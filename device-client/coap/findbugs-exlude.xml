@@ -11,29 +11,24 @@
     </Match>
      
     <Match>
-        <Class name="com.sensinode.coap.test.StubCoapServer"/>
+        <Class name="org.mbed.coap.test.StubCoapServer"/>
         <Or>
             <Bug pattern="RC_REF_COMPARISON_BAD_PRACTICE" />
             <Bug pattern="DM_NUMBER_CTOR" />            
         </Or>
     </Match>
     <Match>
-        <Class name="com.sensinode.coap.ExHeaderOptions"/>
+        <Class name="org.mbed.coap.ExHeaderOptions"/>
         <Bug pattern="RC_REF_COMPARISON" />
     </Match>
     <Match>
-        <Class name="com.sensinode.coap.udp.UDPConnectorChannel"/>
+        <Class name="org.mbed.coap.udp.UDPConnectorChannel"/>
         <Bug pattern="NP_NULL_ON_SOME_PATH" /> <!-- Possible null pointer dereference -->
     </Match>
      
     <Match>
-        <Class name="com.sensinode.coap.server.CoapServer"/>
+        <Class name="org.mbed.coap.server.CoapServer"/>
         <Bug pattern="IS2_INCONSISTENT_SYNC" /> <!-- Inconsistent synchronization  -->
-    </Match>
-    <Match>
-        <Class name="com.sensinode.nanoservice.emulator.LoadBalancerTransportWrapper"/>
-        <!-- It's OK in this particular case  -->
-        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
     </Match>
 
 </FindBugsFilter>
