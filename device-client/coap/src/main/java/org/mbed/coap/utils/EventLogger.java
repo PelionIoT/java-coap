@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
  */
 public class EventLogger {
 
-    private static final String EVENT_LOGGER = "com.sensinode.nanoservice.eventlog";
+    private static final String EVENT_LOGGER = "com.arm.mbed.commons.eventlog";
     public static final String COAP_RECEIVED = "CoAP received";
     public static final String COAP_SENT = "CoAP sent";
     private static final EventLogger NULL = new NullEventLogger();
