@@ -1,0 +1,39 @@
+<FindBugsFilter>
+    <Match>
+        <Or>            
+            <Bug code="PZLA" />   <!-- Consider returning a zero length array rather than null -->
+            <Bug pattern="EI_EXPOSE_REP" />  <!-- May expose internal representation by returning reference to mutable object -->
+            <Bug pattern="EI_EXPOSE_REP2" />  <!-- May expose internal representation by incorporating reference to mutable object -->
+            <Bug pattern="DMI_RANDOM_USED_ONLY_ONCE" /> <!-- Random object created and used only once -->
+            <Bug pattern="DM_DEFAULT_ENCODING" /> <!-- Reliance on default encoding-->
+            <Bug pattern="RR_NOT_CHECKED" /> <!-- Method ignores results of InputStream.read() -->
+        </Or>
+    </Match>
+     
+    <Match>
+        <Class name="com.sensinode.coap.test.StubCoapServer"/>
+        <Or>
+            <Bug pattern="RC_REF_COMPARISON_BAD_PRACTICE" />
+            <Bug pattern="DM_NUMBER_CTOR" />            
+        </Or>
+    </Match>
+    <Match>
+        <Class name="com.sensinode.coap.ExHeaderOptions"/>
+        <Bug pattern="RC_REF_COMPARISON" />
+    </Match>
+    <Match>
+        <Class name="com.sensinode.coap.udp.UDPConnectorChannel"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH" /> <!-- Possible null pointer dereference -->
+    </Match>
+     
+    <Match>
+        <Class name="com.sensinode.coap.server.CoapServer"/>
+        <Bug pattern="IS2_INCONSISTENT_SYNC" /> <!-- Inconsistent synchronization  -->
+    </Match>
+    <Match>
+        <Class name="com.sensinode.nanoservice.emulator.LoadBalancerTransportWrapper"/>
+        <!-- It's OK in this particular case  -->
+        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
+    </Match>
+
+</FindBugsFilter>
