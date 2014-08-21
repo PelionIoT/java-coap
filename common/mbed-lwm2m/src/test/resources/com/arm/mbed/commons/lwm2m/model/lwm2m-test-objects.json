@@ -1,0 +1,46 @@
+{
+    "lwm2m-objects":    [
+    {
+        "object-id":    "test",
+        "object-name":  "LWM2M Test Object",
+        "description":  "",
+        "instances":    MULTIPLE,
+        "resources":    [
+            {
+                "resource-id":      0,
+                "resource-name":    "test0",
+                "operations":       "R",
+                "instances":        SINGLE,
+                "type":             STRING,
+                "range":            "{0,255}",
+                "description":      ""
+            },
+            {
+                "resource-id":      1,
+                "resource-name":    "test1",
+                "operations":       "R",
+                "instances":        SINGLE,
+                "type":             BOOLEAN,
+                "range":            "",
+                "description":      ""
+            }
+        ]
+    },
+    {
+        "object-id":    "try",
+        "object-name":  "LWM2M Try Object",
+        "description":  "",
+        "instances":    SINGLE,
+        "resources":    [
+            {
+                "resource-id":      0,
+                "resource-name":    "try",
+                "operations":       "R",
+                "instances":        SINGLE,
+                "type":             STRING,
+                "range":            "",
+                "description":      ""
+            }
+        ]
+    }
+] }
