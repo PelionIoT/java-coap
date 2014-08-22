@@ -55,30 +55,30 @@ public class TCPConnectorTest {
     public void testZebra() throws Exception {
         final CoapServer theServer = startServer(0, "/tcptest", null);
         //theServer.setResponseTimeout(new CoapUtils.SingleTimeout(1000));
-        int nspPort = theServer.getLocalSocketAddress().getPort();
+        int dsPort = theServer.getLocalSocketAddress().getPort();
 
-        InetSocketAddress nspAddress = new InetSocketAddress(InetAddress.getLocalHost(), nspPort);
+        InetSocketAddress dsAddress = new InetSocketAddress(InetAddress.getLocalHost(), dsPort);
 
         final TCPClientConnector clientConnector = new TCPClientConnector();
         CoapServer client = CoapServer.newBuilder().transport(clientConnector).timeout(new SingleTimeout(1000)).build();
 
         final SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
-        socketChannel.connect(nspAddress);
+        socketChannel.connect(dsAddress);
         assertTrue(socketChannel.finishConnect());
-        System.out.println("NSP address: " + nspAddress);
+        System.out.println("NSP address: " + dsAddress);
         //assertTrue( socketChannel.finishConnect() );
 
         client.setBlockSize(BlockSize.S_1024);
         client.start();
-        clientConnector.addSocketChannel(nspAddress, socketChannel);
+        clientConnector.addSocketChannel(dsAddress, socketChannel);
         // after this can start monitoring
 
         // making request example;
         CoapPacket request = new CoapPacket();
         request.setMethod(Method.GET);
         request.headers().setUriPath("/tcptest");
-        request.setAddress(nspAddress);
+        request.setAddress(dsAddress);
         SyncCallback<CoapPacket> syncResp = new SyncCallback<CoapPacket>();
 
         System.out.println("Send -----");
@@ -150,7 +150,7 @@ public class TCPConnectorTest {
         Thread.sleep(2000);
         Socket rawSocket = null;
         try {
-            rawSocket = new Socket(nspAddress.getHostName(), nspPort);
+            rawSocket = new Socket(dsAddress.getHostName(), dsPort);
             OutputStream rawStream = rawSocket.getOutputStream();
             rawStream.write(new byte[]{-40, 60});
             rawStream.close();
@@ -161,7 +161,7 @@ public class TCPConnectorTest {
         }
         Socket rawSocket2 = null;
         try {
-            rawSocket2 = new Socket(nspAddress.getHostName(), nspPort);
+            rawSocket2 = new Socket(dsAddress.getHostName(), dsPort);
             OutputStream rawStream2 = rawSocket2.getOutputStream();
             rawStream2.write(new byte[]{5});
             rawStream2.close();
@@ -196,9 +196,9 @@ public class TCPConnectorTest {
     public void testZebra2() throws Throwable {
         final CoapServer theServer = startServer(0, "/tcptest", null, 32000);
         //theServer.setResponseTimeout(new CoapUtils.SingleTimeout(1000));
-        int nspPort = theServer.getLocalSocketAddress().getPort();
+        int dsPort = theServer.getLocalSocketAddress().getPort();
 
-        InetSocketAddress nspAddress = new InetSocketAddress(InetAddress.getLocalHost(), nspPort);
+        InetSocketAddress dsAddress = new InetSocketAddress(InetAddress.getLocalHost(), dsPort);
 
         final TCPClientConnector clientConnector = new TCPClientConnector(32000);
         final TCPClientConnector tcpCnn2 = new TCPClientConnector();
@@ -207,23 +207,23 @@ public class TCPConnectorTest {
 
         final SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
-        socketChannel.connect(nspAddress);
+        socketChannel.connect(dsAddress);
         assertTrue(socketChannel.finishConnect());
 
         final SocketChannel socketChannel2 = SocketChannel.open();
         socketChannel2.configureBlocking(false);
-        socketChannel2.connect(nspAddress);
+        socketChannel2.connect(dsAddress);
         assertTrue(socketChannel2.finishConnect());
-        System.out.println("NSP address: " + nspAddress);
+        System.out.println("NSP address: " + dsAddress);
         //assertTrue( socketChannel.finishConnect() );
 
         client.setBlockSize(null);
         client.start();
-        clientConnector.addSocketChannel(nspAddress, socketChannel);
+        clientConnector.addSocketChannel(dsAddress, socketChannel);
 
         client2.setBlockSize(null);
         client2.start();
-        tcpCnn2.addSocketChannel(nspAddress, socketChannel2);
+        tcpCnn2.addSocketChannel(dsAddress, socketChannel2);
         // after this can start monitoring
 
         // making request example;
@@ -236,7 +236,7 @@ public class TCPConnectorTest {
             longPayload30Kilo = longPayload30Kilo + longPayloadOneKilo;
         }
         request.setPayload(longPayload30Kilo);
-        request.setAddress(nspAddress);
+        request.setAddress(dsAddress);
         final SyncCallback<CoapPacket> bigSyncResp = new SyncCallback<CoapPacket>();
         final SyncCallback<CoapPacket> syncResp = new SyncCallback<CoapPacket>();
         final SyncCallback<CoapPacket> syncResp2 = new SyncCallback<CoapPacket>();
@@ -245,7 +245,7 @@ public class TCPConnectorTest {
         final CoapPacket requestC2 = new CoapPacket();
         requestC2.setMethod(Method.GET);
         requestC2.headers().setUriPath("/tcptest");
-        requestC2.setAddress(nspAddress);
+        requestC2.setAddress(dsAddress);
 
         System.out.println("Send -----");
         client.makeRequest(request, bigSyncResp);

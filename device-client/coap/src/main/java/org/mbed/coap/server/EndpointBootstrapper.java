@@ -33,7 +33,7 @@ public class EndpointBootstrapper {
     private final String endpointName;
     private String type;
     private String domain;
-    private InetSocketAddress nspAddress;
+    private InetSocketAddress dsAddress;
     private CoapHandler bootstrapResponseHandler;
 
     public static enum BootstrappingState {
@@ -71,7 +71,7 @@ public class EndpointBootstrapper {
     }
 
     public InetSocketAddress getDsAddress() {
-        return nspAddress;
+        return dsAddress;
     }
 
     public void setBsPath(String bsPath) {
@@ -196,9 +196,9 @@ public class EndpointBootstrapper {
     private void handleNsdAddress (String address, Callback<BootstrappingState> callback) {
         URI uri = URI.create(address);
         if (uri.getPort() == -1) {
-            nspAddress = new InetSocketAddress(uri.getHost(), CoapConstants.DEFAULT_PORT);
+            dsAddress = new InetSocketAddress(uri.getHost(), CoapConstants.DEFAULT_PORT);
         } else {
-            nspAddress = new InetSocketAddress(uri.getHost(), uri.getPort());
+            dsAddress = new InetSocketAddress(uri.getHost(), uri.getPort());
         }
 
         removeBootstrapResponseHandler();
