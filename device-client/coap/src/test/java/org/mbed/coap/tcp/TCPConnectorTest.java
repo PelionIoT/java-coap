@@ -66,7 +66,7 @@ public class TCPConnectorTest {
         socketChannel.configureBlocking(false);
         socketChannel.connect(dsAddress);
         assertTrue(socketChannel.finishConnect());
-        System.out.println("NSP address: " + dsAddress);
+        System.out.println("DeviceServer address: " + dsAddress);
         //assertTrue( socketChannel.finishConnect() );
 
         client.setBlockSize(BlockSize.S_1024);
@@ -214,7 +214,7 @@ public class TCPConnectorTest {
         socketChannel2.configureBlocking(false);
         socketChannel2.connect(dsAddress);
         assertTrue(socketChannel2.finishConnect());
-        System.out.println("NSP address: " + dsAddress);
+        System.out.println("DeviceServer address: " + dsAddress);
         //assertTrue( socketChannel.finishConnect() );
 
         client.setBlockSize(null);
