@@ -70,7 +70,7 @@ public class EndpointBootstrapper {
         return state;
     }
 
-    public InetSocketAddress getNspAddress() {
+    public InetSocketAddress getDsAddress() {
         return nspAddress;
     }
 

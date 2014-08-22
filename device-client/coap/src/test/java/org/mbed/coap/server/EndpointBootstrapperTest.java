@@ -105,12 +105,12 @@ public class EndpointBootstrapperTest {
         EndpointBootstrapper boot = new EndpointBootstrapper(epServer, InMemoryTransport.createAddress(BS_PORT), EP_NAME);
         boot.setType("Test");
         boot.setDomain("domain");
-        assertNull(boot.getNspAddress());
+        assertNull(boot.getDsAddress());
         FutureCallbackAdapter<BootstrappingState> callback = new FutureCallbackAdapter<BootstrappingState>();
         boot.bootstrap(callback);
         waitFor(callback, BootstrappingState.BOOTSTRAPPED, 1000);
         assertEquals(BootstrappingState.BOOTSTRAPPED, boot.getState() );
-        assertEquals(new InetSocketAddress("localhost", 5673), boot.getNspAddress() );
+        assertEquals(new InetSocketAddress("localhost", 5673), boot.getDsAddress() );
     }
 
     @Test
@@ -121,16 +121,16 @@ public class EndpointBootstrapperTest {
         setupBootstrapRequestHandler(response1, response2);
 
         EndpointBootstrapper boot = new EndpointBootstrapper(epServer, InMemoryTransport.createAddress(BS_PORT), EP_NAME);
-        assertNull(boot.getNspAddress());
+        assertNull(boot.getDsAddress());
         boot.bootstrap();
 
         int i=0;
-        while (boot.getNspAddress() == null && i<50) {
+        while (boot.getDsAddress() == null && i<50) {
             Thread.sleep(20);
         }
 
         assertEquals(BootstrappingState.BOOTSTRAPPED, boot.getState() );
-        assertEquals(new InetSocketAddress("localhost", 5673), boot.getNspAddress() );
+        assertEquals(new InetSocketAddress("localhost", 5673), boot.getDsAddress() );
     }
 
     @Test
@@ -142,7 +142,7 @@ public class EndpointBootstrapperTest {
         boot.bootstrap(callback);
         waitFor(callback, BootstrappingState.BOOTSTRAP_FAILED, 1000);
         assertEquals(BootstrappingState.BOOTSTRAP_FAILED, boot.getState() );
-        assertNull(boot.getNspAddress());
+        assertNull(boot.getDsAddress());
     }
 
     @Test
@@ -155,7 +155,7 @@ public class EndpointBootstrapperTest {
         boot.bootstrap(callback);
         waitFor(callback, BootstrappingState.BOOTSTRAP_FAILED, 1000);
         assertEquals(BootstrappingState.BOOTSTRAP_REQUESTED, boot.getState() );
-        assertNull(boot.getNspAddress());
+        assertNull(boot.getDsAddress());
     }
 
     @Test
@@ -169,7 +169,7 @@ public class EndpointBootstrapperTest {
         boot.bootstrap(callback);
         waitFor(callback, BootstrappingState.BOOTSTRAPPED, 1000);
         assertEquals(BootstrappingState.BOOTSTRAPPED, boot.getState() );
-        assertEquals(new InetSocketAddress("localhost", 5673), boot.getNspAddress() );
+        assertEquals(new InetSocketAddress("localhost", 5673), boot.getDsAddress() );
     }
 
     private void waitFor (FutureCallbackAdapter<BootstrappingState> callback, BootstrappingState desired, long timeout)
