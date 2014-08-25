@@ -6,22 +6,6 @@ package org.mbed.coap.server;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import org.mbed.coap.CoapConstants;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
-import org.mbed.coap.MediaTypes;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapExchange;
-import org.mbed.coap.server.CoapHandler;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.EndpointBootstrapper;
-import org.mbed.coap.server.EndpointBootstrapper.BootstrappingState;
-import org.mbed.coap.test.InMemoryTransport;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.utils.Callback;
-import org.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -30,10 +14,21 @@ import java.util.concurrent.ExecutionException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.CoapConstants;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.Code;
+import org.mbed.coap.MediaTypes;
+import org.mbed.coap.MessageType;
+import org.mbed.coap.Method;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.server.EndpointBootstrapper.BootstrappingState;
+import org.mbed.coap.test.InMemoryTransport;
+import org.mbed.coap.transmission.SingleTimeout;
+import org.mbed.coap.utils.Callback;
+import org.mbed.coap.utils.FutureCallbackAdapter;
 
 /**
  * @author nordav01
- *
  */
 public class EndpointBootstrapperTest {
 
@@ -55,7 +50,7 @@ public class EndpointBootstrapperTest {
     }
 
     private void setupBootstrapRequestHandler(CoapPacket... responses) {
-        final LinkedList<CoapPacket> responseList = new LinkedList<CoapPacket>(Arrays.asList(responses));
+        final LinkedList<CoapPacket> responseList = new LinkedList<>(Arrays.asList(responses));
         bsServer.addRequestHandler("/bs", new CoapHandler() {
             @Override
             public void handle(CoapExchange exchange) throws CoapException {
@@ -106,7 +101,7 @@ public class EndpointBootstrapperTest {
         boot.setType("Test");
         boot.setDomain("domain");
         assertNull(boot.getDsAddress());
-        FutureCallbackAdapter<BootstrappingState> callback = new FutureCallbackAdapter<BootstrappingState>();
+        FutureCallbackAdapter<BootstrappingState> callback = new FutureCallbackAdapter<>();
         boot.bootstrap(callback);
         waitFor(callback, BootstrappingState.BOOTSTRAPPED, 1000);
         assertEquals(BootstrappingState.BOOTSTRAPPED, boot.getState() );
@@ -125,7 +120,7 @@ public class EndpointBootstrapperTest {
         boot.bootstrap();
 
         int i=0;
-        while (boot.getDsAddress() == null && i<50) {
+        while (boot.getState() != BootstrappingState.BOOTSTRAPPED && i<50) {
             Thread.sleep(20);
         }
 
@@ -138,7 +133,7 @@ public class EndpointBootstrapperTest {
         setupBootstrapRequestErrorHandler(Code.C400_BAD_REQUEST);
 
         EndpointBootstrapper boot = new EndpointBootstrapper(epServer, InMemoryTransport.createAddress(BS_PORT), EP_NAME);
-        FutureCallbackAdapter<BootstrappingState> callback = new FutureCallbackAdapter<BootstrappingState>();
+        FutureCallbackAdapter<BootstrappingState> callback = new FutureCallbackAdapter<>();
         boot.bootstrap(callback);
         waitFor(callback, BootstrappingState.BOOTSTRAP_FAILED, 1000);
         assertEquals(BootstrappingState.BOOTSTRAP_FAILED, boot.getState() );
@@ -151,7 +146,7 @@ public class EndpointBootstrapperTest {
         setupBootstrapRequestHandler(response);
 
         EndpointBootstrapper boot = new EndpointBootstrapper(epServer, InMemoryTransport.createAddress(BS_PORT), EP_NAME);
-        FutureCallbackAdapter<BootstrappingState> callback = new FutureCallbackAdapter<BootstrappingState>();
+        FutureCallbackAdapter<BootstrappingState> callback = new FutureCallbackAdapter<>();
         boot.bootstrap(callback);
         waitFor(callback, BootstrappingState.BOOTSTRAP_FAILED, 1000);
         assertEquals(BootstrappingState.BOOTSTRAP_REQUESTED, boot.getState() );
@@ -165,7 +160,7 @@ public class EndpointBootstrapperTest {
                 createCoap("/0/0/0", "coap://localhost:5673", MediaTypes.CT_APPLICATION_LWM2M_TEXT));
 
         EndpointBootstrapper boot = new EndpointBootstrapper(epServer, InMemoryTransport.createAddress(BS_PORT), EP_NAME);
-        FutureCallbackAdapter<BootstrappingState> callback = new FutureCallbackAdapter<BootstrappingState>();
+        FutureCallbackAdapter<BootstrappingState> callback = new FutureCallbackAdapter<>();
         boot.bootstrap(callback);
         waitFor(callback, BootstrappingState.BOOTSTRAPPED, 1000);
         assertEquals(BootstrappingState.BOOTSTRAPPED, boot.getState() );
@@ -178,7 +173,7 @@ public class EndpointBootstrapperTest {
         long millis = 20;
         int retry = (int) (timeout / millis) + 1;
         while (callback.get() != desired && retry-- > 0) {
-            Thread.sleep(20);
+            Thread.sleep(millis);
         }
     }
 
