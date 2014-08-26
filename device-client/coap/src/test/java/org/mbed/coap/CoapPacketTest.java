@@ -41,7 +41,7 @@ public class CoapPacketTest {
     }
 
     @Test
-    public void coapPacketTest1() throws CoapException {
+    public void deserializeAfterSerializeGivesBackACoapPacketWithSameData() throws CoapException {
         CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
         byte[] rawCp = CoapPacket.serialize(cp);
         CoapPacket cp2 = CoapPacket.deserialize(new ByteArrayInputStream(rawCp));
@@ -56,7 +56,7 @@ public class CoapPacketTest {
     }
 
     @Test
-    public void coapPacketTest2() throws CoapException {
+    public void readSerializedGiveBackSimilarCoapPacket() throws CoapException {
         CoapPacket cp = new CoapPacket(Code.C205_CONTENT, MessageType.Acknowledgement, null);
         cp.setPayload("TEST");
 
@@ -64,7 +64,7 @@ public class CoapPacketTest {
         CoapPacket cp2 = CoapPacket.read(rawCp);
 
         assertArrayEquals(rawCp, CoapPacket.serialize(cp2));
-        assertCoapPackets(cp, cp2);
+        assertSimilar(cp, cp2);
     }
 
     @Test
@@ -97,7 +97,7 @@ public class CoapPacketTest {
         System.out.println(cp);
         System.out.println(cp2);
 
-        assertCoapPackets(cp, cp2);
+        assertSimilar(cp, cp2);
     }
 
     @Test
@@ -116,7 +116,7 @@ public class CoapPacketTest {
         System.out.println(Arrays.toString(cp.toByteArray()));
         System.out.println(cp2);
         System.out.println(Arrays.toString(cp2.toByteArray()));
-        assertCoapPackets(cp, cp2);
+        assertSimilar(cp, cp2);
 
         Map<String, String> q = new HashMap<>();
         q.put("par1", "1");
@@ -150,10 +150,10 @@ public class CoapPacketTest {
         System.out.println(Arrays.toString(cp.toByteArray()));
         System.out.println(cp2);
         System.out.println(Arrays.toString(cp2.toByteArray()));
-        assertCoapPackets(cp, cp2);
+        assertSimilar(cp, cp2);
     }
 
-    private static void assertCoapPackets(CoapPacket cp1, CoapPacket cp2) {
+    private static void assertSimilar(CoapPacket cp1, CoapPacket cp2) {
         assertEquals(cp1.getMethod(), cp2.getMethod());
         assertEquals(cp1.getMessageType(), cp2.getMessageType());
         assertEquals(cp1.getCode(), cp2.getCode());
