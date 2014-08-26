@@ -121,16 +121,15 @@ public class LinkFormatBuilder {
                 || key.equals(LinkFormat.LINK_INTERFACE_DESCRIPTION) || key.equals(LinkFormat.LINK_CONTENT_TYPE)) {
             //for parameters with multiple values ('relation-types')
             String[] paramVals = lf.getParamRelationTypes(key);
-            isAccepted &= hasMatch(val, paramVals);
+            return isAccepted && hasMatch(val, paramVals);
         } else if (key.equals(LinkFormat.LINK_OBSERVABLE) || key.equals(LinkFormat.LINK_EXPORT)) {
             //for flag parameters
-            isAccepted &= lf.getParam(key) != null;
+            return isAccepted && lf.getParam(key) != null;
         } else if ("href".equals(key)) {
-            isAccepted &= hasMatch(val, lf.getUri());
+            return isAccepted && hasMatch(val, lf.getUri());
         } else {
-            isAccepted &= hasMatch(val, lf.getParam(key));
+            return isAccepted && hasMatch(val, lf.getParam(key));
         }
-        return isAccepted;
     }
 
     private static boolean hasMatch(String queryVal, String... paramVals) {
