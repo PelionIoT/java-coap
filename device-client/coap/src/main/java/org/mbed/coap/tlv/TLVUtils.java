@@ -3,13 +3,13 @@
  */
 package org.mbed.coap.tlv;
 
-import org.mbed.coap.utils.ByteArrayBackedInputStream;
-import org.mbed.coap.utils.ByteArrayBackedOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import org.mbed.coap.utils.ByteArrayBackedInputStream;
+import org.mbed.coap.utils.ByteArrayBackedOutputStream;
 
 /**
  * Utility class for serializing and parsing TLV messages.
@@ -64,7 +64,7 @@ public class TLVUtils {
         try {
             ByteArrayBackedInputStream bais = new ByteArrayBackedInputStream(data);
 
-            List<TimestampedTLVObject> tlvList = new LinkedList<TimestampedTLVObject>();
+            List<TimestampedTLVObject> tlvList = new LinkedList<>();
 
             Integer lastCurrTimestampSec = null;
             Integer lastOffsetSec = 0;
@@ -123,7 +123,7 @@ public class TLVUtils {
     public static List<TLVObject> deserializeList(byte[] data) throws IOException {
         ByteArrayBackedInputStream bais = new ByteArrayBackedInputStream(data);
 
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
 
         while (bais.available() > 0) {
             TLVObject tlvObj = TLVObject.deserialize(bais);

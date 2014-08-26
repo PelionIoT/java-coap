@@ -1,17 +1,5 @@
 package org.mbed.coap.server;
 
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.exception.CoapCodeException;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.exception.CoapTimeoutException;
-import org.mbed.coap.server.CoapExchange;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.test.InMemoryTransport;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.utils.CoapResource;
-import org.mbed.coap.utils.SyncCallback;
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -22,6 +10,16 @@ import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.Code;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.exception.CoapCodeException;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.exception.CoapTimeoutException;
+import org.mbed.coap.test.InMemoryTransport;
+import org.mbed.coap.transmission.SingleTimeout;
+import org.mbed.coap.utils.CoapResource;
+import org.mbed.coap.utils.SyncCallback;
 
 /**
  *
@@ -58,11 +56,11 @@ public class CoapServerExecutorTest {
         CoapClient client4 = CoapClient.newBuilder(5683).transport(InMemoryTransport.create(1004)).timeout(new SingleTimeout(600)).build();
         CoapClient client5 = CoapClient.newBuilder(5683).transport(InMemoryTransport.create(1005)).timeout(new SingleTimeout(600)).build();
 
-        SyncCallback<CoapPacket> cl = new SyncCallback<CoapPacket>();
-        SyncCallback<CoapPacket> cl2 = new SyncCallback<CoapPacket>();
-        SyncCallback<CoapPacket> cl3 = new SyncCallback<CoapPacket>();
-        SyncCallback<CoapPacket> cl4 = new SyncCallback<CoapPacket>();
-        SyncCallback<CoapPacket> cl5 = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> cl = new SyncCallback<>();
+        SyncCallback<CoapPacket> cl2 = new SyncCallback<>();
+        SyncCallback<CoapPacket> cl3 = new SyncCallback<>();
+        SyncCallback<CoapPacket> cl4 = new SyncCallback<>();
+        SyncCallback<CoapPacket> cl5 = new SyncCallback<>();
 
         synchronized (monitor) {
             client1.resource("/slow").get(cl);
@@ -86,8 +84,8 @@ public class CoapServerExecutorTest {
         CoapClient client2 = CoapClient.newBuilder(InMemoryTransport.createAddress(5683))
                 .transport(InMemoryTransport.create(1002)).timeout(new SingleTimeout(600)).build();
 
-        SyncCallback<CoapPacket> cl = new SyncCallback<CoapPacket>();
-        SyncCallback<CoapPacket> cl2 = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> cl = new SyncCallback<>();
+        SyncCallback<CoapPacket> cl2 = new SyncCallback<>();
 
         synchronized (monitor) {
             client1.resource("/slow").get(cl);

@@ -1,29 +1,30 @@
 package org.mbed.coap.server;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.HeaderOptions;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.Method;
 import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapErrorCallback;
-import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.test.InMemoryTransport;
 import org.mbed.coap.test.StubCoapServer;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
 import org.mbed.coap.transport.TransportWorkerWrapper;
-import java.util.concurrent.CountDownLatch;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  *
@@ -41,6 +42,7 @@ public class CoapServerDuplicateTest {
             @Override
             public void parserError(byte[] packet, CoapException exception) {
             }
+
             @Override
             public void duplicated(CoapPacket request) {
                 if (latch != null) {
@@ -48,7 +50,7 @@ public class CoapServerDuplicateTest {
                 }
             }
         });
-        
+
         coapServer = new StubCoapServer(server);
         coapServer.start();
         coapServer.whenPUT("/test").thenReturn("dupa");
@@ -65,7 +67,7 @@ public class CoapServerDuplicateTest {
     @Test
     public void testDuplicateRequest() throws IOException, CoapException, InterruptedException {
         latch = new CountDownLatch(1);
-        
+
         ConnectorMockCoap connectorMock = new ConnectorMockCoap();
         new TransportWorkerWrapper(connectorMock).start(connectorMock);
         CoapPacket req = new CoapPacket(Method.PUT, MessageType.Confirmable, "/test", coapServer.getAddress());
@@ -88,7 +90,7 @@ public class CoapServerDuplicateTest {
     @Test
     public void testDuplicateRequestNotProcessed() throws IOException, CoapException, InterruptedException {
         latch = new CountDownLatch(1);
-        
+
         ConnectorMockCoap connectorMock = new ConnectorMockCoap();
         new TransportWorkerWrapper(connectorMock).start(connectorMock);
         CoapPacket req = new CoapPacket(Method.POST, MessageType.Confirmable, "/test-delay", coapServer.getAddress());
@@ -144,7 +146,7 @@ public class CoapServerDuplicateTest {
 
     private static class ConnectorMockCoap extends InMemoryTransport implements TransportReceiver {
 
-        public BlockingQueue<CoapPacket> receiveQueue = new LinkedBlockingQueue<CoapPacket>();
+        public BlockingQueue<CoapPacket> receiveQueue = new LinkedBlockingQueue<>();
 
         public ConnectorMockCoap() {
             //start(this);

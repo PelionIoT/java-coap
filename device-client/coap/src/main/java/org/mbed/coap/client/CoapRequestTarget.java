@@ -3,6 +3,7 @@
  */
 package org.mbed.coap.client;
 
+import java.util.concurrent.Future;
 import org.mbed.coap.BlockOption;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapPacket;
@@ -15,7 +16,6 @@ import org.mbed.coap.server.CoapServerObserve;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.FutureCallbackAdapter;
-import java.util.concurrent.Future;
 
 /**
  * CoAP request builder.
@@ -227,7 +227,7 @@ public class CoapRequestTarget {
             CoapServerObserve obsServer = (CoapServerObserve) coapClient.coapServer;
 
             requestPacket.headers().setObserve(0);
-            FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<CoapPacket>();
+            FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
             coapClient.putObservationListener(observationListener, obsServer.observe(requestPacket, callback));
 
             return callback;
@@ -241,7 +241,7 @@ public class CoapRequestTarget {
     }
 
     private Future<CoapPacket> request() throws CoapException {
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<CoapPacket>();
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         request(callback);
         return callback;
     }

@@ -3,15 +3,15 @@
  */
 package org.mbed.coap.client;
 
+import java.io.Closeable;
+import java.net.InetSocketAddress;
+import java.util.concurrent.Future;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.FutureCallbackAdapter;
-import java.io.Closeable;
-import java.net.InetSocketAddress;
-import java.util.concurrent.Future;
 
 /**
  * CoAP client implementation.
@@ -78,7 +78,7 @@ public class CoapClient implements Closeable {
     }
 
     public Future<CoapPacket> ping() throws CoapException {
-        FutureCallbackAdapter<CoapPacket> rsp = new FutureCallbackAdapter<CoapPacket>();
+        FutureCallbackAdapter<CoapPacket> rsp = new FutureCallbackAdapter<>();
         CoapPacket pingRequest = new CoapPacket(null, MessageType.Confirmable, destination);
         coapServer.makeRequest(pingRequest, rsp);
         return rsp;

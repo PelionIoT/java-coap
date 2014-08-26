@@ -1,6 +1,15 @@
 package org.mbed.coap.test;
 
-import org.mbed.coap.test.utils.Utils;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import org.junit.After;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.BlockOption;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapMessage;
@@ -15,16 +24,10 @@ import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.test.utils.Utils;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
 import org.mbed.coap.utils.SyncCallback;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import org.junit.After;
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author szymon
@@ -185,7 +188,7 @@ public class ClientServerWithBlocksTest {
         request.headers().setSize1(0);
         request.setAddress(new InetSocketAddress("localhost", SERVER_PORT));
 
-        SyncCallback<CoapPacket> syncCallback = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> syncCallback = new SyncCallback<>();
         cnn.makeRequest(request, syncCallback);
 
         assertEquals(Code.C205_CONTENT, syncCallback.getResponse().getCode());
@@ -220,7 +223,7 @@ public class ClientServerWithBlocksTest {
         CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.setPayload(body);
         request.headers().setBlock1Req(new BlockOption(1, BlockSize.S_128, true));
-        SyncCallback<CoapPacket> syncCallback = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> syncCallback = new SyncCallback<>();
         cnn.makeRequest(request, syncCallback);
         CoapPacket resp = syncCallback.getResponse();
 
@@ -277,8 +280,8 @@ public class ClientServerWithBlocksTest {
 
     }
 
-    private CoapPacket makeRequest(CoapServer client, CoapPacket request) throws Exception {
-        SyncCallback<CoapPacket> syncCallback = new SyncCallback<CoapPacket>();
+    private static CoapPacket makeRequest(CoapServer client, CoapPacket request) throws Exception {
+        SyncCallback<CoapPacket> syncCallback = new SyncCallback<>();
         client.makeRequest(request, syncCallback);
         return syncCallback.getResponse();
     }

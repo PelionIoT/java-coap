@@ -1,14 +1,5 @@
 package microbenchmark;
 
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.transport.TransportConnector;
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
-import org.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -19,6 +10,15 @@ import org.apache.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.MessageType;
+import org.mbed.coap.Method;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.transport.TransportConnector;
+import org.mbed.coap.transport.TransportContext;
+import org.mbed.coap.transport.TransportReceiver;
+import org.mbed.coap.utils.SimpleCoapResource;
 
 /**
  *
@@ -57,7 +57,7 @@ public abstract class ServerBenchmarkBase {
 
     @After
     public void coolDown() {
-        System.out.println("RUN-TIME: " + (endTime - stTime) + "ms, MSG-PER-SEC: " + ((long) MAX * 1000L / (endTime - stTime)));
+        System.out.println("RUN-TIME: " + (endTime - stTime) + "ms, MSG-PER-SEC: " + (MAX * 1000L / (endTime - stTime)));
         server.stop();
     }
 

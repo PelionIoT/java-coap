@@ -3,12 +3,6 @@
  */
 package org.mbed.coap.test;
 
-import org.mbed.coap.transport.TransportConnector;
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
-import org.mbed.coap.transport.TransportWorkerWrapper;
-import org.mbed.coap.udp.AbstractTransportConnector;
-import org.mbed.coap.utils.IpPortAddress;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -18,6 +12,12 @@ import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import org.mbed.coap.transport.TransportConnector;
+import org.mbed.coap.transport.TransportContext;
+import org.mbed.coap.transport.TransportReceiver;
+import org.mbed.coap.transport.TransportWorkerWrapper;
+import org.mbed.coap.udp.AbstractTransportConnector;
+import org.mbed.coap.utils.IpPortAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryTransport.class);
     public final static String LOCALHOST = "localhost";
-    private static final Map<IpPortAddress, BlockingQueue<DatagramMessage>> BIND_CONNECTORS = new HashMap<IpPortAddress, BlockingQueue<DatagramMessage>>();
+    private static final Map<IpPortAddress, BlockingQueue<DatagramMessage>> BIND_CONNECTORS = new HashMap<>();
     private TransportContext transportContext;
     private BlockingQueue<DatagramMessage> queue;
 
@@ -89,7 +89,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
 
     @Override
     protected void initialize() throws IOException {
-        queue = new LinkedBlockingQueue<DatagramMessage>();
+        queue = new LinkedBlockingQueue<>();
         bind(new IpPortAddress(getBindSocket()), queue);
     }
 

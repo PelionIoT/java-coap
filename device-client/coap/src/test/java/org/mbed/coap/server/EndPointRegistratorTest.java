@@ -1,19 +1,5 @@
 package org.mbed.coap.server;
 
-import org.mbed.coap.test.CoapResourceMock;
-import org.mbed.coap.CoapConstants;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
-import org.mbed.coap.linkformat.LinkFormat;
-import org.mbed.coap.linkformat.LinkFormatBuilder;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.EndPointRegistrator;
-import org.mbed.coap.test.InMemoryTransport;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.utils.FutureCallbackAdapter;
-import org.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
@@ -27,6 +13,18 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.CoapConstants;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.Code;
+import org.mbed.coap.MessageType;
+import org.mbed.coap.Method;
+import org.mbed.coap.linkformat.LinkFormat;
+import org.mbed.coap.linkformat.LinkFormatBuilder;
+import org.mbed.coap.test.CoapResourceMock;
+import org.mbed.coap.test.InMemoryTransport;
+import org.mbed.coap.transmission.SingleTimeout;
+import org.mbed.coap.utils.FutureCallbackAdapter;
+import org.mbed.coap.utils.SimpleCoapResource;
 
 /**
  *
@@ -73,19 +71,19 @@ public class EndPointRegistratorTest {
         epReg.setHostName(EP_NAME);
         epReg.setType("test");
 
-        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, fut.get());
 
         //UPDATE REGISTRATION
-        fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         fut.get();
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, epReg.getState());
         assertEquals(0, rdResource.getLatestRequest().getPayload().length);
 
         //REMOVE REGISTRATION
-        fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        fut = new FutureCallbackAdapter<>();
         epReg.unregister(fut);
         assertEquals(EndPointRegistrator.RegistrationState.NOT_REGISTERED, fut.get());
 
@@ -105,20 +103,20 @@ public class EndPointRegistratorTest {
         epReg.setHostName(EP_NAME);
         epReg.setType("test");
 
-        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, fut.get());
         assertEquals(0, rdResource.getLatestRequest().getPayload().length);
 
         //UPDATE REGISTRATION
-        fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         fut.get();
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, epReg.getState());
         assertEquals(0, rdResource.getLatestRequest().getPayload().length);
 
         //REMOVE REGISTRATION
-        fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        fut = new FutureCallbackAdapter<>();
         epReg.unregister(fut);
         assertEquals(EndPointRegistrator.RegistrationState.NOT_REGISTERED, fut.get());
 
@@ -129,7 +127,7 @@ public class EndPointRegistratorTest {
         EndPointRegistrator epReg = new EndPointRegistrator(epServer, InMemoryTransport.createAddress(RD_PORT), EP_NAME);
         epReg.setRdPath("/non-existing");
 
-        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         assertEquals(EndPointRegistrator.RegistrationState.FAILED, fut.get());
 
@@ -140,7 +138,7 @@ public class EndPointRegistratorTest {
         EndPointRegistrator epReg = new EndPointRegistrator(epServer, InMemoryTransport.createAddress(0), EP_NAME);
         epServer.setResponseTimeout(new SingleTimeout(400));
 
-        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<>();
         synchronized (rdResource) {
             epReg.register(fut);
             assertEquals(EndPointRegistrator.RegistrationState.REGISTRATION_SENT, epReg.getState());
@@ -169,7 +167,7 @@ public class EndPointRegistratorTest {
         epReg.setLifeTime(1234);
         epReg.setContext("test-context");
 
-        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, fut.get());
 
@@ -196,14 +194,14 @@ public class EndPointRegistratorTest {
         EndPointRegistrator epReg = new EndPointRegistrator(epServer, InMemoryTransport.createAddress(RD_PORT), EP_NAME);
         epReg.setLifeTime(1);
 
-        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, fut.get());
         assertFalse(epReg.isTimeout());
         Thread.sleep(1100);
         assertTrue(epReg.isTimeout());
 
-        fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, fut.get());
 
@@ -213,7 +211,7 @@ public class EndPointRegistratorTest {
     public void testUnregisterForNotRegistered() throws InterruptedException, ExecutionException {
         EndPointRegistrator epReg = new EndPointRegistrator(epServer, InMemoryTransport.createAddress(RD_PORT), EP_NAME);
 
-        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<>();
         epReg.unregister(fut);
         assertEquals(EndPointRegistrator.RegistrationState.NOT_REGISTERED, fut.get());
 
@@ -232,7 +230,7 @@ public class EndPointRegistratorTest {
         epReg.setHostName(EP_NAME);
         epReg.setType("test");
 
-        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, fut.get());
         assertEquals(Method.POST, rdResource.getLatestRequest().getMethod());
@@ -241,7 +239,7 @@ public class EndPointRegistratorTest {
         epServer.addRequestHandler("/extra", new SimpleCoapResource("extra", "ns:test"));
 
         //UPDATE REGISTRATION
-        fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         fut.get();
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, epReg.getState());
@@ -255,7 +253,7 @@ public class EndPointRegistratorTest {
         assertEquals("ns:test", listLF.get(0).getResourceTypeArray()[0]);
 
         //SECOND UPDATE REGISTRATION
-        fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         fut.get();
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, epReg.getState());
@@ -267,7 +265,7 @@ public class EndPointRegistratorTest {
         epServer.addRequestHandler("/extra2", new SimpleCoapResource("extra2", "ns:te2"));
 
         //UPDATE REGISTRATION
-        fut = new FutureCallbackAdapter<EndPointRegistrator.RegistrationState>();
+        fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         fut.get();
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, epReg.getState());

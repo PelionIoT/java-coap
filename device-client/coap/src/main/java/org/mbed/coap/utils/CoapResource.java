@@ -48,15 +48,15 @@ public abstract class CoapResource implements CoapHandler {
 
     public abstract void get(CoapExchange exchange) throws CoapCodeException;
 
-    public void put(CoapExchange exchange) throws CoapCodeException {
+    public void put(@SuppressWarnings("unused") CoapExchange exchange) throws CoapCodeException {
         throw new CoapCodeException(Code.C405_METHOD_NOT_ALLOWED);
     }
 
-    public void delete(CoapExchange exchange) throws CoapCodeException {
+    public void delete(@SuppressWarnings("unused") CoapExchange exchange) throws CoapCodeException {
         throw new CoapCodeException(Code.C405_METHOD_NOT_ALLOWED);
     }
 
-    public void post(CoapExchange exchange) throws CoapCodeException {
+    public void post(@SuppressWarnings("unused") CoapExchange exchange) throws CoapCodeException {
         throw new CoapCodeException(Code.C405_METHOD_NOT_ALLOWED);
     }
 

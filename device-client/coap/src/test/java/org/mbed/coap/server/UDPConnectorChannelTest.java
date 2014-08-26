@@ -1,13 +1,5 @@
 package org.mbed.coap.server;
 
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.transport.TransportReceiver;
-import org.mbed.coap.udp.DatagramChannelTransport;
-import org.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.DatagramSocket;
@@ -20,7 +12,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.mockito.Mockito.*;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.MessageType;
+import org.mbed.coap.Method;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.transport.TransportReceiver;
+import org.mbed.coap.udp.DatagramChannelTransport;
+import org.mbed.coap.utils.FutureCallbackAdapter;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -96,7 +100,7 @@ public class UDPConnectorChannelTest {
         srv.start();
 
         try {
-            FutureCallbackAdapter<CoapPacket> fut = new FutureCallbackAdapter<CoapPacket>();
+            FutureCallbackAdapter<CoapPacket> fut = new FutureCallbackAdapter<>();
             srv.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", new InetSocketAddress(61616)), fut);
             assertFalse(fut.isDone());
 
@@ -120,7 +124,7 @@ public class UDPConnectorChannelTest {
         srv.start();
 
         try {
-            FutureCallbackAdapter<CoapPacket> fut = new FutureCallbackAdapter<CoapPacket>();
+            FutureCallbackAdapter<CoapPacket> fut = new FutureCallbackAdapter<>();
             srv.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", new InetSocketAddress(61616)), fut);
 
         } catch (CoapException ex) {

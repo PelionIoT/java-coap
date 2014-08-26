@@ -1,12 +1,5 @@
 package microbenchmark;
 
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapExchange;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.ObservationHandler;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
@@ -16,6 +9,13 @@ import org.apache.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.Code;
+import org.mbed.coap.MessageType;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.server.CoapExchange;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.ObservationHandler;
 
 /**
  *
@@ -57,7 +57,7 @@ public class ServerNotifBenchmark {
 
     @After
     public void coolDown() {
-        System.out.println("RUN-TIME: " + (endTime - stTime) + "ms, MSG-PER-SEC: " + ((long) MAX * 1000l / (endTime - stTime)));
+        System.out.println("RUN-TIME: " + (endTime - stTime) + "ms, MSG-PER-SEC: " + (MAX * 1000L / (endTime - stTime)));
         server.stop();
     }
 

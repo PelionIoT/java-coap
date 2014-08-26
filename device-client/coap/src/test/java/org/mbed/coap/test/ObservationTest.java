@@ -1,5 +1,15 @@
 package org.mbed.coap.test;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
@@ -13,14 +23,6 @@ import org.mbed.coap.observe.SimpleObservableResource;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.SimpleCoapResource;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import org.junit.AfterClass;
-import static org.junit.Assert.*;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -252,7 +254,7 @@ public class ObservationTest {
 
     public static class SyncObservationListener implements ObservationListener {
 
-        BlockingQueue<CoapPacket> queue = new LinkedBlockingQueue<CoapPacket>();
+        BlockingQueue<CoapPacket> queue = new LinkedBlockingQueue<>();
 
         @Override
         public void onObservation(CoapPacket obsPacket) throws CoapException {

@@ -29,6 +29,10 @@ public class QoSDatagramSocket extends DatagramSocket {
         }
     }
 
+    /**
+     * Non-synchronized on purpose (TODO refactor away the need to do this)
+     */
+    @SuppressWarnings("sync-override")
     @Override
     public void setTrafficClass(int tc) throws SocketException {
         if (tc < 0 || tc > 255) {

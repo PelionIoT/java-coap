@@ -3,10 +3,10 @@
  */
 package org.mbed.coap.server;
 
+import java.net.InetSocketAddress;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.transport.TransportContext;
-import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +52,7 @@ class CoapExchangeImpl extends CoapExchange {
         return responseTransportContext;
     }
 
+    @Override
     public void setResponseTransportContext(TransportContext responseTransportContext) {
         this.responseTransportContext = responseTransportContext;
     }

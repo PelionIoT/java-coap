@@ -3,6 +3,14 @@
  */
 package org.mbed.coap.test;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapMessage;
 import org.mbed.coap.CoapPacket;
@@ -21,14 +29,6 @@ import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.utils.SyncCallback;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  *
@@ -40,9 +40,9 @@ public class StubCoapServer {
     static final Short ANY_SHORT = Short.valueOf((short) 0);
     static final Long ANY_LONG = Long.valueOf(0);
     static final byte[] ANY_BYTEARR = new byte[1];
-    private final Map<CoapPacket, StubResponse> rules = new LinkedHashMap<CoapPacket, StubResponse>();
+    private final Map<CoapPacket, StubResponse> rules = new LinkedHashMap<>();
     private CoapServer server;
-    private final Map<String, CoapPacket> requests = new HashMap<String, CoapPacket>();
+    private final Map<String, CoapPacket> requests = new HashMap<>();
     private long singleTimeout;
     private TransportConnector transportConnector;
     private BlockSize blockSize;
@@ -91,7 +91,7 @@ public class StubCoapServer {
     public void setCoapServer(CoapServer coapServer) {
         server = coapServer;
     }
-    
+
     public void setBlockSize(BlockSize blockSize) {
         this.blockSize = blockSize;
     }
@@ -131,7 +131,7 @@ public class StubCoapServer {
     }
 
     CoapMessage makeRequest(CoapPacket req) throws CoapException {
-        SyncCallback<CoapPacket> callback = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> callback = new SyncCallback<>();
         server.makeRequest(req, callback);
         try {
             return callback.getResponse();
@@ -328,7 +328,7 @@ public class StubCoapServer {
     }
 
     public void enableObservationHandler() {
-        notifQueue = new LinkedBlockingQueue<CoapPacket>();
+        notifQueue = new LinkedBlockingQueue<>();
         server.setObservationHandler(new ObservationHandler() {
             @Override
             public void callException(Exception ex) {

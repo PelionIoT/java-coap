@@ -50,7 +50,7 @@ public class LinkFormatBuilder {
      * @throws ParseException
      */
     public static List<LinkFormat> parseLinkAsList(String linkValueList) throws ParseException {
-        List<LinkFormat> linkHeaderList = new LinkedList<LinkFormat>();
+        List<LinkFormat> linkHeaderList = new LinkedList<>();
         for (String ln : linkValueList.split(",")) {
             LinkFormat lf = parse(ln);
             linkHeaderList.add(lf);
@@ -97,7 +97,7 @@ public class LinkFormatBuilder {
             return list;
         }
 
-        List<LinkFormat> filteredList = new ArrayList<LinkFormat>();
+        List<LinkFormat> filteredList = new ArrayList<>();
         for (LinkFormat lf : list) {
             boolean isAccepted = true;
             for (Map.Entry<String, String> entry : queryFilter.entrySet()) {

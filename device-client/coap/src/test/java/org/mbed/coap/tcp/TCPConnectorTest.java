@@ -1,22 +1,5 @@
 package org.mbed.coap.tcp;
 
-import org.mbed.coap.BlockSize;
-import org.mbed.coap.CoapMessage;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
-import org.mbed.coap.Method;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.tcp.TCPClientConnector;
-import org.mbed.coap.tcp.TCPServerConnector;
-import org.mbed.coap.test.StubCoapServer;
-import org.mbed.coap.transmission.CoapTimeout;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.transmission.TransmissionTimeout;
-import org.mbed.coap.utils.CoapCallback;
-import org.mbed.coap.utils.SimpleCoapResource;
-import org.mbed.coap.utils.SyncCallback;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -26,8 +9,26 @@ import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
+import org.mbed.coap.BlockSize;
+import org.mbed.coap.CoapMessage;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.Code;
+import org.mbed.coap.Method;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.test.StubCoapServer;
+import org.mbed.coap.transmission.CoapTimeout;
+import org.mbed.coap.transmission.SingleTimeout;
+import org.mbed.coap.transmission.TransmissionTimeout;
+import org.mbed.coap.utils.CoapCallback;
+import org.mbed.coap.utils.SimpleCoapResource;
+import org.mbed.coap.utils.SyncCallback;
 
 /**
  * @author KALLE
@@ -79,7 +80,7 @@ public class TCPConnectorTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/tcptest");
         request.setAddress(dsAddress);
-        SyncCallback<CoapPacket> syncResp = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> syncResp = new SyncCallback<>();
 
         System.out.println("Send -----");
         client.makeRequest(request, syncResp);
@@ -171,7 +172,7 @@ public class TCPConnectorTest {
             }
         }
         Thread.sleep(1000);
-        final List<String> ok = new ArrayList<String>();
+        final List<String> ok = new ArrayList<>();
         theServer.makeRequest(request2, new CoapCallback() {
             @Override
             public void callException(Exception ex) {
@@ -237,10 +238,10 @@ public class TCPConnectorTest {
         }
         request.setPayload(longPayload30Kilo);
         request.setAddress(dsAddress);
-        final SyncCallback<CoapPacket> bigSyncResp = new SyncCallback<CoapPacket>();
-        final SyncCallback<CoapPacket> syncResp = new SyncCallback<CoapPacket>();
-        final SyncCallback<CoapPacket> syncResp2 = new SyncCallback<CoapPacket>();
-        final SyncCallback<CoapPacket> syncResp3 = new SyncCallback<CoapPacket>();
+        final SyncCallback<CoapPacket> bigSyncResp = new SyncCallback<>();
+        final SyncCallback<CoapPacket> syncResp = new SyncCallback<>();
+        final SyncCallback<CoapPacket> syncResp2 = new SyncCallback<>();
+        final SyncCallback<CoapPacket> syncResp3 = new SyncCallback<>();
 
         final CoapPacket requestC2 = new CoapPacket();
         requestC2.setMethod(Method.GET);
@@ -319,7 +320,7 @@ public class TCPConnectorTest {
 //                throw new UnsupportedOperationException("Not supported yet.");
             }
         });
-        final List<Boolean> failures = new ArrayList<Boolean>(0);
+        final List<Boolean> failures = new ArrayList<>(0);
         Thread cSender = new Thread() {
             @Override
             public void run() {

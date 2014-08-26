@@ -1,17 +1,13 @@
 package org.mbed.coap.client;
 
+import java.net.InetSocketAddress;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import org.junit.Test;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.Method;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.client.CoapRequestTarget;
-import java.net.InetSocketAddress;
-import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import org.junit.Before;
-import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -20,14 +16,6 @@ import static org.mockito.Mockito.when;
  * @author szymon
  */
 public class CoapRequestTargetTest {
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
-    }
 
     @Test
     public void test() {
@@ -74,20 +62,21 @@ public class CoapRequestTargetTest {
     @Test
     public void malformedUriQuery() {
         CoapRequestTarget req = new CoapRequestTarget("/0/1/2", mock(CoapClient.class));
-        failQuery(req, "", "2");
-        failQuery(req, "&", "2");
-        failQuery(req, "=", "54");
-        failQuery(req, "f", "");
-        failQuery(req, "f", "&");
-        failQuery(req, "f", "=");
+        failQueryWithNonValidChars(req, "", "2");
+        failQueryWithNonValidChars(req, "&", "2");
+        failQueryWithNonValidChars(req, "=", "54");
+        failQueryWithNonValidChars(req, "f", "");
+        failQueryWithNonValidChars(req, "f", "&");
+        failQueryWithNonValidChars(req, "f", "=");
 
     }
 
-    private static void failQuery(CoapRequestTarget req, String name, String val) {
+    private static void failQueryWithNonValidChars(CoapRequestTarget req, String name, String val) {
         try {
             req.query(name, val);
             fail();
         } catch (IllegalArgumentException e) {
+            assertEquals("Non valid characters provided in query", e.getMessage());
         }
     }
 }

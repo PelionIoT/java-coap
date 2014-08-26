@@ -3,7 +3,6 @@
  */
 package org.mbed.coap.server;
 
-import org.mbed.coap.CoapPacket;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +13,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.mbed.coap.CoapPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ class DuplicationDetector implements Runnable {
     private final Lock REDUCE_LOCK = new ReentrantLock();
     private final long requestIdTimeout;
     private final long maxSize;
-    private final ConcurrentMap<CoapRequestId, CoapPacket> requestMap = new ConcurrentHashMap<CoapRequestId, CoapPacket>();
+    private final ConcurrentMap<CoapRequestId, CoapPacket> requestMap = new ConcurrentHashMap<>();
     private long cleanDelayMili = 10000;
     private ScheduledExecutorService scheduledExecutor;
     private ScheduledFuture<?> cleanWorkerFut;
@@ -47,7 +47,7 @@ class DuplicationDetector implements Runnable {
         this.maxSize = maxSize;
         this.overSizeMargin = maxSize / 100; //1%
         this.scheduledExecutor = scheduledExecutor;
-        LOGGER.debug("Coap duplicate detector init (max traffic: {} msg/sec)", (int)(maxSize / (requestIdTimeout / 1000.0d)));
+        LOGGER.debug("Coap duplicate detector init (max traffic: {} msg/sec)", (int) (maxSize / (requestIdTimeout / 1000.0d)));
     }
 
     public DuplicationDetector() {

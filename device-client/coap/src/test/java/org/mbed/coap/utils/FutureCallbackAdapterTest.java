@@ -1,6 +1,5 @@
 package org.mbed.coap.utils;
 
-import org.mbed.coap.utils.FutureCallbackAdapter;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -17,7 +16,7 @@ public class FutureCallbackAdapterTest {
 
     @Test
     public void test() throws InterruptedException, ExecutionException, TimeoutException {
-        FutureCallbackAdapter<String> f = new FutureCallbackAdapter<String>();
+        FutureCallbackAdapter<String> f = new FutureCallbackAdapter<>();
         assertFalse(f.cancel(true));
         assertFalse(f.isDone());
         assertFalse(f.isCancelled());
@@ -34,7 +33,7 @@ public class FutureCallbackAdapterTest {
 
     @Test
     public void exceptionTest() throws Exception {
-        FutureCallbackAdapter f = new FutureCallbackAdapter();
+        FutureCallbackAdapter<String> f = new FutureCallbackAdapter<>();
         assertFalse(f.isDone());
 
         f.callException(new Exception("test"));
@@ -56,7 +55,7 @@ public class FutureCallbackAdapterTest {
     @Test(expected = java.util.concurrent.TimeoutException.class)
     public void timeoutTest() throws Exception {
 
-        FutureCallbackAdapter f = new FutureCallbackAdapter();
+        FutureCallbackAdapter<String> f = new FutureCallbackAdapter<>();
         f.get(10, TimeUnit.MILLISECONDS);
     }
 }

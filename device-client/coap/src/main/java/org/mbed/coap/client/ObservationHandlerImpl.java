@@ -3,15 +3,15 @@
  */
 package org.mbed.coap.client;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.mbed.coap.Code;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.ObservationTerminatedException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.ObservationHandler;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 class ObservationHandlerImpl implements ObservationHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ObservationHandlerImpl.class);
-    private final Map<Token, ObservationListener> observationMap = new HashMap<Token, ObservationListener>();
+    private final Map<Token, ObservationListener> observationMap = new HashMap<>();
 
     @Override
     public void callException(Exception ex) {

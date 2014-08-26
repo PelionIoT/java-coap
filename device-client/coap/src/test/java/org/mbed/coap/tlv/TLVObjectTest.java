@@ -1,7 +1,5 @@
 package org.mbed.coap.tlv;
 
-import org.mbed.coap.tlv.TLVObject;
-import org.mbed.coap.tlv.TLVUtils;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.Arrays;
@@ -94,7 +92,7 @@ public class TLVObjectTest {
 
         TLVObject tlvOb1 = new TLVObject((short) 1, "abc");
         TLVObject tlvOb2 = new TLVObject((short) 100, "fdsfs");
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
         tlvList.add(tlvOb1);
         tlvList.add(tlvOb2);
 

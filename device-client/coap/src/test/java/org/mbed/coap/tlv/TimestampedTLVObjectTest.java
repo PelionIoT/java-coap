@@ -4,9 +4,6 @@
  */
 package org.mbed.coap.tlv;
 
-import org.mbed.coap.tlv.TLVObject;
-import org.mbed.coap.tlv.TLVUtils;
-import org.mbed.coap.tlv.TimestampedTLVObject;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.LinkedList;
@@ -25,7 +22,7 @@ public class TimestampedTLVObjectTest {
     @Test
     public void testDeserializeHistorical() throws IOException, ParseException {
         //--- build tlv message ---
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
         tlvList.add(new TLVObject(TimestampedTLVObject.TYPE_CURRENT_TIMESTAMP, "1360333120"));
         tlvList.add(new TLVObject(TimestampedTLVObject.TYPE_OFFSET_TIMESTAMP, "60"));
         tlvList.add(new TLVObject((short) 1001, "20 C"));
@@ -47,7 +44,7 @@ public class TimestampedTLVObjectTest {
     @Test
     public void testDeserializeLatest() throws IOException, ParseException {
         //--- build tlv message ---
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
         tlvList.add(new TLVObject(TimestampedTLVObject.TYPE_CURRENT_TIMESTAMP, "1360333120"));
         tlvList.add(new TLVObject((short) 1001, "20 C"));
         tlvList.add(new TLVObject((short) 1002, "101 W"));
@@ -64,7 +61,7 @@ public class TimestampedTLVObjectTest {
     @Test
     public void testDeserializeLatestAndHistorical() throws ParseException, IOException {
         //--- build tlv message ---
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
         tlvList.add(new TLVObject(TimestampedTLVObject.TYPE_CURRENT_TIMESTAMP, "1360333120"));
         tlvList.add(new TLVObject((short) 1001, "20 C"));
         tlvList.add(new TLVObject((short) 1002, "101 W"));
@@ -84,7 +81,7 @@ public class TimestampedTLVObjectTest {
     @Test
     public void testDeserializeLatestNoTS() throws IOException, ParseException {
         //--- build tlv message ---
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
         tlvList.add(new TLVObject((short) 1001, "20 C"));
         tlvList.add(new TLVObject((short) 1002, "101 W"));
         byte[] tlvMsg = TLVUtils.serializeList(tlvList);
@@ -101,7 +98,7 @@ public class TimestampedTLVObjectTest {
     @Test
     public void testDeserializeTSNoContent() throws IOException, ParseException {
         //--- build tlv message ---
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
         tlvList.add(new TLVObject(TimestampedTLVObject.TYPE_CURRENT_TIMESTAMP, "1360333120"));
         byte[] tlvMsg = TLVUtils.serializeList(tlvList);
         //------------------------
@@ -114,7 +111,7 @@ public class TimestampedTLVObjectTest {
     @Test(expected = ParseException.class)
     public void testMalformattedTimestamp() throws IOException, ParseException {
         //--- build tlv message ---
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
         tlvList.add(new TLVObject(TimestampedTLVObject.TYPE_CURRENT_TIMESTAMP, "1360dupa333120"));
         tlvList.add(new TLVObject((short) 1001, "20 C"));
         byte[] tlvMsg = TLVUtils.serializeList(tlvList);
@@ -127,7 +124,7 @@ public class TimestampedTLVObjectTest {
     public void testMalformattedTimestamp2() throws IOException, ParseException {
         //--- build tlv message ---
         Long malformattedTsSec = 0x1FFFFFFFFL; //5 bytes long
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
         tlvList.add(new TLVObject(TimestampedTLVObject.TYPE_CURRENT_TIMESTAMP, malformattedTsSec.toString()));
         tlvList.add(new TLVObject((short) 1001, "20 C"));
         byte[] tlvMsg = TLVUtils.serializeList(tlvList);
@@ -139,7 +136,7 @@ public class TimestampedTLVObjectTest {
     @Test(expected = ParseException.class)
     public void testMalformattedOffset() throws IOException, ParseException {
         //--- build tlv message ---
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
         tlvList.add(new TLVObject(TimestampedTLVObject.TYPE_OFFSET_TIMESTAMP, "1360dupa"));
         tlvList.add(new TLVObject((short) 1001, "20 C"));
         byte[] tlvMsg = TLVUtils.serializeList(tlvList);
@@ -151,7 +148,7 @@ public class TimestampedTLVObjectTest {
     @Test(expected = ParseException.class)
     public void testMalformattedOffset2() throws IOException, ParseException {
         //--- build tlv message ---
-        List<TLVObject> tlvList = new LinkedList<TLVObject>();
+        List<TLVObject> tlvList = new LinkedList<>();
         tlvList.add(new TLVObject(TimestampedTLVObject.TYPE_OFFSET_TIMESTAMP, "-1360"));
         tlvList.add(new TLVObject((short) 1001, "20 C"));
         byte[] tlvMsg = TLVUtils.serializeList(tlvList);
@@ -182,7 +179,7 @@ public class TimestampedTLVObjectTest {
     @Test
     public void testSerializeHistoricalSorted() throws IOException {
         //--- build tlv message ---
-        List<TimestampedTLVObject> ttlvList = new LinkedList<TimestampedTLVObject>();
+        List<TimestampedTLVObject> ttlvList = new LinkedList<>();
         ttlvList.add(new TimestampedTLVObject(1360333060000L, false, new TLVObject((short) 1001, "20 C")));
         ttlvList.add(new TimestampedTLVObject(1360333000000L, false, new TLVObject((short) 1002, "106 W")));
         ttlvList.add(new TimestampedTLVObject(1360333060000L, false, new TLVObject((short) 1002, "103 W")));
@@ -204,7 +201,7 @@ public class TimestampedTLVObjectTest {
     @Test
     public void testSerializeLatest() throws IOException {
         //--- build tlv message ---
-        List<TimestampedTLVObject> ttlvList = new LinkedList<TimestampedTLVObject>();
+        List<TimestampedTLVObject> ttlvList = new LinkedList<>();
         ttlvList.add(new TimestampedTLVObject(1360333120000L, true, new TLVObject((short) 1001, "20 C")));
         ttlvList.add(new TimestampedTLVObject(1360333120000L, true, new TLVObject((short) 1002, "106 W")));
         //------------------------
@@ -222,7 +219,7 @@ public class TimestampedTLVObjectTest {
     @Test(expected = IllegalArgumentException.class)
     public void testSerializeHistoricalWithWrongCurrentTimestamp() throws IOException {
         //--- build tlv message ---
-        List<TimestampedTLVObject> ttlvList = new LinkedList<TimestampedTLVObject>();
+        List<TimestampedTLVObject> ttlvList = new LinkedList<>();
         ttlvList.add(new TimestampedTLVObject(1360333060000L, true, new TLVObject((short) 1001, "20 C")));
         ttlvList.add(new TimestampedTLVObject(1360333000000L, true, new TLVObject((short) 1002, "106 W")));
         ttlvList.add(new TimestampedTLVObject(1360333060000L, true, new TLVObject((short) 1002, "103 W")));
@@ -233,14 +230,14 @@ public class TimestampedTLVObjectTest {
 
     @Test
     public void testSerializeHistoricalWithEmptyList() throws IOException {
-        List<TimestampedTLVObject> ttlvList = new LinkedList<TimestampedTLVObject>();
+        List<TimestampedTLVObject> ttlvList = new LinkedList<>();
         assertEquals(0, TLVUtils.serializeTimestampedList(ttlvList, 1000333120000L).length);
     }
 
     @Test(expected = NullPointerException.class)
     public void testSerializeHistoricalWithNullTimestamp() throws IOException {
         //--- build tlv message ---
-        List<TimestampedTLVObject> ttlvList = new LinkedList<TimestampedTLVObject>();
+        List<TimestampedTLVObject> ttlvList = new LinkedList<>();
         ttlvList.add(new TimestampedTLVObject(1360333060000L, true, new TLVObject((short) 1001, "20 C")));
         ttlvList.add(new TimestampedTLVObject(null, true, new TLVObject((short) 1002, "106 W")));
         ttlvList.add(new TimestampedTLVObject(1360333060000L, true, new TLVObject((short) 1002, "103 W")));

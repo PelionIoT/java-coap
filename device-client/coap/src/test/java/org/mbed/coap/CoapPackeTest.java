@@ -1,16 +1,5 @@
 package org.mbed.coap;
 
-import org.mbed.coap.test.utils.Utils;
-import org.mbed.coap.BlockOption;
-import org.mbed.coap.BlockSize;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
-import org.mbed.coap.HeaderOptions;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.linkformat.LinkFormat;
-import org.mbed.coap.linkformat.LinkFormatBuilder;
 import java.io.ByteArrayInputStream;
 import java.text.ParseException;
 import java.util.Arrays;
@@ -20,6 +9,10 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import org.junit.Test;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.linkformat.LinkFormat;
+import org.mbed.coap.linkformat.LinkFormatBuilder;
+import org.mbed.coap.test.utils.Utils;
 
 /**
  *
@@ -125,7 +118,7 @@ public class CoapPackeTest {
         System.out.println(Arrays.toString(cp2.toByteArray()));
         assertCoapPackets(cp, cp2);
 
-        Map<String, String> q = new HashMap<String, String>();
+        Map<String, String> q = new HashMap<>();
         q.put("par1", "1");
         q.put("par2", "201");
         assertEquals(q, cp.headers().getUriQueryMap());
@@ -224,7 +217,7 @@ public class CoapPackeTest {
 
     @Test
     public void testParseUriQuery() throws ParseException {
-        Map<String, String> q = new HashMap<String, String>();
+        Map<String, String> q = new HashMap<>();
         q.put("par1", "12");
 
         assertEquals(q, HeaderOptions.parseUriQuery("par1=12"));
@@ -263,7 +256,7 @@ public class CoapPackeTest {
         cp.headers().setLocationPath("/2//1");
         cp.headers().setUriQuery("te=12&&ble=14");
         cp.toByteArray();
-        
+
         CoapPacket cp2 = CoapPacket.read(cp.toByteArray());
         assertEquals(cp, cp2);
         assertEquals("/3/13//", cp2.headers().getUriPath());

@@ -19,7 +19,7 @@ public class LinkFormat implements Serializable {
 
     private static final long serialVersionUID = 100003L;
     String uri;
-    private final Map<String, Object> params = new HashMap<String, Object>();
+    private final Map<String, Object> params = new HashMap<>();
     //
     //--- RFC 6690 ---
     static final String LINK_RESOURCE_TYPE = "rt";

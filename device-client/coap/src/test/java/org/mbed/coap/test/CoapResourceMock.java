@@ -3,6 +3,8 @@
  */
 package org.mbed.coap.test;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.MessageType;
@@ -10,8 +12,6 @@ import org.mbed.coap.Method;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapHandler;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  *
@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class CoapResourceMock implements CoapHandler {
 
-    private final Map<MockRequest, CoapPacket> resultMap = new HashMap<MockRequest, CoapPacket>();
+    private final Map<MockRequest, CoapPacket> resultMap = new HashMap<>();
     private CoapPacket latestRequest;
 
     /**
