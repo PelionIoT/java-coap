@@ -9,10 +9,6 @@ package org.mbed.coap.exception;
  */
 public class CoapException extends Exception {
 
-    public CoapException() {
-        super("Coap message exception");
-    }
-
     public CoapException(Throwable cause) {
         super(cause);
     }
