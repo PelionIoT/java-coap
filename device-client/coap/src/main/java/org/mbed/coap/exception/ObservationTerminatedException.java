@@ -14,6 +14,7 @@ public class ObservationTerminatedException extends CoapException {
     private final CoapPacket packet;
 
     public ObservationTerminatedException(CoapPacket packet) {
+        super("Coap message exception");
         this.packet = packet;
     }
 
