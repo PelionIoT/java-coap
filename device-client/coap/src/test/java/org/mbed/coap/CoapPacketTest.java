@@ -18,7 +18,7 @@ import org.mbed.coap.test.utils.Utils;
  *
  * @author szymon
  */
-public class CoapPackeTest {
+public class CoapPacketTest {
 
     @Test
     public void linkFormat() throws ParseException {
