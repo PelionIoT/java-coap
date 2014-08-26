@@ -1,15 +1,5 @@
 package org.mbed.coap.test;
 
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Method;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.exception.CoapTimeoutException;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.test.InMemoryTransport;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.utils.FutureCallbackAdapter;
-import org.mbed.coap.utils.SyncCallback;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -20,6 +10,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.Method;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.exception.CoapTimeoutException;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.transmission.SingleTimeout;
+import org.mbed.coap.utils.FutureCallbackAdapter;
+import org.mbed.coap.utils.SyncCallback;
 
 /**
  *
@@ -49,7 +48,7 @@ public class TimeoutTest {
         request.setMessageId(1647);
         request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), 60666));
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> callback = new SyncCallback<>();
         cnn.makeRequest(request, callback);
 
         //assertEquals("Wrong number of transactions", 1, cnn.getNumberOfTransactions());
@@ -76,7 +75,7 @@ public class TimeoutTest {
         request.setMessageId(1647);
         request.setAddress(InMemoryTransport.createAddress(0));
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<CoapPacket>();
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
 
         //assertEquals("Wrong number of transactions", 1, cnn.getNumberOfTransactions());

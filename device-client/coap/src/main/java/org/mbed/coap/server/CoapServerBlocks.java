@@ -3,6 +3,11 @@
  */
 package org.mbed.coap.server;
 
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executor;
 import org.mbed.coap.BlockOption;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
@@ -13,11 +18,6 @@ import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +30,8 @@ class CoapServerBlocks extends CoapServer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerBlocks.class);
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;
-    protected Map<BlockRequestId, BlockRequest> blockReqMap = new HashMap<BlockRequestId, BlockRequest>();
-    private final Map<NotificationBlockId, byte[]> notifBlockMap = new HashMap<NotificationBlockId, byte[]>();
+    protected Map<BlockRequestId, BlockRequest> blockReqMap = new HashMap<>();
+    private final Map<NotificationBlockId, byte[]> notifBlockMap = new HashMap<>();
 
     CoapServerBlocks() {
         super();

@@ -3,6 +3,11 @@
  */
 package org.mbed.coap.server;
 
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.MediaTypes;
@@ -11,11 +16,6 @@ import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.linkformat.LinkFormat;
 import org.mbed.coap.linkformat.LinkFormatBuilder;
 import org.mbed.coap.utils.Callback;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -229,7 +229,7 @@ public class EndPointRegistrator {
         //FIND ADDITIONAL LINKS
         List<LinkFormat> addedLinks = null;
         if (!registeredLinks.equals(links)) {
-            addedLinks = new ArrayList<LinkFormat>();
+            addedLinks = new ArrayList<>();
             for (LinkFormat lf : links) {
                 if (!registeredLinks.contains(lf)) {
                     addedLinks.add(lf);

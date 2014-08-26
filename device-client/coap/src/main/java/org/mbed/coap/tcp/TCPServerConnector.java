@@ -3,8 +3,6 @@
  */
 package org.mbed.coap.tcp;
 
-import org.mbed.coap.transport.TransportConnector;
-import org.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -18,6 +16,8 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.mbed.coap.transport.TransportConnector;
+import org.mbed.coap.transport.TransportContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +33,7 @@ public class TCPServerConnector extends TCPConnector implements TransportConnect
 
     /**
      * Constructs TCPServerConnector and binds it to given address with maximum
-     * message size of
-     * {@link org.mbed.coap.tcp.TCPConnector#DEFAULT_MAX_LENGTH}
+     * message size of {@link org.mbed.coap.tcp.TCPConnector#DEFAULT_MAX_LENGTH}
      *
      * @param bindingSocketAddress address of binding socket
      */
@@ -87,7 +86,7 @@ public class TCPServerConnector extends TCPConnector implements TransportConnect
                 changeRequests.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
                 List<ByteBuffer> queue = pendingData.get(socketChannel);
                 if (queue == null) {
-                    queue = new ArrayList<ByteBuffer>();
+                    queue = new ArrayList<>();
                     if (LOGGER.isTraceEnabled()) {
                         LOGGER.trace("Send queue filling, creating new queue");
                     }

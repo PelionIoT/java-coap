@@ -3,11 +3,11 @@
  */
 package org.mbed.coap.udp;
 
-import org.mbed.coap.transport.TransportConnectorTask;
-import org.mbed.coap.transport.TransportReceiver;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import org.mbed.coap.transport.TransportConnectorTask;
+import org.mbed.coap.transport.TransportReceiver;
 
 /**
  *
@@ -20,7 +20,7 @@ public abstract class AbstractTransportConnector implements TransportConnectorTa
     protected boolean isRunning;
     protected int bufferSize = DEFAULT_BUFFER_SIZE;
     private static final int DEFAULT_BUFFER_SIZE = 1080;
-    private final ThreadLocal<ByteBuffer> buffer = new ThreadLocal<ByteBuffer>();
+    private final ThreadLocal<ByteBuffer> buffer = new ThreadLocal<>();
 
     public AbstractTransportConnector(InetSocketAddress bindSocket) {
         this.bindSocket = bindSocket;
@@ -90,7 +90,6 @@ public abstract class AbstractTransportConnector implements TransportConnectorTa
 //            throw new RuntimeException(ex);
 //        }
 //    }
-
     protected ByteBuffer getBuffer() {
 
         if (buffer.get() == null) {

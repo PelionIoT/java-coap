@@ -3,9 +3,6 @@
  */
 package org.mbed.coap;
 
-import org.mbed.coap.exception.CoapMessageFormatException;
-import org.mbed.coap.exception.CoapUnknownOptionException;
-import org.mbed.coap.utils.HexArray;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,6 +16,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.mbed.coap.exception.CoapMessageFormatException;
+import org.mbed.coap.exception.CoapUnknownOptionException;
+import org.mbed.coap.utils.HexArray;
 
 /**
  * Implements CoAP basic header options.
@@ -207,7 +207,7 @@ public class HeaderOptions implements Serializable {
         }
         //unrecognizeg option header
         if (unrecognizedOptions == null) {
-            unrecognizedOptions = new HashMap<Integer, RawOption>();
+            unrecognizedOptions = new HashMap<>();
         }
         unrecognizedOptions.put(optionNumber, new RawOption(optionNumber, data));
         return true;
@@ -219,7 +219,7 @@ public class HeaderOptions implements Serializable {
      * @return sorted list
      */
     protected List<RawOption> getRawOptions() {
-        LinkedList<RawOption> list = new LinkedList<RawOption>();
+        LinkedList<RawOption> list = new LinkedList<>();
 
         if (contentFormat != null) {
             list.add(RawOption.fromUint(CONTENT_FORMAT, contentFormat.longValue()));
@@ -321,7 +321,7 @@ public class HeaderOptions implements Serializable {
     }
 
     protected static byte[][] writeVariableUInt(short[] value) {
-        List<byte[]> btList = new ArrayList<byte[]>();
+        List<byte[]> btList = new ArrayList<>();
 
         for (int i = 0; i < value.length; i++) {
             //if (value[i] != null) {
@@ -676,7 +676,7 @@ public class HeaderOptions implements Serializable {
         if (uriQuery == null || uriQuery.length() == 0) {
             return null;
         }
-        Map<String, String> result = new LinkedHashMap<String, String>();
+        Map<String, String> result = new LinkedHashMap<>();
         String[] params = uriQuery.substring(uriQuery.indexOf('?') + 1).split("&");
 
         for (String prm : params) {
@@ -692,10 +692,10 @@ public class HeaderOptions implements Serializable {
     public static Map<String, List<String>> parseUriQueryMult(String uriQuery) throws ParseException {
         //TODO: parse for multiple values
         if (uriQuery == null || uriQuery.length() == 0) {
-            return new HashMap<String, List<String>>(); //empty map
+            return new HashMap<>(); //empty map
             //return null;
         }
-        Map<String, List<String>> result = new HashMap<String, List<String>>();
+        Map<String, List<String>> result = new HashMap<>();
         String[] params = uriQuery.substring(uriQuery.indexOf('?') + 1).split("&");
 
         for (String prm : params) {
@@ -703,7 +703,7 @@ public class HeaderOptions implements Serializable {
             if (p.length != 2) {
                 throw new ParseException("", 0);
             }
-            List<String> values = new LinkedList<String>();
+            List<String> values = new LinkedList<>();
             values.add(p[1]);
             result.put(p[0], values);
         }
@@ -719,7 +719,7 @@ public class HeaderOptions implements Serializable {
      */
     static String[] split(String val, char ch) {
         int offset = 0;
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>();
         int nextPos = val.indexOf(ch, offset);
 
         while (nextPos != -1) {

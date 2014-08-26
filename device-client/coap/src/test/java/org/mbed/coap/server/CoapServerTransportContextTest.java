@@ -1,24 +1,27 @@
 package org.mbed.coap.server;
 
-import org.mbed.coap.BlockSize;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.exception.CoapCodeException;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapExchange;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.test.InMemoryTransport;
-import org.mbed.coap.test.SingleParamTransportContext;
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.utils.CoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.*;
+import org.mbed.coap.BlockSize;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.Code;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.exception.CoapCodeException;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.test.InMemoryTransport;
+import org.mbed.coap.test.SingleParamTransportContext;
+import org.mbed.coap.transport.TransportContext;
+import org.mbed.coap.utils.CoapResource;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  *
@@ -78,7 +81,7 @@ public class CoapServerTransportContextTest {
         client.close();
     }
 
-    private static class TextTransportContext extends SingleParamTransportContext {
+    private static class TextTransportContext extends SingleParamTransportContext<MyEnum> {
 
         public TextTransportContext(String text) {
             super(MyEnum.TEXT, text, null);

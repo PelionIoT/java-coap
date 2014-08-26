@@ -3,14 +3,29 @@
  */
 package org.mbed.coap.server;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapConstants;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.CoapUtils;
-import org.mbed.coap.Code;
-import org.mbed.coap.MessageType;
 import org.mbed.coap.CoapUtils.PacketDelay;
 import org.mbed.coap.CoapUtils.PacketDropping;
+import org.mbed.coap.Code;
+import org.mbed.coap.MessageType;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
@@ -35,21 +50,6 @@ import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.EventLogger;
 import org.mbed.coap.utils.EventLoggerCoapPacket;
-import java.io.Closeable;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +65,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServer.class);
     private static final EventLogger EVENT_LOGGER = EventLogger.getLogger("coap");
     private boolean isRunning;
-    private final Map<HandlerURI, CoapHandler> handlers = new HashMap<HandlerURI, CoapHandler>();
+    private final Map<HandlerURI, CoapHandler> handlers = new HashMap<>();
     private static final int DEFAULT_DUPLICATION_TIMEOUT = 30000;
     private ScheduledExecutorService scheduledExecutor;
     private TransportConnector transport;
@@ -268,8 +268,8 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     public void setDelayedTransactionTimeout(int delayedTransactionTimeout) {
         this.delayedTransactionTimeout = delayedTransactionTimeout;
     }
-    
-    public void setErrorCallback (CoapErrorCallback errorCallback) {
+
+    public void setErrorCallback(CoapErrorCallback errorCallback) {
         this.errorCallback = errorCallback;
     }
 
@@ -520,7 +520,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
         //cannot process
         handleNotProcessedMessage(packet);
     }
-    
+
     /**
      * Handles parsing errors on incoming messages.
      */
@@ -563,7 +563,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
                 }
             }
             if (observationHandler != null) {
-                if (!findDuplicate(packet, "CoAP notification repeated") ) {
+                if (!findDuplicate(packet, "CoAP notification repeated")) {
                     if (LOGGER.isTraceEnabled()) {
                         LOGGER.trace("Notification [" + packet.getAddress() + "]");
                     }
@@ -792,9 +792,9 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
                         LOGGER.debug(message + ", no response available [" + request.toString() + "]");
                     }
                 }
-                
+
                 errorCallback.duplicated(request);
-                
+
                 return true;
             }
         }
@@ -897,7 +897,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
      * @return list with LinkFormat
      */
     public List<LinkFormat> getResourceLinks() {
-        List<LinkFormat> linkFormats = new LinkedList<LinkFormat>();
+        List<LinkFormat> linkFormats = new LinkedList<>();
         //List<LinkFormat> linkFormats = new
         for (Entry<HandlerURI, CoapHandler> entry : handlers.entrySet()) {
             HandlerURI uri = entry.getKey();

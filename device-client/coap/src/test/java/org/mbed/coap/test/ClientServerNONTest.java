@@ -1,5 +1,12 @@
 package org.mbed.coap.test;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.Random;
+import org.junit.After;
+import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.HeaderOptions;
@@ -11,18 +18,10 @@ import org.mbed.coap.exception.CoapTimeoutException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.internal.DelayedTransactionId;
-import org.mbed.coap.test.InMemoryTransport;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
 import org.mbed.coap.utils.SyncCallback;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Random;
-import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author szymon
@@ -107,7 +106,7 @@ public class ClientServerNONTest {
         request.setAddress(serverAddr);
         request.setToken(nextToken());
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> callback = new SyncCallback<>();
         client.makeRequest(request, callback);
         assertEquals(MessageType.Reset, callback.getResponse().getMessageType());
 
@@ -121,7 +120,7 @@ public class ClientServerNONTest {
         CoapPacket request = new CoapPacket(Code.C205_CONTENT, MessageType.NonConfirmable, serverAddr);
         request.setToken(nextToken());
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> callback = new SyncCallback<>();
         cnn.makeRequest(request, callback);
         assertEquals(MessageType.Reset, callback.getResponse().getMessageType());
 

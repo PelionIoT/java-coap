@@ -1,23 +1,5 @@
 package org.mbed.coap.test;
 
-import org.mbed.coap.CoapConstants;
-import org.mbed.coap.CoapMessage;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.CoapUtils;
-import org.mbed.coap.Code;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
-import org.mbed.coap.CoapUtils.PacketDropping;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.test.InMemoryTransport;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.transport.TransportConnector;
-import org.mbed.coap.udp.MulticastSocketTransport;
-import org.mbed.coap.utils.FutureCallbackAdapter;
-import org.mbed.coap.utils.SimpleCoapResource;
-import org.mbed.coap.utils.SyncCallback;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -26,9 +8,28 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.Future;
 import org.junit.After;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.CoapConstants;
+import org.mbed.coap.CoapMessage;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.CoapUtils;
+import org.mbed.coap.CoapUtils.PacketDropping;
+import org.mbed.coap.Code;
+import org.mbed.coap.MessageType;
+import org.mbed.coap.Method;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.transmission.SingleTimeout;
+import org.mbed.coap.transport.TransportConnector;
+import org.mbed.coap.udp.MulticastSocketTransport;
+import org.mbed.coap.utils.FutureCallbackAdapter;
+import org.mbed.coap.utils.SimpleCoapResource;
+import org.mbed.coap.utils.SyncCallback;
 
 /**
  *
@@ -66,7 +67,7 @@ public class ClientServerTest {
         request.setMessageId(1647);
         request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<CoapPacket>();
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
@@ -84,7 +85,7 @@ public class ClientServerTest {
         request.headers().put(74, new byte[]{1, 2, 3});
         request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<CoapPacket>();
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
@@ -103,7 +104,7 @@ public class ClientServerTest {
         request.headers().put(71, new byte[]{1, 2, 3});
         request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<CoapPacket>();
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
         assertEquals(Code.C402_BAD_OPTION, callback.get().getCode());
         cnn.stop();
@@ -122,7 +123,7 @@ public class ClientServerTest {
         request.headers().put((byte) 71, new byte[]{1, 2, 3});
         request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<CoapPacket>();
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
@@ -139,7 +140,7 @@ public class ClientServerTest {
         request.setMessageId(1648);
         request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> callback = new SyncCallback<>();
         cnn.makeRequest(request, callback);
         assertEquals("Shortest path", callback.getResponse().getPayloadString());
         cnn.stop();
@@ -241,7 +242,7 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.newBuilder().build();
         cnn.start();
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> callback = new SyncCallback<>();
         CoapClient client = cnn.createCoapClient(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
         client.resource("/test/1").maxAge(2635593050L).get(callback);
         assertEquals("Dziala", callback.getResponse().getPayloadString());
@@ -320,7 +321,7 @@ public class ClientServerTest {
         request.setMessageId(1647);
         request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<CoapPacket>();
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();

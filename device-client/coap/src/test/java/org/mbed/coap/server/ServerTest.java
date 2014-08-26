@@ -1,6 +1,23 @@
 package org.mbed.coap.server;
 
-import static org.junit.Assert.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.text.ParseException;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.CoapConstants;
 import org.mbed.coap.CoapMessage;
 import org.mbed.coap.CoapPacket;
@@ -13,30 +30,12 @@ import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.linkformat.LinkFormat;
 import org.mbed.coap.linkformat.LinkFormatBuilder;
-import org.mbed.coap.server.CoapErrorCallback;
-import org.mbed.coap.server.CoapExchange;
-import org.mbed.coap.server.CoapHandler;
-import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.test.InMemoryTransport;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.TransportWorkerWrapper;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
 import org.mbed.coap.utils.SyncCallback;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.CountDownLatch;
-import java.net.InetAddress;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.text.ParseException;
-import java.util.List;
-import java.util.concurrent.Executors;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  *
@@ -101,7 +100,7 @@ public class ServerTest {
         short[] acceptList = {MediaTypes.CT_APPLICATION_JSON};
         request.headers().setAccept(acceptList);
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> callback = new SyncCallback<>();
         cnn.makeRequest(request, callback);
         assertEquals(Code.C406_NOT_ACCEPTABLE, callback.getResponse().getCode());
         cnn.stop();
@@ -121,7 +120,7 @@ public class ServerTest {
         short[] acceptList = {MediaTypes.CT_APPLICATION_JSON, MediaTypes.CT_APPLICATION_XML, MediaTypes.CT_TEXT_PLAIN};
         request.headers().setAccept(acceptList);
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<CoapPacket>();
+        SyncCallback<CoapPacket> callback = new SyncCallback<>();
         cnn.makeRequest(request, callback);
         assertEquals(Code.C205_CONTENT, callback.getResponse().getCode());
         cnn.stop();
@@ -192,6 +191,7 @@ public class ServerTest {
             public void parserError(byte[] packet, CoapException exception) {
                 latch.countDown();
             }
+
             @Override
             public void duplicated(CoapPacket request) {
             }
@@ -202,10 +202,10 @@ public class ServerTest {
         DatagramPacket packet = new DatagramPacket(content, content.length, InetAddress.getLocalHost(), SERVER_PORT);
         client.send(packet);
         client.close();
-        
+
         assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
     }
-    
+
     @Test
     public void bufferSizeTest() throws IOException, CoapException {
         int messageSize = 2000;

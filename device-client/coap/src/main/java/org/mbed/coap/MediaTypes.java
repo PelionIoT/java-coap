@@ -48,7 +48,7 @@ public class MediaTypes {
      */
     public final static short CT_APPLICATION_LWM2M_JSON = 100;
 
-    static final Map<Short, String> MEDIA_TYPE_MAP = new HashMap<Short, String>();
+    static final Map<Short, String> MEDIA_TYPE_MAP = new HashMap<>();
 
     static {
         MEDIA_TYPE_MAP.put(CT_TEXT_PLAIN, "text/plain");

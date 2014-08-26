@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 public class TransactionManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionManager.class);
-    private final ConcurrentHashMap<CoapTransactionId, CoapTransaction> transactions = new ConcurrentHashMap<CoapTransactionId, CoapTransaction>();
+    private final ConcurrentHashMap<CoapTransactionId, CoapTransaction> transactions = new ConcurrentHashMap<>();
 
     public void add(CoapTransaction trans) {
         transactions.put(trans.getTransactionId(), trans);
@@ -53,7 +53,7 @@ public class TransactionManager {
     }
 
     public Collection<CoapTransaction> findTimeoutTransactions(final long currentTime) {
-        final Collection<CoapTransaction> transTimeOut = new LinkedList<CoapTransaction>();
+        final Collection<CoapTransaction> transTimeOut = new LinkedList<>();
         for (Map.Entry<CoapTransactionId, CoapTransaction> entry : transactions.entrySet()) {
             if (entry.getValue().isTimedOut(currentTime)) {
                 transTimeOut.add(entry.getValue());

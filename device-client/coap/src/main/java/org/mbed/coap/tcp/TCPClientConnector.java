@@ -3,8 +3,6 @@
  */
 package org.mbed.coap.tcp;
 
-import org.mbed.coap.transport.TransportConnector;
-import org.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -17,6 +15,8 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.mbed.coap.transport.TransportConnector;
+import org.mbed.coap.transport.TransportContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +75,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
                 }
                 List<ByteBuffer> queue = pendingData.get(socketChannel);
                 if (queue == null) {
-                    queue = new ArrayList<ByteBuffer>();
+                    queue = new ArrayList<>();
                     if (LOGGER.isTraceEnabled()) {
                         LOGGER.trace("Client Send queue filling, creating new queue");
                     }

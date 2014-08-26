@@ -3,7 +3,6 @@
  */
 package org.mbed.coap.tcp;
 
-import org.mbed.coap.transport.TransportReceiver;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -14,6 +13,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.mbed.coap.transport.TransportReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,10 +24,10 @@ import org.slf4j.LoggerFactory;
 public abstract class TCPConnector implements Runnable {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(TCPConnector.class);
-    protected final Map<InetSocketAddress, ByteBuffer> oldReadBuffer = new HashMap<InetSocketAddress, ByteBuffer>();
-    protected final Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<SocketChannel, List<ByteBuffer>>();
-    protected final List<ChangeRequest> changeRequests = new LinkedList<ChangeRequest>();
-    protected final Map<InetSocketAddress, SocketChannel> sockets = new HashMap<InetSocketAddress, SocketChannel>();
+    protected final Map<InetSocketAddress, ByteBuffer> oldReadBuffer = new HashMap<>();
+    protected final Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<>();
+    protected final List<ChangeRequest> changeRequests = new LinkedList<>();
+    protected final Map<InetSocketAddress, SocketChannel> sockets = new HashMap<>();
     protected boolean isRunning;
     protected Selector selector;
     protected TransportReceiver udpReceiver;
@@ -41,16 +41,17 @@ public abstract class TCPConnector implements Runnable {
     public TCPConnector() {
         this(DEFAULT_MAX_LENGTH);
     }
-    
+
     /**
      * Constructs TCPConnector with given message size
-     * @param maxMessageLength maximum message length in bytes, both read and write
-     * uses this.
+     *
+     * @param maxMessageLength maximum message length in bytes, both read and
+     * write uses this.
      */
     public TCPConnector(int maxMessageLength) {
         MAX_LENGTH = maxMessageLength;
     }
-    
+
     public void start(TransportReceiver udpReceiver) throws IOException {
         this.udpReceiver = udpReceiver;
         initialize();
