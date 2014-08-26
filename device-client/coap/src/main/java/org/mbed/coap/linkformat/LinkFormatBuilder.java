@@ -103,7 +103,7 @@ public class LinkFormatBuilder {
             for (Map.Entry<String, String> entry : queryFilter.entrySet()) {
                 String val = entry.getValue();
                 String key = entry.getKey();
-                isAccepted = filter(key, lf, isAccepted, val);
+                isAccepted = isAccepted && filter(key, lf, val);
                 if (!isAccepted) {
                     break;
                 }
@@ -116,19 +116,19 @@ public class LinkFormatBuilder {
         return filteredList;
     }
 
-    private static boolean filter(String key, LinkFormat lf, boolean isAccepted, String val) {
+    private static boolean filter(String key, LinkFormat lf, String val) {
         if (key.equals(LinkFormat.LINK_RELATIONS) || key.equals(LinkFormat.LINK_REV) || key.equals(LinkFormat.LINK_RESOURCE_TYPE)
                 || key.equals(LinkFormat.LINK_INTERFACE_DESCRIPTION) || key.equals(LinkFormat.LINK_CONTENT_TYPE)) {
             //for parameters with multiple values ('relation-types')
             String[] paramVals = lf.getParamRelationTypes(key);
-            return isAccepted && hasMatch(val, paramVals);
+            return hasMatch(val, paramVals);
         } else if (key.equals(LinkFormat.LINK_OBSERVABLE) || key.equals(LinkFormat.LINK_EXPORT)) {
             //for flag parameters
-            return isAccepted && lf.getParam(key) != null;
+            return lf.getParam(key) != null;
         } else if ("href".equals(key)) {
-            return isAccepted && hasMatch(val, lf.getUri());
+            return hasMatch(val, lf.getUri());
         } else {
-            return isAccepted && hasMatch(val, lf.getParam(key));
+            return hasMatch(val, lf.getParam(key));
         }
     }
 
