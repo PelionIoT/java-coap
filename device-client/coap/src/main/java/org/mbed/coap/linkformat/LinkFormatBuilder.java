@@ -99,21 +99,23 @@ public class LinkFormatBuilder {
 
         List<LinkFormat> filteredList = new ArrayList<>();
         for (LinkFormat lf : list) {
-            boolean isAccepted = true;
-            for (Map.Entry<String, String> entry : queryFilter.entrySet()) {
-                String val = entry.getValue();
-                String key = entry.getKey();
-                isAccepted = isAccepted && filter(key, lf, val);
-                if (!isAccepted) {
-                    break;
-                }
-            }
-            if (isAccepted) {
+            if (isAccepted(queryFilter, lf)) {
                 filteredList.add(lf);
             }
         }
 
         return filteredList;
+    }
+
+    private static boolean isAccepted(Map<String, String> queryFilter, LinkFormat lf) {
+        for (Map.Entry<String, String> entry : queryFilter.entrySet()) {
+            String val = entry.getValue();
+            String key = entry.getKey();
+            if (!filter(key, lf, val)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean filter(String key, LinkFormat lf, String val) {
