@@ -148,24 +148,23 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequest2() throws Exception {
-        CoapClient client = CoapClient.newBuilder().target(SERVER_PORT).build();
+        try (CoapClient client = CoapClient.newBuilder().target(SERVER_PORT).build()) {
 
-        Future<CoapPacket> coapResp = client.resource("/test/1").get();
-        assertEquals("Dziala", coapResp.get().getPayloadString());
-        client.close();
+            Future<CoapPacket> coapResp = client.resource("/test/1").get();
+            assertEquals("Dziala", coapResp.get().getPayloadString());
+        }
     }
 
     @Test
     public void simpleRequest3() throws Exception {
-        CoapClient client = CoapClient.newBuilder().target(SERVER_PORT).build();
+        try (CoapClient client = CoapClient.newBuilder().target(SERVER_PORT).build()) {
 
-        Future<CoapPacket> coapResp = client.resource("/resource/123").get();
-        assertEquals("Prefix dziala", coapResp.get().getPayloadString());
+            Future<CoapPacket> coapResp = client.resource("/resource/123").get();
+            assertEquals("Prefix dziala", coapResp.get().getPayloadString());
 
-        coapResp = client.resource("/test/1/tre").get();
-        assertEquals(Code.C404_NOT_FOUND, coapResp.get().getCode());
-        //coapSrv.stop();
-        client.close();
+            coapResp = client.resource("/test/1/tre").get();
+            assertEquals(Code.C404_NOT_FOUND, coapResp.get().getCode());
+        }
     }
 
     @Test
@@ -176,12 +175,12 @@ public class ClientServerTest {
         ipv6Server.addRequestHandler("/resource", new SimpleCoapResource("1234qwerty"));
         ipv6Server.start();
 
-        CoapClient client = CoapClient.newBuilder(new InetSocketAddress(adr, ipv6Server.getLocalSocketAddress().getPort())).build();
+        try (CoapClient client = CoapClient.newBuilder(new InetSocketAddress(adr, ipv6Server.getLocalSocketAddress().getPort())).build()) {
 
-        CoapMessage coapResp = client.resource("/resource").sync().get();
-        assertEquals("1234qwerty", coapResp.getPayloadString());
+            CoapMessage coapResp = client.resource("/resource").sync().get();
+            assertEquals("1234qwerty", coapResp.getPayloadString());
 
-        client.close();
+        }
         ipv6Server.stop();
     }
 
@@ -209,32 +208,31 @@ public class ClientServerTest {
 
     @Test
     public void requestWithPacketLost() throws CoapException, UnknownHostException, IOException {
-        CoapClient cnn = CoapClient.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT)).build();
+        try (CoapClient cnn = CoapClient.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT)).build()) {
 
-        final SimpleCoapResource res = new SimpleCoapResource("Not dropped");
-        server.addRequestHandler("/dropable", res);
+            final SimpleCoapResource res = new SimpleCoapResource("Not dropped");
+            server.addRequestHandler("/dropable", res);
 
-        //will drop only first packet
-        server.setPacketDropping(new PacketDropping() {
+            //will drop only first packet
+            server.setPacketDropping(new PacketDropping() {
 
-            private boolean dropped = false;
+                private boolean dropped = false;
 
-            @Override
-            public boolean drop() {
-                if (dropped) {
-                    return false;
-                } else {
-                    dropped = true;
-                    res.setResourceBody("dropped");
-                    return true;
+                @Override
+                public boolean drop() {
+                    if (dropped) {
+                        return false;
+                    } else {
+                        dropped = true;
+                        res.setResourceBody("dropped");
+                        return true;
+                    }
                 }
-            }
-        });
+            });
 
-        CoapMessage resp = cnn.resource("/dropable").sync().get();
-        assertEquals("dropped", resp.getPayloadString());
-        //coapSrv.stop();
-        cnn.close();
+            CoapMessage resp = cnn.resource("/dropable").sync().get();
+            assertEquals("dropped", resp.getPayloadString());
+        }
     }
 
     @Test
@@ -278,9 +276,9 @@ public class ClientServerTest {
         srv.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
         srv.start();
 
-        CoapClient cnn = CoapClient.newBuilder(InMemoryTransport.createAddress(61601)).transport(InMemoryTransport.create(0)).build();
-        assertEquals("23 C", cnn.resource("/temp").sync().get().getPayloadString());
-        cnn.close();
+        try (CoapClient cnn = CoapClient.newBuilder(InMemoryTransport.createAddress(61601)).transport(InMemoryTransport.create(0)).build()) {
+            assertEquals("23 C", cnn.resource("/temp").sync().get().getPayloadString());
+        }
         srv.stop();
     }
 
@@ -290,9 +288,9 @@ public class ClientServerTest {
         srv.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
         srv.start();
 
-        CoapClient client = CoapClient.newBuilder(InMemoryTransport.createAddress(61601)).transport(new InMemoryTransport()).build();
-        assertEquals(Code.C402_BAD_OPTION, client.resource("/temp").header(123, "dupa".getBytes()).sync().get().getCode());
-        client.close();
+        try (CoapClient client = CoapClient.newBuilder(InMemoryTransport.createAddress(61601)).transport(new InMemoryTransport()).build()) {
+            assertEquals(Code.C402_BAD_OPTION, client.resource("/temp").header(123, "dupa".getBytes()).sync().get().getCode());
+        }
         srv.stop();
     }
 
