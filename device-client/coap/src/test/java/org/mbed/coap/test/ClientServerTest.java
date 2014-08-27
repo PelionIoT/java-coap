@@ -242,7 +242,7 @@ public class ClientServerTest {
         cnn.start();
 
         SyncCallback<CoapPacket> callback = new SyncCallback<>();
-        CoapClient client = cnn.createCoapClient(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        CoapClient client = CoapClientBuilder.clientFor(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT), cnn);
         client.resource("/test/1").maxAge(2635593050L).get(callback);
         assertEquals("Dziala", callback.getResponse().getPayloadString());
         cnn.stop();

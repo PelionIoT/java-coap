@@ -48,17 +48,17 @@ public class MulticastTest {
         cnnServer.start();
 
         // multicast request
-        CoapClient cnn = cnnServer.createCoapClient(address);
+        CoapClient cnn = CoapClientBuilder.clientFor(address, cnnServer);
         CoapMessage msg = cnn.resource("/multicast").sync().get();
         assertEquals("multicast", msg.getPayloadString());
 
         // IPv6 request
-        CoapClient cnn3 = cnnServer.createCoapClient(new InetSocketAddress("::1", port));
+        CoapClient cnn3 = CoapClientBuilder.clientFor(new InetSocketAddress("::1", port), cnnServer);
         CoapMessage msg3 = cnn3.resource("/multicast").sync().get();
         assertEquals("multicast", msg3.getPayloadString());
 
         // IPv4 request
-        CoapClient cnn4 = cnnServer.createCoapClient(new InetSocketAddress("127.0.0.1", port));
+        CoapClient cnn4 = CoapClientBuilder.clientFor(new InetSocketAddress("127.0.0.1", port), cnnServer);
         CoapMessage msg4 = cnn4.resource("/multicast").sync().get();
         assertEquals("multicast", msg4.getPayloadString());
 
