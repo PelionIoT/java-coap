@@ -1,11 +1,5 @@
 package org.mbed.coap.test;
 
-import org.mbed.coap.CoapConstants;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Method;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.utils.Callback;
-import org.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -14,6 +8,12 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mbed.coap.CoapConstants;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.Method;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.utils.Callback;
+import org.mbed.coap.utils.SimpleCoapResource;
 
 /**
  *
@@ -43,7 +43,7 @@ public class ClientServerWithRetr {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), CoapConstants.DEFAULT_PORT + 1));
+        request.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), CoapConstants.DEFAULT_PORT + 1));
 
         CallbackImpl callback = new CallbackImpl();
         cnnServer.makeRequest(request, callback);

@@ -3,6 +3,12 @@
  */
 package org.mbed.coap.observe;
 
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import org.mbed.coap.BlockOption;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.CoapUtils;
@@ -13,12 +19,6 @@ import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.HexArray;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +97,7 @@ public abstract class AbstractObservableResource extends CoapResource {
         }
         if (request.headers().getBlock2Res() == null && request.headers().getBlock1Req() == null) {
 
-            ObservationRelation subs = new ObservationRelation(request.getToken(), request.getAddress(), request.headers().getObserve(), request.getMustAcknowladge());
+            ObservationRelation subs = new ObservationRelation(request.getToken(), request.getOtherEndAddress(), request.headers().getObserve(), request.getMustAcknowladge());
 
             addObservationRelation(subs, request.headers().getUriPath());
             exchange.getResponseHeaders().setObserve(subs.getObserveSeq());
@@ -152,7 +152,7 @@ public abstract class AbstractObservableResource extends CoapResource {
 
                 CoapPacket coapNotif = new CoapPacket();
                 coapNotif.setCode(code);
-                coapNotif.setAddress(sub.getAddress());
+                coapNotif.setOtherEndAddress(sub.getAddress());
                 coapNotif.headers().setObserve(sub.getNextObserveSeq()); //TODO: sync problem
                 coapNotif.setToken(sub.getToken());
 
@@ -215,7 +215,7 @@ public abstract class AbstractObservableResource extends CoapResource {
 
     private void sendNotification(boolean isConfirmable, ObservationRelation sub, CoapPacket coapNotif, byte[] payload,
             NotificationDeliveryListener deliveryListener) throws CoapException {
-        
+
         if (isConfirmable || (sub.getObserveSeq() % FORCE_CON_FREQ) == 0) {
             coapNotif.setMessageType(MessageType.Confirmable);
             sub.setIsDelivering(true);
@@ -233,7 +233,7 @@ public abstract class AbstractObservableResource extends CoapResource {
     private CoapPacket createNotifPacket(ObservationRelation sub, byte[] payload, Short contentType, byte[] etag, Long maxAge) {
         CoapPacket coapNotif = new CoapPacket();
         coapNotif.setCode(Code.C205_CONTENT);
-        coapNotif.setAddress(sub.getAddress());
+        coapNotif.setOtherEndAddress(sub.getAddress());
         coapNotif.headers().setObserve(sub.getNextObserveSeq());
         coapNotif.setToken(sub.getToken());
         coapNotif.headers().setEtag(etag);

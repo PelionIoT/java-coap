@@ -96,7 +96,7 @@ public class ServerTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test2");
         request.setMessageId(1647);
-        request.setAddress(new InetSocketAddress("127.0.0.1", SERVER_PORT));
+        request.setOtherEndAddress(new InetSocketAddress("127.0.0.1", SERVER_PORT));
 
         short[] acceptList = {MediaTypes.CT_APPLICATION_JSON};
         request.headers().setAccept(acceptList);
@@ -116,7 +116,7 @@ public class ServerTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test2");
         request.setMessageId(1647);
-        request.setAddress(new InetSocketAddress("127.0.0.1", SERVER_PORT));
+        request.setOtherEndAddress(new InetSocketAddress("127.0.0.1", SERVER_PORT));
 
         short[] acceptList = {MediaTypes.CT_APPLICATION_JSON, MediaTypes.CT_APPLICATION_XML, MediaTypes.CT_TEXT_PLAIN};
         request.headers().setAccept(acceptList);

@@ -47,7 +47,7 @@ public class TimeoutTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), 60666));
+        request.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), 60666));
 
         SyncCallback<CoapPacket> callback = new SyncCallback<>();
         cnn.makeRequest(request, callback);
@@ -74,7 +74,7 @@ public class TimeoutTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.setAddress(InMemoryTransport.createAddress(0));
+        request.setOtherEndAddress(InMemoryTransport.createAddress(0));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);

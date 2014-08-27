@@ -1,9 +1,10 @@
 /**
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
-
 package org.mbed.coap.server;
 
+import java.net.InetSocketAddress;
+import java.net.URI;
 import org.mbed.coap.CoapConstants;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
@@ -13,8 +14,6 @@ import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.CoapResource;
-import java.net.InetSocketAddress;
-import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +36,7 @@ public class EndpointBootstrapper {
     private CoapHandler bootstrapResponseHandler;
 
     public static enum BootstrappingState {
+
         NOT_BOOTSTRAPPED, BOOTSTRAP_REQUESTED, BOOTSTRAPPED, BOOTSTRAP_FAILED
     }
 
@@ -104,7 +104,7 @@ public class EndpointBootstrapper {
         coap.headers().setUriQuery(getUriQuery());
         coap.headers().setUriHost(domain);
         coap.setMessageId(server.getNextMID());
-        coap.setAddress(bsAddress);
+        coap.setOtherEndAddress(bsAddress);
 
         try {
             sendBootstrap(coap, callback);
@@ -117,7 +117,7 @@ public class EndpointBootstrapper {
         }
     }
 
-    private void sendBootstrap (CoapPacket coap, final Callback<BootstrappingState> callback) throws CoapException {
+    private void sendBootstrap(CoapPacket coap, final Callback<BootstrappingState> callback) throws CoapException {
         server.makeRequest(coap, new Callback<CoapPacket>() {
             @Override
             public void call(CoapPacket coap) {
@@ -149,7 +149,7 @@ public class EndpointBootstrapper {
         }
     }
 
-    private void bootstrapResponse (Exception exception, Callback<BootstrappingState> callback) {
+    private void bootstrapResponse(Exception exception, Callback<BootstrappingState> callback) {
         LOG.debug("Bootstrap error: " + exception);
         state = BootstrappingState.BOOTSTRAP_FAILED;
         removeBootstrapResponseHandler();
@@ -179,7 +179,7 @@ public class EndpointBootstrapper {
                 String body = exchange.getRequestBodyString();
                 exchange.setResponseCode(Code.C204_CHANGED);
                 exchange.sendResponse();
-                if (uri.matches("/0/[\\d]+/0") ) {
+                if (uri.matches("/0/[\\d]+/0")) {
                     handleNsdAddress(body, callback);
                 }
             }
@@ -193,7 +193,7 @@ public class EndpointBootstrapper {
         };
     }
 
-    private void handleNsdAddress (String address, Callback<BootstrappingState> callback) {
+    private void handleNsdAddress(String address, Callback<BootstrappingState> callback) {
         URI uri = URI.create(address);
         if (uri.getPort() == -1) {
             dsAddress = new InetSocketAddress(uri.getHost(), CoapConstants.DEFAULT_PORT);
@@ -233,7 +233,6 @@ public class EndpointBootstrapper {
         }
         return uriQuery.substring(1);
     }
-
 
     @Override
     public String toString() {

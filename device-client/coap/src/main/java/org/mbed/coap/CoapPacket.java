@@ -3,10 +3,6 @@
  */
 package org.mbed.coap;
 
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.utils.ByteArrayBackedInputStream;
-import org.mbed.coap.utils.ByteArrayBackedOutputStream;
-import org.mbed.coap.utils.HexArray;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,10 +10,13 @@ import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Objects;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.utils.ByteArrayBackedInputStream;
+import org.mbed.coap.utils.ByteArrayBackedOutputStream;
+import org.mbed.coap.utils.HexArray;
 
 /**
- * This class encode and decode CoAP messages based on RFC 7252
- * document
+ * This class encode and decode CoAP messages based on RFC 7252 document
  *
  * @author szymon
  */
@@ -32,7 +31,7 @@ public class CoapPacket implements CoapMessage, Serializable {
     private Code code;
     private Method method;
     private byte[] payload = new byte[0];
-    private InetSocketAddress address;
+    private InetSocketAddress otherEndAddress;
     private ExHeaderOptions options = new ExHeaderOptions();
     private byte[] token = DEFAULT_TOKEN; //opaque
 
@@ -48,12 +47,12 @@ public class CoapPacket implements CoapMessage, Serializable {
      *
      * @param code response code
      * @param messageType message type
-     * @param address destination address
+     * @param otherEndAddress destination address
      */
-    public CoapPacket(Code code, MessageType messageType, InetSocketAddress address) {
+    public CoapPacket(Code code, MessageType messageType, InetSocketAddress otherEndAddress) {
         this.code = code;
         this.messageType = messageType;
-        this.address = address;
+        this.otherEndAddress = otherEndAddress;
     }
 
     /**
@@ -62,13 +61,13 @@ public class CoapPacket implements CoapMessage, Serializable {
      * @param method request method
      * @param messageType message type
      * @param uriPath uri path
-     * @param address destination address
+     * @param otherEndAddress destination address
      */
-    public CoapPacket(Method method, MessageType messageType, String uriPath, InetSocketAddress address) {
+    public CoapPacket(Method method, MessageType messageType, String uriPath, InetSocketAddress otherEndAddress) {
         this.method = method;
         this.messageType = messageType;
         this.headers().setUriPath(uriPath);
-        this.address = address;
+        this.otherEndAddress = otherEndAddress;
     }
 
     /**
@@ -76,15 +75,15 @@ public class CoapPacket implements CoapMessage, Serializable {
      *
      * @param rawData data
      * @param length data length
-     * @param address source address
+     * @param otherEndAddress source address
      * @return CoapPacket instance
      * @throws CoapException if can not parse
      */
-    public static CoapPacket read(byte[] rawData, int length, InetSocketAddress address) throws CoapException {
+    public static CoapPacket read(byte[] rawData, int length, InetSocketAddress otherEndAddress) throws CoapException {
         ByteArrayBackedInputStream inputStream = new ByteArrayBackedInputStream(rawData, 0, length);
         CoapPacket cp = new CoapPacket();
         cp.readFrom(inputStream);
-        cp.address = address;
+        cp.otherEndAddress = otherEndAddress;
         return cp;
     }
 
@@ -114,22 +113,12 @@ public class CoapPacket implements CoapMessage, Serializable {
         return read(rawData, rawData.length);
     }
 
-    /**
-     * Return address.
-     *
-     * @return address
-     */
-    public InetSocketAddress getAddress() {
-        return address;
+    public InetSocketAddress getOtherEndAddress() {
+        return otherEndAddress;
     }
 
-    /**
-     * Sets address.
-     *
-     * @param address address
-     */
-    public void setAddress(InetSocketAddress address) {
-        this.address = address;
+    public void setOtherEndAddress(InetSocketAddress otherEndAddress) {
+        this.otherEndAddress = otherEndAddress;
     }
 
     /**
@@ -236,7 +225,7 @@ public class CoapPacket implements CoapMessage, Serializable {
             response.setMessageType(MessageType.NonConfirmable);
             response.setCode(responseCode);
             response.setToken(getToken());
-            response.setAddress(this.getAddress());
+            response.setOtherEndAddress(this.getOtherEndAddress());
             return response;
         }
         if (messageType == MessageType.Confirmable) {
@@ -245,7 +234,7 @@ public class CoapPacket implements CoapMessage, Serializable {
             response.setMessageType(MessageType.Acknowledgement);
             response.setCode(responseCode);
             response.setToken(getToken());
-            response.setAddress(this.getAddress());
+            response.setOtherEndAddress(this.getOtherEndAddress());
             return response;
         }
 
@@ -447,8 +436,8 @@ public class CoapPacket implements CoapMessage, Serializable {
     public String toString(boolean printFullPayload, boolean printPayloadOnlyAsHex, boolean printAddress) {
         StringBuilder sb = new StringBuilder();
 
-        if (printAddress && this.getAddress() != null) {
-            sb.append(this.getAddress()).append(' ');
+        if (printAddress && this.getOtherEndAddress() != null) {
+            sb.append(this.getOtherEndAddress()).append(' ');
         }
 
         sb.append(getMessageType().toString());
@@ -511,7 +500,7 @@ public class CoapPacket implements CoapMessage, Serializable {
         hash = 41 * hash + Objects.hashCode(this.code);
         hash = 41 * hash + Objects.hashCode(this.method);
         hash = 41 * hash + Arrays.hashCode(this.payload);
-        hash = 41 * hash + Objects.hashCode(this.address);
+        hash = 41 * hash + Objects.hashCode(this.otherEndAddress);
         hash = 41 * hash + Objects.hashCode(this.options);
         hash = 41 * hash + Arrays.hashCode(this.token);
         return hash;
@@ -545,7 +534,7 @@ public class CoapPacket implements CoapMessage, Serializable {
         if (!Arrays.equals(this.payload, other.payload)) {
             return false;
         }
-        if (!Objects.equals(this.address, other.address)) {
+        if (!Objects.equals(this.otherEndAddress, other.otherEndAddress)) {
             return false;
         }
         if (!Objects.equals(this.options, other.options)) {

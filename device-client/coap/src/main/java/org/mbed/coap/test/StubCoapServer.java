@@ -110,7 +110,7 @@ public class StubCoapServer {
             ex.setResponseCode(Code.C404_NOT_FOUND);
         } else {
             CoapPacket newResp = CoapPacket.read(resp.resp.toByteArray());
-            newResp.setAddress(ex.getRemoteAddress());
+            newResp.setOtherEndAddress(ex.getRemoteAddress());
             newResp.setMessageId(ex.getRequest().getMessageId());
             ex.setResponse(newResp);
             try {

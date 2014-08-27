@@ -66,7 +66,7 @@ public class ClientServerTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        request.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
@@ -84,7 +84,7 @@ public class ClientServerTest {
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
         request.headers().put(74, new byte[]{1, 2, 3});
-        request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        request.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
@@ -103,7 +103,7 @@ public class ClientServerTest {
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
         request.headers().put(71, new byte[]{1, 2, 3});
-        request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        request.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
@@ -122,7 +122,7 @@ public class ClientServerTest {
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
         request.headers().put((byte) 71, new byte[]{1, 2, 3});
-        request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        request.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
@@ -139,7 +139,7 @@ public class ClientServerTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/");
         request.setMessageId(1648);
-        request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        request.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         SyncCallback<CoapPacket> callback = new SyncCallback<>();
         cnn.makeRequest(request, callback);
@@ -318,7 +318,7 @@ public class ClientServerTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.setAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        request.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);

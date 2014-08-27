@@ -414,7 +414,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
      * @throws CoapException throws exception if request can not be send
      */
     public void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext) throws CoapException {
-        if (callback == null || packet == null || packet.getAddress() == null) {
+        if (callback == null || packet == null || packet.getOtherEndAddress() == null) {
             throw new NullPointerException();
         }
 
@@ -429,8 +429,8 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
                 trans.send(System.currentTimeMillis());
             } else {
                 //send NON message without waiting for piggy-backed response
-                delayedTransMagr.add(new DelayedTransactionId(packet.getToken(), packet.getAddress()), new CoapTransaction(callback, packet, this, transContext));
-                this.send(packet, packet.getAddress(), transContext);
+                delayedTransMagr.add(new DelayedTransactionId(packet.getToken(), packet.getOtherEndAddress()), new CoapTransaction(callback, packet, this, transContext));
+                this.send(packet, packet.getOtherEndAddress(), transContext);
                 if (LOGGER.isWarnEnabled() && packet.getToken() == null) {
                     LOGGER.warn("Sent NON request without token: " + packet);
                 }
@@ -486,7 +486,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
         if (packetDropping.drop()) {
             //message dropped, no response
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Message dropped, source:" + packet.getAddress() + " [" + packet + "]");
+                LOGGER.debug("Message dropped, source:" + packet.getOtherEndAddress() + " [" + packet + "]");
             }
             return;
         }
@@ -501,7 +501,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
         } else if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("CoAP received [" + packet.toString(false) + "]");
         }
-        EVENT_LOGGER.info(EventLogger.COAP_RECEIVED, packet.getAddress(), new EventLoggerCoapPacket(packet));
+        EVENT_LOGGER.info(EventLogger.COAP_RECEIVED, packet.getOtherEndAddress(), new EventLoggerCoapPacket(packet));
         if (packet.getMethod() != null) {
 
             if (handleRequest(packet, transportContext)) {
@@ -539,7 +539,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
                 resp.setMessageId(getNextMID());
             }
             try {
-                send(resp, packet.getAddress(), TransportContext.NULL);
+                send(resp, packet.getOtherEndAddress(), TransportContext.NULL);
             } catch (Exception e) {
                 LOGGER.error(e.getMessage(), e);
             }
@@ -564,7 +564,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
             if (observationHandler != null) {
                 if (!findDuplicate(packet, "CoAP notification repeated")) {
                     if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Notification [" + packet.getAddress() + "]");
+                        LOGGER.trace("Notification [" + packet.getOtherEndAddress() + "]");
                     }
                     CoapExchange exchange = new CoapExchangeImpl(packet, this);
                     observationHandler.call(exchange);
@@ -583,7 +583,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
                 resp.setMessageId(getNextMID());
             }
             try {
-                send(resp, packet.getAddress(), TransportContext.NULL);
+                send(resp, packet.getOtherEndAddress(), TransportContext.NULL);
                 LOGGER.warn("Can not process CoAP message [{}] sent RESET message", packet);
                 return;
             } catch (Exception ex) {
@@ -595,7 +595,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     }
 
     private boolean handleDelayedResponse(CoapPacket packet) {
-        DelayedTransactionId delayedTransactionId = new DelayedTransactionId(packet.getToken(), packet.getAddress());
+        DelayedTransactionId delayedTransactionId = new DelayedTransactionId(packet.getToken(), packet.getOtherEndAddress());
         CoapTransaction trans = delayedTransMagr.find(delayedTransactionId);
 
         if (trans != null) {
@@ -603,11 +603,11 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
             try {
                 trans.getCallback().call(packet);
                 if (packet.getMustAcknowladge()) {
-                    send(packet.createResponse(), packet.getAddress(), TransportContext.NULL);
+                    send(packet.createResponse(), packet.getOtherEndAddress(), TransportContext.NULL);
                 }
             } catch (Exception ex) {
                 try {
-                    send(packet.createResponse(Code.C500_INTERNAL_SERVER_ERROR), packet.getAddress(), TransportContext.NULL);
+                    send(packet.createResponse(Code.C500_INTERNAL_SERVER_ERROR), packet.getOtherEndAddress(), TransportContext.NULL);
                     LOGGER.error("Error while handling delayed response: " + ex.getMessage(), ex);
                 } catch (CoapException ex1) {
                     LOGGER.error(ex1.getMessage(), ex1);
@@ -655,7 +655,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
         if (packet.getMessageType() == MessageType.Acknowledgement
                 && packet.getCode() == null && packet.getToken() != null) {
             //delayed response
-            DelayedTransactionId delayedTransactionId = new DelayedTransactionId(trans.getCoapRequest().getToken(), packet.getAddress());
+            DelayedTransactionId delayedTransactionId = new DelayedTransactionId(trans.getCoapRequest().getToken(), packet.getOtherEndAddress());
             removeCoapTransId(coapTransId);
             delayedTransMagr.add(delayedTransactionId, trans);
             return true;
@@ -752,7 +752,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
             }
             if (errorResponse != null) {
                 try {
-                    send(errorResponse, request.getAddress(), TransportContext.NULL);
+                    send(errorResponse, request.getOtherEndAddress(), TransportContext.NULL);
                     if (duplicationDetector != null) {
                         duplicationDetector.putResponse(request, errorResponse);
                     }
@@ -777,7 +777,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
             if (duplResp != null) {
                 if (duplResp != DuplicationDetector.EMPTY_COAP_PACKET) {
                     try {
-                        send(duplResp, request.getAddress(), TransportContext.NULL);
+                        send(duplResp, request.getOtherEndAddress(), TransportContext.NULL);
                     } catch (CoapException coapException) {
                         LOGGER.error(coapException.getMessage(), coapException);
                     } catch (IOException iOException) {
