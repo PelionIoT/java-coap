@@ -3,19 +3,20 @@
  */
 package org.mbed.coap.server.internal;
 
-import org.mbed.coap.CoapPacket;
 import java.net.InetSocketAddress;
+import org.mbed.coap.CoapPacket;
 
 /**
  * Identifies CoAP transaction
  */
 public class CoapTransactionId {
+
     protected int messageId;
     protected InetSocketAddress address;
 
     public CoapTransactionId(CoapPacket packet) {
         messageId = packet.getMessageId();
-        address = packet.getAddress();
+        address = packet.getOtherEndAddress();
     }
 
     @Override

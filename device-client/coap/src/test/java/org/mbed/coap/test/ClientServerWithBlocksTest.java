@@ -187,7 +187,7 @@ public class ClientServerWithBlocksTest {
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, "/small", new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.headers().setBlock2Res(new BlockOption(0, BlockSize.S_256, true));
         request.headers().setSize1(0);
-        request.setAddress(new InetSocketAddress("localhost", SERVER_PORT));
+        request.setOtherEndAddress(new InetSocketAddress("localhost", SERVER_PORT));
 
         SyncCallback<CoapPacket> syncCallback = new SyncCallback<>();
         cnn.makeRequest(request, syncCallback);

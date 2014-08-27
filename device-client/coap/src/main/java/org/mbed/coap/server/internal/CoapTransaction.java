@@ -3,11 +3,11 @@
  */
 package org.mbed.coap.server.internal;
 
+import java.io.IOException;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
-import java.io.IOException;
 
 /**
  * Describes CoAP transaction
@@ -27,7 +27,7 @@ public class CoapTransaction {
         this.coapServer = coapServer;
         this.callback = callback;
         this.coapRequest = coapRequest;
-        if (coapRequest.getAddress().getAddress().isMulticastAddress()) {
+        if (coapRequest.getOtherEndAddress().getAddress().isMulticastAddress()) {
             this.transId = new MulticastTransactionId(coapRequest);
         } else {
             this.transId = new CoapTransactionId(coapRequest);
@@ -57,7 +57,7 @@ public class CoapTransaction {
     public final boolean send(final long currentTime) throws CoapException, IOException {
         this.retrAttempts++;
         long nextTimeout = 0;
-        if (coapRequest.getAddress().getAddress().isMulticastAddress()) {
+        if (coapRequest.getOtherEndAddress().getAddress().isMulticastAddress()) {
             nextTimeout = coapServer.getTransmissionTimeout().getMulticastTimeout(this.retrAttempts);
         } else {
             nextTimeout = coapServer.getTransmissionTimeout().getTimeout(this.retrAttempts);
@@ -65,7 +65,7 @@ public class CoapTransaction {
         if (nextTimeout <= 0) {
             return false;
         }
-        coapServer.send(coapRequest, coapRequest.getAddress(), transContext);
+        coapServer.send(coapRequest, coapRequest.getOtherEndAddress(), transContext);
         this.timeout = currentTime + nextTimeout;
         return true;
     }
