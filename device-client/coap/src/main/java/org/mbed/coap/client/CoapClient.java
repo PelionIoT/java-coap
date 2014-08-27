@@ -24,35 +24,6 @@ public class CoapClient implements Closeable {
     final CoapServer coapServer;
     private ObservationHandlerImpl observationHandler;
 
-    /**
-     * Creates CoAP client builder.
-     *
-     * @return CoAP client builder instance
-     */
-    public static CoapClientBuilder newBuilder() {
-        return new CoapClientBuilder();
-    }
-
-    /**
-     * Creates CoAP client builder with target on localhost.
-     *
-     * @param localPort local port number
-     * @return CoAP client builder instance
-     */
-    public static CoapClientBuilder newBuilder(int localPort) {
-        return new CoapClientBuilder(localPort);
-    }
-
-    /**
-     * Creates CoAP client builder with target socket address.
-     *
-     * @param destination target address
-     * @return CoAP client builder instance
-     */
-    public static CoapClientBuilder newBuilder(InetSocketAddress destination) {
-        return new CoapClientBuilder(destination);
-    }
-
     public CoapClient(InetSocketAddress destination, CoapServer coapServer) {
         this.destination = destination;
         this.coapServer = coapServer;

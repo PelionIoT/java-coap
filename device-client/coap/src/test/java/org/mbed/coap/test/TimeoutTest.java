@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Method;
 import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
 import org.mbed.coap.server.CoapServer;
@@ -28,7 +29,7 @@ public class TimeoutTest {
 
     @Test(expected = CoapTimeoutException.class)
     public void testTimeout() throws IOException, CoapException {
-        CoapClient client = CoapClient.newBuilder(InMemoryTransport.createAddress(0))
+        CoapClient client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(0))
                 .transport(InMemoryTransport.create())
                 .timeout(new SingleTimeout(100))
                 .build();

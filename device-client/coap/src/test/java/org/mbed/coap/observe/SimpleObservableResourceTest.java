@@ -1,22 +1,21 @@
 package org.mbed.coap.observe;
 
-import org.mbed.coap.test.ObservationTest;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.client.ObservationListener;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.exception.ObservationTerminatedException;
-import org.mbed.coap.observe.NotificationDeliveryListener;
-import org.mbed.coap.observe.SimpleObservableResource;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.test.InMemoryTransport;
-import org.mbed.coap.transmission.SingleTimeout;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.junit.After;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
+import org.mbed.coap.client.ObservationListener;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.exception.ObservationTerminatedException;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.test.InMemoryTransport;
+import org.mbed.coap.test.ObservationTest;
+import org.mbed.coap.transmission.SingleTimeout;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -44,7 +43,7 @@ public class SimpleObservableResourceTest {
         server.addRequestHandler("/obs", obsResource);
         server.start();
 
-        client = CoapClient.newBuilder(InMemoryTransport.createAddress(5683))
+        client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(5683))
                 .transport(new InMemoryTransport())
                 .timeout(1000).build();
     }

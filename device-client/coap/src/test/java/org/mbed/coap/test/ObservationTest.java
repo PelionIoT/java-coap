@@ -15,6 +15,7 @@ import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.client.ObservationListener;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.ObservationNotEstablishedException;
@@ -58,7 +59,7 @@ public class ObservationTest {
 
     @Test(expected = ObservationNotEstablishedException.class)
     public void observationAttemptOnNonObsResource() throws IOException, CoapException {
-        CoapClient client = CoapClient.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
         try {
             client.resource("/path1").sync().observe(null);
         } finally {
@@ -68,7 +69,7 @@ public class ObservationTest {
 
     @Test
     public void observationOnNon() throws Exception {
-        CoapClient client = CoapClient.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         SyncObservationListener obsListener = new SyncObservationListener();
         CoapPacket resp = client.resource(RES_OBS_PATH1).non().sync().observe(obsListener);
@@ -78,7 +79,7 @@ public class ObservationTest {
 
     @Test
     public void observationTest() throws Exception {
-        CoapClient client = CoapClient.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         SyncObservationListener obsListener = new SyncObservationListener();
         client.resource(RES_OBS_PATH1).observe(obsListener).get();
@@ -120,7 +121,7 @@ public class ObservationTest {
     @Test
     public void terminateObservationByServer() throws Exception {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
-        CoapClient client = CoapClient.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         SyncObservationListener obsListener = new SyncObservationListener();
         client.resource(RES_OBS_PATH1).sync().observe(obsListener);
@@ -141,7 +142,7 @@ public class ObservationTest {
     @Test
     public void terminateObservationByServerWithErrorCode() throws Exception {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
-        CoapClient client = CoapClient.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         SyncObservationListener obsListener = new SyncObservationListener();
         client.resource(RES_OBS_PATH1).sync().observe(obsListener);
@@ -165,7 +166,7 @@ public class ObservationTest {
     @Test
     public void terminateObservationByServerTimeout() throws Exception {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
-        CoapClient client = CoapClient.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         SyncObservationListener obsListener = new SyncObservationListener();
         client.resource(RES_OBS_PATH1).sync().observe(obsListener);
@@ -186,7 +187,7 @@ public class ObservationTest {
     @Test
     public void dontTerminateObservationIfNoObs() throws Exception {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
-        CoapClient client = CoapClient.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         //register observation
         SyncObservationListener obsListener = new SyncObservationListener();
@@ -209,7 +210,7 @@ public class ObservationTest {
     @Test
     public void terminateObservationByClientWithRst() throws Exception {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
-        CoapClient client = CoapClient.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         //register observation
         ObservationListener obsListener = mock(ObservationListener.class);
@@ -233,7 +234,7 @@ public class ObservationTest {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         OBS_RESOURCE_1.setBody(ClientServerWithBlocksTest.BIG_RESOURCE);
 
-        CoapClient client = CoapClient.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         //register observation
         SyncObservationListener obsListener = new SyncObservationListener();

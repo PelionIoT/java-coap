@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
@@ -50,11 +51,11 @@ public class CoapServerExecutorTest {
 
     @Test(expected = CoapTimeoutException.class)
     public void testQueueFull() throws IOException, CoapException, Exception {
-        CoapClient client1 = CoapClient.newBuilder(5683).transport(InMemoryTransport.create(1001)).timeout(new SingleTimeout(600)).build();
-        CoapClient client2 = CoapClient.newBuilder(5683).transport(InMemoryTransport.create(1002)).timeout(new SingleTimeout(600)).build();
-        CoapClient client3 = CoapClient.newBuilder(5683).transport(InMemoryTransport.create(1003)).timeout(new SingleTimeout(600)).build();
-        CoapClient client4 = CoapClient.newBuilder(5683).transport(InMemoryTransport.create(1004)).timeout(new SingleTimeout(600)).build();
-        CoapClient client5 = CoapClient.newBuilder(5683).transport(InMemoryTransport.create(1005)).timeout(new SingleTimeout(600)).build();
+        CoapClient client1 = CoapClientBuilder.newBuilder(5683).transport(InMemoryTransport.create(1001)).timeout(new SingleTimeout(600)).build();
+        CoapClient client2 = CoapClientBuilder.newBuilder(5683).transport(InMemoryTransport.create(1002)).timeout(new SingleTimeout(600)).build();
+        CoapClient client3 = CoapClientBuilder.newBuilder(5683).transport(InMemoryTransport.create(1003)).timeout(new SingleTimeout(600)).build();
+        CoapClient client4 = CoapClientBuilder.newBuilder(5683).transport(InMemoryTransport.create(1004)).timeout(new SingleTimeout(600)).build();
+        CoapClient client5 = CoapClientBuilder.newBuilder(5683).transport(InMemoryTransport.create(1005)).timeout(new SingleTimeout(600)).build();
 
         SyncCallback<CoapPacket> cl = new SyncCallback<>();
         SyncCallback<CoapPacket> cl2 = new SyncCallback<>();
@@ -79,9 +80,9 @@ public class CoapServerExecutorTest {
 
     @Test
     public void testQueueNoTimeout() throws IOException, CoapException, Exception {
-        CoapClient client1 = CoapClient.newBuilder(InMemoryTransport.createAddress(5683))
+        CoapClient client1 = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(5683))
                 .transport(InMemoryTransport.create(1001)).timeout(new SingleTimeout(600)).build();
-        CoapClient client2 = CoapClient.newBuilder(InMemoryTransport.createAddress(5683))
+        CoapClient client2 = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(5683))
                 .transport(InMemoryTransport.create(1002)).timeout(new SingleTimeout(600)).build();
 
         SyncCallback<CoapPacket> cl = new SyncCallback<>();
