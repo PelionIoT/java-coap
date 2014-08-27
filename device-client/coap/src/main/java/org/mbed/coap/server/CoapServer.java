@@ -26,7 +26,6 @@ import org.mbed.coap.CoapUtils.PacketDelay;
 import org.mbed.coap.CoapUtils.PacketDropping;
 import org.mbed.coap.Code;
 import org.mbed.coap.MessageType;
-import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
@@ -804,16 +803,6 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     protected void callRequestHandler(CoapPacket request, CoapHandler coapHandler, TransportContext transportContext) throws CoapException {
         CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, transportContext);
         coapHandler.handle(exchange);
-    }
-
-    /**
-     * Creates CoapClient instance for this server.
-     *
-     * @param target target address
-     * @return CoapConnection instance
-     */
-    public CoapClient createCoapClient(InetSocketAddress target) {
-        return new CoapClient(target, this);
     }
 
     void setTransportConnector(TransportConnector transportConnector) {

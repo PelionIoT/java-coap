@@ -63,6 +63,10 @@ public final class CoapClientBuilder {
         return new CoapClientBuilder(destination);
     }
 
+    public static CoapClient clientFor(InetSocketAddress target, CoapServer server) {
+        return new CoapClient(target, server);
+    }
+
     public CoapClient build() throws IOException {
         getOrCreateServer().start();
         return new CoapClient(destination, coapServer);
