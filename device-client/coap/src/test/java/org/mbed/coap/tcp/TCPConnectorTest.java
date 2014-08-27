@@ -20,6 +20,7 @@ import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.Method;
 import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.test.StubCoapServer;
@@ -45,7 +46,7 @@ public class TCPConnectorTest {
         int srvPort = server.getLocalSocketAddress().getPort();
         System.out.println("server port " + srvPort);
         TCPClientConnector tcpCnn = new TCPClientConnector();
-        CoapClient cnn = CoapClient.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), srvPort)).transport(tcpCnn).timeout(1000).build();
+        CoapClient cnn = CoapClientBuilder.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), srvPort)).transport(tcpCnn).timeout(1000).build();
         assertEquals(defaultResourceValue, cnn.resource(defaultPath).sync().get().getPayloadString());
         cnn.close();
 
@@ -451,8 +452,8 @@ public class TCPConnectorTest {
 
         TCPClientConnector tcpCnn = new TCPClientConnector();
         TCPClientConnector tcpCnn2 = new TCPClientConnector();
-        CoapClient cnn = CoapClient.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), srvPort)).transport(tcpCnn).build();
-        CoapClient cnn2 = CoapClient.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), srvPort)).transport(tcpCnn2).build();
+        CoapClient cnn = CoapClientBuilder.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), srvPort)).transport(tcpCnn).build();
+        CoapClient cnn2 = CoapClientBuilder.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), srvPort)).transport(tcpCnn2).build();
         assertEquals("dupa", cnn.resource("/tcptest").sync().get().getPayloadString());
         assertEquals("dupa", cnn2.resource("/tcptest").sync().get().getPayloadString());
         assertEquals("dupa", cnn.resource("/tcptest").sync().get().getPayloadString());
@@ -471,7 +472,7 @@ public class TCPConnectorTest {
     public void notStartedServer() throws CoapException, UnknownHostException, IOException, Exception {
         System.out.println("not started server test");
         TCPClientConnector tcpCnn = new TCPClientConnector();
-        CoapClient cnn = CoapClient.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), defaultServerPort)).transport(tcpCnn).timeout(500).build();
+        CoapClient cnn = CoapClientBuilder.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), defaultServerPort)).transport(tcpCnn).timeout(500).build();
         assertEquals(defaultResourceValue, cnn.resource("/dupa_no_server").sync().get().getPayloadString());
 //        cnn.closeConnection();
     }
@@ -482,7 +483,7 @@ public class TCPConnectorTest {
         int srvPort = server.getLocalSocketAddress().getPort();
         System.out.println("server port" + srvPort);
         TCPClientConnector tcpCnn = new TCPClientConnector();
-        CoapClient cnn = CoapClient.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), srvPort)).transport(tcpCnn).timeout(500).build();
+        CoapClient cnn = CoapClientBuilder.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), srvPort)).transport(tcpCnn).timeout(500).build();
         assertEquals(defaultResourceValue, cnn.resource(defaultPath).sync().get().getPayloadString());
         stopServer(server);
         try {
@@ -502,7 +503,7 @@ public class TCPConnectorTest {
         int port = server.getLocalSocketAddress().getPort();
         TCPClientConnector tcpCnn = new TCPClientConnector();
 
-        CoapClient cnn = CoapClient.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), port)).transport(tcpCnn).timeout(160).build();
+        CoapClient cnn = CoapClientBuilder.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), port)).transport(tcpCnn).timeout(160).build();
 
         assertEquals(defaultResourceValue, cnn.resource(defaultPath).sync().get().getPayloadString());
         stopServer(server);

@@ -1,18 +1,26 @@
 package org.mbed.coap.udp;
 
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.test.StubCoapServer;
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
-import org.mbed.coap.udp.DatagramSocketTransport;
-import org.mbed.coap.udp.QoSDatagramSocket;
-import org.mbed.coap.udp.TrafficClassTransportContext;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
-import static org.mockito.Mockito.*;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
+import org.mbed.coap.test.StubCoapServer;
+import org.mbed.coap.transport.TransportContext;
+import org.mbed.coap.transport.TransportReceiver;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -25,7 +33,7 @@ public class DatagramSocketTransportTest {
         StubCoapServer server = new StubCoapServer(new DatagramSocketTransport(new InetSocketAddress(0)));
         server.start();
 
-        CoapClient client = CoapClient.newBuilder(server.getAddress()).transport(new DatagramSocketTransport(0)).build();
+        CoapClient client = CoapClientBuilder.newBuilder(server.getAddress()).transport(new DatagramSocketTransport(0)).build();
 
         assertNotNull(client.ping().get());
         server.stop();
@@ -127,7 +135,7 @@ public class DatagramSocketTransportTest {
         DatagramSocketTransport trans = spy(new DatagramSocketTransport(0));
         when(trans.createSocket()).thenReturn(socket);
 
-        CoapClient client = CoapClient.newBuilder(5683).transport(trans).timeout(10000).build();
+        CoapClient client = CoapClientBuilder.newBuilder(5683).transport(trans).timeout(10000).build();
 
         client.resource("/test").context(TrafficClassTransportContext.height()).get();
         verify(socket).setTrafficClass(TrafficClassTransportContext.HIGH);

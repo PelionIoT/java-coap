@@ -10,6 +10,7 @@ import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.test.InMemoryTransport;
@@ -48,7 +49,7 @@ public class CoapServerTransportContextTest {
     @Test
     public void testRequest() throws IOException, CoapException {
         InMemoryTransport cliTransport = spy(new InMemoryTransport());
-        CoapClient client = CoapClient.newBuilder(InMemoryTransport.createAddress(5683)).transport(cliTransport).build();
+        CoapClient client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(5683)).transport(cliTransport).build();
 
         srvTransport.setTransportContext(new TextTransportContext("dupa"));
         client.resource("/test").context(new TextTransportContext("client-sending")).sync().get();
@@ -66,7 +67,7 @@ public class CoapServerTransportContextTest {
     @Test
     public void testRequestWithBlocks() throws IOException, CoapException {
         InMemoryTransport cliTransport = spy(new InMemoryTransport());
-        CoapClient client = CoapClient.newBuilder(InMemoryTransport.createAddress(5683)).transport(cliTransport).blockSize(BlockSize.S_16).build();
+        CoapClient client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(5683)).transport(cliTransport).blockSize(BlockSize.S_16).build();
 
         srvTransport.setTransportContext(new TextTransportContext("dupa"));
         CoapPacket resp = client.resource("/test").payload("fhdkfhsdkj fhsdjkhfkjsdh fjkhs dkjhfsdjkh")

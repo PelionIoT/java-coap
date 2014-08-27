@@ -1,13 +1,5 @@
 package org.mbed.coap.tcp;
 
-import org.mbed.coap.CoapMessage;
-import org.mbed.coap.Code;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.tcp.SocketChannelConnector;
-import org.mbed.coap.tcp.TCPServerConnector;
-import org.mbed.coap.test.StubCoapServer;
-import org.mbed.coap.transmission.CoapTimeout;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
@@ -18,6 +10,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.CoapMessage;
+import org.mbed.coap.Code;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.test.StubCoapServer;
+import org.mbed.coap.transmission.CoapTimeout;
 
 /**
  *
@@ -45,7 +44,7 @@ public class SocketChannelConnectorTest {
     @Test
     public void successTest() throws IOException, CoapException {
         SocketChannelConnector socConnector = new SocketChannelConnector();
-        CoapClient client = CoapClient.newBuilder(server.getAddress()).transport(socConnector).build();
+        CoapClient client = CoapClientBuilder.newBuilder(server.getAddress()).transport(socConnector).build();
 
         final SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(true);
@@ -63,7 +62,7 @@ public class SocketChannelConnectorTest {
     @Test(expected = IOException.class)
     public void differentDestinationAddress() throws IOException, Throwable {
         SocketChannelConnector socConnector = new SocketChannelConnector();
-        CoapClient client = CoapClient.newBuilder(new InetSocketAddress("localhost", 1)).transport(socConnector).build();
+        CoapClient client = CoapClientBuilder.newBuilder(new InetSocketAddress("localhost", 1)).transport(socConnector).build();
 
         final SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(true);
@@ -83,7 +82,7 @@ public class SocketChannelConnectorTest {
     @Test(expected = IOException.class)
     public void noSocket() throws IOException, Throwable {
         SocketChannelConnector socConnector = new SocketChannelConnector();
-        CoapClient client = CoapClient.newBuilder(1).transport(socConnector).build();
+        CoapClient client = CoapClientBuilder.newBuilder(1).transport(socConnector).build();
 
         try {
             client.resource("/test").sync().get();
@@ -97,7 +96,7 @@ public class SocketChannelConnectorTest {
     @Test
     public void serverSendsFirst() throws IOException, CoapException, InterruptedException {
         SocketChannelConnector socConnector = new SocketChannelConnector();
-        CoapClient client = CoapClient.newBuilder(server.getAddress()).transport(socConnector).build();
+        CoapClient client = CoapClientBuilder.newBuilder(server.getAddress()).transport(socConnector).build();
 
         final SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(true);
@@ -151,7 +150,7 @@ public class SocketChannelConnectorTest {
     @Test
     public void serverDisconets() throws IOException, CoapException {
         SocketChannelConnector socConnector = new SocketChannelConnector();
-        CoapClient client = CoapClient.newBuilder(server.getAddress()).transport(socConnector)
+        CoapClient client = CoapClientBuilder.newBuilder(server.getAddress()).transport(socConnector)
                 .timeout(new CoapTimeout(500)).build();
 
         final SocketChannel socketChannel = SocketChannel.open();

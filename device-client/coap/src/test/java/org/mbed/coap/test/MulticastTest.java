@@ -1,15 +1,5 @@
 package org.mbed.coap.test;
 
-import org.mbed.coap.CoapMessage;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Method;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.udp.DatagramChannelTransport;
-import org.mbed.coap.udp.MulticastSocketTransport;
-import org.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -19,6 +9,17 @@ import java.net.MulticastSocket;
 import static org.junit.Assert.assertEquals;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mbed.coap.CoapMessage;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.Method;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.transmission.SingleTimeout;
+import org.mbed.coap.udp.DatagramChannelTransport;
+import org.mbed.coap.udp.MulticastSocketTransport;
+import org.mbed.coap.utils.SimpleCoapResource;
 
 /**
  * @author szymon
@@ -62,7 +63,7 @@ public class MulticastTest {
         assertEquals("multicast", msg4.getPayloadString());
 
         // IPv4 request (using Datagram channel)
-        CoapClient cnn2 = CoapClient.newBuilder(new InetSocketAddress("127.0.0.1", port)).build();
+        CoapClient cnn2 = CoapClientBuilder.newBuilder(new InetSocketAddress("127.0.0.1", port)).build();
         msg = cnn2.resource("/multicast").sync().get();
         assertEquals("multicast", msg.getPayloadString());
 
@@ -120,7 +121,7 @@ public class MulticastTest {
             soc = new DatagramSocket(61620);
             DatagramPacket reqDatagram = new DatagramPacket(
                     "Wiadomosc".getBytes(), 9, new InetSocketAddress("FF02::1",
-                    61619)
+                            61619)
             );
 
             msoc = new MulticastSocket(61619);

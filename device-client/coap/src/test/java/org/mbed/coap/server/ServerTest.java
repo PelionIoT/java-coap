@@ -26,6 +26,7 @@ import org.mbed.coap.MediaTypes;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.Method;
 import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.linkformat.LinkFormat;
@@ -66,7 +67,7 @@ public class ServerTest {
     @Test
     public void resourceManipulationTest() throws CoapException, UnknownHostException, IOException {
         //Connection cnn = new Connection(Inet4Address.getLocalHost());
-        CoapClient client = CoapClient.newBuilder(SERVER_PORT).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
 
         //Getting resources
         assertEquals("Dziala", client.resource("/test/1").sync().get().getPayloadString());
@@ -133,7 +134,7 @@ public class ServerTest {
         CoapHandler hdlr = new SimpleCoapResource("TEST");
         srv.addRequestHandler("/test", hdlr);
 
-        CoapClient client = CoapClient.newBuilder(srv.getLocalSocketAddress().getPort()).build();
+        CoapClient client = CoapClientBuilder.newBuilder(srv.getLocalSocketAddress().getPort()).build();
         assertEquals("TEST", client.resource("/test").sync().get().getPayloadString());
 
         srv.removeRequestHandler(hdlr);
@@ -164,7 +165,7 @@ public class ServerTest {
 
     @Test
     public void wellKnownResourcesTest() throws IOException, CoapException, ParseException {
-        CoapClient client = CoapClient.newBuilder(SERVER_PORT).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
         CoapMessage msg = client.resource(CoapConstants.WELL_KNOWN_CORE).sync().get();
 
         assertNotNull(msg);
@@ -174,7 +175,7 @@ public class ServerTest {
 
     @Test
     public void wellKnownResourcesFilterTest() throws IOException, CoapException, ParseException {
-        CoapClient client = CoapClient.newBuilder(SERVER_PORT).timeout(new SingleTimeout(100000)).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).timeout(new SingleTimeout(100000)).build();
         CoapMessage msg = client.resource(CoapConstants.WELL_KNOWN_CORE).query("rt", "simple").sync().get();
 
         assertNotNull(msg);
@@ -218,7 +219,7 @@ public class ServerTest {
         srv1.addRequestHandler("/test", testResource);
         srv1.start();
 
-        CoapClient client = CoapClient.newBuilder(InMemoryTransport.createAddress(61616)).transport(InMemoryTransport.create()).build();
+        CoapClient client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(61616)).transport(InMemoryTransport.create()).build();
 
         client.resource("/test").payload(new byte[messageSize]).sync().put();
         assertEquals(messageSize, testResource.payload.length());
@@ -227,7 +228,7 @@ public class ServerTest {
 
     @Test
     public void sendPing() throws Exception {
-        CoapClient client = CoapClient.newBuilder(SERVER_PORT).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
         CoapPacket pingResp = client.ping().get();
 
         assertEquals(MessageType.Reset, pingResp.getMessageType());

@@ -22,6 +22,7 @@ import org.mbed.coap.Code;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.Method;
 import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.transmission.SingleTimeout;
@@ -148,7 +149,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequest2() throws Exception {
-        try (CoapClient client = CoapClient.newBuilder().target(SERVER_PORT).build()) {
+        try (CoapClient client = CoapClientBuilder.newBuilder().target(SERVER_PORT).build()) {
 
             Future<CoapPacket> coapResp = client.resource("/test/1").get();
             assertEquals("Dziala", coapResp.get().getPayloadString());
@@ -157,7 +158,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequest3() throws Exception {
-        try (CoapClient client = CoapClient.newBuilder().target(SERVER_PORT).build()) {
+        try (CoapClient client = CoapClientBuilder.newBuilder().target(SERVER_PORT).build()) {
 
             Future<CoapPacket> coapResp = client.resource("/resource/123").get();
             assertEquals("Prefix dziala", coapResp.get().getPayloadString());
@@ -175,7 +176,7 @@ public class ClientServerTest {
         ipv6Server.addRequestHandler("/resource", new SimpleCoapResource("1234qwerty"));
         ipv6Server.start();
 
-        try (CoapClient client = CoapClient.newBuilder(new InetSocketAddress(adr, ipv6Server.getLocalSocketAddress().getPort())).build()) {
+        try (CoapClient client = CoapClientBuilder.newBuilder(new InetSocketAddress(adr, ipv6Server.getLocalSocketAddress().getPort())).build()) {
 
             CoapMessage coapResp = client.resource("/resource").sync().get();
             assertEquals("1234qwerty", coapResp.getPayloadString());
@@ -208,7 +209,7 @@ public class ClientServerTest {
 
     @Test
     public void requestWithPacketLost() throws CoapException, UnknownHostException, IOException {
-        try (CoapClient cnn = CoapClient.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT)).build()) {
+        try (CoapClient cnn = CoapClientBuilder.newBuilder(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT)).build()) {
 
             final SimpleCoapResource res = new SimpleCoapResource("Not dropped");
             server.addRequestHandler("/dropable", res);
@@ -255,7 +256,7 @@ public class ClientServerTest {
         srv.start();
         final int port = srv.getLocalSocketAddress().getPort();
 
-        CoapClient cnn = CoapClient.newBuilder(port).build();
+        CoapClient cnn = CoapClientBuilder.newBuilder(port).build();
         assertEquals("TTEESSTT", cnn.resource("/test").sync().get().getPayloadString());
 
         srv.stop();
@@ -276,7 +277,7 @@ public class ClientServerTest {
         srv.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
         srv.start();
 
-        try (CoapClient cnn = CoapClient.newBuilder(InMemoryTransport.createAddress(61601)).transport(InMemoryTransport.create(0)).build()) {
+        try (CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(61601)).transport(InMemoryTransport.create(0)).build()) {
             assertEquals("23 C", cnn.resource("/temp").sync().get().getPayloadString());
         }
         srv.stop();
@@ -288,7 +289,7 @@ public class ClientServerTest {
         srv.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
         srv.start();
 
-        try (CoapClient client = CoapClient.newBuilder(InMemoryTransport.createAddress(61601)).transport(new InMemoryTransport()).build()) {
+        try (CoapClient client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(61601)).transport(new InMemoryTransport()).build()) {
             assertEquals(Code.C402_BAD_OPTION, client.resource("/temp").header(123, "dupa".getBytes()).sync().get().getCode());
         }
         srv.stop();
@@ -332,7 +333,7 @@ public class ClientServerTest {
         srv.setPacketDropping(new CoapUtils.ProbPacketDropping((byte) 100));
         srv.start();
 
-        CoapClient cnn = CoapClient.newBuilder(InMemoryTransport.createAddress(CoapConstants.DEFAULT_PORT))
+        CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(CoapConstants.DEFAULT_PORT))
                 .transport(InMemoryTransport.create()).timeout(new SingleTimeout(100)).build();
 
         assertNotNull(cnn.resource("/test").sync().get());

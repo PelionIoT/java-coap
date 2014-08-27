@@ -12,6 +12,7 @@ import org.mbed.coap.Code;
 import org.mbed.coap.HeaderOptions;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
@@ -57,7 +58,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testLateResponse() throws IOException, CoapException, InterruptedException {
-        CoapClient client = CoapClient.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
+        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
 
         Thread.sleep(10);
         assertEquals("test-content", client.resource("/seperate").token(nextToken()).sync().get().getPayloadString());
@@ -67,7 +68,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testNonRequest() throws IOException, CoapException {
-        CoapClient client = CoapClient.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
+        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
 
         assertEquals("test-content", client.resource("/seperate").token(nextToken()).non().sync().get().getPayloadString());
 
@@ -76,7 +77,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testNonRequestWithoutToken() throws IOException, CoapException, InterruptedException {
-        CoapClient client = CoapClient.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
+        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
 
         assertEquals("test-content", client.resource("/seperate").non().sync().get().getPayloadString());
         Thread.sleep(40);
@@ -86,7 +87,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testNonRequestWithTimeout() throws IOException, CoapException {
-        CoapClient client = CoapClient.newBuilder(serverAddr).transport(InMemoryTransport.create())
+        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryTransport.create())
                 .delayedTransTimeout(100).build();
 
         try {

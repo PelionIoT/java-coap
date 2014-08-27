@@ -1,12 +1,5 @@
 package org.mbed.coap.stubtest;
 
-import org.mbed.coap.BlockSize;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
-import org.mbed.coap.MediaTypes;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.test.StubCoapServer;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -18,6 +11,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.BlockSize;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.Code;
+import org.mbed.coap.MediaTypes;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.test.StubCoapServer;
 
 /**
  *
@@ -34,7 +35,7 @@ public class StubCoapServerTest {
         //stub = new StubCoapServer(1000000);
         stub.start();
 
-        client = CoapClient.newBuilder(stub.getAddress()).build();
+        client = CoapClientBuilder.newBuilder(stub.getAddress()).build();
     }
 
     @After
