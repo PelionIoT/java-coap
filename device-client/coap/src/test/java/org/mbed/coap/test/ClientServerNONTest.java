@@ -1,5 +1,7 @@
 package org.mbed.coap.test;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Random;
@@ -41,7 +43,7 @@ public class ClientServerNONTest {
         assertEquals(dti1.hashCode(), dti2.hashCode());
         assertEquals(dti1, dti2);
 
-        server = CoapServer.newBuilder().transport(InMemoryTransport.create())
+        server = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create())
                 .timeout(new SingleTimeout(1000))
                 .build();
         server.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
@@ -101,7 +103,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testUnexpectedConRequest() throws Exception {
-        CoapServer client = CoapServer.newBuilder().transport(InMemoryTransport.create()).timeout(new SingleTimeout(100)).build();
+        CoapServer client = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create()).timeout(new SingleTimeout(100)).build();
         client.start();
         CoapPacket request = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, serverAddr);
         request.setOtherEndAddress(serverAddr);
@@ -116,7 +118,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testUnexpectedNonRequest() throws Exception {
-        CoapServer cnn = CoapServer.newBuilder().transport(InMemoryTransport.create()).delayedTimeout(100).build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create()).delayedTimeout(100).build();
         cnn.start();
         CoapPacket request = new CoapPacket(Code.C205_CONTENT, MessageType.NonConfirmable, serverAddr);
         request.setToken(nextToken());

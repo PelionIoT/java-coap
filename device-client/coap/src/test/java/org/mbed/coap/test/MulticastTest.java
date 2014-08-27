@@ -1,5 +1,7 @@
 package org.mbed.coap.test;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -29,7 +31,7 @@ public class MulticastTest {
     @Test
 //    @Ignore
     public void multicastConnection() throws IOException, CoapException {
-        CoapServer server = CoapServer.newBuilder()
+        CoapServer server = CoapServerBuilder.newBuilder()
                 .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES)).build();
         server.addRequestHandler("/multicast", new SimpleCoapResource(
                 "multicast"));
@@ -42,7 +44,7 @@ public class MulticastTest {
         // InetSocketAddress address = new
         // InetSocketAddress("fe80:0:0:0:f0f1:7af6:3111:b7a6", 61619);
 
-        CoapServer cnnServer = CoapServer.newBuilder()
+        CoapServer cnnServer = CoapServerBuilder.newBuilder()
                 .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES))
                 .timeout(new SingleTimeout(1000000)).build();
         cnnServer.start();
@@ -76,7 +78,7 @@ public class MulticastTest {
     @Test
     @Ignore
     public void multicastRequest() throws IOException, CoapException {
-        CoapServer server = CoapServer.newBuilder().transport(61619).build();
+        CoapServer server = CoapServerBuilder.newBuilder().transport(61619).build();
         server.addRequestHandler("/multicast", new SimpleCoapResource(
                 "multicast"));
         server.start();
@@ -112,7 +114,7 @@ public class MulticastTest {
     @Ignore
     public void multicastTest() throws IOException {
 
-        CoapServer server = CoapServer.newBuilder().transport(new DatagramChannelTransport(new InetSocketAddress("::1", 61619))).build();
+        CoapServer server = CoapServerBuilder.newBuilder().transport(new DatagramChannelTransport(new InetSocketAddress("::1", 61619))).build();
         server.start();
 
         DatagramSocket soc = null;

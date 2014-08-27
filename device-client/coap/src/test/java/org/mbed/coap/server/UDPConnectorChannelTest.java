@@ -65,7 +65,7 @@ public class UDPConnectorChannelTest {
         DatagramChannel ch = PowerMockito.mock(DatagramChannel.class);
         when(ch.configureBlocking(anyBoolean())).thenThrow(new ClosedChannelException());
 
-        CoapServer srv = CoapServer.newBuilder().transport(new UDPConnectorChannelMock(ch, new InetSocketAddress(5683))).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(new UDPConnectorChannelMock(ch, new InetSocketAddress(5683))).build();
         srv.start();
     }
 
@@ -78,7 +78,7 @@ public class UDPConnectorChannelTest {
         when(ch.socket()).thenReturn(datSocket);
         doThrow(new BindException()).when(datSocket).bind(isA(InetSocketAddress.class));
 
-        CoapServer srv = CoapServer.newBuilder().transport(new UDPConnectorChannelMock(ch, new InetSocketAddress(5683))).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(new UDPConnectorChannelMock(ch, new InetSocketAddress(5683))).build();
         try {
             srv.start();
             Assert.fail("Expected: BindException()");
@@ -96,7 +96,7 @@ public class UDPConnectorChannelTest {
         doThrow(new IOException()).when(ch).close();
         when(ch.send(isA(ByteBuffer.class), isA(InetSocketAddress.class))).thenThrow(new SecurityException());
 
-        CoapServer srv = CoapServer.newBuilder().transport(new UDPConnectorChannelMock(ch, new InetSocketAddress(5683), true)).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(new UDPConnectorChannelMock(ch, new InetSocketAddress(5683), true)).build();
         srv.start();
 
         try {
@@ -120,7 +120,7 @@ public class UDPConnectorChannelTest {
         doThrow(new IOException()).when(ch).close();
         when(ch.send(isA(ByteBuffer.class), isA(InetSocketAddress.class))).thenThrow(new ClosedChannelException());
 
-        CoapServer srv = CoapServer.newBuilder().transport(new UDPConnectorChannelMock(ch, new InetSocketAddress(5683), true)).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(new UDPConnectorChannelMock(ch, new InetSocketAddress(5683), true)).build();
         srv.start();
 
         try {

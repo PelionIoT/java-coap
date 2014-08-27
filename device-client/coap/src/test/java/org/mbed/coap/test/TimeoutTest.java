@@ -1,5 +1,7 @@
 package org.mbed.coap.test;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -40,7 +42,7 @@ public class TimeoutTest {
     @Test
     @Ignore
     public void timeoutTestIgn() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServer.newBuilder().transport(61616).executor(Executors.newCachedThreadPool()).build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616).executor(Executors.newCachedThreadPool()).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket();
@@ -66,7 +68,7 @@ public class TimeoutTest {
 
     @Test
     public void timeoutTest() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServer.newBuilder().transport(InMemoryTransport.create())
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create())
                 .executor(Executors.newCachedThreadPool()).timeout(new SingleTimeout(100)).build();
         cnn.start();
 

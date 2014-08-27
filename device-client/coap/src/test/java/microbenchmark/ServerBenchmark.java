@@ -1,5 +1,7 @@
 package microbenchmark;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.Method;
@@ -45,7 +47,7 @@ public class ServerBenchmark {
         buffer.position(coapReq.toByteArray().length);
 
         trans = new SynchTransportStub();
-        server = CoapServer.newBuilder().transport(trans).executor(Executors.newScheduledThreadPool(1)).build();
+        server = CoapServerBuilder.newBuilder().transport(trans).executor(Executors.newScheduledThreadPool(1)).build();
         server.addRequestHandler("/path1/sub2/sub3", new SimpleCoapResource("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"));
         server.start();
         System.out.println("MSG SIZE: " + reqData.length);

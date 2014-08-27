@@ -1,5 +1,7 @@
 package org.mbed.coap.observe;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.junit.After;
@@ -35,7 +37,7 @@ public class SimpleObservableResourceTest {
 
     @Before
     public void setUp() throws IOException {
-        server = CoapServer.newBuilder().transport(new InMemoryTransport(5683))
+        server = CoapServerBuilder.newBuilder().transport(new InMemoryTransport(5683))
                 .timeout(new SingleTimeout(500)).build();
 
         obsResource = new SimpleObservableResource("", server);

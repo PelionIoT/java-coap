@@ -1,5 +1,7 @@
 package org.mbed.coap.test;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -46,7 +48,7 @@ public class ClientServerWithBlocksTest {
     @Before
     public void setUp() throws UnknownHostException, IOException {
 
-        server = CoapServer.newBuilder().build();
+        server = CoapServerBuilder.newBuilder().build();
         server.addRequestHandler("/bigResource", new StaticBigResource());
         server.addRequestHandler("/dynamic", new DynamicBigResource());
         server.addRequestHandler("/ultra-dynamic", new UltraDynamicBigResource());
@@ -183,7 +185,7 @@ public class ClientServerWithBlocksTest {
         final String BODY = "The use of web services on the Internet has become ubiquitous.";
         server.addRequestHandler("/small", new SimpleCoapResource(BODY));
 
-        CoapServer cnn = CoapServer.newBuilder().blockSize(BlockSize.S_256).build().start();
+        CoapServer cnn = CoapServerBuilder.newBuilder().blockSize(BlockSize.S_256).build().start();
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, "/small", new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.headers().setBlock2Res(new BlockOption(0, BlockSize.S_256, true));
         request.headers().setSize1(0);
@@ -217,7 +219,7 @@ public class ClientServerWithBlocksTest {
     @Test
     public void incompleteBlockRequest() throws Exception {
         String body = "gdfgdjgdfgdj";
-        CoapServer cnn = CoapServer.newBuilder().build().start();
+        CoapServer cnn = CoapServerBuilder.newBuilder().build().start();
 //        CoapConnection cnn = CoapConnection.create(new InetSocketAddress("127.0.0.1", SERVER_PORT));
 
 //        CoapPacket request = cnn.makeCoapMessage(Method.PUT, "/chang-res", body.getBytes(), 0);
@@ -235,7 +237,7 @@ public class ClientServerWithBlocksTest {
     @Test
     public void blockRequestWithWrongToken() throws Exception {
         String body = "gdfgdjgdfgdj";
-        CoapServer client = CoapServer.newBuilder().build().start();
+        CoapServer client = CoapServerBuilder.newBuilder().build().start();
 //        CoapConnection cnn = CoapConnection.create(new InetSocketAddress("127.0.0.1", SERVER_PORT));
 
 //        CoapPacket request = cnn.makeCoapMessage(Method.PUT, "/chang-res", body.getBytes(), 0);
@@ -260,7 +262,7 @@ public class ClientServerWithBlocksTest {
     @Test
     public void blockRequestWithWrongNullToken() throws Exception {
         String body = "gdfgdjgdfgdj";
-        CoapServer client = CoapServer.newBuilder().build().start();
+        CoapServer client = CoapServerBuilder.newBuilder().build().start();
 
         CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.setPayload(body);

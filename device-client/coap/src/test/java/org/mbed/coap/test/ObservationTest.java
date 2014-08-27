@@ -1,5 +1,7 @@
 package org.mbed.coap.test;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.BlockingQueue;
@@ -41,7 +43,7 @@ public class ObservationTest {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-        server = CoapServer.newBuilder().transport(0)
+        server = CoapServerBuilder.newBuilder().transport(0)
                 .timeout(new SingleTimeout(500)).blockSize(BlockSize.S_128).build();
 
         OBS_RESOURCE_1 = new SimpleObservableResource("", server);

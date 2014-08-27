@@ -1,5 +1,7 @@
 package org.mbed.coap.test;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -43,7 +45,7 @@ public class ClientServerTest {
 
     @Before
     public void setUp() throws IOException {
-        server = CoapServer.newBuilder().build();
+        server = CoapServerBuilder.newBuilder().build();
         server.addRequestHandler("/test/1", new SimpleCoapResource("Dziala"));
         server.addRequestHandler("/resource*", new SimpleCoapResource("Prefix dziala"));
         server.addRequestHandler("/", new SimpleCoapResource("Shortest path"));
@@ -59,7 +61,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequest() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServer.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
         CoapPacket request = new CoapPacket();
@@ -76,7 +78,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequestWithCustomHeader() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServer.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
         CoapPacket request = new CoapPacket();
@@ -95,7 +97,7 @@ public class ClientServerTest {
     @Test
     public void simpleRequestWithCriticalCustomHeader() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
         server.useCriticalOptionTest(true);
-        CoapServer cnn = CoapServer.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
         CoapPacket request = new CoapPacket();
@@ -114,7 +116,7 @@ public class ClientServerTest {
     @Test
     public void simpleRequestWithCriticalCustomHeader2() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
         server.useCriticalOptionTest(false);
-        CoapServer cnn = CoapServer.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
         CoapPacket request = new CoapPacket();
@@ -132,7 +134,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequestToShortestPath() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServer.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
         CoapPacket request = new CoapPacket();
@@ -172,7 +174,7 @@ public class ClientServerTest {
     public void simpleIPv6Request() throws CoapException, UnknownHostException, IOException {
         InetAddress adr = InetAddress.getByName("::1");
 
-        CoapServer ipv6Server = CoapServer.newBuilder().transport(0).build();
+        CoapServer ipv6Server = CoapServerBuilder.newBuilder().transport(0).build();
         ipv6Server.addRequestHandler("/resource", new SimpleCoapResource("1234qwerty"));
         ipv6Server.start();
 
@@ -238,7 +240,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequest4() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServer.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
         SyncCallback<CoapPacket> callback = new SyncCallback<>();
@@ -251,7 +253,7 @@ public class ClientServerTest {
     @Test
     public void reusePortSocketImpl() throws IOException, CoapException {
         TransportConnector udpConnector = new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES); //new UDPMulticastConnector(61601, UDPMulticastConnector.MCAST_LINKLOCAL_ALLNODES);
-        CoapServer srv = CoapServer.newBuilder().transport(udpConnector).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(udpConnector).build();
         srv.addRequestHandler("/test", new SimpleCoapResource("TTEESSTT"));
         srv.start();
         final int port = srv.getLocalSocketAddress().getPort();
@@ -262,7 +264,7 @@ public class ClientServerTest {
         srv.stop();
 
         TransportConnector udpConnector2 = new MulticastSocketTransport(new InetSocketAddress(port), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES);
-        CoapServer srv2 = CoapServer.newBuilder().transport(udpConnector2).build();
+        CoapServer srv2 = CoapServerBuilder.newBuilder().transport(udpConnector2).build();
         srv2.addRequestHandler("/test", new SimpleCoapResource("TTEESSTT2"));
         srv2.start();
 
@@ -273,7 +275,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequest5() throws IOException, CoapException {
-        CoapServer srv = CoapServer.newBuilder().transport(InMemoryTransport.create(61601)).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(61601)).build();
         srv.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
         srv.start();
 
@@ -285,7 +287,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequestWithUnknownCriticalOptionHeader() throws IOException, CoapException {
-        CoapServer srv = CoapServer.newBuilder().transport(InMemoryTransport.create(61601)).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(61601)).build();
         srv.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
         srv.start();
 
@@ -297,20 +299,20 @@ public class ClientServerTest {
 
     @Test(expected = java.lang.IllegalStateException.class)
     public void stopNonRunningServer() {
-        CoapServer srv = CoapServer.newBuilder().build();
+        CoapServer srv = CoapServerBuilder.newBuilder().build();
         srv.stop();
     }
 
     @Test(expected = java.lang.IllegalStateException.class)
     public void startRunningServer() throws IOException {
-        CoapServer srv = CoapServer.newBuilder().build();
+        CoapServer srv = CoapServerBuilder.newBuilder().build();
         srv.start();
         srv.start();
     }
 
     @Test
     public void testRequestWithPacketDelay() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServer.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.setPacketDelay(new CoapUtils.AvgPacketDelay(100));
         cnn.start();
 
@@ -328,7 +330,7 @@ public class ClientServerTest {
 
     @Test(expected = org.mbed.coap.exception.CoapTimeoutException.class)
     public void testRequestWithPacketDropping() throws IOException, CoapException {
-        CoapServer srv = CoapServer.newBuilder().transport(InMemoryTransport.create(CoapConstants.DEFAULT_PORT)).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(CoapConstants.DEFAULT_PORT)).build();
         srv.addRequestHandler("/test", new SimpleCoapResource("TEST"));
         srv.setPacketDropping(new CoapUtils.ProbPacketDropping((byte) 100));
         srv.start();

@@ -1,5 +1,7 @@
 package org.mbed.coap.test;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -25,7 +27,7 @@ public class ClientServerWithRetr {
 
     @Before
     public void setUp() throws IOException {
-        server = CoapServer.newBuilder().transport(CoapConstants.DEFAULT_PORT).executor(Executors.newCachedThreadPool()).build();
+        server = CoapServerBuilder.newBuilder().transport(CoapConstants.DEFAULT_PORT).executor(Executors.newCachedThreadPool()).build();
         server.addRequestHandler("/test/1", new SimpleCoapResource("Dziala"));
         //server.addRequestHandler("/test2", new TestResource());
         //server.addRequestHandler("/bigResource", new BigResource() );
@@ -36,7 +38,7 @@ public class ClientServerWithRetr {
     @Test
     @Ignore
     public synchronized void runTest() throws Exception {
-        CoapServer cnnServer = CoapServer.newBuilder().transport(61616).executor(Executors.newCachedThreadPool()).build();
+        CoapServer cnnServer = CoapServerBuilder.newBuilder().transport(61616).executor(Executors.newCachedThreadPool()).build();
         cnnServer.start();
 
         CoapPacket request = new CoapPacket();
