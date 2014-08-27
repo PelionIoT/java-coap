@@ -39,13 +39,13 @@ public class EndpointBootstrapperTest {
 
     @Before
     public void setUp() throws IOException {
-        epServer = CoapServer.newBuilder()
+        epServer = CoapServerBuilder.newBuilder()
                 .transport(InMemoryTransport.create(CoapConstants.DEFAULT_PORT))
                 .timeout(new SingleTimeout(2000))
                 .build()
                 .start();
 
-        bsServer = CoapServer.newBuilder().transport(InMemoryTransport.create(BS_PORT)).build().start();
+        bsServer = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(BS_PORT)).build().start();
     }
 
     private void setupBootstrapRequestHandler(CoapPacket... responses) {

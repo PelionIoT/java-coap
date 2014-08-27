@@ -3,6 +3,8 @@
  */
 package org.mbed.coap.test;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -72,7 +74,7 @@ public class StubCoapServer {
     public void start() throws IOException {
         if (server == null) {
             TransmissionTimeout transTimeout = (singleTimeout > 0) ? new SingleTimeout(singleTimeout) : new CoapTimeout();
-            server = CoapServer.newBuilder().transport(transportConnector).blockSize(blockSize).disableDuplicateCheck().timeout(transTimeout).build();
+            server = CoapServerBuilder.newBuilder().transport(transportConnector).blockSize(blockSize).disableDuplicateCheck().timeout(transTimeout).build();
         }
         server.addRequestHandler("/*", new CoapHandler() {
             @Override

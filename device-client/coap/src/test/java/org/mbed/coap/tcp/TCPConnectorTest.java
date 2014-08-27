@@ -1,5 +1,7 @@
 package org.mbed.coap.tcp;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -62,7 +64,7 @@ public class TCPConnectorTest {
         InetSocketAddress dsAddress = new InetSocketAddress(InetAddress.getLocalHost(), dsPort);
 
         final TCPClientConnector clientConnector = new TCPClientConnector();
-        CoapServer client = CoapServer.newBuilder().transport(clientConnector).timeout(new SingleTimeout(1000)).build();
+        CoapServer client = CoapServerBuilder.newBuilder().transport(clientConnector).timeout(new SingleTimeout(1000)).build();
 
         final SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
@@ -204,8 +206,8 @@ public class TCPConnectorTest {
 
         final TCPClientConnector clientConnector = new TCPClientConnector(32000);
         final TCPClientConnector tcpCnn2 = new TCPClientConnector();
-        final CoapServer client = CoapServer.newBuilder().transport(clientConnector).timeout(new SingleTimeout(4000)).build();
-        final CoapServer client2 = CoapServer.newBuilder().transport(tcpCnn2).timeout(new SingleTimeout(4000)).build();
+        final CoapServer client = CoapServerBuilder.newBuilder().transport(clientConnector).timeout(new SingleTimeout(4000)).build();
+        final CoapServer client2 = CoapServerBuilder.newBuilder().transport(tcpCnn2).timeout(new SingleTimeout(4000)).build();
 
         final SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
@@ -569,7 +571,7 @@ public class TCPConnectorTest {
             transTimeout = new CoapTimeout();
         }
         TCPServerConnector receiver = new TCPServerConnector(new InetSocketAddress(InetAddress.getLocalHost(), port), maxSize);
-        CoapServer tcpServer = CoapServer.newBuilder().timeout(transTimeout).transport(receiver).build();
+        CoapServer tcpServer = CoapServerBuilder.newBuilder().timeout(transTimeout).transport(receiver).build();
         tcpServer.addRequestHandler(path, new SimpleCoapResource(resourceValue));
         tcpServer.start();
         return tcpServer;

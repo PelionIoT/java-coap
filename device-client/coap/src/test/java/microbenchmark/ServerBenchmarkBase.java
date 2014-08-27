@@ -1,5 +1,7 @@
 package microbenchmark;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -47,7 +49,7 @@ public abstract class ServerBenchmarkBase {
         buffer = ByteBuffer.wrap(reqData);
         buffer.position(coapReq.toByteArray().length);
 
-        server = CoapServer.newBuilder().transport(trans).executor(executor).duplicateMsgCacheSize(10000).build();
+        server = CoapServerBuilder.newBuilder().transport(trans).executor(executor).duplicateMsgCacheSize(10000).build();
         server.addRequestHandler("/path1/sub2/sub3", new SimpleCoapResource("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"));
         server.start();
         System.out.println("MSG SIZE: " + reqData.length);

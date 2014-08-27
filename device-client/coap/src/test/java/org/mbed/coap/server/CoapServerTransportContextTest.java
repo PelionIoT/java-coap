@@ -36,7 +36,7 @@ public class CoapServerTransportContextTest {
 
     @Before
     public void setUp() throws IOException {
-        server = CoapServer.newBuilder().transport(srvTransport).build();
+        server = CoapServerBuilder.newBuilder().transport(srvTransport).build();
         server.addRequestHandler("/test", coapResourceTest);
         server.start();
     }

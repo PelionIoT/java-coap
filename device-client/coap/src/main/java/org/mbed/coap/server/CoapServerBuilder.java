@@ -23,6 +23,10 @@ public class CoapServerBuilder {
         server = new CoapServerObserve();
     }
 
+    public static CoapServerBuilder newBuilder() {
+        return new CoapServerBuilder();
+    }
+
     public CoapServerBuilder transport(TransportConnector transportConnector) {
         server.setTransportConnector(transportConnector);
         return this;

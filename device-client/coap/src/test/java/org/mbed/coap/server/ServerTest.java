@@ -49,7 +49,7 @@ public class ServerTest {
 
     @Before
     public void setUp() throws IOException {
-        server = CoapServer.newBuilder().executor(Executors.newCachedThreadPool()).build();
+        server = CoapServerBuilder.newBuilder().executor(Executors.newCachedThreadPool()).build();
         server.addRequestHandler("/test/1", new SimpleCoapResource("Dziala", "simple"));
         server.addRequestHandler("/test2", new TestResource());
         server.addRequestHandler(CoapConstants.WELL_KNOWN_CORE, server.getResourceLinkResource());
@@ -89,7 +89,7 @@ public class ServerTest {
 
     @Test
     public void requestWithAccept() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServer.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
         CoapPacket request = new CoapPacket();
@@ -109,7 +109,7 @@ public class ServerTest {
 
     @Test
     public void requestWithAccept2() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServer.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
         CoapPacket request = new CoapPacket();
@@ -129,7 +129,7 @@ public class ServerTest {
 
     @Test
     public void removeRequestHandlerTest() throws IOException, CoapException {
-        CoapServer srv = CoapServer.newBuilder().transport(0).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(0).build();
         srv.start();
         CoapHandler hdlr = new SimpleCoapResource("TEST");
         srv.addRequestHandler("/test", hdlr);
@@ -145,7 +145,7 @@ public class ServerTest {
 
     @Test
     public void resourceListTest() throws IOException {
-        CoapServer srv = CoapServer.newBuilder().transport(0).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(0).build();
         srv.addRequestHandler("/test/1", new SimpleCoapResource("TEST"));
         srv.start();
 
@@ -215,7 +215,7 @@ public class ServerTest {
         udpConnector1.setBufferSize(messageSize + 100);
         TestResource testResource = new TestResource();
 
-        CoapServer srv1 = CoapServer.newBuilder().transport(new TransportWorkerWrapper(udpConnector1)).build();
+        CoapServer srv1 = CoapServerBuilder.newBuilder().transport(new TransportWorkerWrapper(udpConnector1)).build();
         srv1.addRequestHandler("/test", testResource);
         srv1.start();
 

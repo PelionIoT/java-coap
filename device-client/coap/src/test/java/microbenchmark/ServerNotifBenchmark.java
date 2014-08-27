@@ -1,5 +1,7 @@
 package microbenchmark;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
@@ -47,7 +49,7 @@ public class ServerNotifBenchmark {
 
         trans = new ServerBenchmarkBase.FloodTransportStub(MAX);
         executor = Executors.newScheduledThreadPool(1);
-        server = CoapServer.newBuilder().transport(trans).executor(executor).duplicateMsgCacheSize(10000).build();
+        server = CoapServerBuilder.newBuilder().transport(trans).executor(executor).duplicateMsgCacheSize(10000).build();
         server.start();
         server.setObservationHandler(new ObservationHandlerNull());
         System.out.println("MSG SIZE: " + reqData.length);

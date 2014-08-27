@@ -3,6 +3,8 @@
  */
 package org.mbed.coap.client;
 
+import org.mbed.coap.server.CoapServerBuilder;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -90,7 +92,7 @@ public final class CoapClientBuilder {
         if (coapServer != null) {
             throw new IllegalStateException("Transport already initialized");
         }
-        coapServer = CoapServer.newBuilder().transport(trans).build();
+        coapServer = CoapServerBuilder.newBuilder().transport(trans).build();
         return this;
     }
 
@@ -98,7 +100,7 @@ public final class CoapClientBuilder {
         if (coapServer != null) {
             throw new IllegalStateException("Transport already initialized");
         }
-        coapServer = CoapServer.newBuilder().transport(bindingPort).build();
+        coapServer = CoapServerBuilder.newBuilder().transport(bindingPort).build();
         return this;
     }
 
@@ -124,7 +126,7 @@ public final class CoapClientBuilder {
 
     private CoapServer getOrCreateServer() {
         if (coapServer == null) {
-            coapServer = CoapServer.newBuilder().transport(0).build();
+            coapServer = CoapServerBuilder.newBuilder().transport(0).build();
         }
         return coapServer;
     }

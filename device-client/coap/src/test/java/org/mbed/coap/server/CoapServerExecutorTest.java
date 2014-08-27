@@ -36,7 +36,7 @@ public class CoapServerExecutorTest {
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(2));
 
-        srv = CoapServer.newBuilder().transport(InMemoryTransport.create(5683)).executor(es).build();
+        srv = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(5683)).executor(es).build();
         srv.addRequestHandler("/slow", new SlowResource());
         srv.start();
     }

@@ -40,13 +40,13 @@ public class EndPointRegistratorTest {
 
     @Before
     public void setUp() throws IOException {
-        epServer = CoapServer.newBuilder().transport(InMemoryTransport.create(CoapConstants.DEFAULT_PORT))
+        epServer = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(CoapConstants.DEFAULT_PORT))
                 .timeout(new SingleTimeout(2000)).build();
         epServer.addRequestHandler("/dev/temp", new SimpleCoapResource("21", "ucum:Cel"));
         epServer.addRequestHandler("/dev/power", new SimpleCoapResource("100", "ucum:Pwr"));
         epServer.start();
 
-        rdServer = CoapServer.newBuilder().transport(InMemoryTransport.create(RD_PORT)).build();
+        rdServer = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(RD_PORT)).build();
         rdServer.addRequestHandler("/rd", rdResource);
         rdServer.addRequestHandler("/rd/*", rdResource);
         rdServer.start();

@@ -80,10 +80,6 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     private boolean enabledCriticalOptTest = true;
     private ScheduledFuture<?> transactionTimeoutWorkerFut;
 
-    public static CoapServerBuilder newBuilder() {
-        return new CoapServerBuilder();
-    }
-
     protected CoapServer() {
         // nothing to initialize
     }

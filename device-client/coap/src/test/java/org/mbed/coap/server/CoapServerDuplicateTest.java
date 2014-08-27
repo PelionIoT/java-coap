@@ -37,7 +37,7 @@ public class CoapServerDuplicateTest {
 
     @Before
     public void setUp() throws IOException {
-        CoapServer server = CoapServer.newBuilder().transport(new InMemoryTransport(5683)).build();
+        CoapServer server = CoapServerBuilder.newBuilder().transport(new InMemoryTransport(5683)).build();
         server.setErrorCallback(new CoapErrorCallback() {
             @Override
             public void parserError(byte[] packet, CoapException exception) {
