@@ -24,7 +24,7 @@ public final class HexArray implements Serializable {
      * @return hex string
      */
     public static String toHex(final byte[] data) {
-        return toHex(data, data.length);
+        return data != null ? toHex(data, data.length) : null;
     }
 
     /**
@@ -58,19 +58,19 @@ public final class HexArray implements Serializable {
             return toHex(data, maxLen) + "..";
         }
     }
-    
+
     /**
      * Converts hex string to byte array.
-     * 
+     *
      * @param hex hex string
      * @return byte array
      */
     public static byte[] fromHex(String hex) {
         byte[] b = new byte[hex.length() / 2];
         for (int i=0; i<hex.length(); i+=2) {
-            b[i/2] = (byte) (HEX_DIGIT_STRING.indexOf(hex.charAt(i))*16 + HEX_DIGIT_STRING.indexOf(hex.charAt(i+1)) ); 
+            b[i/2] = (byte) (HEX_DIGIT_STRING.indexOf(hex.charAt(i))*16 + HEX_DIGIT_STRING.indexOf(hex.charAt(i+1)) );
         }
-        
+
         return b;
     }
 
