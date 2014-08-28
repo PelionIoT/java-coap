@@ -244,7 +244,7 @@ public class ClientServerWithBlocksTest {
         CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.setPayload(body);
         request.headers().setBlock1Req(new BlockOption(0, BlockSize.S_128, true));
-        request.setToken(HeaderOptions.convertVariableUInt(1234l));
+        request.setToken(HeaderOptions.convertVariableUInt(1234L));
         CoapPacket resp = makeRequest(client, request);
 
         assertEquals(Code.C204_CHANGED, resp.getCode());
@@ -252,7 +252,7 @@ public class ClientServerWithBlocksTest {
         request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.setPayload(body);
         request.headers().setBlock1Req(new BlockOption(1, BlockSize.S_128, true));
-        request.setToken(HeaderOptions.convertVariableUInt(1235l));
+        request.setToken(HeaderOptions.convertVariableUInt(1235L));
         resp = makeRequest(client, request);
 
         assertFalse("Error code expected", Code.C204_CHANGED == resp.getCode());
@@ -267,7 +267,7 @@ public class ClientServerWithBlocksTest {
         CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.setPayload(body);
         request.headers().setBlock1Req(new BlockOption(0, BlockSize.S_128, true));
-        request.setToken(HeaderOptions.convertVariableUInt(1234l));
+        request.setToken(HeaderOptions.convertVariableUInt(1234L));
 
         CoapPacket resp = makeRequest(client, request);
         assertEquals(Code.C204_CHANGED, resp.getCode());

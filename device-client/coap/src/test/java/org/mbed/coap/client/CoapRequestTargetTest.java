@@ -30,12 +30,12 @@ public class CoapRequestTargetTest {
         req.host("arm.com");
         req.ifMatch(new byte[]{9, 7, 5});
         req.ifNotMatch(false);
-        req.maxAge(789456l);
+        req.maxAge(789456L);
         req.non();
         req.payload("perse");
         req.query("p=1");
         req.query("b", "2");
-        req.token(45463l);
+        req.token(45463L);
 
         CoapPacket packet = new CoapPacket(Method.GET, MessageType.NonConfirmable, "/0/1/2", destination);
         packet.headers().setAccept(new short[]{(short) 1});
@@ -43,7 +43,7 @@ public class CoapRequestTargetTest {
         packet.headers().setUriHost("arm.com");
         packet.headers().setIfMatch(new byte[][]{new byte[]{9, 7, 5}});
         packet.headers().setIfNonMatch(Boolean.FALSE);
-        packet.headers().setMaxAge(789456l);
+        packet.headers().setMaxAge(789456L);
         packet.headers().setUriQuery("p=1&b=2");
         packet.setToken(new byte[]{(byte) 0xB1, (byte) 0x97});
         packet.setPayload("perse");

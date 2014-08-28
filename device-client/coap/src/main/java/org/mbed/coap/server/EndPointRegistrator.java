@@ -280,7 +280,7 @@ public class EndPointRegistrator {
             checkRegistrationLocation(coap);
             state = RegistrationState.REGISTERED;
             currentRetryCount = 0;
-            registrationTimeOut = System.currentTimeMillis() + lifeTimeSec * 1000l;
+            registrationTimeOut = System.currentTimeMillis() + lifeTimeSec * 1000L;
 
             // randomize re-registrer time based on min and max difference
             long delay = getReregisterDelay();
@@ -338,7 +338,7 @@ public class EndPointRegistrator {
         if (diff > 0) {
             tempLifeTimeSecs -= (int) (Math.random() * (diff + 1));
         }
-        long delay = tempLifeTimeSecs * 1000l;
+        long delay = tempLifeTimeSecs * 1000L;
         return Math.max(delay, 20000);
     }
 
