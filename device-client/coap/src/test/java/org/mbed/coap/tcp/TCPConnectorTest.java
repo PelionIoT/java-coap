@@ -526,10 +526,10 @@ public class TCPConnectorTest {
     @Test
     public void clientCloseTest() throws UnknownHostException, IOException, CoapException, InterruptedException {
         TCPServerConnector tcpTransport = new TCPServerConnector(new InetSocketAddress("127.0.0.1", 0));
-        StubCoapServer stubServer = new StubCoapServer(tcpTransport, 1000l);
+        StubCoapServer stubServer = new StubCoapServer(tcpTransport, 1000L);
         stubServer.start();
 
-        StubCoapServer stubClient = new StubCoapServer(new TCPClientConnector(), 1000l);
+        StubCoapServer stubClient = new StubCoapServer(new TCPClientConnector(), 1000L);
         stubClient.start();
 
         assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
