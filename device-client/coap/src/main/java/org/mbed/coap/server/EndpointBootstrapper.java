@@ -104,7 +104,7 @@ public class EndpointBootstrapper {
         coap.headers().setUriQuery(getUriQuery());
         coap.headers().setUriHost(domain);
         coap.setMessageId(server.getNextMID());
-        coap.setOtherEndAddress(bsAddress);
+        coap.setRemoteAddress(bsAddress);
 
         try {
             sendBootstrap(coap, callback);

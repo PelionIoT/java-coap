@@ -26,7 +26,7 @@ public class DuplicationDetectorTest {
         detector.start();
         try {
             CoapPacket packet = mock(CoapPacket.class);
-            when(packet.getOtherEndAddress()).thenReturn(InetSocketAddress.createUnresolved("testHost", 8080));
+            when(packet.getRemoteAddress()).thenReturn(InetSocketAddress.createUnresolved("testHost", 8080));
             when(packet.getMessageId()).thenReturn(9);
 
             CoapPacket firstIsDuplicated = detector.isMessageRepeated(packet);
@@ -50,7 +50,7 @@ public class DuplicationDetectorTest {
         instance.start();
         try {
             CoapPacket packet = mock(CoapPacket.class);
-            when(packet.getOtherEndAddress()).thenReturn(InetSocketAddress.createUnresolved("testHost", 8080));
+            when(packet.getRemoteAddress()).thenReturn(InetSocketAddress.createUnresolved("testHost", 8080));
             when(packet.getMessageId()).thenReturn(9);
 
             CoapPacket firstIsDuplicated = instance.isMessageRepeated(packet);

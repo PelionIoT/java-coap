@@ -153,7 +153,7 @@ public class CoapServerDuplicateTest {
         }
 
         public void send(CoapPacket packet) throws CoapException, IOException {
-            send(packet.toByteArray(), packet.toByteArray().length, packet.getOtherEndAddress(), TransportContext.NULL);
+            send(packet.toByteArray(), packet.toByteArray().length, packet.getRemoteAddress(), TransportContext.NULL);
         }
 
         @Override

@@ -138,7 +138,7 @@ class CoapServerBlocks extends CoapServer {
         if (request.headers().getBlock1Req() != null) {
             //blocking request
             BlockOption reqBlock = request.headers().getBlock1Req();
-            BlockRequestId blockRequestId = new BlockRequestId(request.headers().getUriPath(), request.getOtherEndAddress());
+            BlockRequestId blockRequestId = new BlockRequestId(request.headers().getUriPath(), request.getRemoteAddress());
             BlockRequest blockRequest = blockReqMap.get(blockRequestId);
             if (blockRequest == null) {
                 if (reqBlock.getNr() == 0) {
@@ -284,7 +284,7 @@ class CoapServerBlocks extends CoapServer {
             this.request = request;
             this.requestPayload = request.getPayload();
             this.requestUri = request.headers().getUriPath();
-            this.destination = request.getOtherEndAddress();
+            this.destination = request.getRemoteAddress();
             this.outgoingTransContext = outgoingTransContext;
         }
 
@@ -461,7 +461,7 @@ class CoapServerBlocks extends CoapServer {
         NotificationBlockId(CoapPacket request) {
             token = request.getToken();
             observation = request.headers().getObserve();
-            sourceAddress = request.getOtherEndAddress();
+            sourceAddress = request.getRemoteAddress();
         }
 
         @Override
@@ -508,7 +508,7 @@ class CoapServerBlocks extends CoapServer {
         public BlockRequest(CoapPacket request) {
             this.payload = request.getPayload();
             this.uriPath = request.headers().getUriPath();
-            this.sourceAddress = request.getOtherEndAddress();
+            this.sourceAddress = request.getRemoteAddress();
             this.token = request.getToken();
 
             this.blockRequestId = new BlockRequestId(uriPath, sourceAddress);
