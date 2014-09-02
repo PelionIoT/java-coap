@@ -1,16 +1,15 @@
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>device-client</artifactId>
         <groupId>org.mbed</groupId>
-        <version>2.1.0-SNAPSHOT</version>
+        <version>2.2.0-SNAPSHOT</version>
     </parent>
     <packaging>jar</packaging>
 
     <artifactId>coap</artifactId>
-    
+
     <scm>
         <connection>scm:git:git://10.45.3.23/nanoservice/sensinode-server.git</connection>
         <url>scm:git:git://10.45.3.23/nanoservice/sensinode-server.git</url>
@@ -19,7 +18,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <build>
-        <plugins>            
+        <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -35,7 +34,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
-            </plugin> 
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -61,27 +60,27 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>            
-            <plugin> 
-                <artifactId>maven-deploy-plugin</artifactId> 
-                <executions> 
-                    <execution> 
+            </plugin>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <executions>
+                    <execution>
                         <id>deploy</id>
                         <phase>deploy</phase>
                         <goals>
                             <goal>deploy</goal>
-                        </goals> 
-                    </execution> 
-                </executions> 
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <extensions>
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-webdav</artifactId>
-                <version>1.0-beta-2</version>                
+                <version>1.0-beta-2</version>
             </extension>
-        </extensions>        
+        </extensions>
     </build>
     <dependencies>
         <dependency>
@@ -121,7 +120,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
+
     <profiles>
         <!-- Jenkins by default defines a property BUILD_NUMBER which is used to enable the profile. -->
         <profile>
@@ -136,7 +135,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                    </plugin>                    
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>findbugs-maven-plugin</artifactId>
@@ -154,9 +153,9 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>            
+                    </plugin>
                 </plugins>
             </build>
-        </profile>        
+        </profile>
     </profiles>
 </project>
