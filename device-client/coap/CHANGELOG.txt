@@ -1,0 +1,35 @@
+1.10.0
+ - updated with draft-ietf-core-coap-18
+ - updated with draft-ietf-core-block-12
+ - updated with draft-ietf-core-observe-09
+
+1.9.0
+- TLS support for TCP
+
+1.6.0
+- nanoservice-tlv support
+- added mediaid for SenML
+
+1.5.0
+- updated with draft-ietf-core-coap-12
+- updated with draft-ietf-core-block-10
+- updated with draft-ietf-core-observe-07
+- added coap over TCP
+
+1.4.0
+
+- added support for RFC6690
+- added ETSI DA registration
+- added ETSI NA registration to NSCL
+
+----------------------------------------------------
+1.3.1
+
+minor fixes 
+
+----------------------------------------------------
+1.3.0
+
+- updated with draft-ietf-core-coap-08
+- updated with draft-ietf-core-link-format-07
+- updated with draft-ietf-core-block-08
