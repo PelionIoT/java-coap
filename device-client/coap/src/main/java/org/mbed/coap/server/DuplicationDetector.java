@@ -63,7 +63,7 @@ class DuplicationDetector implements Runnable {
     }
 
     public CoapPacket isMessageRepeated(CoapPacket request) {
-        CoapRequestId requestId = new CoapRequestId(request.getMessageId(), request.getOtherEndAddress(), requestIdTimeout);
+        CoapRequestId requestId = new CoapRequestId(request.getMessageId(), request.getRemoteAddress(), requestIdTimeout);
 
         CoapPacket resp = requestMap.putIfAbsent(requestId, EMPTY_COAP_PACKET);
         if (resp != null) {
@@ -91,7 +91,7 @@ class DuplicationDetector implements Runnable {
     }
 
     public void putResponse(CoapPacket request, CoapPacket response) {
-        CoapRequestId requestId = new CoapRequestId(request.getMessageId(), request.getOtherEndAddress(), requestIdTimeout);
+        CoapRequestId requestId = new CoapRequestId(request.getMessageId(), request.getRemoteAddress(), requestIdTimeout);
         requestMap.put(requestId, response);
     }
 

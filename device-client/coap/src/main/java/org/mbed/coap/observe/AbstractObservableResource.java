@@ -97,7 +97,7 @@ public abstract class AbstractObservableResource extends CoapResource {
         }
         if (request.headers().getBlock2Res() == null && request.headers().getBlock1Req() == null) {
 
-            ObservationRelation subs = new ObservationRelation(request.getToken(), request.getOtherEndAddress(), request.headers().getObserve(), request.getMustAcknowladge());
+            ObservationRelation subs = new ObservationRelation(request.getToken(), request.getRemoteAddress(), request.headers().getObserve(), request.getMustAcknowladge());
 
             addObservationRelation(subs, request.headers().getUriPath());
             exchange.getResponseHeaders().setObserve(subs.getObserveSeq());
@@ -152,7 +152,7 @@ public abstract class AbstractObservableResource extends CoapResource {
 
                 CoapPacket coapNotif = new CoapPacket();
                 coapNotif.setCode(code);
-                coapNotif.setOtherEndAddress(sub.getAddress());
+                coapNotif.setRemoteAddress(sub.getAddress());
                 coapNotif.headers().setObserve(sub.getNextObserveSeq()); //TODO: sync problem
                 coapNotif.setToken(sub.getToken());
 
@@ -233,7 +233,7 @@ public abstract class AbstractObservableResource extends CoapResource {
     private CoapPacket createNotifPacket(ObservationRelation sub, byte[] payload, Short contentType, byte[] etag, Long maxAge) {
         CoapPacket coapNotif = new CoapPacket();
         coapNotif.setCode(Code.C205_CONTENT);
-        coapNotif.setOtherEndAddress(sub.getAddress());
+        coapNotif.setRemoteAddress(sub.getAddress());
         coapNotif.headers().setObserve(sub.getNextObserveSeq());
         coapNotif.setToken(sub.getToken());
         coapNotif.headers().setEtag(etag);

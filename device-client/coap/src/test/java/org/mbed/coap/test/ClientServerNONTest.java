@@ -106,7 +106,7 @@ public class ClientServerNONTest {
         CoapServer client = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create()).timeout(new SingleTimeout(100)).build();
         client.start();
         CoapPacket request = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, serverAddr);
-        request.setOtherEndAddress(serverAddr);
+        request.setRemoteAddress(serverAddr);
         request.setToken(nextToken());
 
         SyncCallback<CoapPacket> callback = new SyncCallback<>();

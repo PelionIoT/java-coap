@@ -82,7 +82,7 @@ public class TCPConnectorTest {
         CoapPacket request = new CoapPacket();
         request.setMethod(Method.GET);
         request.headers().setUriPath("/tcptest");
-        request.setOtherEndAddress(dsAddress);
+        request.setRemoteAddress(dsAddress);
         SyncCallback<CoapPacket> syncResp = new SyncCallback<>();
 
         System.out.println("Send -----");
@@ -139,7 +139,7 @@ public class TCPConnectorTest {
         CoapPacket request2 = new CoapPacket();
         request2.setMethod(Method.GET);
         request2.headers().setUriPath("/test");
-        request2.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel.getLocalAddress()).getPort()));
+        request2.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel.getLocalAddress()).getPort()));
         theServer.makeRequest(request2, new CoapCallback() {
             @Override
             public void callException(Exception ex) {
@@ -240,7 +240,7 @@ public class TCPConnectorTest {
             longPayload30Kilo = longPayload30Kilo + longPayloadOneKilo;
         }
         request.setPayload(longPayload30Kilo);
-        request.setOtherEndAddress(dsAddress);
+        request.setRemoteAddress(dsAddress);
         final SyncCallback<CoapPacket> bigSyncResp = new SyncCallback<>();
         final SyncCallback<CoapPacket> syncResp = new SyncCallback<>();
         final SyncCallback<CoapPacket> syncResp2 = new SyncCallback<>();
@@ -249,7 +249,7 @@ public class TCPConnectorTest {
         final CoapPacket requestC2 = new CoapPacket();
         requestC2.setMethod(Method.GET);
         requestC2.headers().setUriPath("/tcptest");
-        requestC2.setOtherEndAddress(dsAddress);
+        requestC2.setRemoteAddress(dsAddress);
 
         System.out.println("Send -----");
         client.makeRequest(request, bigSyncResp);
@@ -305,12 +305,12 @@ public class TCPConnectorTest {
         final CoapPacket request2 = new CoapPacket();
         request2.setMethod(Method.GET);
         request2.headers().setUriPath("/test");
-        request2.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel.getLocalAddress()).getPort()));
+        request2.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel.getLocalAddress()).getPort()));
 //
         final CoapPacket request222 = new CoapPacket();
         request222.setMethod(Method.GET);
         request222.headers().setUriPath("/test");
-        request222.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel2.getLocalAddress()).getPort()));
+        request222.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel2.getLocalAddress()).getPort()));
 
         theServer.makeRequest(request2, new CoapCallback() {
             @Override
@@ -536,13 +536,13 @@ public class TCPConnectorTest {
 
         System.out.println("---");
         System.out.println("SERVER PORT: " + stubServer.getLocalPort());
-        System.out.println("CLIENT PORT: " + stubServer.verify("/path1").getOtherEndAddress().getPort());
-        assertNotNull(stubServer.client(stubServer.verify("/path1").getOtherEndAddress().getPort()).resource("/").sync().get());
+        System.out.println("CLIENT PORT: " + stubServer.verify("/path1").getRemoteAddress().getPort());
+        assertNotNull(stubServer.client(stubServer.verify("/path1").getRemoteAddress().getPort()).resource("/").sync().get());
 
         stubClient.stop();
         Thread.sleep(50);
         try {
-            stubServer.client(stubServer.verify("/path1").getOtherEndAddress().getPort()).resource("/").sync().get();
+            stubServer.client(stubServer.verify("/path1").getRemoteAddress().getPort()).resource("/").sync().get();
         } catch (CoapException ex) {
             assertTrue(ex.getCause() instanceof IOException);
         }

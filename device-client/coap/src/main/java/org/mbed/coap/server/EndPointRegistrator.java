@@ -208,7 +208,7 @@ public class EndPointRegistrator {
         //coap.headers().setUriHost(domain);
         coap.headers().setContentFormat(MediaTypes.CT_APPLICATION_LINK__FORMAT);
         coap.setMessageId(server.getNextMID());
-        coap.setOtherEndAddress(rdAddress);
+        coap.setRemoteAddress(rdAddress);
 
         List<LinkFormat> addedLinks = findAdditionalLinks(links);
         if (addedLinks != null && !addedLinks.isEmpty()) {
@@ -255,7 +255,7 @@ public class EndPointRegistrator {
         coap.headers().setContentFormat(MediaTypes.CT_APPLICATION_LINK__FORMAT);
         coap.setMessageId(server.getNextMID());
         coap.setPayload(resources);
-        coap.setOtherEndAddress(rdAddress);
+        coap.setRemoteAddress(rdAddress);
 
         state = RegistrationState.REGISTRATION_SENT;
         if (LOG.isDebugEnabled()) {
@@ -390,7 +390,7 @@ public class EndPointRegistrator {
         coap.setMethod(Method.DELETE);
         coap.headers().setUriPath(registrLocation);
         coap.setMessageId(server.getNextMID());
-        coap.setOtherEndAddress(rdAddress);
+        coap.setRemoteAddress(rdAddress);
         try {
             server.makeRequest(coap, new Callback<CoapPacket>() {
                 @Override

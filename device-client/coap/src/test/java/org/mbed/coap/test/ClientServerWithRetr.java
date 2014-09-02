@@ -45,7 +45,7 @@ public class ClientServerWithRetr {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.setOtherEndAddress(new InetSocketAddress(InetAddress.getLocalHost(), CoapConstants.DEFAULT_PORT + 1));
+        request.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), CoapConstants.DEFAULT_PORT + 1));
 
         CallbackImpl callback = new CallbackImpl();
         cnnServer.makeRequest(request, callback);

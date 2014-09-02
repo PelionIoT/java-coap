@@ -59,7 +59,7 @@ class CoapExchangeImpl extends CoapExchange {
 
     @Override
     public InetSocketAddress getRemoteAddress() {
-        return getRequest().getOtherEndAddress();
+        return getRequest().getRemoteAddress();
     }
 
     @Override

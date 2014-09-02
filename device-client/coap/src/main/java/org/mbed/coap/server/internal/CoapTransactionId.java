@@ -16,7 +16,7 @@ public class CoapTransactionId {
 
     public CoapTransactionId(CoapPacket packet) {
         messageId = packet.getMessageId();
-        address = packet.getOtherEndAddress();
+        address = packet.getRemoteAddress();
     }
 
     @Override
