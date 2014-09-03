@@ -3,8 +3,6 @@
  */
 package org.mbed.coap.test;
 
-import org.mbed.coap.server.CoapServerBuilder;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -25,6 +23,7 @@ import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapHandler;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.ObservationHandler;
 import org.mbed.coap.transmission.CoapTimeout;
 import org.mbed.coap.transmission.SingleTimeout;
@@ -111,8 +110,7 @@ public class StubCoapServer {
         if (resp == null) {
             ex.setResponseCode(Code.C404_NOT_FOUND);
         } else {
-            CoapPacket newResp = CoapPacket.read(resp.resp.toByteArray());
-            newResp.setRemoteAddress(ex.getRemoteAddress());
+            CoapPacket newResp = CoapPacket.read(ex.getRemoteAddress(), resp.resp.toByteArray());
             newResp.setMessageId(ex.getRequest().getMessageId());
             ex.setResponse(newResp);
             try {

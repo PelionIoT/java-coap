@@ -1,6 +1,7 @@
 package org.mbed.coap;
 
 import java.io.ByteArrayInputStream;
+import java.net.InetSocketAddress;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,7 +45,7 @@ public class CoapPacketTest {
     public void deserializeAfterSerializeGivesBackACoapPacketWithSameData() throws CoapException {
         CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
         byte[] rawCp = CoapPacket.serialize(cp);
-        CoapPacket cp2 = CoapPacket.deserialize(new ByteArrayInputStream(rawCp));
+        CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
 
         assertArrayEquals(rawCp, CoapPacket.serialize(cp2));
         assertEquals(Method.GET, cp2.getMethod());
@@ -57,11 +58,12 @@ public class CoapPacketTest {
 
     @Test
     public void readSerializedGiveBackSimilarCoapPacket() throws CoapException {
-        CoapPacket cp = new CoapPacket(Code.C205_CONTENT, MessageType.Acknowledgement, null);
+        InetSocketAddress addr = InetSocketAddress.createUnresolved("some.host", 1234);
+        CoapPacket cp = new CoapPacket(Code.C205_CONTENT, MessageType.Acknowledgement, addr);
         cp.setPayload("TEST");
 
         byte[] rawCp = CoapPacket.serialize(cp);
-        CoapPacket cp2 = CoapPacket.read(rawCp);
+        CoapPacket cp2 = CoapPacket.read(addr, rawCp);
 
         assertArrayEquals(rawCp, CoapPacket.serialize(cp2));
         assertSimilar(cp, cp2);
@@ -76,7 +78,7 @@ public class CoapPacketTest {
         cp.headers().setAccept(new short[]{});
         cp.setPayload("t�m� on varsin miel??$�");
         byte[] rawCp = CoapPacket.serialize(cp);
-        CoapPacket cp2 = CoapPacket.deserialize(new ByteArrayInputStream(rawCp));
+        CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
 
         System.out.println(cp);
         System.out.println(cp2);
@@ -93,7 +95,7 @@ public class CoapPacketTest {
         cp.setMessageId(0xFFFF);
 
         byte[] rawCp = CoapPacket.serialize(cp);
-        CoapPacket cp2 = CoapPacket.deserialize(new ByteArrayInputStream(rawCp));
+        CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
         System.out.println(cp);
         System.out.println(cp2);
 
@@ -110,7 +112,7 @@ public class CoapPacketTest {
         cp.setMessageId(3612);
 
         byte[] rawCp = CoapPacket.serialize(cp);
-        CoapPacket cp2 = CoapPacket.deserialize(new ByteArrayInputStream(rawCp));
+        CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
 
         System.out.println(cp);
         System.out.println(Arrays.toString(cp.toByteArray()));
@@ -144,7 +146,7 @@ public class CoapPacketTest {
         cp.setMessageId(3612);
 
         byte[] rawCp = CoapPacket.serialize(cp);
-        CoapPacket cp2 = CoapPacket.deserialize(new ByteArrayInputStream(rawCp));
+        CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
 
         System.out.println(cp);
         System.out.println(Arrays.toString(cp.toByteArray()));
@@ -184,6 +186,7 @@ public class CoapPacketTest {
         assertEquals(cp1.getPayloadString(), cp2.getPayloadString());
         assertEquals(1, cp2.getVersion());
 
+        assertEquals(cp1.getRemoteAddress(), cp2.getRemoteAddress());
     }
 
     @Test
@@ -194,7 +197,7 @@ public class CoapPacketTest {
         cp.setMessageId(0);
 
         byte[] rawCp = CoapPacket.serialize(cp);
-        CoapPacket cp2 = CoapPacket.deserialize(new ByteArrayInputStream(rawCp));
+        CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
 
         System.out.println(cp);
         System.out.println(Arrays.toString(cp.toByteArray()));
@@ -212,7 +215,7 @@ public class CoapPacketTest {
 
     @Test(expected = org.mbed.coap.exception.CoapException.class)
     public void versionTest() throws CoapException {
-        CoapPacket.read(new byte[]{(byte) 0x85});
+        CoapPacket.read(null, new byte[]{(byte) 0x85});
     }
 
     @Test
@@ -233,7 +236,7 @@ public class CoapPacketTest {
 
     @Test
     public void unknownHeaderTest() throws CoapException {
-        CoapPacket cp = new CoapPacket();
+        CoapPacket cp = new CoapPacket(null);
         byte[] hdrVal = new byte[]{1, 2, 3, 4, 5, 6, 7};
         int hdrType = 100;
         cp.headers().put(hdrType, hdrVal);
@@ -241,7 +244,7 @@ public class CoapPacketTest {
 
         byte[] rawCp = CoapPacket.serialize(cp);
 
-        CoapPacket cp2 = CoapPacket.deserialize(new ByteArrayInputStream(rawCp));
+        CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
         System.out.println(cp);
         System.out.println(cp2);
         //assertEquals(1, cp2.headers().getUnrecognizedOptions().size());
@@ -251,13 +254,13 @@ public class CoapPacketTest {
 
     @Test
     public void uriPathWithDoubleSlashes() throws CoapException {
-        CoapPacket cp = new CoapPacket();
+        CoapPacket cp = new CoapPacket(null);
         cp.headers().setUriPath("/3/13//");
         cp.headers().setLocationPath("/2//1");
         cp.headers().setUriQuery("te=12&&ble=14");
         cp.toByteArray();
 
-        CoapPacket cp2 = CoapPacket.read(cp.toByteArray());
+        CoapPacket cp2 = CoapPacket.read(null, cp.toByteArray());
         assertEquals(cp, cp2);
         assertEquals("/3/13//", cp2.headers().getUriPath());
         assertEquals("/2//1", cp2.headers().getLocationPath());
