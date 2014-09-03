@@ -1,7 +1,5 @@
 package org.mbed.coap.test;
 
-import org.mbed.coap.server.CoapServerBuilder;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -27,6 +25,7 @@ import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.udp.MulticastSocketTransport;
@@ -64,11 +63,10 @@ public class ClientServerTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
@@ -81,12 +79,11 @@ public class ClientServerTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
         request.headers().put(74, new byte[]{1, 2, 3});
-        request.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
@@ -100,12 +97,11 @@ public class ClientServerTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
         request.headers().put(71, new byte[]{1, 2, 3});
-        request.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
@@ -119,12 +115,11 @@ public class ClientServerTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
         request.headers().put((byte) 71, new byte[]{1, 2, 3});
-        request.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
@@ -137,11 +132,10 @@ public class ClientServerTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/");
         request.setMessageId(1648);
-        request.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         SyncCallback<CoapPacket> callback = new SyncCallback<>();
         cnn.makeRequest(request, callback);
@@ -316,11 +310,10 @@ public class ClientServerTest {
         cnn.setPacketDelay(new CoapUtils.AvgPacketDelay(100));
         cnn.start();
 
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
@@ -343,7 +336,7 @@ public class ClientServerTest {
 
     @Test(expected = NullPointerException.class)
     public void testMakeRequestWithNullCallback() throws CoapException {
-        server.makeRequest(new CoapPacket(), null);
+        server.makeRequest(new CoapPacket(null), null);
     }
 
     @Test(expected = NullPointerException.class)

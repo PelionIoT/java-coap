@@ -1,12 +1,5 @@
 package microbenchmark;
 
-import org.mbed.coap.BlockOption;
-import org.mbed.coap.BlockSize;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.MediaTypes;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
-import org.mbed.coap.exception.CoapException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import org.apache.log4j.Level;
@@ -14,6 +7,13 @@ import org.apache.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.BlockOption;
+import org.mbed.coap.BlockSize;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.MediaTypes;
+import org.mbed.coap.MessageType;
+import org.mbed.coap.Method;
+import org.mbed.coap.exception.CoapException;
 
 /**
  *
@@ -43,7 +43,7 @@ public class ParsingBenchmark {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         packet.writeTo(baos);
-        CoapPacket.deserialize(new ByteArrayInputStream(baos.toByteArray()));
+        CoapPacket.deserialize(null, new ByteArrayInputStream(baos.toByteArray()));
 
         System.out.println("MSG SIZE: " + packet.toByteArray().length);
     }
@@ -61,7 +61,7 @@ public class ParsingBenchmark {
             //ByteOutputStream baos = new ByteOutputStream();
             packet.writeTo(baos);
 
-            CoapPacket.deserialize(new ByteArrayInputStream(baos.toByteArray()));
+            CoapPacket.deserialize(null, new ByteArrayInputStream(baos.toByteArray()));
             //CoapPacket.deserialize(new ByteInputStream(baos));
         }
         endTime = System.currentTimeMillis();

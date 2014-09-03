@@ -31,15 +31,15 @@ public class CoapPacket implements CoapMessage, Serializable {
     private Code code;
     private Method method;
     private byte[] payload = new byte[0];
-    private InetSocketAddress remoteAddress;
+    private final InetSocketAddress remoteAddress;
     private ExHeaderOptions options = new ExHeaderOptions();
     private byte[] token = DEFAULT_TOKEN; //opaque
 
     /**
      * CoAP packet constructor.
      */
-    public CoapPacket() {
-        // nothing to initialize
+    public CoapPacket(InetSocketAddress remoteAddress) {
+        this.remoteAddress = remoteAddress;
     }
 
     /**
@@ -61,13 +61,13 @@ public class CoapPacket implements CoapMessage, Serializable {
      * @param method request method
      * @param messageType message type
      * @param uriPath uri path
-     * @param otherEndAddress destination address
+     * @param remoteAddress destination address
      */
-    public CoapPacket(Method method, MessageType messageType, String uriPath, InetSocketAddress otherEndAddress) {
+    public CoapPacket(Method method, MessageType messageType, String uriPath, InetSocketAddress remoteAddress) {
         this.method = method;
         this.messageType = messageType;
         this.headers().setUriPath(uriPath);
-        this.remoteAddress = otherEndAddress;
+        this.remoteAddress = remoteAddress;
     }
 
     /**
@@ -75,29 +75,13 @@ public class CoapPacket implements CoapMessage, Serializable {
      *
      * @param rawData data
      * @param length data length
-     * @param otherEndAddress source address
+     * @param remoteAddress source address
      * @return CoapPacket instance
      * @throws CoapException if can not parse
      */
-    public static CoapPacket read(byte[] rawData, int length, InetSocketAddress otherEndAddress) throws CoapException {
+    public static CoapPacket read(byte[] rawData, int length, InetSocketAddress remoteAddress) throws CoapException {
         ByteArrayBackedInputStream inputStream = new ByteArrayBackedInputStream(rawData, 0, length);
-        CoapPacket cp = new CoapPacket();
-        cp.readFrom(inputStream);
-        cp.remoteAddress = otherEndAddress;
-        return cp;
-    }
-
-    /**
-     * Reads CoAP packet from raw data.
-     *
-     * @param rawData data
-     * @param length data length
-     * @return CoapPacket instance
-     * @throws CoapException if can not parse
-     */
-    public static CoapPacket read(byte[] rawData, int length) throws CoapException {
-        ByteArrayBackedInputStream inputStream = new ByteArrayBackedInputStream(rawData, 0, length);
-        CoapPacket cp = new CoapPacket();
+        CoapPacket cp = new CoapPacket(remoteAddress);
         cp.readFrom(inputStream);
         return cp;
     }
@@ -106,19 +90,30 @@ public class CoapPacket implements CoapMessage, Serializable {
      * Reads CoAP packet from raw data.
      *
      * @param rawData data
+     * @param length data length
      * @return CoapPacket instance
      * @throws CoapException if can not parse
      */
-    public static CoapPacket read(byte[] rawData) throws CoapException {
-        return read(rawData, rawData.length);
+    public static CoapPacket read(InetSocketAddress remoteAddress, byte[] rawData, int length) throws CoapException {
+        ByteArrayBackedInputStream inputStream = new ByteArrayBackedInputStream(rawData, 0, length);
+        CoapPacket cp = new CoapPacket(remoteAddress);
+        cp.readFrom(inputStream);
+        return cp;
+    }
+
+    /**
+     * Reads CoAP packet from raw data.
+     *
+     * @param rawData data
+     * @return CoapPacket instance
+     * @throws CoapException if can not parse
+     */
+    public static CoapPacket read(InetSocketAddress remoteAddress, byte[] rawData) throws CoapException {
+        return read(remoteAddress, rawData, rawData.length);
     }
 
     public InetSocketAddress getRemoteAddress() {
         return remoteAddress;
-    }
-
-    public void setRemoteAddress(InetSocketAddress remoteAddress) {
-        this.remoteAddress = remoteAddress;
     }
 
     /**
@@ -128,8 +123,8 @@ public class CoapPacket implements CoapMessage, Serializable {
      * @return CoapPacket instance
      * @throws CoapException if can not parse
      */
-    public static CoapPacket deserialize(InputStream inputStream) throws CoapException {
-        CoapPacket coapPacket = new CoapPacket();
+    public static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream inputStream) throws CoapException {
+        CoapPacket coapPacket = new CoapPacket(remoteAddress);
         coapPacket.readFrom(inputStream);
         return coapPacket;
     }
@@ -221,20 +216,18 @@ public class CoapPacket implements CoapMessage, Serializable {
      */
     public CoapPacket createResponse(Code responseCode) {
         if (messageType == MessageType.NonConfirmable) {
-            CoapPacket response = new CoapPacket();
+            CoapPacket response = new CoapPacket(this.getRemoteAddress());
             response.setMessageType(MessageType.NonConfirmable);
             response.setCode(responseCode);
             response.setToken(getToken());
-            response.setRemoteAddress(this.getRemoteAddress());
             return response;
         }
         if (messageType == MessageType.Confirmable) {
-            CoapPacket response = new CoapPacket();
+            CoapPacket response = new CoapPacket(this.getRemoteAddress());
             response.setMessageId(this.messageId);
             response.setMessageType(MessageType.Acknowledgement);
             response.setCode(responseCode);
             response.setToken(getToken());
-            response.setRemoteAddress(this.getRemoteAddress());
             return response;
         }
 

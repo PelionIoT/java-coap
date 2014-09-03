@@ -1,7 +1,5 @@
 package org.mbed.coap.test;
 
-import org.mbed.coap.server.CoapServerBuilder;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -27,6 +25,7 @@ import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.test.utils.Utils;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
@@ -186,10 +185,9 @@ public class ClientServerWithBlocksTest {
         server.addRequestHandler("/small", new SimpleCoapResource(BODY));
 
         CoapServer cnn = CoapServerBuilder.newBuilder().blockSize(BlockSize.S_256).build().start();
-        CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, "/small", new InetSocketAddress("127.0.0.1", SERVER_PORT));
+        CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, "/small", new InetSocketAddress("localhost", SERVER_PORT));
         request.headers().setBlock2Res(new BlockOption(0, BlockSize.S_256, true));
         request.headers().setSize1(0);
-        request.setRemoteAddress(new InetSocketAddress("localhost", SERVER_PORT));
 
         SyncCallback<CoapPacket> syncCallback = new SyncCallback<>();
         cnn.makeRequest(request, syncCallback);

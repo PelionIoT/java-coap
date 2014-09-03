@@ -1,7 +1,5 @@
 package org.mbed.coap.test;
 
-import org.mbed.coap.server.CoapServerBuilder;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -18,6 +16,7 @@ import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.udp.DatagramChannelTransport;
 import org.mbed.coap.udp.MulticastSocketTransport;
@@ -83,7 +82,7 @@ public class MulticastTest {
                 "multicast"));
         server.start();
 
-        CoapPacket coap = new CoapPacket();
+        CoapPacket coap = new CoapPacket(null);
         coap.setMethod(Method.GET);
         coap.headers().setUriPath("/multicast");
 

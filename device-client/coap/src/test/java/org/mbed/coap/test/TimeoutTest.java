@@ -1,7 +1,5 @@
 package org.mbed.coap.test;
 
-import org.mbed.coap.server.CoapServerBuilder;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -19,6 +17,7 @@ import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.FutureCallbackAdapter;
 import org.mbed.coap.utils.SyncCallback;
@@ -45,11 +44,10 @@ public class TimeoutTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616).executor(Executors.newCachedThreadPool()).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), 60666));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), 60666));
 
         SyncCallback<CoapPacket> callback = new SyncCallback<>();
         cnn.makeRequest(request, callback);
@@ -72,11 +70,10 @@ public class TimeoutTest {
                 .executor(Executors.newCachedThreadPool()).timeout(new SingleTimeout(100)).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(InMemoryTransport.createAddress(0));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.setRemoteAddress(InMemoryTransport.createAddress(0));
 
         FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
         cnn.makeRequest(request, callback);
