@@ -3,6 +3,7 @@
  */
 package org.mbed.coap.server;
 
+import java.net.InetSocketAddress;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.CoapUtils;
 import org.mbed.coap.Code;
@@ -11,7 +12,6 @@ import org.mbed.coap.MessageType;
 import org.mbed.coap.Method;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.transport.TransportContext;
-import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,7 +157,7 @@ public abstract class CoapExchange {
         if (request.getMessageType() == MessageType.NonConfirmable) {
             return;
         }
-        CoapPacket emptyAck = new CoapPacket();
+        CoapPacket emptyAck = new CoapPacket(null);
         emptyAck.setCode(null);
         emptyAck.setMethod(null);
         emptyAck.setMessageType(MessageType.Acknowledgement);

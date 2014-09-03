@@ -159,7 +159,7 @@ public class CoapServerDuplicateTest {
         @Override
         public void onReceive(InetSocketAddress adr, ByteBuffer buffer, TransportContext transportContext) {
             try {
-                CoapPacket p = CoapPacket.read(buffer.array(), buffer.position());
+                CoapPacket p = CoapPacket.read(buffer.array(), buffer.position(), null);
                 receiveQueue.add(p);
             } catch (CoapException ex) {
                 ex.printStackTrace();

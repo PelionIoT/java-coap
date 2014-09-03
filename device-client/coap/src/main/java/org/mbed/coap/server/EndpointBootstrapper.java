@@ -97,14 +97,13 @@ public class EndpointBootstrapper {
         server.addRequestHandler("/0", bootstrapResponseHandler);
         server.addRequestHandler("/0/*", bootstrapResponseHandler);
 
-        CoapPacket coap = new CoapPacket();
+        CoapPacket coap = new CoapPacket(bsAddress);
         coap.setMethod(Method.POST);
         coap.headers().setAccept(new short[]{MediaTypes.CT_APPLICATION_LWM2M_TEXT});
         coap.headers().setUriPath(bsPath);
         coap.headers().setUriQuery(getUriQuery());
         coap.headers().setUriHost(domain);
         coap.setMessageId(server.getNextMID());
-        coap.setRemoteAddress(bsAddress);
 
         try {
             sendBootstrap(coap, callback);

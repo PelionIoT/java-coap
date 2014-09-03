@@ -79,10 +79,9 @@ public class TCPConnectorTest {
         // after this can start monitoring
 
         // making request example;
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(dsAddress);
         request.setMethod(Method.GET);
         request.headers().setUriPath("/tcptest");
-        request.setRemoteAddress(dsAddress);
         SyncCallback<CoapPacket> syncResp = new SyncCallback<>();
 
         System.out.println("Send -----");
@@ -136,10 +135,9 @@ public class TCPConnectorTest {
 //        };
 //        runnable.start();
         //Thread.sleep(5000);
-        CoapPacket request2 = new CoapPacket();
+        CoapPacket request2 = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel.getLocalAddress()).getPort()));
         request2.setMethod(Method.GET);
         request2.headers().setUriPath("/test");
-        request2.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel.getLocalAddress()).getPort()));
         theServer.makeRequest(request2, new CoapCallback() {
             @Override
             public void callException(Exception ex) {
@@ -231,7 +229,7 @@ public class TCPConnectorTest {
         // after this can start monitoring
 
         // making request example;
-        final CoapPacket request = new CoapPacket();
+        final CoapPacket request = new CoapPacket(dsAddress);
         request.setMethod(Method.POST);
         request.headers().setUriPath("/tcptest");
         String longPayloadOneKilo = "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
@@ -240,16 +238,14 @@ public class TCPConnectorTest {
             longPayload30Kilo = longPayload30Kilo + longPayloadOneKilo;
         }
         request.setPayload(longPayload30Kilo);
-        request.setRemoteAddress(dsAddress);
         final SyncCallback<CoapPacket> bigSyncResp = new SyncCallback<>();
         final SyncCallback<CoapPacket> syncResp = new SyncCallback<>();
         final SyncCallback<CoapPacket> syncResp2 = new SyncCallback<>();
         final SyncCallback<CoapPacket> syncResp3 = new SyncCallback<>();
 
-        final CoapPacket requestC2 = new CoapPacket();
+        final CoapPacket requestC2 = new CoapPacket(dsAddress);
         requestC2.setMethod(Method.GET);
         requestC2.headers().setUriPath("/tcptest");
-        requestC2.setRemoteAddress(dsAddress);
 
         System.out.println("Send -----");
         client.makeRequest(request, bigSyncResp);
@@ -302,15 +298,13 @@ public class TCPConnectorTest {
         };
         runnable.start();
         //Thread.sleep(5000);
-        final CoapPacket request2 = new CoapPacket();
+        final CoapPacket request2 = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel.getLocalAddress()).getPort()));
         request2.setMethod(Method.GET);
         request2.headers().setUriPath("/test");
-        request2.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel.getLocalAddress()).getPort()));
 //
-        final CoapPacket request222 = new CoapPacket();
+        final CoapPacket request222 = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel2.getLocalAddress()).getPort()));
         request222.setMethod(Method.GET);
         request222.headers().setUriPath("/test");
-        request222.setRemoteAddress(new InetSocketAddress(InetAddress.getLocalHost(), ((InetSocketAddress) socketChannel2.getLocalAddress()).getPort()));
 
         theServer.makeRequest(request2, new CoapCallback() {
             @Override

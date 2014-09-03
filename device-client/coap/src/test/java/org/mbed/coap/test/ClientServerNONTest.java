@@ -1,7 +1,5 @@
 package org.mbed.coap.test;
 
-import org.mbed.coap.server.CoapServerBuilder;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Random;
@@ -20,6 +18,7 @@ import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.internal.DelayedTransactionId;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.CoapResource;
@@ -106,7 +105,6 @@ public class ClientServerNONTest {
         CoapServer client = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create()).timeout(new SingleTimeout(100)).build();
         client.start();
         CoapPacket request = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, serverAddr);
-        request.setRemoteAddress(serverAddr);
         request.setToken(nextToken());
 
         SyncCallback<CoapPacket> callback = new SyncCallback<>();

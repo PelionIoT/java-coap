@@ -201,14 +201,13 @@ public class EndPointRegistrator {
             return;
         }
         final List<LinkFormat> links = server.getResourceLinks();
-        CoapPacket coap = new CoapPacket();
+        CoapPacket coap = new CoapPacket(rdAddress);
         coap.setMethod(Method.PUT);
         coap.headers().setUriPath(registrLocation);
         coap.headers().setUriQuery(getUriQuery());
         //coap.headers().setUriHost(domain);
         coap.headers().setContentFormat(MediaTypes.CT_APPLICATION_LINK__FORMAT);
         coap.setMessageId(server.getNextMID());
-        coap.setRemoteAddress(rdAddress);
 
         List<LinkFormat> addedLinks = findAdditionalLinks(links);
         if (addedLinks != null && !addedLinks.isEmpty()) {
@@ -247,7 +246,7 @@ public class EndPointRegistrator {
             resources = LinkFormatBuilder.toString(links);
         }
 
-        CoapPacket coap = new CoapPacket();
+        CoapPacket coap = new CoapPacket(rdAddress);
         coap.setMethod(Method.POST);
         coap.headers().setUriPath(rdPath);
         coap.headers().setUriQuery(getUriQuery());
@@ -255,7 +254,6 @@ public class EndPointRegistrator {
         coap.headers().setContentFormat(MediaTypes.CT_APPLICATION_LINK__FORMAT);
         coap.setMessageId(server.getNextMID());
         coap.setPayload(resources);
-        coap.setRemoteAddress(rdAddress);
 
         state = RegistrationState.REGISTRATION_SENT;
         if (LOG.isDebugEnabled()) {
@@ -386,11 +384,10 @@ public class EndPointRegistrator {
             return;
         }
 
-        CoapPacket coap = new CoapPacket();
+        CoapPacket coap = new CoapPacket(rdAddress);
         coap.setMethod(Method.DELETE);
         coap.headers().setUriPath(registrLocation);
         coap.setMessageId(server.getNextMID());
-        coap.setRemoteAddress(rdAddress);
         try {
             server.makeRequest(coap, new Callback<CoapPacket>() {
                 @Override

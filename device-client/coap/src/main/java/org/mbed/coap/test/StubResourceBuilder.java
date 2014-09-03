@@ -15,7 +15,7 @@ import org.mbed.coap.Method;
 public class StubResourceBuilder {
 
     private final StubCoapServer stubResource;
-    private final CoapPacket req = new CoapPacket();
+    private final CoapPacket req = new CoapPacket(null);
     private final CoapPacket resp = new CoapPacket(Code.C205_CONTENT, MessageType.Acknowledgement, null);
     private boolean delayNotif;
     private long delayMilli;

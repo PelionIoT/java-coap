@@ -150,9 +150,8 @@ public abstract class AbstractObservableResource extends CoapResource {
 
                 ObservationRelation sub = entry.getValue();
 
-                CoapPacket coapNotif = new CoapPacket();
+                CoapPacket coapNotif = new CoapPacket(sub.getAddress());
                 coapNotif.setCode(code);
-                coapNotif.setRemoteAddress(sub.getAddress());
                 coapNotif.headers().setObserve(sub.getNextObserveSeq()); //TODO: sync problem
                 coapNotif.setToken(sub.getToken());
 
@@ -231,9 +230,8 @@ public abstract class AbstractObservableResource extends CoapResource {
     }
 
     private CoapPacket createNotifPacket(ObservationRelation sub, byte[] payload, Short contentType, byte[] etag, Long maxAge) {
-        CoapPacket coapNotif = new CoapPacket();
+        CoapPacket coapNotif = new CoapPacket(sub.getAddress());
         coapNotif.setCode(Code.C205_CONTENT);
-        coapNotif.setRemoteAddress(sub.getAddress());
         coapNotif.headers().setObserve(sub.getNextObserveSeq());
         coapNotif.setToken(sub.getToken());
         coapNotif.headers().setEtag(etag);

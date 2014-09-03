@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
  */
 class DuplicationDetector implements Runnable {
 
-    public static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket();
+    public static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket(null);
     private static final Logger LOGGER = LoggerFactory.getLogger(DuplicationDetector.class);
     private static final long DEFAULT_REQUEST_ID_TIMEOUT = 30000;
     private static final int DEFAULT_MAX_SIZE = 100000;

@@ -92,11 +92,10 @@ public class ServerTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test2");
         request.setMessageId(1647);
-        request.setRemoteAddress(new InetSocketAddress("127.0.0.1", SERVER_PORT));
 
         short[] acceptList = {MediaTypes.CT_APPLICATION_JSON};
         request.headers().setAccept(acceptList);
@@ -112,11 +111,10 @@ public class ServerTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket();
+        CoapPacket request = new CoapPacket(new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test2");
         request.setMessageId(1647);
-        request.setRemoteAddress(new InetSocketAddress("127.0.0.1", SERVER_PORT));
 
         short[] acceptList = {MediaTypes.CT_APPLICATION_JSON, MediaTypes.CT_APPLICATION_XML, MediaTypes.CT_TEXT_PLAIN};
         request.headers().setAccept(acceptList);
