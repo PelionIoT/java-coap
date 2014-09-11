@@ -179,7 +179,9 @@ public class EndpointBootstrapper {
                 exchange.setResponseCode(Code.C204_CHANGED);
                 exchange.sendResponse();
                 if (uri.matches("/0/[\\d]+/0")) {
-                    handleNsdAddress(body, callback);
+                    handleServerAddress(body, callback);
+                } else if (uri.matches("/0/[\\d]+/366")) {
+                    EndpointBootstrapper.this.domain = body;
                 }
             }
 
@@ -192,7 +194,7 @@ public class EndpointBootstrapper {
         };
     }
 
-    private void handleNsdAddress(String address, Callback<BootstrappingState> callback) {
+    private void handleServerAddress(String address, Callback<BootstrappingState> callback) {
         URI uri = URI.create(address);
         if (uri.getPort() == -1) {
             dsAddress = new InetSocketAddress(uri.getHost(), CoapConstants.DEFAULT_PORT);
@@ -215,7 +217,6 @@ public class EndpointBootstrapper {
     }
 
     private String getUriQuery() {
-
         StringBuilder uriQuery = new StringBuilder();
         if (endpointName != null) {
             uriQuery.append("&ep=").append(endpointName);
