@@ -3,14 +3,14 @@
  */
 package org.mbed.coap.server;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutionException;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.CoapConstants;
@@ -105,6 +105,23 @@ public class EndpointBootstrapperTest {
         waitFor(callback, BootstrappingState.BOOTSTRAPPED, 1000);
         assertEquals(BootstrappingState.BOOTSTRAPPED, boot.getState());
         assertEquals(new InetSocketAddress("localhost", 5673), boot.getDsAddress());
+    }
+
+    @Test
+    public void successfulNoSecBootstrapWithDomain() throws Exception {
+        setupBootstrapRequestHandler(
+                createCoap("/0/1/366", "mbed.org", MediaTypes.CT_APPLICATION_LWM2M_TEXT),
+                createCoap("/0/1/0", "coap://localhost:5673", MediaTypes.CT_APPLICATION_LWM2M_TEXT));
+
+        EndpointBootstrapper boot = new EndpointBootstrapper(epServer, InMemoryTransport.createAddress(BS_PORT), EP_NAME);
+        boot.setType("Test");
+        assertNull(boot.getDsAddress());
+        FutureCallbackAdapter<BootstrappingState> callback = new FutureCallbackAdapter<>();
+        boot.bootstrap(callback);
+        waitFor(callback, BootstrappingState.BOOTSTRAPPED, 1000);
+        assertEquals(BootstrappingState.BOOTSTRAPPED, boot.getState());
+        assertEquals(new InetSocketAddress("localhost", 5673), boot.getDsAddress());
+        assertEquals("mbed.org", boot.getDomain());
     }
 
     @Test
