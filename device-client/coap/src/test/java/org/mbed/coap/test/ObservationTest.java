@@ -1,15 +1,17 @@
+/*
+ * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.test;
 
-import org.mbed.coap.server.CoapServerBuilder;
-
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mbed.coap.BlockSize;
@@ -24,11 +26,9 @@ import org.mbed.coap.exception.ObservationNotEstablishedException;
 import org.mbed.coap.exception.ObservationTerminatedException;
 import org.mbed.coap.observe.SimpleObservableResource;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.SimpleCoapResource;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 
 /**
  *
