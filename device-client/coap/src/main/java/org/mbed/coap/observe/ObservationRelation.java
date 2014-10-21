@@ -1,13 +1,12 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.observe;
 
-import org.mbed.coap.utils.HexArray;
 import java.net.InetSocketAddress;
+import org.mbed.coap.utils.HexArray;
 
 /**
- *
  * @author szymon
  */
 public final class ObservationRelation {
@@ -47,7 +46,7 @@ public final class ObservationRelation {
         this.isDelivering = isDelivering;
     }
 
-    synchronized boolean isDelivering() {
+    public synchronized boolean isDelivering() {
         return isDelivering;
     }
 
