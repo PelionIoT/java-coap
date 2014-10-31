@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
@@ -167,31 +167,23 @@ public class CoapRequestTarget {
     }
 
     public Future<CoapPacket> get() throws CoapException {
-        if (blockSize != null) {
-            requestPacket.headers().setBlock2Res(new BlockOption(0, blockSize, false));
-        }
+        updatePacketWithBlock2();
         return request();
     }
 
     public void get(Callback<CoapPacket> callback) throws CoapException {
-        if (blockSize != null) {
-            requestPacket.headers().setBlock2Res(new BlockOption(0, blockSize, false));
-        }
+        updatePacketWithBlock2();
         request(callback);
     }
 
     public Future<CoapPacket> post() throws CoapException {
-        if (blockSize != null) {
-            requestPacket.headers().setBlock1Req(new BlockOption(0, blockSize, true));
-        }
+        updatePacketWithBlock1();
         requestPacket.setMethod(Method.POST);
         return request();
     }
 
     public void post(Callback<CoapPacket> callback) throws CoapException {
-        if (blockSize != null) {
-            requestPacket.headers().setBlock1Req(new BlockOption(0, blockSize, false));
-        }
+        updatePacketWithBlock1();
         requestPacket.setMethod(Method.POST);
         request(callback);
     }
@@ -207,17 +199,13 @@ public class CoapRequestTarget {
     }
 
     public Future<CoapPacket> put() throws CoapException {
-        if (blockSize != null) {
-            requestPacket.headers().setBlock1Req(new BlockOption(0, blockSize, true));
-        }
+        updatePacketWithBlock1();
         requestPacket.setMethod(Method.PUT);
         return request();
     }
 
     public void put(Callback<CoapPacket> callback) throws CoapException {
-        if (blockSize != null) {
-            requestPacket.headers().setBlock1Req(new BlockOption(0, blockSize, false));
-        }
+        updatePacketWithBlock1();
         requestPacket.setMethod(Method.PUT);
         request(callback);
     }
@@ -228,7 +216,7 @@ public class CoapRequestTarget {
 
             requestPacket.headers().setObserve(0);
             FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-            coapClient.putObservationListener(observationListener, obsServer.observe(requestPacket, callback));
+            coapClient.putObservationListener(observationListener, obsServer.observe(requestPacket, callback), requestPacket.headers().getUriPath());
 
             return callback;
         } else {
@@ -253,4 +241,17 @@ public class CoapRequestTarget {
     public SyncRequestTarget sync() {
         return new SyncRequestTarget(this);
     }
+
+    private void updatePacketWithBlock1() {
+        if (blockSize != null) {
+            requestPacket.headers().setBlock1Req(new BlockOption(0, blockSize, true));
+        }
+    }
+
+    private void updatePacketWithBlock2() {
+        if (blockSize != null) {
+            requestPacket.headers().setBlock2Res(new BlockOption(0, blockSize, false));
+        }
+    }
+
 }

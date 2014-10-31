@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.observe;
@@ -204,7 +204,7 @@ public abstract class AbstractObservableResource extends CoapResource {
                 CoapPacket coapNotif = createNotifPacket(sub, payload, contentType, etag, maxAge);
 
                 if (!sub.isDelivering()) {
-                    sendNotification(isConfirmable, sub, coapNotif, payload, deliveryListener);
+                    sendNotification(isConfirmable, sub, coapNotif, deliveryListener);
                 } else {
                     LOGGER.warn("Could not deliver notification to {}, previous still not confirmed", entry.getKey());
                 }
@@ -212,13 +212,13 @@ public abstract class AbstractObservableResource extends CoapResource {
         }
     }
 
-    private void sendNotification(boolean isConfirmable, ObservationRelation sub, CoapPacket coapNotif, byte[] payload,
+    private void sendNotification(boolean isConfirmable, ObservationRelation sub, CoapPacket coapNotif,
             NotificationDeliveryListener deliveryListener) throws CoapException {
 
         if (isConfirmable || (sub.getObserveSeq() % FORCE_CON_FREQ) == 0) {
             coapNotif.setMessageType(MessageType.Confirmable);
             sub.setIsDelivering(true);
-            this.coapServer.makeRequest(coapNotif, new NotificationAckCallback(sub, coapNotif, payload, deliveryListener, this));
+            this.coapServer.makeRequest(coapNotif, new NotificationAckCallback(sub, deliveryListener, this));
         } else {
             coapNotif.setMessageType(MessageType.NonConfirmable);
             this.coapServer.makeRequest(coapNotif, CoapUtils.getCallbackNull());

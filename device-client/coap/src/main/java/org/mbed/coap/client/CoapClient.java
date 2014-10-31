@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
@@ -72,12 +72,12 @@ public class CoapClient implements Closeable {
         return destination;
     }
 
-    void putObservationListener(ObservationListener observationListener, byte[] token) {
+    void putObservationListener(ObservationListener observationListener, byte[] token, String uriPath) {
         if (observationHandler == null) {
             observationHandler = new ObservationHandlerImpl();
             coapServer.setObservationHandler(observationHandler);
         }
-        observationHandler.putObservationListener(observationListener, token);
+        observationHandler.putObservationListener(observationListener, token, uriPath);
     }
 
 }
