@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Implements Blocking mechanism for CoAP server (draft-ietf-core-block-14)
+ * Implements Blocking mechanism for CoAP server (draft-ietf-core-block-16)
  *
  * @author szymon
  */
@@ -31,7 +31,6 @@ class CoapServerBlocks extends CoapServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerBlocks.class);
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;
     protected Map<BlockRequestId, BlockRequest> blockReqMap = new HashMap<>();
-    private final Map<NotificationBlockId, byte[]> notifBlockMap = new HashMap<>();
 
     CoapServerBlocks() {
         super();
@@ -81,15 +80,16 @@ class CoapServerBlocks extends CoapServer {
                 block2Res = new BlockOption(0, getBlockSize(), true);
             }
 
-            if (block2Res != null) {
-                sendBlockResponse(block2Res, resp, exchange);
+            //if not notification with block
+            if (block2Res != null && !(exchange.getRequest().headers().getObserve() != null && exchange.getRequest().getCode() != null)) {
+                updateBlockResponse(block2Res, resp, exchange);
             }
         }
 
         super.sendResponse(exchange);
     }
 
-    private static void sendBlockResponse(BlockOption block2Res, CoapPacket resp, CoapExchange exchange) {
+    private static void updateBlockResponse(BlockOption block2Res, CoapPacket resp, CoapExchange exchange) {
         int blFrom = block2Res.getNr() * block2Res.getSize();
         int blTo = blFrom + block2Res.getSize();
 
@@ -208,63 +208,6 @@ class CoapServerBlocks extends CoapServer {
 
         } else {
             super.callRequestHandler(request, coapHandler, incomingTransContext);
-        }
-    }
-
-    @Override
-    public void setObservationHandler(ObservationHandler outerObsHandler) {
-        if (outerObsHandler != null) {
-            super.setObservationHandler(new BlockObsCallback(outerObsHandler));
-        } else {
-            super.setObservationHandler(null);
-        }
-    }
-
-    private class BlockObsCallback implements ObservationHandler {
-
-        private final ObservationHandler wrappedObsHandler;
-
-        public BlockObsCallback(ObservationHandler outerObsHandler) {
-            this.wrappedObsHandler = outerObsHandler;
-        }
-
-        @Override
-        public void call(final CoapExchange t) {
-            if (t.getRequestHeaders().getBlock2Res() == null) {
-                wrappedObsHandler.call(t);
-                return;
-            }
-
-            NotificationBlockId notifBlockId = new NotificationBlockId(t.getRequest());
-            LOGGER.debug("BlockObsCallback:call() " + t.getResponse());
-            if (t.getRequestHeaders().getBlock2Res().getNr() == 0) {
-                //new blocking notification message
-                notifBlockMap.put(notifBlockId, t.getRequest().getPayload());
-                //blockRequest = notifBlockMap.get(notifBlockId);
-            } else {
-                byte[] payload = notifBlockMap.get(notifBlockId);
-                payload = t.getRequest().headers().getBlock2Res().appendPayload(payload, t.getRequestBody());
-                notifBlockMap.put(notifBlockId, payload);
-            }
-
-            if (!t.getRequestHeaders().getBlock2Res().hasMore()) {
-                t.getRequest().setPayload(notifBlockMap.get(notifBlockId));
-                notifBlockMap.remove(notifBlockId);
-                wrappedObsHandler.call(t);
-                return;
-            }
-            t.sendResponse();
-
-        }
-
-        @Override
-        public void callException(Exception ex) {
-            wrappedObsHandler.callException(ex);
-        }
-
-        @Override
-        public boolean hasObservation(byte[] token) {
-            return wrappedObsHandler.hasObservation(token);
         }
     }
 
@@ -449,50 +392,6 @@ class CoapServerBlocks extends CoapServer {
 
         public InetSocketAddress getSourceAddress() {
             return sourceAddress;
-        }
-    }
-
-    private static class NotificationBlockId {
-
-        private final byte[] token;
-        private final Integer observation;
-        private final InetSocketAddress sourceAddress;
-
-        NotificationBlockId(CoapPacket request) {
-            token = request.getToken();
-            observation = request.headers().getObserve();
-            sourceAddress = request.getRemoteAddress();
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 3;
-            hash = 79 * hash + Arrays.hashCode(this.token);
-            hash = 79 * hash + (this.observation != null ? this.observation.hashCode() : 0);
-            hash = 79 * hash + (this.sourceAddress != null ? this.sourceAddress.hashCode() : 0);
-            return hash;
-        }
-
-        @Override
-        @SuppressWarnings({"PMD.NPathComplexity", "PMD.CyclomaticComplexity"}) //ignore for equals method
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final NotificationBlockId other = (NotificationBlockId) obj;
-            if (this.token != other.token && (this.token == null || !Arrays.equals(this.token, other.token))) {
-                return false;
-            }
-            if (this.observation != other.observation && (this.observation == null || !this.observation.equals(other.observation))) {
-                return false;
-            }
-            if (this.sourceAddress != other.sourceAddress && (this.sourceAddress == null || !this.sourceAddress.equals(other.sourceAddress))) {
-                return false;
-            }
-            return true;
         }
     }
 

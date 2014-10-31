@@ -1,8 +1,11 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
+import java.net.InetSocketAddress;
+import java.util.Random;
+import java.util.concurrent.Executor;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.HeaderOptions;
@@ -12,9 +15,6 @@ import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.ObservationNotEstablishedException;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.utils.Callback;
-import java.net.InetSocketAddress;
-import java.util.Random;
-import java.util.concurrent.Executor;
 
 /**
  * Implements CoAP observe mechanism for CoAP Server.
@@ -133,6 +133,10 @@ public class CoapServerObserve extends CoapServerBlocks {
 
         public SimpleObservationIDGenerator() {
             token = 0xFFFF & (new Random()).nextLong();
+        }
+
+        public SimpleObservationIDGenerator(int initToken) {
+            token = initToken;
         }
 
         @Override

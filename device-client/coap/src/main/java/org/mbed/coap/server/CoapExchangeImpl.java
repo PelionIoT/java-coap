@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author szymon
  */
 class CoapExchangeImpl extends CoapExchange {
@@ -27,21 +26,13 @@ class CoapExchangeImpl extends CoapExchange {
 
     public CoapExchangeImpl(CoapPacket request, CoapServer coapServer, TransportContext transportContext) {
         super(request, request.createResponse());
-        if (LOGGER.isWarnEnabled() && this.response == null) {
-            LOGGER.warn("CoapExchangeImpl() response is null");
-        }
+        //        if (LOGGER.isWarnEnabled() && this.response == null) {
+        //            LOGGER.warn("CoapExchangeImpl() response is null");
+        //        }
         this.coapServer = coapServer;
         this.requestTransportContext = transportContext;
     }
 
-//    @Override
-//    public CoapPacket getResponse() {
-//        return super.getResponse();
-//    }
-//    @Override
-//    public CoapPacket getRequest() {
-//        return super.getRequest();
-//    }
     @Override
     public TransportContext getRequestTransportContext() {
         return requestTransportContext;

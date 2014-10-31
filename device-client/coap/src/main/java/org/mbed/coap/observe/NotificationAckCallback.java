@@ -1,12 +1,10 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.observe;
 
-import org.mbed.coap.BlockOption;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.MessageType;
-import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
 import org.mbed.coap.utils.CoapCallback;
 import org.slf4j.Logger;
@@ -20,17 +18,13 @@ class NotificationAckCallback implements CoapCallback {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationAckCallback.class);
     private final ObservationRelation sub;
-    private final CoapPacket coapNotif;
-    private final byte[] payload;
     private final NotificationDeliveryListener deliveryListener;
     private final AbstractObservableResource observableResource;
 
-    NotificationAckCallback(ObservationRelation sub, CoapPacket coapNotif, byte[] payload,
-            NotificationDeliveryListener deliveryListener, final AbstractObservableResource observableResource) {
+    NotificationAckCallback(ObservationRelation sub, NotificationDeliveryListener deliveryListener,
+            AbstractObservableResource observableResource) {
         this.observableResource = observableResource;
         this.sub = sub;
-        this.coapNotif = coapNotif;
-        this.payload = payload;
         this.sub.setIsDelivering(true);
         if (deliveryListener == null) {
             throw new NullPointerException();
@@ -43,17 +37,6 @@ class NotificationAckCallback implements CoapCallback {
         this.sub.setIsDelivering(false);
         if (resp.getMessageType() == MessageType.Acknowledgement) {
             //OK
-            if (coapNotif != null && coapNotif.headers().getBlock2Res() != null && coapNotif.headers().getBlock2Res().hasMore()) {
-                //send next block
-                BlockOption blockOpt = coapNotif.headers().getBlock2Res().nextBlock(payload);
-                coapNotif.headers().setBlock2Res(blockOpt);
-                coapNotif.setPayload(blockOpt.createBlockPart(payload));
-                try {
-                    observableResource.coapServer.makeRequest(coapNotif, this);
-                } catch (CoapException ex) {
-                    LOGGER.error(ex.getMessage(), ex);
-                }
-            }
             deliveryListener.onSuccess(sub.getAddress());
         } else if (resp.getMessageType() == MessageType.Reset) {
             //observation termination
