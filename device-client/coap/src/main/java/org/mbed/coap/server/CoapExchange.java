@@ -1,17 +1,22 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import org.mbed.coap.BlockOption;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.CoapUtils;
 import org.mbed.coap.Code;
 import org.mbed.coap.ExHeaderOptions;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.Method;
+import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.transport.TransportContext;
+import org.mbed.coap.utils.ByteArrayBackedOutputStream;
+import org.mbed.coap.utils.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -186,6 +191,49 @@ public abstract class CoapExchange {
     public abstract TransportContext getResponseTransportContext();
 
     public abstract void setResponseTransportContext(TransportContext responseTransportContext);
+
+    /**
+     * Retrieves full notification payload. Applies only when handling notification with block2.
+     *
+     * @param uriPath uri-path
+     * @param callback callback
+     * @throws CoapException
+     */
+    public void retrieveNotificationBlocks(final String uriPath, final Callback<CoapPacket> callback) throws CoapException {
+        if (request.headers().getObserve() == null || request.headers().getBlock2Res() == null) {
+            throw new IllegalStateException("Method retrieveNotificationBlocks can be called only when received notification with block header.");
+        }
+        //get all blocks
+        CoapPacket fullNotifRequest = new CoapPacket(Method.GET, MessageType.Confirmable, uriPath, getRemoteAddress());
+        fullNotifRequest.headers().setBlock2Res(new BlockOption(1, request.headers().getBlock2Res().getSzx(), false));
+        final byte[] etag = request.headers().getEtag();
+
+        getCoapServer().makeRequest(fullNotifRequest, new Callback<CoapPacket>() {
+            @Override
+            public void callException(Exception ex) {
+                callback.callException(ex);
+            }
+
+            @Override
+            public void call(CoapPacket coapPacket) {
+                if (coapPacket.getCode() == Code.C205_CONTENT) {
+
+                    ByteArrayBackedOutputStream bytesOut = new ByteArrayBackedOutputStream(request.getPayload().length + coapPacket.getPayload().length);
+                    bytesOut.write(request.getPayload(), 0, request.getPayload().length);
+                    bytesOut.write(coapPacket.getPayload(), 0, coapPacket.getPayload().length);
+                    coapPacket.setPayload(bytesOut.toByteArray());
+
+                    if (Arrays.equals(etag, coapPacket.headers().getEtag())) {
+                        callback.call(coapPacket);
+                    } else {
+                        callException(new CoapException("Could not retrieve full observation message, etag does not mach [" + getRemoteAddress() + uriPath + "]"));
+                    }
+                } else {
+                    callException(new CoapCodeException(coapPacket.getCode(), "Unexpected response when retrieving full observation message [" + getRemoteAddress() + uriPath + "]"));
+                }
+            }
+        });
+    }
 
     @Override
     public String toString() {

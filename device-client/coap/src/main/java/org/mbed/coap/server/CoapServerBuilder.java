@@ -1,22 +1,22 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
+import java.net.InetSocketAddress;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.udp.DatagramChannelTransport;
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * @author szymon
  */
 public class CoapServerBuilder {
 
-    private final CoapServer server;
+    private final CoapServerObserve server;
     private int duplicationMaxSize = 10000;
 
     CoapServerBuilder() {
@@ -94,5 +94,10 @@ public class CoapServerBuilder {
         }
         server.init(duplicationMaxSize);
         return server;
+    }
+
+    public CoapServerBuilder observerIdGenerator(CoapServerObserve.ObservationIDGenerator observationIDGenerator) {
+        server.setObservationIDGenerator(observationIDGenerator);
+        return this;
     }
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
@@ -6,32 +6,38 @@ package org.mbed.coap.client;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import org.mbed.coap.BlockOption;
+import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.ObservationTerminatedException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.ObservationHandler;
+import org.mbed.coap.utils.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author szymon
  */
 class ObservationHandlerImpl implements ObservationHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ObservationHandlerImpl.class);
-    private final Map<Token, ObservationListener> observationMap = new HashMap<>();
+    private final Map<Token, ObservationListenerContainer> observationMap = new HashMap<>();
+
+    public ObservationHandlerImpl() {
+        //nothing to initialize
+    }
 
     @Override
     public void callException(Exception ex) {
         if (ex instanceof ObservationTerminatedException) {
             ObservationTerminatedException termEx = (ObservationTerminatedException) ex;
-            ObservationListener obsListener = observationMap.get(new Token(termEx.getNotification().getToken()));
-            if (obsListener != null) {
+            ObservationListenerContainer obsListContainer = observationMap.get(new Token(termEx.getNotification().getToken()));
+            if (obsListContainer != null) {
                 try {
-                    obsListener.onTermination(termEx.getNotification());
+                    obsListContainer.observationListener.onTermination(termEx.getNotification());
                 } catch (CoapException coapException) {
                     LOGGER.error(coapException.getMessage(), coapException);
                 }
@@ -44,11 +50,31 @@ class ObservationHandlerImpl implements ObservationHandler {
 
     @Override
     public void call(CoapExchange t) {
-        ObservationListener obsListener = observationMap.get(new Token(t.getRequest().getToken()));
-        if (obsListener != null) {
+        final ObservationListenerContainer obsListContainer = observationMap.get(new Token(t.getRequest().getToken()));
+        if (obsListContainer != null) {
             try {
-                obsListener.onObservation(t.getRequest());
-                t.sendResponse();
+                BlockOption requestBlock2Res = t.getRequest().headers().getBlock2Res();
+                if (requestBlock2Res != null && requestBlock2Res.getNr() == 0) {
+                    t.sendResponse();
+                    t.retrieveNotificationBlocks(obsListContainer.uriPath, new Callback<CoapPacket>() {
+                        @Override
+                        public void callException(Exception ex) {
+                            LOGGER.warn(ex.getMessage());
+                        }
+
+                        @Override
+                        public void call(CoapPacket coapPacket) {
+                            try {
+                                obsListContainer.observationListener.onObservation(coapPacket);
+                            } catch (CoapException e) {
+                                LOGGER.error(e.getMessage(), e);
+                            }
+                        }
+                    });
+                } else {
+                    obsListContainer.observationListener.onObservation(t.getRequest());
+                    t.sendResponse();
+                }
             } catch (ObservationTerminatedException ex) {
                 t.sendResetResponse();
             } catch (CoapCodeException ex) {
@@ -64,8 +90,8 @@ class ObservationHandlerImpl implements ObservationHandler {
         }
     }
 
-    void putObservationListener(ObservationListener observationListener, byte[] token) {
-        observationMap.put(new Token(token), observationListener);
+    void putObservationListener(ObservationListener observationListener, byte[] token, String uriPath) {
+        observationMap.put(new Token(token), new ObservationListenerContainer(uriPath, observationListener));
     }
 
     @Override
@@ -105,4 +131,13 @@ class ObservationHandlerImpl implements ObservationHandler {
 
     }
 
+    private static class ObservationListenerContainer {
+        private final String uriPath;
+        private final ObservationListener observationListener;
+
+        private ObservationListenerContainer(String uriPath, ObservationListener observationListener) {
+            this.uriPath = uriPath;
+            this.observationListener = observationListener;
+        }
+    }
 }
