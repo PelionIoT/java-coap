@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.test;
@@ -30,13 +30,15 @@ import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.utils.SyncCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author szymon
  */
 public class StubCoapServer {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(StubCoapServer.class);
     static final Integer ANY_INTEGER = Integer.valueOf(0);
     static final Short ANY_SHORT = Short.valueOf((short) 0);
     static final Long ANY_LONG = Long.valueOf(0);
@@ -185,9 +187,8 @@ public class StubCoapServer {
     private static int checkBodyAndHeaders(CoapPacket request, int currRank, Map.Entry<CoapPacket, StubResponse> rule,
             ExHeaderOptions ruleHead) throws NotMatchedException {
         //check body
-        if (request.headers().getBlock2Res() != null) {
-            //do not check payload for block response request
-        } else {
+        if (request.headers().getBlock2Res() == null) {
+            //do check payload for block response request
             currRank += match(rule.getKey().getPayload(), request.getPayload()) * 10; //payload has high rank
         }
         //check headers
@@ -332,7 +333,7 @@ public class StubCoapServer {
         server.setObservationHandler(new ObservationHandler() {
             @Override
             public void callException(Exception ex) {
-                ex.printStackTrace();
+                LOGGER.error(ex.getMessage(), ex);
             }
 
             @Override

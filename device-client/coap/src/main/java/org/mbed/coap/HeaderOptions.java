@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap;
@@ -25,7 +25,7 @@ import org.mbed.coap.utils.HexArray;
  *
  * @author szymon
  */
-@SuppressWarnings({"PMD.ArrayIsStoredDirectly", "PMD.MethodReturnsInternalArray"})
+@SuppressWarnings({"PMD.ArrayIsStoredDirectly", "PMD.MethodReturnsInternalArray", "PMD.NPathComplexity", "PMD.CyclomaticComplexity"})
 public class HeaderOptions implements Serializable {
 
     public static final byte IF_MATCH = 1; //multiple
@@ -64,7 +64,6 @@ public class HeaderOptions implements Serializable {
     private Integer size1;
     private Map<Integer, RawOption> unrecognizedOptions;
 
-    @SuppressWarnings("PMD.CyclomaticComplexity")
     protected boolean parseOption(int type, byte[] data) {
         switch (type) {
             case CONTENT_FORMAT:
@@ -331,7 +330,7 @@ public class HeaderOptions implements Serializable {
             //    btList.add(new byte[0]);
             //}
         }
-        return btList.toArray(new byte[0][0]);
+        return btList.toArray(new byte[btList.size()][1]);
     }
 
     /**
@@ -836,7 +835,6 @@ public class HeaderOptions implements Serializable {
     }
 
     @Override
-    @SuppressWarnings("PMD.NPathComplexity")
     public int hashCode() {
         int hash = 7;
         hash = 41 * hash + (this.contentFormat != null ? this.contentFormat.hashCode() : 0);
@@ -859,7 +857,6 @@ public class HeaderOptions implements Serializable {
     }
 
     @Override
-    @SuppressWarnings({"PMD.NPathComplexity", "PMD.CyclomaticComplexity"})
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;

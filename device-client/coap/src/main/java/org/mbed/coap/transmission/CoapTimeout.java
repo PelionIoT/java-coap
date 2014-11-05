@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transmission;
 
-import org.mbed.coap.CoapConstants;
 import java.util.Random;
+import org.mbed.coap.CoapConstants;
 
 /**
  * @author szymon
@@ -51,13 +51,21 @@ public class CoapTimeout implements TransmissionTimeout {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         CoapTimeout that = (CoapTimeout) o;
 
-        if (maxRetransmit != that.maxRetransmit) return false;
-        if (timeoutBase != that.timeoutBase) return false;
+        if (maxRetransmit != that.maxRetransmit) {
+            return false;
+        }
+        if (timeoutBase != that.timeoutBase) {
+            return false;
+        }
 
         return true;
     }

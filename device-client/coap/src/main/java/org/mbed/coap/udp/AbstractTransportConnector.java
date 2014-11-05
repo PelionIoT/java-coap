@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.udp;
@@ -73,7 +73,10 @@ public abstract class AbstractTransportConnector implements TransportConnectorTa
     @Override
     public void performReceive() {
         //ByteBuffer buf = getBuffer();
-        while (receive(transReceiver)) {
+        while (true) {
+            if (!receive(transReceiver)) {
+                break;
+            }
         }
 //        while (adr != null) {
 //            udpReceiver.onReceive(createUnresolvedInetSocketAddress(adr), buf, getAndClearTransportContext());
