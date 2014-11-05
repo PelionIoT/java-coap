@@ -1,15 +1,15 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.tcp;
 
-import org.mbed.coap.transport.TransportConnectorTask;
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import org.mbed.coap.transport.TransportConnectorTask;
+import org.mbed.coap.transport.TransportContext;
+import org.mbed.coap.transport.TransportReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +72,7 @@ public class SocketChannelConnector implements TransportConnectorTask {
     }
 
     @Override
+    @SuppressWarnings("PMD.UseNotifyAllInsteadOfNotify")
     public synchronized void stop() {
         socketAddress = null;
         socketChannel = null;

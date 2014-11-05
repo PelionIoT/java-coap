@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.linkformat;
@@ -360,11 +360,9 @@ public class LinkFormat implements Serializable {
             sb.append(';').append(key);
             if (val instanceof Integer) {
                 sb.append('=').append(val.toString());
-            } else if (val instanceof Boolean) {
-                //empty
             } else if (val instanceof PToken) {
                 sb.append('=').append(val);
-            } else {
+            } else if (!(val instanceof Boolean)) {
                 sb.append("=\"").append(val.toString()).append('\"');
             }
         }

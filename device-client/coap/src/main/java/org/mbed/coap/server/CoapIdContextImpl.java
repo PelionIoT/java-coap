@@ -11,6 +11,7 @@ public class CoapIdContextImpl implements CoapIdContext {
     private AtomicInteger globalMid = new AtomicInteger(new Random().nextInt(0xFFFF));
 
     public CoapIdContextImpl() {
+        //nothing to initialize
     }
 
     public CoapIdContextImpl(int initMid) {
