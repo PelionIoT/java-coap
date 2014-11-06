@@ -36,6 +36,11 @@ public class CoapPacketBuilder {
         return this;
     }
 
+    public CoapPacketBuilder put() {
+        coapPacket.setMethod(Method.PUT);
+        return this;
+    }
+
     public CoapPacketBuilder ack(Code code) {
         coapPacket.setMessageType(MessageType.Acknowledgement);
         coapPacket.setCode(code);
@@ -45,6 +50,11 @@ public class CoapPacketBuilder {
 
     public CoapPacketBuilder uriPath(String uriPath) {
         coapPacket.headers().setUriPath(uriPath);
+        return this;
+    }
+
+    public CoapPacketBuilder contFormat(short contentFormat) {
+        coapPacket.headers().setContentFormat(contentFormat);
         return this;
     }
 
@@ -74,8 +84,14 @@ public class CoapPacketBuilder {
         return this;
     }
 
+    public CoapPacketBuilder block1Req(int blockNr, BlockSize blockSize, boolean more) {
+        coapPacket.headers().setBlock1Req(new BlockOption(blockNr, blockSize, more));
+        return this;
+    }
+
     public CoapPacketBuilder etag(int etag) {
         coapPacket.headers().setEtag(HeaderOptions.convertVariableUInt(etag));
         return this;
     }
+
 }
