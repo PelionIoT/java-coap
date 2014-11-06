@@ -218,10 +218,11 @@ public abstract class CoapExchange {
             public void call(CoapPacket coapPacket) {
                 if (coapPacket.getCode() == Code.C205_CONTENT) {
 
-                    ByteArrayBackedOutputStream bytesOut = new ByteArrayBackedOutputStream(request.getPayload().length + coapPacket.getPayload().length);
-                    bytesOut.write(request.getPayload(), 0, request.getPayload().length);
-                    bytesOut.write(coapPacket.getPayload(), 0, coapPacket.getPayload().length);
-                    coapPacket.setPayload(bytesOut.toByteArray());
+                    try (ByteArrayBackedOutputStream bytesOut = new ByteArrayBackedOutputStream(request.getPayload().length + coapPacket.getPayload().length)) {
+                        bytesOut.write(request.getPayload(), 0, request.getPayload().length);
+                        bytesOut.write(coapPacket.getPayload(), 0, coapPacket.getPayload().length);
+                        coapPacket.setPayload(bytesOut.toByteArray());
+                    }
 
                     if (Arrays.equals(etag, coapPacket.headers().getEtag())) {
                         callback.call(coapPacket);
