@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.tcp;
@@ -76,29 +76,7 @@ public class TCPServerConnector extends TCPConnector implements TransportConnect
                 LOGGER.trace("Send queue filling to " + destinationAddress);
             }
             try {
-                SocketChannel socketChannel = sockets.get(destinationAddress);
-                if (socketChannel == null || !socketChannel.isOpen()) {
-                    throw new IOException("No Connection to " + destinationAddress);
-                }
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Send queue filling, adding changerequest to socketchannel " + socketChannel);
-                }
-                changeRequests.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
-                List<ByteBuffer> queue = pendingData.get(socketChannel);
-                if (queue == null) {
-                    queue = new ArrayList<>();
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Send queue filling, creating new queue");
-                    }
-                    pendingData.put(socketChannel, queue);
-                }
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Send queue filling, adding to queue");
-                }
-                ByteBuffer allData = ByteBuffer.allocate(len + LENGTH_BYTES);
-                allData.putInt(len);
-                allData.put(data, 0, len);
-                queue.add(ByteBuffer.wrap(allData.array()));
+                fillQueueWithData(data, len, destinationAddress);
             } catch (IOException e) {
                 throw e;
             } catch (Exception e) {
@@ -112,6 +90,32 @@ public class TCPServerConnector extends TCPConnector implements TransportConnect
                 LOGGER.trace("Send queue filling, done");
             }
         }
+    }
+
+    private void fillQueueWithData(byte[] data, int len, InetSocketAddress destinationAddress) throws IOException {
+        SocketChannel socketChannel = sockets.get(destinationAddress);
+        if (socketChannel == null || !socketChannel.isOpen()) {
+            throw new IOException("No Connection to " + destinationAddress);
+        }
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Send queue filling, adding changerequest to socketchannel " + socketChannel);
+        }
+        changeRequests.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
+        List<ByteBuffer> queue = pendingData.get(socketChannel);
+        if (queue == null) {
+            queue = new ArrayList<>();
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Send queue filling, creating new queue");
+            }
+            pendingData.put(socketChannel, queue);
+        }
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Send queue filling, adding to queue");
+        }
+        ByteBuffer allData = ByteBuffer.allocate(len + LENGTH_BYTES);
+        allData.putInt(len);
+        allData.put(data, 0, len);
+        queue.add(ByteBuffer.wrap(allData.array()));
     }
 
     @Override

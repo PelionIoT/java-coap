@@ -26,10 +26,6 @@ class ObservationHandlerImpl implements ObservationHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ObservationHandlerImpl.class);
     private final Map<Token, ObservationListenerContainer> observationMap = new HashMap<>();
 
-    public ObservationHandlerImpl() {
-        //nothing to initialize
-    }
-
     @Override
     public void callException(Exception ex) {
         if (ex instanceof ObservationTerminatedException) {
@@ -135,7 +131,7 @@ class ObservationHandlerImpl implements ObservationHandler {
         private final String uriPath;
         private final ObservationListener observationListener;
 
-        private ObservationListenerContainer(String uriPath, ObservationListener observationListener) {
+        ObservationListenerContainer(String uriPath, ObservationListener observationListener) {
             this.uriPath = uriPath;
             this.observationListener = observationListener;
         }

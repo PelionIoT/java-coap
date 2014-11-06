@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.tcp;
@@ -61,33 +61,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
         }
         synchronized (changeRequests) {
             try {
-                SocketChannel socketChannel = sockets.get(destinationAddress);
-                if (socketChannel == null) {
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Client Creating new connection to server");
-                    }
-                    socketChannel = initiateConnection(destinationAddress);
-                } else {
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Client Send queue filling, adding changerequest");
-                    }
-                    changeRequests.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
-                }
-                List<ByteBuffer> queue = pendingData.get(socketChannel);
-                if (queue == null) {
-                    queue = new ArrayList<>();
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Client Send queue filling, creating new queue");
-                    }
-                    pendingData.put(socketChannel, queue);
-                }
-                ByteBuffer allData = ByteBuffer.allocate(len + LENGTH_BYTES);
-                allData.putInt(len);
-                allData.put(data, 0, len);
-                queue.add(ByteBuffer.wrap(allData.array()));
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Client Send queue filling, adding to queue [len:{}]", allData.capacity());
-                }
+                fillQueueWithData(data, len, destinationAddress);
             } catch (Exception e) {
                 LOGGER.error("Client WriteQueue put caused exception ", e);
             }
@@ -98,6 +72,36 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("Client Send queue filling, done");
             }
+        }
+    }
+
+    private void fillQueueWithData(byte[] data, int len, InetSocketAddress destinationAddress) throws IOException {
+        SocketChannel socketChannel = sockets.get(destinationAddress);
+        if (socketChannel == null) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Client Creating new connection to server");
+            }
+            socketChannel = initiateConnection(destinationAddress);
+        } else {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Client Send queue filling, adding changerequest");
+            }
+            changeRequests.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
+        }
+        List<ByteBuffer> queue = pendingData.get(socketChannel);
+        if (queue == null) {
+            queue = new ArrayList<>();
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Client Send queue filling, creating new queue");
+            }
+            pendingData.put(socketChannel, queue);
+        }
+        ByteBuffer allData = ByteBuffer.allocate(len + LENGTH_BYTES);
+        allData.putInt(len);
+        allData.put(data, 0, len);
+        queue.add(ByteBuffer.wrap(allData.array()));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Client Send queue filling, adding to queue [len:{}]", allData.capacity());
         }
     }
 
@@ -146,32 +150,37 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace("Client selected [" + num + "]");
                 }
+                iterateOverAvailableEvents();
 
-                // Iterate over the set of keys for which events are available
-                Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
-                while (selectedKeys.hasNext()) {
-                    SelectionKey key = selectedKeys.next();
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Client found selection key " + key);
-                    }
-                    selectedKeys.remove();
 
-                    if (!key.isValid()) {
-                        continue;
-                    }
-
-                    if (key.isConnectable()) {
-                        finishConnection(key);
-                    } else if (key.isReadable()) {
-                        read(key);
-                    } else if (key.isWritable()) {
-                        write(key);
-                    }
-                }
             } catch (ClosedSelectorException e) {
                 LOGGER.debug("Client Selector closed");
             } catch (Exception e) {
                 LOGGER.error("Client Cannot make selector select, trying again. ", e);
+            }
+        }
+    }
+
+    private void iterateOverAvailableEvents() throws IOException {
+        // Iterate over the set of keys for which events are available
+        Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
+        while (selectedKeys.hasNext()) {
+            SelectionKey key = selectedKeys.next();
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Client found selection key " + key);
+            }
+            selectedKeys.remove();
+
+            if (!key.isValid()) {
+                continue;
+            }
+
+            if (key.isConnectable()) {
+                finishConnection(key);
+            } else if (key.isReadable()) {
+                read(key);
+            } else if (key.isWritable()) {
+                write(key);
             }
         }
     }
