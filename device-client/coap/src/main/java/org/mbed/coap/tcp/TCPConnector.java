@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.tcp;
@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author Kalle Väyrynen
  */
 public abstract class TCPConnector implements Runnable {
@@ -102,27 +101,14 @@ public abstract class TCPConnector implements Runnable {
         long numRead;
         try {
             ByteBuffer partialMessage = oldReadBuffer.get(socketAddress);
-            if (partialMessage == null) {
-                LOGGER.trace("Incoming message does not have old message fragment stored.");
-                // new message fragment, just try to read all.
-                numRead = socketChannel.read(lenBuffer);
-            } else {
-                // old fragment has already been read
-                LOGGER.trace("Incoming message does have old message fragment stored, continuing filling old buffer, remaining: " + partialMessage.remaining());
-                numRead = partialMessage.remaining();
-            }
+            numRead = getBytesToRead(socketChannel, lenBuffer, partialMessage);
 
             if (numRead != -1) {
                 if (partialMessage == null) {
-                    int length = lenBuffer.getInt(0);
-                    LOGGER.trace("New msg length " + length);
-                    if (length < 1 || length > MAX_LENGTH) {
-                        LOGGER.warn("Received message length of " + length + ", which is invalid, closing socket.");
-                        key.cancel();
-                        socketChannel.close();
+                    readBuffer = allocateBuffer(lenBuffer, key, socketChannel);
+                    if (readBuffer == null) {
                         return;
                     }
-                    readBuffer = ByteBuffer.allocate(length);
                     numRead = socketChannel.read(readBuffer);
                 } else {
                     readBuffer = ByteBuffer.allocate(partialMessage.remaining());
@@ -140,24 +126,9 @@ public abstract class TCPConnector implements Runnable {
                     LOGGER.trace("Partial message now remaining: " + partialMessage.remaining());
                 }
 
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Socket reading length read " + numRead + ", should be " + readBuffer.limit() + " clienthash " + this.hashCode());
-                }
-                if (numRead < readBuffer.limit()) {
-                    LOGGER.trace("Not all message was received.");
-                    if (partialMessage == null) {
-                        LOGGER.trace("Putting readBuffer to oldBuffers, length " + readBuffer.limit());
-                        oldReadBuffer.put(socketAddress, readBuffer);
-                    } else {
-                        LOGGER.trace("Replacing partialMessageBuffer to oldBuffers");
-                        oldReadBuffer.put(socketAddress, partialMessage);
-                    }
+                readBuffer = updateOldReadBuffer(numRead, readBuffer, partialMessage, socketAddress);
+                if (readBuffer == null) {
                     return;
-                } else {
-                    if (partialMessage != null) {
-                        readBuffer = partialMessage;
-                        oldReadBuffer.remove(socketAddress);
-                    }
                 }
             }
         } catch (IOException e) {
@@ -185,5 +156,52 @@ public abstract class TCPConnector implements Runnable {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Socket reading end");
         }
+    }
+
+    private long getBytesToRead(SocketChannel socketChannel, ByteBuffer lenBuffer, ByteBuffer partialMessage) throws IOException {
+        if (partialMessage == null) {
+            LOGGER.trace("Incoming message does not have old message fragment stored.");
+            // new message fragment, just try to read all.
+            return socketChannel.read(lenBuffer);
+        } else {
+            // old fragment has already been read
+            LOGGER.trace("Incoming message does have old message fragment stored, continuing filling old buffer, remaining: " + partialMessage.remaining());
+            return partialMessage.remaining();
+        }
+    }
+
+    private ByteBuffer allocateBuffer(ByteBuffer lenBuffer, SelectionKey key, SocketChannel socketChannel) throws IOException {
+        int length = lenBuffer.getInt(0);
+        LOGGER.trace("New msg length " + length);
+        if (length < 1 || length > MAX_LENGTH) {
+            LOGGER.warn("Received message length of " + length + ", which is invalid, closing socket.");
+            key.cancel();
+            socketChannel.close();
+            return null;
+        }
+        return ByteBuffer.allocate(length);
+    }
+
+    private ByteBuffer updateOldReadBuffer(long numRead, ByteBuffer readBuffer, ByteBuffer partialMessage, InetSocketAddress socketAddress) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Socket reading length read " + numRead + ", should be " + readBuffer.limit() + " clienthash " + this.hashCode());
+        }
+        if (numRead < readBuffer.limit()) {
+            LOGGER.trace("Not all message was received.");
+            if (partialMessage == null) {
+                LOGGER.trace("Putting readBuffer to oldBuffers, length " + readBuffer.limit());
+                oldReadBuffer.put(socketAddress, readBuffer);
+            } else {
+                LOGGER.trace("Replacing partialMessageBuffer to oldBuffers");
+                oldReadBuffer.put(socketAddress, partialMessage);
+            }
+            return null;
+        } else {
+            if (partialMessage != null) {
+                readBuffer = partialMessage;
+                oldReadBuffer.remove(socketAddress);
+            }
+        }
+        return readBuffer;
     }
 }
