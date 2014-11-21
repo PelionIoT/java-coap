@@ -34,7 +34,7 @@ public class DuplicationDetectorTest {
             CoapPacket secondIsDuplicated = detector.isMessageRepeated(packet);
 
             assertNull("insertion to empty duplicate check list fails", firstIsDuplicated);
-            assertNull("second insertion after timeout with same id fails", secondIsDuplicated);
+            assertNotNull("second insertion after timeout with same id fails", secondIsDuplicated);
         } finally {
             detector.stop();
         }
