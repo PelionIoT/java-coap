@@ -4,18 +4,17 @@
 package org.mbed.coap.server;
 
 import java.net.InetSocketAddress;
+import java.util.logging.Logger;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.transport.TransportContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 class CoapExchangeImpl extends CoapExchange {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CoapExchangeImpl.class);
+    private static final Logger LOGGER = Logger.getLogger(CoapExchangeImpl.class.getName());
     private CoapServer coapServer;
     private TransportContext requestTransportContext;
     private TransportContext responseTransportContext = TransportContext.NULL;
@@ -73,9 +72,7 @@ class CoapExchangeImpl extends CoapExchange {
         if (this.response != null) {
             message.setMessageId(this.response.getMessageId());
         } else {
-            if (LOGGER.isWarnEnabled()) {
-                LOGGER.warn("Coap messaging: trying to set response for request with type:" + this.getRequest().getMessageType());
-            }
+            LOGGER.warning("Coap messaging: trying to set response for request with type:" + this.getRequest().getMessageType());
         }
         this.response = message;
     }

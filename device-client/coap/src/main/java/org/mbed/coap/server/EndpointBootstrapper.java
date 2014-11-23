@@ -1,10 +1,12 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.mbed.coap.CoapConstants;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
@@ -14,15 +16,13 @@ import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.CoapResource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author nordav01
  */
 public class EndpointBootstrapper {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EndpointBootstrapper.class);
+    private static final Logger LOG = Logger.getLogger(EndpointBootstrapper.class.getName());
     private static final String BSPATH = "/bs";
 
     private BootstrappingState state = BootstrappingState.NOT_BOOTSTRAPPED;
@@ -111,8 +111,8 @@ public class EndpointBootstrapper {
             bootstrapResponse(exception, callback);
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Bootstrap request sent to: " + bsAddress.getHostString() + ":" + bsAddress.getPort() + bsPath + "?" + coap.headers().getUriQuery());
+        if (LOG.isLoggable(Level.FINE)) {
+            LOG.fine("Bootstrap request sent to: " + bsAddress.getHostString() + ":" + bsAddress.getPort() + bsPath + "?" + coap.headers().getUriQuery());
         }
     }
 
@@ -131,8 +131,8 @@ public class EndpointBootstrapper {
     }
 
     private void bootstrapResponse(CoapPacket coap, Callback<BootstrappingState> callback) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(getNodeName() + " response for bootstrap request: " + coap);
+        if (LOG.isLoggable(Level.FINE)) {
+            LOG.fine(getNodeName() + " response for bootstrap request: " + coap);
         }
 
         Code code = coap.getCode();
@@ -149,7 +149,7 @@ public class EndpointBootstrapper {
     }
 
     private void bootstrapResponse(Exception exception, Callback<BootstrappingState> callback) {
-        LOG.debug("Bootstrap error: " + exception);
+        LOG.fine("Bootstrap error: " + exception);
         state = BootstrappingState.BOOTSTRAP_FAILED;
         removeBootstrapResponseHandler();
 

@@ -1,22 +1,22 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapErrorCallback;
-import org.mbed.coap.transmission.TransmissionTimeout;
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.server.CoapErrorCallback;
+import org.mbed.coap.transmission.TransmissionTimeout;
+import org.mbed.coap.transport.TransportContext;
+import org.mbed.coap.transport.TransportReceiver;
 
 /**
  *
@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class CoapServerAbstract implements TransportReceiver {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerAbstract.class);
+    private static final Logger LOGGER = Logger.getLogger(CoapServerAbstract.class.getName());
     private static final int DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
     protected int delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
     protected TransmissionTimeout transmissionTimeout;
@@ -44,11 +44,9 @@ public abstract class CoapServerAbstract implements TransportReceiver {
         try {
             executor.execute(new MessageHandlerTask(buffer, adr, transportContext, this));
         } catch (RejectedExecutionException ex) {
-            if (LOGGER.isWarnEnabled()) {
-                LOGGER.warn("Executor queue is full, message from " + adr + " is rejected");
-            }
-            if (LOGGER.isTraceEnabled() && executor instanceof ThreadPoolExecutor) {
-                LOGGER.trace("Executor Queue remaining capacity " + ((ThreadPoolExecutor) executor).getQueue().remainingCapacity()
+            LOGGER.warning("Executor queue is full, message from " + adr + " is rejected");
+            if (LOGGER.isLoggable(Level.FINEST) && executor instanceof ThreadPoolExecutor) {
+                LOGGER.finest("Executor Queue remaining capacity " + ((ThreadPoolExecutor) executor).getQueue().remainingCapacity()
                         + " out of " + ((ThreadPoolExecutor) executor).getQueue().size());
             }
         }

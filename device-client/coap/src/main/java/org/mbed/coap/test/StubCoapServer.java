@@ -14,6 +14,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapMessage;
 import org.mbed.coap.CoapPacket;
@@ -33,15 +35,13 @@ import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.utils.SyncCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 public class StubCoapServer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StubCoapServer.class);
+    private static final Logger LOGGER = Logger.getLogger(StubCoapServer.class.getName());
     static final Integer ANY_INTEGER = Integer.valueOf(0);
     static final Short ANY_SHORT = Short.valueOf((short) 0);
     static final Long ANY_LONG = Long.valueOf(0);
@@ -336,7 +336,7 @@ public class StubCoapServer {
         server.setObservationHandler(new ObservationHandler() {
             @Override
             public void callException(Exception ex) {
-                LOGGER.error(ex.getMessage(), ex);
+                LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
             }
 
             @Override

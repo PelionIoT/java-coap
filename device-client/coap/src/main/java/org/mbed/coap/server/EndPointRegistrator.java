@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
 import org.mbed.coap.MediaTypes;
@@ -16,15 +18,13 @@ import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.linkformat.LinkFormat;
 import org.mbed.coap.linkformat.LinkFormatBuilder;
 import org.mbed.coap.utils.Callback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 public class EndPointRegistrator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EndPointRegistrator.class);
+    private static final Logger LOG = Logger.getLogger(EndPointRegistrator.class.getName());
     private static final String RDPATH = "/rd";
     private String rdPath = RDPATH;
     private final CoapServer server;
@@ -48,8 +48,8 @@ public class EndPointRegistrator {
     private boolean queueMode;
 
     private void logState() {
-        if (LOG.isTraceEnabled()) {
-            LOG.trace(hostName + " " + state.toString());
+        if (LOG.isLoggable(Level.FINEST)) {
+            LOG.finest(hostName + " " + state.toString());
         }
     }
 
@@ -225,8 +225,8 @@ public class EndPointRegistrator {
         }
 
         state = RegistrationState.REGISTRATION_SENT;
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Registration Update sent to: " + rdAddress.getHostString() + ":" + rdAddress.getPort() + registrLocation + (coap.headers().getUriQuery() != null ? "?" + coap.headers().getUriQuery() : ""));
+        if (LOG.isLoggable(Level.FINE)) {
+            LOG.fine("Registration Update sent to: " + rdAddress.getHostString() + ":" + rdAddress.getPort() + registrLocation + (coap.headers().getUriQuery() != null ? "?" + coap.headers().getUriQuery() : ""));
             //LOG.debug("Registration sent to: " + rdAddress.getHostString() + ":" + rdAddress.getPort() + rdPath + "?" + getUriQuery());
         }
 
@@ -266,12 +266,12 @@ public class EndPointRegistrator {
         coap.setPayload(resources);
 
         state = RegistrationState.REGISTRATION_SENT;
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Registration sent to: " + rdAddress.getHostString() + ":" + rdAddress.getPort() + rdPath + (coap.headers().getUriQuery() != null ? "?" + coap.headers().getUriQuery() : ""));
+        if (LOG.isLoggable(Level.FINE)) {
+            LOG.fine("Registration sent to: " + rdAddress.getHostString() + ":" + rdAddress.getPort() + rdPath + (coap.headers().getUriQuery() != null ? "?" + coap.headers().getUriQuery() : ""));
             //LOG.debug("Registration sent to: " + rdAddress.getHostString() + ":" + rdAddress.getPort() + rdPath + "?" + getUriQuery());
         }
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Registration payload:" + resources);
+        if (LOG.isLoggable(Level.FINEST)) {
+            LOG.finest("Registration payload:" + resources);
         }
 
         RegistratorRunnable regRunnable = new RegistratorRunnable(coap, callback, links);
@@ -281,8 +281,8 @@ public class EndPointRegistrator {
     }
 
     private void registrationResponse(CoapPacket coap, List<LinkFormat> links, final Callback<RegistrationState> callback) {
-        if (LOG.isTraceEnabled()) {
-            LOG.trace(EndPointRegistrator.this.getNodeName() + " registration response: " + coap);
+        if (LOG.isLoggable(Level.FINEST)) {
+            LOG.finest(EndPointRegistrator.this.getNodeName() + " registration response: " + coap);
         }
         if (coap.getCode() == Code.C201_CREATED || coap.getCode() == Code.C204_CHANGED) {
             checkRegistrationLocation(coap);
@@ -305,7 +305,7 @@ public class EndPointRegistrator {
                 callback.call(state);
             }
         } else {
-            LOG.warn("Could not register (" + coap + ")");
+            LOG.warning("Could not register (" + coap + ")");
             currentRetryCount++;
             state = RegistrationState.FAILED;
             logState();
@@ -322,7 +322,7 @@ public class EndPointRegistrator {
             registrLocation = coap.headers().getLocationPath();
         }
         if (registrLocation == null) {
-            LOG.warn("Registration error, no location returned");
+            LOG.warning("Registration error, no location returned");
             //LOG.warn(EndPointRegistrator.this.getNodeName() + " registration error, no location returned");
         } else {
             if (coap.getCode() == Code.C201_CREATED) {
@@ -363,7 +363,7 @@ public class EndPointRegistrator {
     }
 
     private void registrationResponse(Exception exception, Callback<RegistrationState> callback) {
-        LOG.debug("Registration error: " + exception);
+        LOG.fine("Registration error: " + exception);
         state = RegistrationState.FAILED;
         logState();
         currentRetryCount++;
@@ -403,7 +403,7 @@ public class EndPointRegistrator {
                 @Override
                 public void call(CoapPacket t) {
                     if (t.getCode() != Code.C202_DELETED) {
-                        LOG.warn("Could not remove registration (" + t + ")");
+                        LOG.warning("Could not remove registration (" + t + ")");
                         //LOG.warn(EndPointRegistrator.this.getNodeName() + " Could not remove registration");
                     } else {
                         state = RegistrationState.NOT_REGISTERED;
@@ -417,12 +417,12 @@ public class EndPointRegistrator {
 
                 @Override
                 public void callException(Exception ex) {
-                    LOG.error(ex.toString(), ex);
+                    LOG.log(Level.SEVERE, ex.toString(), ex);
                     callback.callException(ex);
                 }
             });
         } catch (Exception ex) {
-            LOG.error(ex.toString(), ex);
+            LOG.log(Level.SEVERE, ex.toString(), ex);
         }
 
     }
@@ -444,8 +444,8 @@ public class EndPointRegistrator {
                 registrationResponse(ex, callback);
             }
         });
-        if (LOG.isTraceEnabled()) {
-            LOG.trace(EndPointRegistrator.this.getNodeName() + " sent registration update request");
+        if (LOG.isLoggable(Level.FINEST)) {
+            LOG.finest(EndPointRegistrator.this.getNodeName() + " sent registration update request");
         }
 
     }
