@@ -1,14 +1,17 @@
+/*
+ * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.server;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import org.junit.Test;
 import org.mbed.coap.CoapPacket;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  *
@@ -30,11 +33,11 @@ public class DuplicationDetectorTest {
             when(packet.getMessageId()).thenReturn(9);
 
             CoapPacket firstIsDuplicated = detector.isMessageRepeated(packet);
-            Thread.sleep(timeout + cleanupInterval + 1);
+            Thread.sleep(timeout + cleanupInterval + 10);
             CoapPacket secondIsDuplicated = detector.isMessageRepeated(packet);
 
             assertNull("insertion to empty duplicate check list fails", firstIsDuplicated);
-            assertNotNull("second insertion after timeout with same id fails", secondIsDuplicated);
+            assertNull("second insertion after timeout with same id fails", secondIsDuplicated);
         } finally {
             detector.stop();
         }
