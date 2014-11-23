@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
@@ -8,8 +8,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
 
 /**
  *
@@ -17,7 +16,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TransactionManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionManager.class);
+    private static final Logger LOGGER = Logger.getLogger(TransactionManager.class.getName());
     private final ConcurrentHashMap<CoapTransactionId, CoapTransaction> transactions = new ConcurrentHashMap<>();
 
     public void add(CoapTransaction trans) {
@@ -40,7 +39,7 @@ public class TransactionManager {
                 CoapTransactionId t = entry.getKey();
                 if (t instanceof MulticastTransactionId && t.equals(coapTransId)) {
                     trans = entry.getValue();
-                    LOGGER.trace("Found transactionId match for multicast request [{}", t);
+                    LOGGER.finest("Found transactionId match for multicast request " + t);
                     break;
                 }
             }

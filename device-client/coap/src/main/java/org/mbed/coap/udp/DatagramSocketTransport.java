@@ -1,15 +1,18 @@
+/*
+ * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.udp;
 
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.mbed.coap.transport.TransportContext;
+import org.mbed.coap.transport.TransportReceiver;
 
 /**
  * Datagram transport based on DatagramSocket. Not thread-save.
@@ -18,7 +21,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DatagramSocketTransport extends AbstractTransportConnector {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DatagramSocketTransport.class);
+    private static final Logger LOGGER = Logger.getLogger(DatagramSocketTransport.class.getName());
     private DatagramSocket socket;
     private int socketBufferSize = -1;
     protected boolean reuseAddress;
@@ -54,8 +57,8 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
         }
         socket.setReuseAddress(reuseAddress);
         LOGGER.info("CoAP server binds on " + socket.getLocalSocketAddress());
-        if (socketBufferSize > 0) {
-            LOGGER.debug("DatagramSocket [receiveBuffer: {}, sendBuffer: {}]", socket.getReceiveBufferSize(), socket.getSendBufferSize());
+        if (socketBufferSize > 0 && LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("DatagramSocket [receiveBuffer: " + socket.getReceiveBufferSize() + ", sendBuffer: " + socket.getSendBufferSize() + "]");
         }
     }
 
@@ -80,9 +83,9 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
             return true;
         } catch (IOException ex) {
             if ("socket closed".equals(ex.getMessage())) {
-                LOGGER.warn("DatagramSocket was closed.");
+                LOGGER.warning("DatagramSocket was closed.");
             } else {
-                LOGGER.error(ex.getMessage(), ex);
+                LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
             }
         }
         return false;
