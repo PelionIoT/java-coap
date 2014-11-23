@@ -5,6 +5,7 @@ package org.mbed.coap.server;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.logging.Logger;
 import org.mbed.coap.BlockOption;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.CoapUtils;
@@ -17,15 +18,13 @@ import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.ByteArrayBackedOutputStream;
 import org.mbed.coap.utils.Callback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 public abstract class CoapExchange {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CoapExchange.class);
+    private static final Logger LOGGER = Logger.getLogger(CoapExchange.class.getName());
     protected CoapPacket request;
     protected CoapPacket response;
     private boolean isDelayedResponse;
@@ -138,7 +137,7 @@ public abstract class CoapExchange {
     public void sendResponse() {
         if (!isDelayedResponse) {
             if (request.getMessageType() == MessageType.NonConfirmable && request.getMethod() == null) {
-                LOGGER.trace("Send response ignored for NON response");
+                LOGGER.finest("Send response ignored for NON response");
             } else {
                 send();
             }
@@ -147,7 +146,7 @@ public abstract class CoapExchange {
             try {
                 this.getCoapServer().makeRequest(response, CoapUtils.getCallbackNull());
             } catch (CoapException ex) {
-                LOGGER.warn("Error while sending delayed response: " + ex.getMessage());
+                LOGGER.warning("Error while sending delayed response: " + ex.getMessage());
             }
         }
     }

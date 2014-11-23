@@ -6,6 +6,8 @@ package org.mbed.coap.client;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.mbed.coap.BlockOption;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
@@ -15,15 +17,13 @@ import org.mbed.coap.exception.ObservationTerminatedException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.ObservationHandler;
 import org.mbed.coap.utils.Callback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 class ObservationHandlerImpl implements ObservationHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ObservationHandlerImpl.class);
+    private static final Logger LOGGER = Logger.getLogger(ObservationHandlerImpl.class.getName());
     private final Map<Token, ObservationListenerContainer> observationMap = new HashMap<>();
 
     @Override
@@ -35,13 +35,13 @@ class ObservationHandlerImpl implements ObservationHandler {
                 try {
                     obsListContainer.observationListener.onTermination(termEx.getNotification());
                 } catch (CoapException coapException) {
-                    LOGGER.error(coapException.getMessage(), coapException);
+                    LOGGER.log(Level.SEVERE, coapException.getMessage(), coapException);
                 }
                 return;
             }
 
         }
-        LOGGER.warn(ex.getMessage());
+        LOGGER.warning(ex.getMessage());
     }
 
     @Override
@@ -55,7 +55,7 @@ class ObservationHandlerImpl implements ObservationHandler {
                     t.retrieveNotificationBlocks(obsListContainer.uriPath, new Callback<CoapPacket>() {
                         @Override
                         public void callException(Exception ex) {
-                            LOGGER.warn(ex.getMessage());
+                            LOGGER.warning(ex.getMessage());
                         }
 
                         @Override
@@ -63,7 +63,7 @@ class ObservationHandlerImpl implements ObservationHandler {
                             try {
                                 obsListContainer.observationListener.onObservation(coapPacket);
                             } catch (CoapException e) {
-                                LOGGER.error(e.getMessage(), e);
+                                LOGGER.log(Level.SEVERE, e.getMessage(), e);
                             }
                         }
                     });
@@ -81,7 +81,7 @@ class ObservationHandlerImpl implements ObservationHandler {
                 t.sendResponse();
             }
         } else {
-            LOGGER.warn("Could not handle observation");
+            LOGGER.warning("Could not handle observation");
             t.sendResetResponse();
         }
     }

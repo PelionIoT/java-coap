@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
@@ -13,9 +13,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.mbed.coap.CoapPacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Checks if incoming request has been repeated
@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 class DuplicationDetector implements Runnable {
 
     public static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket(null);
-    private static final Logger LOGGER = LoggerFactory.getLogger(DuplicationDetector.class);
+    private static final Logger LOGGER = Logger.getLogger(DuplicationDetector.class.getName());
     private static final long DEFAULT_REQUEST_ID_TIMEOUT = 30000;
     private static final int DEFAULT_MAX_SIZE = 100000;
     //
@@ -47,7 +47,7 @@ class DuplicationDetector implements Runnable {
         this.maxSize = maxSize;
         this.overSizeMargin = maxSize / 100; //1%
         this.scheduledExecutor = scheduledExecutor;
-        LOGGER.debug("Coap duplicate detector init (max traffic: {} msg/sec)", (int) (maxSize / (requestIdTimeout / 1000.0d)));
+        LOGGER.fine("Coap duplicate detector init (max traffic: " + (int) (maxSize / (requestIdTimeout / 1000.0d)) + " msg/sec)");
     }
 
     public DuplicationDetector() {
@@ -80,9 +80,9 @@ class DuplicationDetector implements Runnable {
                         //requestList.remove(it.next());
                     }
                 } catch (Exception e) {
-                    LOGGER.error(e.getMessage(), e);
+                    LOGGER.log(Level.SEVERE, e.getMessage(), e);
                 }
-                LOGGER.warn("CoAP request duplicate list has reached max size ({}), reduced by {}", maxSize, overSizeMargin);
+                LOGGER.warning("CoAP request duplicate list has reached max size (" + maxSize + "), reduced by " + overSizeMargin);
             } finally {
                 REDUCE_LOCK.unlock();
             }
@@ -106,8 +106,8 @@ class DuplicationDetector implements Runnable {
                 removedItems++;
             }
         }
-        if (LOGGER.isTraceEnabled() && removedItems > 0) {
-            LOGGER.trace("CoAP request duplicate list, non valid items removed: " + removedItems + " ");
+        if (LOGGER.isLoggable(Level.FINEST) && removedItems > 0) {
+            LOGGER.finest("CoAP request duplicate list, non valid items removed: " + removedItems + " ");
         }
     }
 

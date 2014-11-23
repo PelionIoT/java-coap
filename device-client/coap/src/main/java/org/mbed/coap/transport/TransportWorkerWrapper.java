@@ -1,12 +1,12 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Worker implementation for transport connector.
@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 public class TransportWorkerWrapper implements Runnable, TransportConnector {
 //TODO: rename to TransportWorker
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TransportWorkerWrapper.class);
+    private static final Logger LOGGER = Logger.getLogger(TransportWorkerWrapper.class.getName());
     private final TransportConnectorTask wrappedConnector;
     protected boolean isRunning;
     private Thread[] transportThreads;
@@ -37,7 +37,7 @@ public class TransportWorkerWrapper implements Runnable, TransportConnector {
             try {
                 wrappedConnector.performReceive();
             } catch (Throwable ex) {    //NOPMD  bug in executor when any Exception is thrown
-                LOGGER.error(ex.getMessage(), ex);
+                LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
             }
         }
     }

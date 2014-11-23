@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.test;
@@ -12,14 +12,13 @@ import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
 import org.mbed.coap.transport.TransportWorkerWrapper;
 import org.mbed.coap.udp.AbstractTransportConnector;
 import org.mbed.coap.utils.IpPortAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Creates instance of a TransportConnector that uses java internal memory as a
@@ -29,7 +28,7 @@ import org.slf4j.LoggerFactory;
  */
 public class InMemoryTransport extends AbstractTransportConnector {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryTransport.class);
+    private static final Logger LOGGER = Logger.getLogger(InMemoryTransport.class.getName());
     public final static String LOCALHOST = "localhost";
     private static final Map<IpPortAddress, BlockingQueue<DatagramMessage>> BIND_CONNECTORS = new HashMap<>();
     private TransportContext transportContext;
@@ -52,7 +51,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
         while (true) {
             port = rnd.nextInt(0xFFFF);
             if (!BIND_CONNECTORS.containsKey(new IpPortAddress(createAddress(port)))) {
-                LOGGER.trace("getFreePort() " + port);
+                LOGGER.finest("getFreePort() " + port);
                 return port;
             }
         }

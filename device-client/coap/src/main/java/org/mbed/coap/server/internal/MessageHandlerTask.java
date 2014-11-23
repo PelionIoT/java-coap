@@ -1,16 +1,16 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.HexArray;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Worker class that handles incoming traffic.
@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
  */
 final class MessageHandlerTask implements Runnable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MessageHandlerTask.class);
+    private static final Logger LOGGER = Logger.getLogger(MessageHandlerTask.class.getName());
     private byte[] packet;
     private final InetSocketAddress address;
     private final TransportContext transportContext;
@@ -39,9 +39,9 @@ final class MessageHandlerTask implements Runnable {
             CoapPacket coapPkt = CoapPacket.read(packet, packet.length, address);
             coapServer.handle(coapPkt, transportContext);
         } catch (CoapException ex) {
-            LOGGER.warn("Malformed coap message source: " + address + ", size:" + packet.length);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Malformed coap message payload: " + HexArray.toHex(packet));
+            LOGGER.warning("Malformed coap message source: " + address + ", size:" + packet.length);
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Malformed coap message payload: " + HexArray.toHex(packet));
             }
             coapServer.handleException(packet, ex, transportContext);
         }

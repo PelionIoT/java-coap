@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.mbed.coap.BlockOption;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.Code;
@@ -18,8 +20,6 @@ import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implements Blocking mechanism for CoAP server (draft-ietf-core-block-16)
@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
  */
 class CoapServerBlocks extends CoapServer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerBlocks.class);
+    private static final Logger LOGGER = Logger.getLogger(CoapServerBlocks.class.getName());
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;
     protected Map<BlockRequestId, BlockRequest> blockReqMap = new HashMap<>();
 
@@ -111,7 +111,7 @@ class CoapServerBlocks extends CoapServer {
             try {
                 System.arraycopy(resp.getPayload(), blFrom, blockPayload, 0, newLength);
             } catch (Exception ex) {
-                LOGGER.error(ex.getMessage(), ex);
+                LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
             }
         }
         resp.headers().setBlock2Res(block2Res);
@@ -143,7 +143,7 @@ class CoapServerBlocks extends CoapServer {
             if (blockRequest == null) {
                 if (reqBlock.getNr() == 0) {
                     //new blocking
-                    LOGGER.trace("callRequestHandler() new block transfer");
+                    LOGGER.finest("callRequestHandler() new block transfer");
                     blockRequest = new BlockRequest(request);
                     addBlockRequest(blockRequest);
                 } else {
@@ -156,7 +156,7 @@ class CoapServerBlocks extends CoapServer {
                     return;
                 }
             } else {
-                LOGGER.trace("callRequestHandler() block transfer continuation " + reqBlock);
+                LOGGER.finest("callRequestHandler() block transfer continuation " + reqBlock);
             }
 
             //boolean isTokenMismatch = (blockRequest.token==null && request.headers().getToken()==null);
@@ -165,7 +165,7 @@ class CoapServerBlocks extends CoapServer {
 
             if (isTokenMismatch) {
                 //token mismatch, send error, stop collecting blocks
-                LOGGER.trace("callRequestHandler() block token mismatch " + reqBlock);
+                LOGGER.finest("callRequestHandler() block token mismatch " + reqBlock);
                 CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, incomingTransContext);
                 exchange.setResponseCode(Code.C408_REQUEST_ENTITY_INCOMPLETE);
                 exchange.getRequestHeaders().setBlock1Req(reqBlock);
@@ -194,8 +194,8 @@ class CoapServerBlocks extends CoapServer {
                 //more block available, send ACK
                 if (this.getBlockSize() != null && reqBlock.getSize() > this.getBlockSize().getSize()) {
                     //to large block, change
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("to large block (" + reqBlock.getSize() + "), changing to " + this.getBlockSize().getSize());
+                    if (LOGGER.isLoggable(Level.FINEST)) {
+                        LOGGER.finest("to large block (" + reqBlock.getSize() + "), changing to " + this.getBlockSize().getSize());
                     }
                     reqBlock = new BlockOption(reqBlock.getNr(), this.getBlockSize(), reqBlock.hasMore());
                 }
@@ -244,7 +244,7 @@ class CoapServerBlocks extends CoapServer {
                         makeRequest(request, outgoingTransContext);
                         return;
                     } catch (CoapException ex) {
-                        LOGGER.error(ex.getMessage(), ex);
+                        LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
                         reqCallback.callException(ex);
                         return;
                     }
@@ -257,7 +257,7 @@ class CoapServerBlocks extends CoapServer {
                 try {
                     receiveBlock(response);
                 } catch (CoapException ex) {
-                    LOGGER.warn(ex.getLocalizedMessage(), ex);
+                    LOGGER.log(Level.WARNING, ex.getLocalizedMessage(), ex);
                     reqCallback.callException(ex);
                 }
             } else {
@@ -266,8 +266,8 @@ class CoapServerBlocks extends CoapServer {
         }
 
         private void receiveBlock(CoapPacket blResponse) throws CoapException {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Received CoAP block [" + blResponse.headers().getBlock2Res() + "]");
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("Received CoAP block [" + blResponse.headers().getBlock2Res() + "]");
             }
             if (response == null) {
                 response = blResponse;
@@ -307,14 +307,14 @@ class CoapServerBlocks extends CoapServer {
             //resource representation has changed, start from beginning
             resourceChanged++;
             if (resourceChanged > MAX_BLOCK_RESOURCE_CHANGE) {
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("CoAP resource representation has changed " + resourceChanged + ", giving up.");
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest("CoAP resource representation has changed " + resourceChanged + ", giving up.");
                 }
                 reqCallback.callException(new CoapCodeException(Code.C408_REQUEST_ENTITY_INCOMPLETE));
                 return true;
             }
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("CoAP resource representation has changed while getting blocks");
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("CoAP resource representation has changed while getting blocks");
             }
             response = null;
             CoapPacket cpRequest = new CoapPacket(Method.GET, MessageType.Confirmable, requestUri, destination);

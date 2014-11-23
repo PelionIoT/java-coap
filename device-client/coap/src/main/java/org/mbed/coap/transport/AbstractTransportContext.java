@@ -1,7 +1,11 @@
+/*
+ * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Abstract class for transport context, that optionally wraps another instance
@@ -11,7 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractTransportContext<E extends Enum<?>> implements TransportContext {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTransportContext.class);
+    private static final Logger LOGGER = Logger.getLogger(AbstractTransportContext.class.getName());
     private final TransportContext wrappedTransContext;
 
     protected AbstractTransportContext(TransportContext wrappedTransContext) {
@@ -27,10 +31,10 @@ public abstract class AbstractTransportContext<E extends Enum<?>> implements Tra
             try {
                 return clazz.cast(retValue);
             } catch (ClassCastException ex) {
-                LOGGER.warn("Could not cast transport context parameter: {}", ex.getMessage());
+                LOGGER.log(Level.WARNING, "Could not cast transport context parameter: {}", ex.getMessage());
             }
         } catch (ClassCastException ex) {
-            LOGGER.trace("Could not cast enumerator: {}", ex.getMessage());
+            LOGGER.finest("Could not cast enumerator: " + ex.getMessage());
         }
 
         if (wrappedTransContext != null) {

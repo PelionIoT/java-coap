@@ -1,26 +1,25 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.udp;
 
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.mbed.coap.transport.TransportContext;
+import org.mbed.coap.transport.TransportReceiver;
 
 /**
- *
  * @author szymon
  */
 public class DatagramChannelTransport extends AbstractTransportConnector {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DatagramChannelTransport.class);
+    private static final Logger LOGGER = Logger.getLogger(DatagramChannelTransport.class.getName());
     protected DatagramChannel channel;
     protected boolean channelReuseAddress;
     protected boolean channelConfigureBlocking = true;
@@ -66,11 +65,11 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
 
             LOGGER.info("CoAP server binds on " + channel.socket().getLocalSocketAddress());
             if (socketBufferSize > 0) {
-                LOGGER.debug("DatagramChannel [receiveBuffer: {}, sendBuffer: {}]", channel.socket().getReceiveBufferSize(), channel.socket().getSendBufferSize());
+                LOGGER.fine("DatagramChannel [receiveBuffer: " + channel.socket().getReceiveBufferSize() + ", sendBuffer: " + channel.socket().getSendBufferSize() + "]");
             }
 
         } catch (BindException ex) {
-            LOGGER.error("Can not bind on " + getBindSocket());
+            LOGGER.severe("Can not bind on " + getBindSocket());
             throw ex;
         }
     }
@@ -85,11 +84,11 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
         try {
             channel.close();
             if (channel.isOpen()) {
-                LOGGER.warn("DatagramChannel stays open");
+                LOGGER.warning("DatagramChannel stays open");
                 try {
                     Thread.sleep(300);
                     if (channel.isOpen()) {
-                        LOGGER.warn("DatagramChannel is still open!");
+                        LOGGER.warning("DatagramChannel is still open!");
                     }
                 } catch (InterruptedException ex) {
                     //do nothing
@@ -97,7 +96,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
             }
             channel = null;
         } catch (IOException ex) {
-            LOGGER.error(ex.getMessage(), ex);
+            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
 
@@ -105,14 +104,14 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
     public void send(byte[] data, int len, InetSocketAddress adr, TransportContext transContext) throws IOException {
         if (channel == null) {
             if (this.isRunning) {
-                LOGGER.error("UDPConnectorChannel is NULL, reinitializing");
+                LOGGER.severe("UDPConnectorChannel is NULL, reinitializing");
                 initialize();
                 if (channel == null) {
-                    LOGGER.error("DatagramChannel is still NULL I give up!!!!!!");
+                    LOGGER.severe("DatagramChannel is still NULL I give up!!!!!!");
                     return;
                 }
             } else {
-                LOGGER.error("UDPConnectorChannel is closed");
+                LOGGER.severe("UDPConnectorChannel is closed");
                 return;
             }
         }
@@ -120,11 +119,11 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
         try {
             int res = channel.send(ByteBuffer.wrap(data, 0, len), adr);
             if (res != len) {
-                LOGGER.error("Did not send full datagram " + res + " =! " + len);
+                LOGGER.severe("Did not send full datagram " + res + " =! " + len);
             }
         } catch (ClosedChannelException ex) {
             //Probably Java BUG
-            LOGGER.error("Could not send datagram packet, trying again", ex);
+            LOGGER.log(Level.SEVERE, "Could not send datagram packet, trying again", ex);
 
             //this.channel = null;
             initialize();
@@ -150,14 +149,14 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
         } catch (ClosedChannelException ex) {
             if (isRunning()) {
                 try {
-                    LOGGER.error("DatagramChannel closed, reopening");
+                    LOGGER.severe("DatagramChannel closed, reopening");
                     initialize();
                 } catch (IOException ex1) {
-                    LOGGER.error(ex1.getMessage(), ex1);
+                    LOGGER.log(Level.SEVERE, ex1.getMessage(), ex1);
                 }
             }
         } catch (IOException ex) {
-            LOGGER.error(ex.getMessage(), ex);
+            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
         }
         return false;
     }
