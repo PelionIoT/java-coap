@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
@@ -21,9 +21,6 @@ import java.util.concurrent.TimeUnit;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapConstants;
 import org.mbed.coap.CoapPacket;
-import org.mbed.coap.CoapUtils;
-import org.mbed.coap.CoapUtils.PacketDelay;
-import org.mbed.coap.CoapUtils.PacketDropping;
 import org.mbed.coap.Code;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.exception.CoapCodeException;
@@ -70,8 +67,6 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     private TransportConnector transport;
     private BlockSize blockOptionSize; //null: no blocking
     private boolean isSelfCreatedExecutor;
-    private PacketDropping packetDropping;
-    private PacketDelay packetDelay;
     protected TransactionManager transMgr = new TransactionManager();
     private final DelayedTransactionManager delayedTransMagr = new DelayedTransactionManager();
     private ObservationHandler observationHandler;
@@ -133,8 +128,6 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
             this.transmissionTimeout = new CoapTimeout();
         }
 
-        packetDropping = new CoapUtils.NoPacketDropping();
-        packetDelay = new CoapUtils.NoPacketDelay();
         if (duplicationListSize > 0) {
             duplicationDetector = new DuplicationDetector(TimeUnit.MILLISECONDS, DEFAULT_DUPLICATION_TIMEOUT, duplicationListSize, scheduledExecutor);
         }
@@ -285,24 +278,6 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
      */
     public void setTransmissionTimeout(TransmissionTimeout transmissionTimeout) {
         this.transmissionTimeout = transmissionTimeout;
-    }
-
-    /**
-     * Sets packet delay for network latency simulation
-     *
-     * @param packetDelay packet delay
-     */
-    public void setPacketDelay(PacketDelay packetDelay) {
-        this.packetDelay = packetDelay;
-    }
-
-    /**
-     * Sets packet dropping for network packet drop simulation
-     *
-     * @param packetDropping packet dropping
-     */
-    public void setPacketDropping(PacketDropping packetDropping) {
-        this.packetDropping = packetDropping;
     }
 
     /**
@@ -478,18 +453,6 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     protected void handle(CoapPacket packet, TransportContext transportContext) {
         if (handlePing(packet)) {
             return;
-        }
-        if (packetDropping.drop()) {
-            //message dropped, no response
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Message dropped, source:" + packet.getRemoteAddress() + " [" + packet + "]");
-            }
-            return;
-        }
-        try {
-            packetDelay.delay();
-        } catch (InterruptedException ex) {
-            //do nothing
         }
 
         if (LOGGER.isTraceEnabled()) {
