@@ -31,7 +31,7 @@ public abstract class AbstractTransportContext<E extends Enum<?>> implements Tra
             try {
                 return clazz.cast(retValue);
             } catch (ClassCastException ex) {
-                LOGGER.log(Level.WARNING, "Could not cast transport context parameter: {}", ex.getMessage());
+                LOGGER.log(Level.WARNING, "Could not cast transport context parameter: ", ex.getMessage());
             }
         } catch (ClassCastException ex) {
             LOGGER.finest("Could not cast enumerator: " + ex.getMessage());
