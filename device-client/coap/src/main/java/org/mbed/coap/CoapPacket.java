@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
  */
 package org.mbed.coap;
@@ -20,7 +20,6 @@ import org.mbed.coap.utils.HexArray;
  *
  * @author szymon
  */
-@SuppressWarnings({"PMD.ArrayIsStoredDirectly", "PMD.MethodReturnsInternalArray"})
 public class CoapPacket implements CoapMessage, Serializable {
 
     static final int PAYLOAD_MARKER = 0xFF;

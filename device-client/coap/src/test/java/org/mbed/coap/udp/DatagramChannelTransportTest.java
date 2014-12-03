@@ -1,5 +1,13 @@
-package org.mbed.coap.server;
+/*
+ * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ */
+package org.mbed.coap.udp;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.*;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.DatagramSocket;
@@ -8,23 +16,16 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import org.junit.Assert;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.Method;
 import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transport.TransportReceiver;
-import org.mbed.coap.udp.DatagramChannelTransport;
 import org.mbed.coap.utils.FutureCallbackAdapter;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -36,7 +37,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(value = PowerMockRunner.class)
 
 @PrepareForTest({DatagramChannel.class, DatagramChannelTransport.class, DatagramSocket.class})
-public class UDPConnectorChannelTest {
+public class DatagramChannelTransportTest {
 
     @Test
     public void initTest() throws IOException {

@@ -25,7 +25,7 @@ import org.mbed.coap.utils.HexArray;
  *
  * @author szymon
  */
-@SuppressWarnings({"PMD.ArrayIsStoredDirectly", "PMD.MethodReturnsInternalArray", "PMD.NPathComplexity", "PMD.CyclomaticComplexity"})
+@SuppressWarnings({"PMD.NPathComplexity", "PMD.CyclomaticComplexity"})
 public class HeaderOptions implements Serializable {
 
     public static final byte IF_MATCH = 1; //multiple
