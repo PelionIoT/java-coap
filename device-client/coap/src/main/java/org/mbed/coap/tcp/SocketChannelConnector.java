@@ -72,11 +72,10 @@ public class SocketChannelConnector implements TransportConnectorTask {
     }
 
     @Override
-    @SuppressWarnings("PMD.UseNotifyAllInsteadOfNotify")
     public synchronized void stop() {
         socketAddress = null;
         socketChannel = null;
-        this.notify();
+        this.notifyAll();
     }
 
     private synchronized SocketChannel socketChannel() {
