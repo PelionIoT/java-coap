@@ -216,8 +216,8 @@ public class EndPointRegistrator {
 
         state = RegistrationState.REGISTRATION_SENT;
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Registration Update sent to: " + rdAddress.getHostName() + ":" + rdAddress.getPort() + registrLocation + (coap.headers().getUriQuery() != null ? "?" + coap.headers().getUriQuery() : ""));
-            //LOG.debug("Registration sent to: " + rdAddress.getHostName() + ":" + rdAddress.getPort() + rdPath + "?" + getUriQuery());            
+            LOG.debug("Registration Update sent to: " + rdAddress.getHostString() + ":" + rdAddress.getPort() + registrLocation + (coap.headers().getUriQuery() != null ? "?" + coap.headers().getUriQuery() : ""));
+            //LOG.debug("Registration sent to: " + rdAddress.getHostString() + ":" + rdAddress.getPort() + rdPath + "?" + getUriQuery());            
         }
 
         RegistratorRunnable regRunnable = new RegistratorRunnable(coap, callback, links);
@@ -257,8 +257,8 @@ public class EndPointRegistrator {
 
         state = RegistrationState.REGISTRATION_SENT;
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Registration sent to: " + rdAddress.getHostName() + ":" + rdAddress.getPort() + rdPath + (coap.headers().getUriQuery() != null ? "?" + coap.headers().getUriQuery() : ""));
-            //LOG.debug("Registration sent to: " + rdAddress.getHostName() + ":" + rdAddress.getPort() + rdPath + "?" + getUriQuery());            
+            LOG.debug("Registration sent to: " + rdAddress.getHostString() + ":" + rdAddress.getPort() + rdPath + (coap.headers().getUriQuery() != null ? "?" + coap.headers().getUriQuery() : ""));
+            //LOG.debug("Registration sent to: " + rdAddress.getHostString() + ":" + rdAddress.getPort() + rdPath + "?" + getUriQuery());            
         }
         if (LOG.isTraceEnabled()) {
             LOG.trace("Registration payload:" + resources);
