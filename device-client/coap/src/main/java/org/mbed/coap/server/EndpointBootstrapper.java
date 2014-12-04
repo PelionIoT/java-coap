@@ -112,7 +112,7 @@ public class EndpointBootstrapper {
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Bootstrap request sent to: " + bsAddress.getHostName() + ":" + bsAddress.getPort() + bsPath + "?" + coap.headers().getUriQuery());
+            LOG.debug("Bootstrap request sent to: " + bsAddress.getHostString() + ":" + bsAddress.getPort() + bsPath + "?" + coap.headers().getUriQuery());
         }
     }
 

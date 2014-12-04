@@ -152,7 +152,7 @@ public class TCPConnectorTest {
         Thread.sleep(2000);
         Socket rawSocket = null;
         try {
-            rawSocket = new Socket(dsAddress.getHostName(), dsPort);
+            rawSocket = new Socket(dsAddress.getHostString(), dsPort);
             OutputStream rawStream = rawSocket.getOutputStream();
             rawStream.write(new byte[]{-40, 60});
             rawStream.close();
@@ -163,7 +163,7 @@ public class TCPConnectorTest {
         }
         Socket rawSocket2 = null;
         try {
-            rawSocket2 = new Socket(dsAddress.getHostName(), dsPort);
+            rawSocket2 = new Socket(dsAddress.getHostString(), dsPort);
             OutputStream rawStream2 = rawSocket2.getOutputStream();
             rawStream2.write(new byte[]{5});
             rawStream2.close();
