@@ -90,7 +90,7 @@ public abstract class TCPConnector implements Runnable {
 
     abstract String getThreadName();
 
-    final public void read(SelectionKey key) throws IOException {
+    public final void read(SelectionKey key) throws IOException {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Socket reading");
         }
@@ -158,7 +158,7 @@ public abstract class TCPConnector implements Runnable {
         }
     }
 
-    private long getBytesToRead(SocketChannel socketChannel, ByteBuffer lenBuffer, ByteBuffer partialMessage) throws IOException {
+    private static long getBytesToRead(SocketChannel socketChannel, ByteBuffer lenBuffer, ByteBuffer partialMessage) throws IOException {
         if (partialMessage == null) {
             LOGGER.trace("Incoming message does not have old message fragment stored.");
             // new message fragment, just try to read all.
@@ -198,8 +198,8 @@ public abstract class TCPConnector implements Runnable {
             return null;
         } else {
             if (partialMessage != null) {
-                readBuffer = partialMessage;
                 oldReadBuffer.remove(socketAddress);
+                return partialMessage;
             }
         }
         return readBuffer;
