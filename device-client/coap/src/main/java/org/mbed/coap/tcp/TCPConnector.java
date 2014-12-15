@@ -58,7 +58,7 @@ public abstract class TCPConnector implements Runnable {
 
     protected void initialize() throws IOException {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.debug("TCPConnector initializes in thread " + getThreadName());
+            LOGGER.debug("TCPConnector initializes and creates thread " + getThreadName());
         }
         selector = initSelector();
         pendingData.clear();
