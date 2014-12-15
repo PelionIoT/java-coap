@@ -1,16 +1,16 @@
 package org.mbed.coap.server;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.CoapConstants;
@@ -74,6 +74,7 @@ public class EndPointRegistratorTest {
         FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<>();
         epReg.register(fut);
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, fut.get());
+        assertFalse(rdResource.getLatestRequest().headers().getUriQuery().contains("b=UQ"));
 
         //UPDATE REGISTRATION
         fut = new FutureCallbackAdapter<>();
@@ -81,6 +82,7 @@ public class EndPointRegistratorTest {
         fut.get();
         assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, epReg.getState());
         assertEquals(0, rdResource.getLatestRequest().getPayload().length);
+        assertFalse(rdResource.getLatestRequest().headers().getUriQuery().contains("b=UQ"));
 
         //REMOVE REGISTRATION
         fut = new FutureCallbackAdapter<>();
@@ -120,6 +122,39 @@ public class EndPointRegistratorTest {
         epReg.unregister(fut);
         assertEquals(EndPointRegistrator.RegistrationState.NOT_REGISTERED, fut.get());
 
+    }
+
+    @Test
+    public void testSuccesfullRegistrationInQueueMode() throws InterruptedException, ExecutionException {
+        CoapPacket result = new CoapPacket(Code.C201_CREATED, MessageType.Acknowledgement, null);
+        result.headers().setLocationPath("/rd/" + EP_NAME);
+        rdResource.mockResponse(Method.POST, result);
+        rdResource.mockResponse(Method.DELETE, new CoapPacket(Code.C202_DELETED, MessageType.Acknowledgement, null));
+        rdResource.mockResponse(Method.PUT, new CoapPacket(Code.C204_CHANGED, MessageType.Acknowledgement, null));
+
+        EndPointRegistrator epReg = new EndPointRegistrator(epServer, InMemoryTransport.createAddress(RD_PORT), EP_NAME);
+        epReg.setDomain("domain");
+        epReg.setHostName(EP_NAME);
+        epReg.setType("test");
+        epReg.setQueueMode(true);
+
+        FutureCallbackAdapter<EndPointRegistrator.RegistrationState> fut = new FutureCallbackAdapter<>();
+        epReg.register(fut);
+        assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, fut.get());
+        assertTrue(rdResource.getLatestRequest().headers().getUriQuery().contains("b=UQ"));
+
+        //UPDATE REGISTRATION
+        fut = new FutureCallbackAdapter<>();
+        epReg.register(fut);
+        fut.get();
+        assertEquals(EndPointRegistrator.RegistrationState.REGISTERED, epReg.getState());
+        assertEquals(0, rdResource.getLatestRequest().getPayload().length);
+        assertTrue(rdResource.getLatestRequest().headers().getUriQuery().contains("b=UQ"));
+
+        //REMOVE REGISTRATION
+        fut = new FutureCallbackAdapter<>();
+        epReg.unregister(fut);
+        assertEquals(EndPointRegistrator.RegistrationState.NOT_REGISTERED, fut.get());
     }
 
     @Test
