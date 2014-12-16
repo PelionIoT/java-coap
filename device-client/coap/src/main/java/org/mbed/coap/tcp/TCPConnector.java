@@ -3,6 +3,7 @@
  */
 package org.mbed.coap.tcp;
 
+import com.sun.org.apache.xerces.internal.impl.xs.XSConstraints;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -13,6 +14,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.mbed.coap.transport.TransportReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,18 +32,22 @@ public abstract class TCPConnector implements Runnable {
     protected final Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<>();
     protected final List<ChangeRequest> changeRequests = new LinkedList<>();
     protected final Map<InetSocketAddress, SocketChannel> sockets = new HashMap<>();
+    protected final Map<InetSocketAddress, ScheduledFuture> timers;
+    ScheduledThreadPoolExecutor scheduledThreadPool;
     protected boolean isRunning;
     protected Selector selector;
-    protected TransportReceiver udpReceiver;
+    protected TransportReceiver messageReceiver;
     protected final int MAX_LENGTH;
-    private static final int DEFAULT_MAX_LENGTH = 1024;
+    protected static final int DEFAULT_MAX_LENGTH = 1024;
     protected static final int LENGTH_BYTES = 4;
+    private final int IDLE_TIMEOUT;
 
     /**
-     * Constructs TCPConnector with DEFAULT_MAX_LENGTH message size
+     * Constructs TCPConnector with DEFAULT_MAX_LENGTH message size without idle
+     * timeout
      */
     public TCPConnector() {
-        this(DEFAULT_MAX_LENGTH);
+        this(DEFAULT_MAX_LENGTH, 0);
     }
 
     /**
@@ -46,13 +55,23 @@ public abstract class TCPConnector implements Runnable {
      *
      * @param maxMessageLength maximum message length in bytes, both read and
      * write uses this.
+     * @param idleTimeout timeout in seconds, how long to keep TCP connection
+     * open until trigger cleanup
      */
-    public TCPConnector(int maxMessageLength) {
-        MAX_LENGTH = maxMessageLength;
+    public TCPConnector(int maxMessageLength, int idleTimeout) {
+        this.MAX_LENGTH = maxMessageLength;
+        this.IDLE_TIMEOUT = idleTimeout;
+        if (IDLE_TIMEOUT > 0) {
+            scheduledThreadPool = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(60000);
+            scheduledThreadPool.setRemoveOnCancelPolicy(true);
+            timers = new HashMap<>();
+        } else {
+            timers = null;
+        }
     }
 
     public void start(TransportReceiver udpReceiver) throws IOException {
-        this.udpReceiver = udpReceiver;
+        this.messageReceiver = udpReceiver;
         initialize();
     }
 
@@ -149,7 +168,9 @@ public abstract class TCPConnector implements Runnable {
         }
 
         try {
-            udpReceiver.onReceive((InetSocketAddress) socketChannel.socket().getRemoteSocketAddress(), readBuffer, null);
+            InetSocketAddress address = (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
+            resetTimer(address);
+            messageReceiver.onReceive(address, readBuffer, null);
         } catch (Exception e) {
             LOGGER.error("Tried to put incoming msg to readQueue but failed. ", e);
         }
@@ -203,5 +224,40 @@ public abstract class TCPConnector implements Runnable {
             }
         }
         return readBuffer;
+    }
+
+    public void resetTimer(InetSocketAddress address) {
+        if (timers != null) {
+            ScheduledFuture fut = timers.remove(address);
+            if (fut != null) {
+                fut.cancel(false);
+            }
+            timers.put(address, scheduledThreadPool.schedule(new Timeoutter(address), IDLE_TIMEOUT, TimeUnit.SECONDS));
+        }
+    }
+
+    protected final class Timeoutter implements Runnable {
+
+        private final InetSocketAddress address;
+
+        public Timeoutter(InetSocketAddress address) {
+            this.address = address;
+        }
+
+        @Override
+        public void run() {
+            LOGGER.debug("Timeoutting TCP socket to " + address);
+            SocketChannel socket = sockets.remove(address);
+            if (socket != null) {
+                try {
+                    pendingData.remove(socket);
+                    socket.close();
+                } catch (IOException e) {
+
+                }
+            }
+            oldReadBuffer.remove(address);
+        }
+
     }
 }
