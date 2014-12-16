@@ -38,9 +38,9 @@ public class TCPServerConnector extends TCPConnector implements TransportConnect
      * @param bindingSocketAddress address of binding socket
      */
     public TCPServerConnector(InetSocketAddress bindingSocketAddress) {
-        this.bindAddress = bindingSocketAddress;
+        this(bindingSocketAddress, DEFAULT_MAX_LENGTH);
     }
-
+    
     /**
      * Constructs TCPServerConnector and binds it to given address with given
      * maximum message size
@@ -50,7 +50,20 @@ public class TCPServerConnector extends TCPConnector implements TransportConnect
      * send
      */
     public TCPServerConnector(InetSocketAddress bindingSocketAddress, int maxMessageSize) {
-        super(maxMessageSize);
+        this(bindingSocketAddress, maxMessageSize, 0);
+    }
+    
+    /**
+     * Constructs TCPServerConnector and binds it to given address with given
+     * maximum message size and given idle timeout value (seconds)
+     *
+     * @param bindingSocketAddress address of binding socket
+     * @param maxMessageSize maximum message size the connector can receive or
+     * send
+     * @param idleTimeout idle timeout in seconds how long to keep TCP socket open
+     */
+    public TCPServerConnector(InetSocketAddress bindingSocketAddress, int maxMessageSize, int idleTimeout) {
+        super(maxMessageSize, idleTimeout);
         this.bindAddress = bindingSocketAddress;
     }
 
@@ -204,6 +217,7 @@ public class TCPServerConnector extends TCPConnector implements TransportConnect
         socketChannel.configureBlocking(false);
         InetSocketAddress remoteAddress = (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
         sockets.put(remoteAddress, socketChannel);
+        resetTimer(remoteAddress);
         oldReadBuffer.remove(remoteAddress);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Socket accepted was " + socketChannel);
@@ -221,6 +235,11 @@ public class TCPServerConnector extends TCPConnector implements TransportConnect
             LOGGER.trace("Socket writing to " + key);
         }
         SocketChannel socketChannel = (SocketChannel) key.channel();
+        try {
+            resetTimer((InetSocketAddress)socketChannel.getRemoteAddress());
+        } catch (IOException e) {
+            LOGGER.warn("Cannot reset timer for socket " + socketChannel);
+        }
         try {
             synchronized (changeRequests) {
                 List<ByteBuffer> queue = pendingData.get(socketChannel);
