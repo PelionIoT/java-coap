@@ -15,6 +15,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.util.Set;
 import org.junit.Test;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapMessage;
@@ -540,6 +542,15 @@ public class TCPConnectorTest {
         } catch (CoapException ex) {
             assertTrue(ex.getCause() instanceof IOException);
         }
+        stubClient.start();
+        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
+        stubClient.stop();
+        stubClient.start();
+        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
+        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
+        stubClient.stop();
+        stubClient.start();
+        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
         stubServer.stop();
     }
 

@@ -11,6 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapMessage;
 import org.mbed.coap.CoapPacket;
@@ -75,7 +78,7 @@ public class StubCoapServer {
     public void start() throws IOException {
         if (server == null) {
             TransmissionTimeout transTimeout = (singleTimeout > 0) ? new SingleTimeout(singleTimeout) : new CoapTimeout();
-            server = CoapServerBuilder.newBuilder().transport(transportConnector).blockSize(blockSize).disableDuplicateCheck().timeout(transTimeout).build();
+            server = CoapServerBuilder.newBuilder().transport(transportConnector).blockSize(blockSize).disableDuplicateCheck().timeout(transTimeout).executor(new ThreadPoolExecutor(0, 2, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>())).build();
         }
         server.addRequestHandler("/*", new CoapHandler() {
             @Override
