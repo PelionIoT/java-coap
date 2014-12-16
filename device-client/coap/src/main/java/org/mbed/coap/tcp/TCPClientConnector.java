@@ -33,9 +33,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
      * {@link org.mbed.coap.tcp.TCPConnector#DEFAULT_MAX_LENGTH}
      */
     public TCPClientConnector() {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Client constructor");
-        }
+        this(DEFAULT_MAX_LENGTH);
     }
 
     /**
@@ -44,11 +42,23 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
      * @param maxMessageSize maximum message size to be able receive or send
      */
     public TCPClientConnector(int maxMessageSize) {
-        super(maxMessageSize);
+        this(maxMessageSize, 0);
+    }
+    
+    /**
+     * Constructs TCP client connector with defined message size
+     *
+     * @param maxMessageSize maximum message size to be able receive or send
+     * @param idleTimeout timeout for idle TCP sockets until clearing up
+     */
+    public TCPClientConnector(int maxMessageSize, int idleTimeout) {
+        super(maxMessageSize, idleTimeout);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Client constructor");
         }
     }
+    
+    
 
     @Override
     public void send(byte[] data, int len, InetSocketAddress destinationAddress, TransportContext transContext) throws IOException {
@@ -190,6 +200,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             LOGGER.trace("Client Socket writing");
         }
         SocketChannel socketChannel = (SocketChannel) key.channel();
+        resetTimer((InetSocketAddress)socketChannel.getRemoteAddress());
         synchronized (changeRequests) {
             List<ByteBuffer> queue = pendingData.get(socketChannel);
             try {
@@ -217,7 +228,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             } catch (Exception e) {
                 LOGGER.error("Client Cannot write to socket.", e);
                 queue.clear();
-                sockets.remove(socketChannel.socket().getRemoteSocketAddress());
+                sockets.remove((InetSocketAddress)socketChannel.socket().getRemoteSocketAddress());
                 key.cancel();
                 socketChannel.close();
             }
@@ -246,6 +257,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             socketChannel.finishConnect();
             InetSocketAddress remoteAddress = (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
             sockets.put(remoteAddress, socketChannel);
+            resetTimer(remoteAddress);
             oldReadBuffer.remove(remoteAddress);
         } catch (IOException e) {
             LOGGER.error("Client cannot finish connection " + e);
@@ -265,7 +277,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
         SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
         socketChannel.connect(address);
-
+        resetTimer(address);
         synchronized (changeRequests) {
             changeRequests.add(new ChangeRequest(socketChannel, ChangeRequest.REGISTER, SelectionKey.OP_CONNECT));
         }

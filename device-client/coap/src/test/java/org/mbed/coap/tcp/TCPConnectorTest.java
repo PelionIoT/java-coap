@@ -520,6 +520,27 @@ public class TCPConnectorTest {
     }
 
     @Test
+    public void timeoutTest() throws UnknownHostException, IOException, CoapException, InterruptedException {
+        TCPServerConnector tcpTransport = new TCPServerConnector(new InetSocketAddress("127.0.0.1", 0));
+        StubCoapServer stubServer = new StubCoapServer(tcpTransport, 1000L);
+        stubServer.start();
+
+        StubCoapServer stubClient = new StubCoapServer(new TCPClientConnector(TCPClientConnector.DEFAULT_MAX_LENGTH, 1), 1000L);
+        stubClient.start();
+        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
+        Thread.sleep(1200);
+        try {
+            stubServer.client(stubServer.verify("/path1").getRemoteAddress().getPort()).resource("/").sync().get();
+            fail("did not timeout");
+        } catch (Exception ex) {
+//            ex.printStackTrace();
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
+    }
+    
+    
+    @Test
     public void clientCloseTest() throws UnknownHostException, IOException, CoapException, InterruptedException {
         TCPServerConnector tcpTransport = new TCPServerConnector(new InetSocketAddress("127.0.0.1", 0));
         StubCoapServer stubServer = new StubCoapServer(tcpTransport, 1000L);
@@ -539,18 +560,22 @@ public class TCPConnectorTest {
         Thread.sleep(50);
         try {
             stubServer.client(stubServer.verify("/path1").getRemoteAddress().getPort()).resource("/").sync().get();
+            fail();
         } catch (CoapException ex) {
             assertTrue(ex.getCause() instanceof IOException);
         }
         stubClient.start();
         assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
         stubClient.stop();
-        stubClient.start();
-        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
-        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
-        stubClient.stop();
-        stubClient.start();
-        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
+//        Thread.sleep(50);
+//        stubClient.start();
+//        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
+//        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
+//        stubClient.stop();
+//        Thread.sleep(50);
+//        stubClient.start();
+//        assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
+//        stubClient.stop();
         stubServer.stop();
     }
 
