@@ -3,7 +3,6 @@
  */
 package org.mbed.coap.tcp;
 
-import com.sun.org.apache.xerces.internal.impl.xs.XSConstraints;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -110,18 +109,25 @@ public abstract class TCPConnector implements Runnable {
     abstract String getThreadName();
 
     public final void cleanupConnection(InetSocketAddress address) {
-        SocketChannel channel = sockets.remove(address);
-        if (channel != null) {
-            pendingData.remove(channel);
-            try {
-                channel.close();
-            } catch (IOException e) {
-                LOGGER.debug("Channel close exception, already closed?");
+        try {
+            SocketChannel channel = sockets.remove(address);
+            if (timers != null) {
+                ScheduledFuture future = timers.remove(address);
+
+                if (future != null) {
+                    future.cancel(false);
+                }
             }
+            if (channel != null) {
+                pendingData.remove(channel);
+                channel.close();
+            }
+            oldReadBuffer.remove(address);
+        } catch (Exception e) {
+            LOGGER.warn("Unexpected error in cleaning up connection", e);
         }
-        oldReadBuffer.remove(address);
     }
-    
+
     public final void read(SelectionKey key) throws IOException {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Socket reading");
@@ -207,7 +213,7 @@ public abstract class TCPConnector implements Runnable {
         if (length < 1 || length > MAX_LENGTH) {
             LOGGER.warn("Received message length of " + length + ", which is invalid, closing socket.");
             key.cancel();
-            cleanupConnection((InetSocketAddress)socketChannel.getRemoteAddress());
+            cleanupConnection((InetSocketAddress) socketChannel.getRemoteAddress());
             return null;
         }
         return ByteBuffer.allocate(length);
