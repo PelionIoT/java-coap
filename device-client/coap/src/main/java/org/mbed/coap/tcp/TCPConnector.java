@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -242,6 +243,18 @@ public abstract class TCPConnector implements Runnable {
         return readBuffer;
     }
 
+    protected List<ByteBuffer> makeSureQueueExists(SocketChannel socketChannel) {
+        List<ByteBuffer> queue = pendingData.get(socketChannel);
+        if (queue == null) {
+            queue = new ArrayList<>();
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Client Send queue filling, creating new queue");
+            }
+            pendingData.put(socketChannel, queue);
+        }
+        return queue;
+    }
+    
     public void resetTimer(InetSocketAddress address) {
         if (timers != null) {
             ScheduledFuture fut = timers.remove(address);

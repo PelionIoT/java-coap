@@ -216,6 +216,14 @@ public class TCPServerConnector extends TCPConnector implements TransportConnect
         SocketChannel socketChannel = serverSocketChannel.accept();
         socketChannel.configureBlocking(false);
         InetSocketAddress remoteAddress = (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
+        List<ByteBuffer> queue = pendingData.get(socketChannel);
+        if (queue == null) {
+            queue = new ArrayList<>();
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Client Send queue filling, creating new queue");
+            }
+            pendingData.put(socketChannel, queue);
+        }
         sockets.put(remoteAddress, socketChannel);
         resetTimer(remoteAddress);
         oldReadBuffer.remove(remoteAddress);
