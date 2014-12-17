@@ -109,6 +109,19 @@ public abstract class TCPConnector implements Runnable {
 
     abstract String getThreadName();
 
+    public final void cleanupConnection(InetSocketAddress address) {
+        SocketChannel channel = sockets.remove(address);
+        if (channel != null) {
+            pendingData.remove(channel);
+            try {
+                channel.close();
+            } catch (IOException e) {
+                LOGGER.debug("Channel close exception, already closed?");
+            }
+        }
+        oldReadBuffer.remove(address);
+    }
+    
     public final void read(SelectionKey key) throws IOException {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Socket reading");
@@ -137,8 +150,7 @@ public abstract class TCPConnector implements Runnable {
                     if (numRead == -1) {
                         LOGGER.warn("Received -1 bytes from channel, unexpectedly closed channel? Finalizing selector and clearing buffers.");
                         key.cancel();
-                        socketChannel.close();
-                        oldReadBuffer.remove(socketAddress);
+                        cleanupConnection(socketAddress);
                         return;
                     }
                     partialMessage.put(readBuffer.array(), 0, (int) numRead);
@@ -153,15 +165,13 @@ public abstract class TCPConnector implements Runnable {
         } catch (IOException e) {
             LOGGER.warn("Socket closed while reading, removing key and closing channel");
             key.cancel();
-            socketChannel.close();
+            cleanupConnection(socketAddress);
             return;
         }
 
         if (numRead == -1) {
-            LOGGER.warn(("Client has closed the socket, clean up server key and channel [" + socketChannel.getRemoteAddress() + "]"));
-            if (sockets.remove(socketChannel.getRemoteAddress()) == null) {
-                LOGGER.trace("Could not find and remove client socket");
-            }
+            LOGGER.debug(("Other end has closed the socket, clean up key and channel to [" + socketChannel.getRemoteAddress() + "]"));
+            cleanupConnection(socketAddress);
             key.channel().close();
             key.cancel();
             return;
@@ -197,7 +207,7 @@ public abstract class TCPConnector implements Runnable {
         if (length < 1 || length > MAX_LENGTH) {
             LOGGER.warn("Received message length of " + length + ", which is invalid, closing socket.");
             key.cancel();
-            socketChannel.close();
+            cleanupConnection((InetSocketAddress)socketChannel.getRemoteAddress());
             return null;
         }
         return ByteBuffer.allocate(length);

@@ -5,6 +5,7 @@ package org.mbed.coap.tcp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
@@ -44,7 +45,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
     public TCPClientConnector(int maxMessageSize) {
         this(maxMessageSize, 0);
     }
-    
+
     /**
      * Constructs TCP client connector with defined message size
      *
@@ -57,8 +58,6 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             LOGGER.trace("Client constructor");
         }
     }
-    
-    
 
     @Override
     public void send(byte[] data, int len, InetSocketAddress destinationAddress, TransportContext transContext) throws IOException {
@@ -91,7 +90,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("Client Creating new connection to server");
             }
-            socketChannel = initiateConnection(destinationAddress);
+            socketChannel = initiateConnection(destinationAddress, null);
         } else {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("Client Send queue filling, adding changerequest");
@@ -117,7 +116,39 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
 
     @Override
     public InetSocketAddress getLocalSocketAddress() {
+        if (!sockets.isEmpty()) {
+            if (sockets.size() > 0) {
+                LOGGER.warn("There are multiple TCP connections in this client, returning the first connection address.");
+            }
+            try {
+                return (InetSocketAddress) sockets.values().iterator().next().getLocalAddress();
+            } catch (IOException e) {
+                LOGGER.warn("Unexpectedly cannot see local address of connection", e);
+            }
+        }
         return null;
+    }
+
+    /**
+     * Create new connection to remote address, it connection already exists
+     * this returns immediately the local address.
+     *
+     * @param remoteAddress Remote address
+     * @param localAddress Local bind address, null if letting socket channel to
+     * assign address automatically.
+     * @return local binded address
+     * @throws IOException if cannot bind to specified local address
+     */
+    public InetSocketAddress connect(InetSocketAddress remoteAddress, InetSocketAddress localAddress) throws IOException {
+        SocketChannel socketChannel = sockets.get(remoteAddress);
+        if (socketChannel == null) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Client Connecting new connection to server");
+            }
+            socketChannel = initiateConnection(remoteAddress, localAddress);
+        }
+        return (InetSocketAddress) socketChannel.getLocalAddress();
+
     }
 
     @Override
@@ -162,7 +193,6 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
                 }
                 iterateOverAvailableEvents();
 
-
             } catch (ClosedSelectorException e) {
                 LOGGER.debug("Client Selector closed");
             } catch (Exception e) {
@@ -200,7 +230,8 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             LOGGER.trace("Client Socket writing");
         }
         SocketChannel socketChannel = (SocketChannel) key.channel();
-        resetTimer((InetSocketAddress)socketChannel.getRemoteAddress());
+        InetSocketAddress address = (InetSocketAddress) socketChannel.getRemoteAddress();
+        resetTimer(address);
         synchronized (changeRequests) {
             List<ByteBuffer> queue = pendingData.get(socketChannel);
             try {
@@ -228,9 +259,8 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             } catch (Exception e) {
                 LOGGER.error("Client Cannot write to socket.", e);
                 queue.clear();
-                sockets.remove((InetSocketAddress)socketChannel.socket().getRemoteSocketAddress());
+                cleanupConnection(address);
                 key.cancel();
-                socketChannel.close();
             }
         }
         if (LOGGER.isTraceEnabled()) {
@@ -270,12 +300,13 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
         }
     }
 
-    private SocketChannel initiateConnection(InetSocketAddress address) throws IOException {
+    private SocketChannel initiateConnection(InetSocketAddress address, InetSocketAddress localAddress) throws IOException {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Client initiating connection to " + address);
+            LOGGER.trace("Client initiating connection to " + address + " local: " + localAddress);
         }
         SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
+        socketChannel.bind(localAddress);
         socketChannel.connect(address);
         resetTimer(address);
         synchronized (changeRequests) {

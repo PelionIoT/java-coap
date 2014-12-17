@@ -255,7 +255,7 @@ public class TCPServerConnector extends TCPConnector implements TransportConnect
                     } catch (Exception ex) {
                         // Cannot write to socket, probably closed and cannot recover.
                         // Do cleanup the connection.
-                        LOGGER.error("Cannot write to socket, closing and cleaning up." + socketChannel.getRemoteAddress());
+                        LOGGER.warn("Cannot write to socket, closing and cleaning up." + socketChannel.getRemoteAddress());
                         try {
                             socketChannel.close();
                             key.cancel();
