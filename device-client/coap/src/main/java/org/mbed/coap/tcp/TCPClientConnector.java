@@ -15,6 +15,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportContext;
 import org.slf4j.Logger;
@@ -116,7 +117,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
     @Override
     public InetSocketAddress getLocalSocketAddress() {
         if (!sockets.isEmpty()) {
-            if (sockets.size() > 0) {
+            if (sockets.size() > 1) {
                 LOGGER.warn("There are multiple TCP connections in this client, returning the first connection address.");
             }
             try {
