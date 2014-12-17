@@ -489,6 +489,7 @@ public class TCPConnectorTest {
         InetSocketAddress address = clientConnector.getLocalSocketAddress();
         System.out.println("address in connection" + address);
         assertNotNull(address);
+        // try new connection, should not change address
         InetSocketAddress newAddress = clientConnector.connect(new InetSocketAddress("localhost", stubServer.getLocalPort()), address);
         assertEquals(address, newAddress);
         
@@ -501,16 +502,21 @@ public class TCPConnectorTest {
             assertTrue(ex.getCause() instanceof IOException);
         }
         assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
-        address = clientConnector.getLocalSocketAddress();
-        System.out.println("address in connection2" + address);
+        InetSocketAddress address2 = clientConnector.getLocalSocketAddress(); // address should have changed here
+        System.out.println("address2 " + address2);
         // let it timeout
-        Thread.sleep(1200);
+        Thread.sleep(1500);
         try {
-            address = clientConnector.connect(new InetSocketAddress("localhost", stubServer.getLocalPort()), address);
+            // try to use old address on connect
+            System.out.println("trying to use old address....");
+            InetSocketAddress address3 = clientConnector.connect(new InetSocketAddress("localhost", stubServer.getLocalPort()), address2);
+            System.out.println("...works " + address3);
         } catch (Exception e) {
-            address = clientConnector.connect(new InetSocketAddress("localhost", stubServer.getLocalPort()), null);
+            System.out.println("...did not work");
+            InetSocketAddress address4 = clientConnector.connect(new InetSocketAddress("localhost", stubServer.getLocalPort()), null);
+            System.out.println("instead using " + address4);
         }
-        System.out.println("address in connection3" + address);
+        
         stubClient.stop();
         stubServer.stop();
     }
