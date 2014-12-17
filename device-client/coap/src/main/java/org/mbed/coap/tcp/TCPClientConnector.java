@@ -97,14 +97,8 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             }
             changeRequests.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
         }
-        List<ByteBuffer> queue = pendingData.get(socketChannel);
-        if (queue == null) {
-            queue = new ArrayList<>();
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Client Send queue filling, creating new queue");
-            }
-            pendingData.put(socketChannel, queue);
-        }
+        
+        List<ByteBuffer> queue = makeSureQueueExists(socketChannel);
         ByteBuffer allData = ByteBuffer.allocate(len + LENGTH_BYTES);
         allData.putInt(len);
         allData.put(data, 0, len);
@@ -287,6 +281,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             socketChannel.finishConnect();
             InetSocketAddress remoteAddress = (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
             sockets.put(remoteAddress, socketChannel);
+            makeSureQueueExists(socketChannel);
             resetTimer(remoteAddress);
             oldReadBuffer.remove(remoteAddress);
         } catch (IOException e) {
