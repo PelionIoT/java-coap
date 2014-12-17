@@ -487,7 +487,7 @@ public class TCPConnectorTest {
         
         assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
         InetSocketAddress address = clientConnector.getLocalSocketAddress();
-        System.out.println(address);
+        System.out.println("address in connection" + address);
         assertNotNull(address);
         InetSocketAddress newAddress = clientConnector.connect(new InetSocketAddress("localhost", stubServer.getLocalPort()), address);
         assertEquals(address, newAddress);
@@ -502,13 +502,17 @@ public class TCPConnectorTest {
         }
         assertNotNull(stubClient.client(stubServer.getLocalPort()).resource("/path1").sync().get());
         address = clientConnector.getLocalSocketAddress();
-        System.out.println(address);
+        System.out.println("address in connection2" + address);
         // let it timeout
         Thread.sleep(1200);
-        address = clientConnector.connect(new InetSocketAddress("localhost", stubServer.getLocalPort()), address);
-        System.out.println(address);
-        
-        
+        try {
+            address = clientConnector.connect(new InetSocketAddress("localhost", stubServer.getLocalPort()), address);
+        } catch (Exception e) {
+            address = clientConnector.connect(new InetSocketAddress("localhost", stubServer.getLocalPort()), null);
+        }
+        System.out.println("address in connection3" + address);
+        stubClient.stop();
+        stubServer.stop();
     }
     
     @Test
