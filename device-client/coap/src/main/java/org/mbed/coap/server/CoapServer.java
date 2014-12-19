@@ -166,7 +166,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
         this.scheduledExecutor = scheduledExecutor;
     }
 
-    protected ScheduledExecutorService getScheduledExecutor() {
+    public ScheduledExecutorService getScheduledExecutor() {
         return scheduledExecutor;
     }
 
