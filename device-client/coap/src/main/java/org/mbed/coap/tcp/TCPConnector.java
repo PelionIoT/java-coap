@@ -38,7 +38,7 @@ public abstract class TCPConnector implements Runnable {
     protected Selector selector;
     protected TransportReceiver messageReceiver;
     protected final int MAX_LENGTH;
-    protected static final int DEFAULT_MAX_LENGTH = 1024;
+    public static final int DEFAULT_MAX_LENGTH = 1024;
     protected static final int LENGTH_BYTES = 4;
     private final int IDLE_TIMEOUT;
 
@@ -254,7 +254,7 @@ public abstract class TCPConnector implements Runnable {
         }
         return queue;
     }
-    
+
     public void resetTimer(InetSocketAddress address) {
         if (timers != null) {
             ScheduledFuture fut = timers.remove(address);
@@ -280,9 +280,10 @@ public abstract class TCPConnector implements Runnable {
             if (socket != null) {
                 try {
                     pendingData.remove(socket);
+                    LOGGER.debug("Closing socket (local: " + socket.getLocalAddress() + ")");
                     socket.close();
                 } catch (IOException e) {
-
+                    LOGGER.error("Error closing socket", e);
                 }
             }
             oldReadBuffer.remove(address);
