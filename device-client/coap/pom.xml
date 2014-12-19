@@ -82,6 +82,14 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>com.github.marschall</groupId>
+                <artifactId>jdeps-maven-plugin</artifactId>
+                <version>0.3.1</version>
+                <configuration>
+                    <profile>true</profile>
+                </configuration>
+            </plugin>
         </plugins>
         <extensions>
             <extension>
