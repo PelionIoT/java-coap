@@ -15,7 +15,6 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportContext;
 import org.slf4j.Logger;
@@ -87,8 +86,8 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
     private void fillQueueWithData(byte[] data, int len, InetSocketAddress destinationAddress) throws IOException {
         SocketChannel socketChannel = sockets.get(destinationAddress);
         if (socketChannel == null) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Client Creating new connection to server");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Client send: Creating new connection to server");
             }
             socketChannel = initiateConnection(destinationAddress, null);
         } else {
@@ -97,7 +96,7 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             }
             changeRequests.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
         }
-        
+
         List<ByteBuffer> queue = makeSureQueueExists(socketChannel);
         ByteBuffer allData = ByteBuffer.allocate(len + LENGTH_BYTES);
         allData.putInt(len);
@@ -136,8 +135,8 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
     public InetSocketAddress connect(InetSocketAddress remoteAddress, InetSocketAddress localAddress) throws IOException {
         SocketChannel socketChannel = sockets.get(remoteAddress);
         if (socketChannel == null) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Client Connecting new connection to server");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Client connect: New connection to server");
             }
             socketChannel = initiateConnection(remoteAddress, localAddress);
         }
@@ -273,11 +272,11 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
     }
 
     private void finishConnection(SelectionKey key) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Client finishing connection");
-        }
         SocketChannel socketChannel = (SocketChannel) key.channel();
         try {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Client finishing connection (local: " + socketChannel.getLocalAddress() + ")");
+            }
             socketChannel.finishConnect();
             InetSocketAddress remoteAddress = (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
             sockets.put(remoteAddress, socketChannel);
@@ -290,14 +289,14 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
             return;
         }
         key.interestOps(SelectionKey.OP_WRITE);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Client finished connection");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Client finished connection");
         }
     }
 
     private SocketChannel initiateConnection(InetSocketAddress address, InetSocketAddress localAddress) throws IOException {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Client initiating connection to " + address + " local: " + localAddress);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Client initiating connection to " + address + " local: " + localAddress);
         }
         SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
@@ -307,9 +306,10 @@ public class TCPClientConnector extends TCPConnector implements TransportConnect
         synchronized (changeRequests) {
             changeRequests.add(new ChangeRequest(socketChannel, ChangeRequest.REGISTER, SelectionKey.OP_CONNECT));
         }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Client initiated connection to " + address);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Client initiated connection to " + address + " local: " + localAddress);
         }
+        selector.wakeup();
         return socketChannel;
     }
 
