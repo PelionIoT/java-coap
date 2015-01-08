@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
@@ -14,6 +14,7 @@ public interface TransportReceiver {
     
     /**
      * Handle data just received from transport layer.
+     * Implementation MUST not block.
      *
      * @param adr source address
      * @param buffer packet raw data
