@@ -1,9 +1,16 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.server;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.BlockSize;
@@ -14,18 +21,10 @@ import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.test.InMemoryTransport;
-import org.mbed.coap.test.SingleParamTransportContext;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.CoapResource;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 /**
- *
  * @author szymon
  */
 public class CoapServerTransportContextTest {
@@ -53,13 +52,13 @@ public class CoapServerTransportContextTest {
 
         srvTransport.setTransportContext(new TextTransportContext("dupa"));
         client.resource("/test").context(new TextTransportContext("client-sending")).sync().get();
-        assertEquals("dupa", coapResourceTest.transportContext.get(MyEnum.TEXT, String.class));
+        assertEquals("dupa", ((TextTransportContext) coapResourceTest.transportContext).getText());
         verify(cliTransport).send(isA(byte[].class), anyInt(), isA(InetSocketAddress.class), eq(new TextTransportContext("client-sending")));
         verify(srvTransport).send(isA(byte[].class), anyInt(), isA(InetSocketAddress.class), eq(new TextTransportContext("get-response")));
 
         srvTransport.setTransportContext(new TextTransportContext("dupa2"));
         client.resource("/test").sync().get();
-        assertEquals("dupa2", coapResourceTest.transportContext.get(MyEnum.TEXT));
+        assertEquals("dupa2", ((TextTransportContext) coapResourceTest.transportContext).getText());
 
         client.close();
     }
@@ -74,7 +73,7 @@ public class CoapServerTransportContextTest {
                 .context(new TextTransportContext("client-block")).sync().put();
 
         assertEquals(Code.C201_CREATED, resp.getCode());
-        assertEquals("dupa", coapResourceTest.transportContext.get(MyEnum.TEXT, String.class));
+        assertEquals("dupa", ((TextTransportContext) coapResourceTest.transportContext).getText());
 
         //for each block it sends same transport context
         verify(cliTransport, times(3)).send(isA(byte[].class), anyInt(), isA(InetSocketAddress.class), eq(new TextTransportContext("client-block")));
@@ -82,17 +81,41 @@ public class CoapServerTransportContextTest {
         client.close();
     }
 
-    private static class TextTransportContext extends SingleParamTransportContext<MyEnum> {
+    private static class TextTransportContext extends TransportContext {
+
+        private final String text;
 
         public TextTransportContext(String text) {
-            super(MyEnum.TEXT, text, null);
+            super(null, null, null, null);
+            this.text = text;
         }
 
-    }
+        public String getText() {
+            return text;
+        }
 
-    private static enum MyEnum {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof TextTransportContext)) {
+                return false;
+            }
 
-        TEXT
+            TextTransportContext that = (TextTransportContext) o;
+
+            if (!text.equals(that.text)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return text.hashCode();
+        }
     }
 
     private static class CoapResourceTest extends CoapResource {
