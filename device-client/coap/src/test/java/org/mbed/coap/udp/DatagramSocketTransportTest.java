@@ -1,26 +1,20 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.udp;
 
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.*;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.test.StubCoapServer;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  *
@@ -111,12 +105,12 @@ public class DatagramSocketTransportTest {
 
         trans.start(mock(TransportReceiver.class));
 
-        trans.send("dupa".getBytes(), 4, new InetSocketAddress("::1", 5683), TrafficClassTransportContext.height());
+        trans.send("dupa".getBytes(), 4, new InetSocketAddress("::1", 5683), new TransportContext(TrafficClassTransportContext.HIGH, null, null, null));
         verify(socket).setTrafficClass(TrafficClassTransportContext.HIGH);
         verify(socket).setTrafficClass(0);
 
         reset(socket);
-        trans.send("dupa".getBytes(), 4, new InetSocketAddress("::1", 5683), new TrafficClassTransportContext(89, TransportContext.NULL));
+        trans.send("dupa".getBytes(), 4, new InetSocketAddress("::1", 5683), new TransportContext(89, null, null, null));
         verify(socket).setTrafficClass(89);
         verify(socket).setTrafficClass(0);
 
@@ -137,7 +131,7 @@ public class DatagramSocketTransportTest {
 
         CoapClient client = CoapClientBuilder.newBuilder(5683).transport(trans).timeout(10000).build();
 
-        client.resource("/test").context(TrafficClassTransportContext.height()).get();
+        client.resource("/test").context(new TransportContext(TrafficClassTransportContext.HIGH, null, null, null)).get();
         verify(socket).setTrafficClass(TrafficClassTransportContext.HIGH);
         verify(socket).setTrafficClass(0);
 

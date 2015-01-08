@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.udp;
 
@@ -98,7 +98,7 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
         }
         DatagramPacket datagramPacket = new DatagramPacket(data, len, destinationAddress);
         if (transContext != null) {
-            Integer tc = transContext.get(TrafficClassTransportContext.Type.TRAFFIC_CLASS, Integer.class);
+            Integer tc = transContext.getTrafficClass();
             if (tc != null && tc > 0) {
                 synchronized (this) {
                     socket.setTrafficClass(tc);
