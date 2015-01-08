@@ -1,79 +1,39 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.transport;
 
 import static org.junit.Assert.*;
-import org.mbed.coap.transport.AbstractTransportContext;
-import org.mbed.coap.transport.TransportContext;
 import org.junit.Test;
 
 /**
- *
  * @author szymon
  */
 public class TransportContextTest {
 
     @Test
     public void test() {
-        TransportContext tc = new MyContext(new MyContext2(null));
+        TransportContext tc = new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222");
 
-        assertEquals("address", tc.get(ContextEnum.ADDRESS, String.class));
-        assertEquals("address", tc.get(ContextEnum.ADDRESS));
-        assertEquals("address2", tc.get(ContextEnum2.ADDRESS2, String.class));
+        assertEquals("+358000111222", tc.getMsisdn());
+        assertEquals("node001", tc.getCertificateCN());
+        assertArrayEquals("dupa".getBytes(), tc.getPreSharedKeyID());
 
-        assertNull(tc.get(ContextEnum2.ADDRESS2, Integer.class));
-        assertNull(tc.get(ContextEnum.CERTIFICATE));
-        assertNull(tc.get(ContextEnum3.ADDRESS3));
-
+        //null
+        assertNull(TransportContext.NULL.getCertificateCN());
+        assertNull(TransportContext.NULL.getPreSharedKeyID());
+        assertNull(TransportContext.NULL.getTrafficClass());
     }
 
-    private static class MyContext extends AbstractTransportContext<ContextEnum> {
+    @Test
+    public void testImmutable() throws Exception {
+        TransportContext tc = new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222");
 
-        public MyContext(TransportContext wrappedTransContext) {
-            super(wrappedTransContext);
-        }
+        assertEquals(new TransportContext(100, "node002", "2".getBytes(), "+48000111222"),
+                tc.withCertificateCN("node002").withMsisdn("+48000111222").withPreSharedKeyID("2".getBytes()).withTrafficClass(100));
 
-        @Override
-        protected Object getParameter(ContextEnum enumerator) {
-            switch (enumerator) {
-                case ADDRESS:
-                    return "address";
-                default:
-                    return null;
-
-            }
-        }
-    }
-
-    private static class MyContext2 extends AbstractTransportContext<ContextEnum2> {
-
-        public MyContext2(TransportContext wrappedTransContext) {
-            super(wrappedTransContext);
-        }
-
-        @Override
-        protected Object getParameter(ContextEnum2 enumerator) {
-            switch (enumerator) {
-                case ADDRESS2:
-                    return "address2";
-                default:
-                    return null;
-
-            }
-        }
-    }
-
-    public enum ContextEnum {
-
-        ADDRESS, CERTIFICATE
-    }
-
-    public enum ContextEnum2 {
-
-        ADDRESS2
-    }
-
-    public enum ContextEnum3 {
-
-        ADDRESS3
+        assertEquals(new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222"), tc);
+        assertEquals(new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222").hashCode(), tc.hashCode());
     }
 
 }
