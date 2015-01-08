@@ -1,16 +1,17 @@
 package com.arm.mbed.commons.lwm2m.tlv;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import com.arm.mbed.commons.lwm2m.LWM2MID;
 import com.arm.mbed.commons.lwm2m.LWM2MObjectInstance;
 import com.arm.mbed.commons.lwm2m.LWM2MResource;
 import com.arm.mbed.commons.lwm2m.LWM2MResourceInstance;
-import com.arm.mbed.commons.lwm2m.tlv.TLVDeserializer;
-import com.arm.mbed.commons.lwm2m.tlv.TLVSerializer;
-import java.util.List;
 import com.google.common.io.BaseEncoding;
 import java.util.Arrays;
+import java.util.List;
 import org.junit.Test;
 
 public class TLVSerializerTest {
@@ -19,13 +20,13 @@ public class TLVSerializerTest {
     public void serializeStringWithLengthOf3() {
         LWM2MResource manufacturer = new LWM2MResource(LWM2MID.from(0), "ARM");
         byte[] manufacturerTLV = TLVSerializer.serialize(manufacturer);
-        
+
         assertThat(manufacturerTLV.length, equalTo(5) );
-        assertArrayEquals( new byte[] { 
+        assertArrayEquals( new byte[] {
                 (byte) 0b11_0_00_011,
                 (byte) 0,
                 'A', 'R', 'M',
-                }, 
+                },
         manufacturerTLV);
     }
 
@@ -33,14 +34,14 @@ public class TLVSerializerTest {
     public void serializeStringWithLengthOf13() {
         LWM2MResource model = new LWM2MResource(LWM2MID.from(1), "nanoservice 2");
         byte[] modelTLV = TLVSerializer.serialize(model);
-        
+
         assertThat(modelTLV.length, equalTo(16) );
-        assertArrayEquals( new byte[] { 
+        assertArrayEquals( new byte[] {
                 (byte) 0b11_0_01_000,
                 (byte) 1,
                 (byte) 13,
                 'n', 'a', 'n', 'o', 's', 'e', 'r', 'v', 'i', 'c', 'e', ' ', '2',
-                }, 
+                },
                 modelTLV);
     }
 
@@ -49,14 +50,14 @@ public class TLVSerializerTest {
         byte[] name = new byte[256];
         LWM2MResource model = new LWM2MResource(LWM2MID.from(1), name);
         byte[] modelTLV = TLVSerializer.serialize(model);
-        
+
         assertThat(modelTLV.length, equalTo(260) );
-        assertArrayEquals( new byte[] { 
+        assertArrayEquals( new byte[] {
                 (byte) 0b11_0_10_000,
                 (byte) 1,
                 (byte) 0x01,
                 (byte) 0x00,
-                }, 
+                },
                 Arrays.copyOf(modelTLV, 4));
     }
 
@@ -65,41 +66,41 @@ public class TLVSerializerTest {
         byte[] name = new byte[65536];
         LWM2MResource model = new LWM2MResource(LWM2MID.from(1), name);
         byte[] modelTLV = TLVSerializer.serialize(model);
-        
+
         assertThat(modelTLV.length, equalTo(65541) );
-        assertArrayEquals( new byte[] { 
+        assertArrayEquals( new byte[] {
                 (byte) 0b11_0_11_000,
                 (byte) 1,
                 (byte) 0x01,
                 (byte) 0x00,
                 (byte) 0x00,
-                }, 
+                },
                 Arrays.copyOf(modelTLV, 5));
     }
-    
+
     @Test
     public void serializeWithLongID() throws Exception {
         LWM2MResource manufacturer = new LWM2MResource(LWM2MID.from(256), "ARM");
         byte[] manufacturerTLV = TLVSerializer.serialize(manufacturer);
-        
+
         assertThat(manufacturerTLV.length, equalTo(6) );
-        assertArrayEquals( new byte[] { 
+        assertArrayEquals( new byte[] {
                 (byte) 0b11_1_00_011,
                 (byte) 1,
                 (byte) 0,
                 'A', 'R', 'M',
-                }, 
+                },
         manufacturerTLV);
     }
-    
+
     @Test
     public void serializeTwoResources() throws Exception {
         LWM2MResource manufacturer = new LWM2MResource(LWM2MID.from(0), "ARM");
         LWM2MResource model = new LWM2MResource(LWM2MID.from(1), "nanoservice 2");
-        
+
         byte[] tlv = TLVSerializer.serializeResources(Arrays.asList(manufacturer, model));
         assertEquals (21, tlv.length);
-        assertArrayEquals( new byte[] { 
+        assertArrayEquals( new byte[] {
                 (byte) 0b11_0_00_011,
                 (byte) 0,
                 'A', 'R', 'M',
@@ -107,19 +108,19 @@ public class TLVSerializerTest {
                 (byte) 1,
                 (byte) 13,
                 'n', 'a', 'n', 'o', 's', 'e', 'r', 'v', 'i', 'c', 'e', ' ', '2'
-                }, 
+                },
                 tlv);
     }
-    
+
     @Test
     public void serializeMultipleResource() throws Exception {
         LWM2MResourceInstance internalBattery = new LWM2MResourceInstance(LWM2MID.create(), 0x01);
         LWM2MResourceInstance usbBattery = new LWM2MResourceInstance(LWM2MID.create(), 0x05);
         LWM2MResource power = new LWM2MResource(LWM2MID.from(6), Arrays.asList(internalBattery, usbBattery));
-        
+
         byte[] powerTLV = TLVSerializer.serialize(power);
         assertEquals(8, powerTLV.length);
-        assertArrayEquals( new byte[] { 
+        assertArrayEquals( new byte[] {
                 (byte) 0b10_0_00_110,
                 (byte) 6,
                 (byte) 0b01_0_00_001,
@@ -128,25 +129,38 @@ public class TLVSerializerTest {
                 (byte) 0b01_0_00_001,
                 (byte) 1,
                 (byte) 0x05,
-                }, 
+                },
                 powerTLV);
     }
-    
+
     @Test
     public void serializeMultipleObjectInstances() throws Exception {
-        LWM2MObjectInstance aco1 = new LWM2MObjectInstance(Arrays.asList(
-            new LWM2MResource(LWM2MID.from(0), 0x3),
-            new LWM2MResource(LWM2MID.from(2), Arrays.asList(
-                new LWM2MResourceInstance(LWM2MID.from(1), 0b11_10_0000),
-                new LWM2MResourceInstance(LWM2MID.from(2), 0b10_00_0000)) 
+        // See LWM2M spec Chapter 6.3.3.2
+
+        // GET /2
+        LWM2MObjectInstance aco0 = new LWM2MObjectInstance(LWM2MID.$0, Arrays.asList(
+            new LWM2MResource(LWM2MID.from(0), 0x03),                       // resource: Object ID
+            new LWM2MResource(LWM2MID.from(1), 0x01),                       // resource: Object Instance ID
+            new LWM2MResource(LWM2MID.from(2), Arrays.asList(               // multiple resource: ACL
+                new LWM2MResourceInstance(LWM2MID.from(1), 0b11_10_0000),   // resource instance: ACL [1]
+                new LWM2MResourceInstance(LWM2MID.from(2), 0b10_00_0000))   // resource instance: ACL [1]
             ),
-            new LWM2MResource(LWM2MID.from(3), 0x01)
+            new LWM2MResource(LWM2MID.from(3), 0x01)                        // resource: Access Control Owner
         ));
-        
-        byte[] acoTLV = TLVSerializer.serialize(aco1);
-        assertEquals(17, acoTLV.length);
+        LWM2MObjectInstance aco1 = new LWM2MObjectInstance(LWM2MID.$1, Arrays.asList(
+                new LWM2MResource(LWM2MID.from(0), 0x04),
+                new LWM2MResource(LWM2MID.from(1), 0x02),
+                new LWM2MResource(LWM2MID.from(2), Arrays.asList(
+                    new LWM2MResourceInstance(LWM2MID.from(1), 0b10_00_0000),
+                    new LWM2MResourceInstance(LWM2MID.from(2), 0b10_00_0000))
+                ),
+                new LWM2MResource(LWM2MID.from(3), 0x01)
+            ));
+
+        byte[] acoTLV = TLVSerializer.serialize(aco0, aco1);
+        assertEquals(40, acoTLV.length);
     }
-    
+
     @Test
     public void serializeCertificates() throws Exception {
         LWM2MResource secMode = new LWM2MResource(LWM2MID.from(2), 2);
@@ -154,7 +168,7 @@ public class TLVSerializerTest {
         LWM2MResource priv = new LWM2MResource(LWM2MID.from(5), BaseEncoding.base64().decode("MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgeDict5S0Dz1OCthRTPIxWdidQGezkscQluPiKt7zD/uhRANCAASzoo3RqwjZEWJdqeQO8MTtGYlG/jZrxodAe4FC6Yu+32ahNakfJDMSEnLAQrRvndT8FGDL6eapppR1nUrR0LgT"));
         LWM2MResource url = new LWM2MResource(LWM2MID.from(0), "coaps://localhost:64464");
         LWM2MObjectInstance security = new LWM2MObjectInstance(LWM2MID.from(0), secMode, cert, priv, url);
-        
+
         byte[] tlv = TLVSerializer.serialize(security);
         List<LWM2MObjectInstance> decoded = TLVDeserializer.deserialiseObjectInstances(tlv);
         assertThat (decoded, hasSize(1));
