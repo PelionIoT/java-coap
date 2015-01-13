@@ -68,7 +68,7 @@ public class StubCoapServer {
     }
 
     public StubCoapServer() {
-        this.singleTimeout = 3000;
+        this.singleTimeout = 10000;
     }
 
     public StubCoapServer(CoapServer coapServer) {
