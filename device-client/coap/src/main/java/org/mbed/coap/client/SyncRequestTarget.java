@@ -1,13 +1,13 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
 
+import java.util.concurrent.ExecutionException;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.exception.CoapException;
 
 /**
- *
  * @author szymon
  */
 public class SyncRequestTarget {
@@ -59,6 +59,9 @@ public class SyncRequestTarget {
     }
 
     private static CoapException handleException(Exception ex) {
+        if (ex instanceof ExecutionException) {
+            return handleException(((Exception) ex.getCause()));
+        }
         if (ex instanceof CoapException) {
             return (CoapException) ex;
         } else if (ex.getCause() instanceof CoapException) {
