@@ -54,6 +54,7 @@ public class StubCoapServer {
     private TransportConnector transportConnector;
     private BlockSize blockSize;
     private BlockingQueue<CoapPacket> notifQueue;
+    private ThreadPoolExecutor executorCreatedByUs;
 
     public StubCoapServer(TransportConnector transportConnector) {
         this.transportConnector = transportConnector;
@@ -79,7 +80,8 @@ public class StubCoapServer {
     public void start() throws IOException {
         if (server == null) {
             TransmissionTimeout transTimeout = (singleTimeout > 0) ? new SingleTimeout(singleTimeout) : new CoapTimeout();
-            server = CoapServerBuilder.newBuilder().transport(transportConnector).blockSize(blockSize).disableDuplicateCheck().timeout(transTimeout).executor(new ThreadPoolExecutor(0, 2, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>())).build();
+            executorCreatedByUs = new ThreadPoolExecutor(0, 20, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+            server = CoapServerBuilder.newBuilder().transport(transportConnector).blockSize(blockSize).disableDuplicateCheck().timeout(transTimeout).executor(executorCreatedByUs).build();
         }
         server.addRequestHandler("/*", new CoapHandler() {
             @Override
@@ -93,6 +95,10 @@ public class StubCoapServer {
 
     public void stop() {
         server.stop();
+        if (executorCreatedByUs != null) {
+            executorCreatedByUs.shutdown();
+            executorCreatedByUs = null;
+        }
     }
 
     public void setCoapServer(CoapServer coapServer) {
