@@ -6,6 +6,7 @@ package org.mbed.coap.test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class StubCoapServer {
     static final Short ANY_SHORT = Short.valueOf((short) 0);
     static final Long ANY_LONG = Long.valueOf(0);
     static final byte[] ANY_BYTEARR = new byte[1];
-    private final Map<CoapPacket, StubResponse> rules = new LinkedHashMap<>();
+    private final Map<CoapPacket, StubResponse> rules = Collections.synchronizedMap(new LinkedHashMap<CoapPacket, StubResponse>());
     private CoapServer server;
     private final Map<String, CoapPacket> requests = new HashMap<>();
     private long singleTimeout;
