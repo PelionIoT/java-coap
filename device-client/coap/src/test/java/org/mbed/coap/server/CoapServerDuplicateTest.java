@@ -1,5 +1,9 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.server;
 
+import static org.junit.Assert.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -8,10 +12,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.CoapPacket;
@@ -20,6 +20,7 @@ import org.mbed.coap.HeaderOptions;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.Method;
 import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.test.CurrentThreadExecutor;
 import org.mbed.coap.test.InMemoryTransport;
 import org.mbed.coap.test.StubCoapServer;
 import org.mbed.coap.transport.TransportContext;
@@ -27,7 +28,6 @@ import org.mbed.coap.transport.TransportReceiver;
 import org.mbed.coap.transport.TransportWorkerWrapper;
 
 /**
- *
  * @author szymon
  */
 public class CoapServerDuplicateTest {
@@ -85,6 +85,20 @@ public class CoapServerDuplicateTest {
         assertEquals("dupa", resp.getPayloadString());
         assertNull(coapServer.verifyPUT("/test"));
         assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void duplicateRequestWithoutErrorCallbackHandler() throws Exception {
+        CoapServer server = CoapServerBuilder.newBuilder().transport(new InMemoryTransport(0)).executor(new CurrentThreadExecutor()).build();
+        server.start();
+
+        CoapPacket req = new CoapPacket(Method.PUT, MessageType.Confirmable, "/test", new InetSocketAddress("localhost", 6666));
+        ByteBuffer buffer = ByteBuffer.wrap(req.toByteArray());
+        buffer.position(req.toByteArray().length);
+        server.onReceive(req.getRemoteAddress(), buffer, TransportContext.NULL);
+        server.onReceive(req.getRemoteAddress(), buffer, TransportContext.NULL);
+
+        server.stop();
     }
 
     @Test
