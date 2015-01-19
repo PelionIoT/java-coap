@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 
 package org.mbed.coap.server;
@@ -13,7 +13,18 @@ import org.mbed.coap.exception.CoapException;
  * @author nordav01
  */
 public interface CoapErrorCallback {
-    
+    static final CoapErrorCallback NULL = new CoapErrorCallback() {
+        @Override
+        public void parserError(byte[] packet, CoapException exception) {
+            //ignore
+        }
+
+        @Override
+        public void duplicated(CoapPacket request) {
+            //ignore
+        }
+    };
+
     void parserError(byte[] packet, CoapException exception);
 
     void duplicated(CoapPacket request);

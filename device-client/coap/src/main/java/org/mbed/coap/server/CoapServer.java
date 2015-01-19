@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -131,6 +131,9 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
         if (duplicationListSize > 0) {
             duplicationDetector = new DuplicationDetector(TimeUnit.MILLISECONDS, DEFAULT_DUPLICATION_TIMEOUT, duplicationListSize, scheduledExecutor);
         }
+        if (errorCallback == null) {
+            errorCallback = CoapErrorCallback.NULL;
+        }
     }
 
     void setExecutor(Executor executor) {
@@ -253,6 +256,9 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     }
 
     public void setErrorCallback(CoapErrorCallback errorCallback) {
+        if (errorCallback == null) {
+            throw new NullPointerException();
+        }
         this.errorCallback = errorCallback;
     }
 
@@ -473,9 +479,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
      */
     @Override
     protected void handleException(byte[] packet, CoapException exception, TransportContext transportContext) {
-        if (errorCallback != null) {
-            errorCallback.parserError(packet, exception);
-        }
+        errorCallback.parserError(packet, exception);
     }
 
     private boolean handlePing(CoapPacket packet) {
