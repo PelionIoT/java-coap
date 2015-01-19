@@ -1,10 +1,11 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,7 +16,7 @@ import java.util.logging.Logger;
  */
 public class TransportWorkerWrapper implements Runnable, TransportConnector {
 //TODO: rename to TransportWorker
-
+private static final AtomicInteger threadIndex = new AtomicInteger(0);
     private static final Logger LOGGER = Logger.getLogger(TransportWorkerWrapper.class.getName());
     private final TransportConnectorTask wrappedConnector;
     protected boolean isRunning;
@@ -48,7 +49,7 @@ public class TransportWorkerWrapper implements Runnable, TransportConnector {
         isRunning = true;
         transportThreads = new Thread[transThreadsCount];
         for (int i = 0; i < transThreadsCount; i++) {
-            transportThreads[i] = new Thread(this, "transport-" + i);
+            transportThreads[i] = new Thread(this, "transport-" + threadIndex.getAndIncrement());
             transportThreads[i].start();
         }
 
