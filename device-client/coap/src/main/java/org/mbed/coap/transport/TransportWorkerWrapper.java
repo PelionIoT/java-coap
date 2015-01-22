@@ -15,8 +15,7 @@ import java.util.logging.Logger;
  * @author szymon
  */
 public class TransportWorkerWrapper implements Runnable, TransportConnector {
-//TODO: rename to TransportWorker
-private static final AtomicInteger threadIndex = new AtomicInteger(0);
+    private static final AtomicInteger THREAD_INDEX = new AtomicInteger(0);
     private static final Logger LOGGER = Logger.getLogger(TransportWorkerWrapper.class.getName());
     private final TransportConnectorTask wrappedConnector;
     protected boolean isRunning;
@@ -49,7 +48,7 @@ private static final AtomicInteger threadIndex = new AtomicInteger(0);
         isRunning = true;
         transportThreads = new Thread[transThreadsCount];
         for (int i = 0; i < transThreadsCount; i++) {
-            transportThreads[i] = new Thread(this, "transport-" + threadIndex.getAndIncrement());
+            transportThreads[i] = new Thread(this, "transport-" + THREAD_INDEX.getAndIncrement());
             transportThreads[i].start();
         }
 
