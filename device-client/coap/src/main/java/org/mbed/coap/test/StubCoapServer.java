@@ -1,10 +1,11 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -168,6 +169,13 @@ public class StubCoapServer {
             ExHeaderOptions ruleHead = rule.getKey().headers();
             if (!ruleHead.getUriPath().equals(request.headers().getUriPath())) {
                 continue;
+            }
+            try {
+                if (!ruleHead.getUriQueryMap().equals(request.headers().getUriQueryMap())) {
+                    continue;
+                }
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
             }
             if (rule.getKey().getMethod() != request.getMethod()) {
                 if (matchedResp == null) {

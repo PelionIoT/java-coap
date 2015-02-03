@@ -1,14 +1,15 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.stubtest;
 
+import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.BlockSize;
@@ -51,11 +52,14 @@ public class StubCoapServerTest {
 
         stub.when("/dupa/2").thenReturn("blada2");
         stub.when("/dupa/3").thenReturn(Code.C401_UNAUTHORIZED);
+        stub.when("/dupa/4").withQuery("b=3&d=2").thenReturn(Code.C415_UNSUPPORTED_MEDIA_TYPE);
         stub.whenDELETE("/del").thenReturn();
 
         assertEquals("blada", client.resource("/dupa").sync().get().getPayloadString());
         assertEquals("blada2", client.resource("/dupa/2").sync().get().getPayloadString());
         assertEquals(Code.C401_UNAUTHORIZED, client.resource("/dupa/3").sync().get().getCode());
+        assertEquals(Code.C415_UNSUPPORTED_MEDIA_TYPE, client.resource("/dupa/4").query("d", "2").query("b", "3").sync().get().getCode());
+        assertEquals(Code.C404_NOT_FOUND, client.resource("/dupa/4").sync().get().getCode());
         assertNotNull(stub.verify("/dupa/2"));
 
         stub.whenPOST("/d").withContentFormat(MediaTypes.CT_APPLICATION_JSON).thenReturn();
