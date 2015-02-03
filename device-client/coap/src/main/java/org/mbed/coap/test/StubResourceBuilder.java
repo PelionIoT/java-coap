@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.test;
 
@@ -97,6 +97,11 @@ public class StubResourceBuilder {
 
     public StubResourceBuilder delay(long delayMilli) {
         this.delayMilli = delayMilli;
+        return this;
+    }
+
+    public StubResourceBuilder withQuery(String query) {
+        req.headers().setUriQuery(query);
         return this;
     }
 }
