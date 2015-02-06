@@ -251,7 +251,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
      *
      * @param delayedTransactionTimeout timeout in milliseconds
      */
-    public void setDelayedTransactionTimeout(int delayedTransactionTimeout) {
+    public void setDelayedTransactionTimeout(long delayedTransactionTimeout) {
         this.delayedTransactionTimeout = delayedTransactionTimeout;
     }
 

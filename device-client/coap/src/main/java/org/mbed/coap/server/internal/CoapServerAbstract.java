@@ -25,13 +25,13 @@ import org.mbed.coap.transport.TransportReceiver;
 public abstract class CoapServerAbstract implements TransportReceiver {
 
     private static final Logger LOGGER = Logger.getLogger(CoapServerAbstract.class.getName());
-    private static final int DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
-    protected int delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
+    private static final long DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
+    protected long delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
     protected TransmissionTimeout transmissionTimeout;
     protected Executor executor;
     protected CoapErrorCallback errorCallback;
 
-    int getDelayedTransactionTimeout() {
+    long getDelayedTransactionTimeout() {
         return delayedTransactionTimeout;
     }
 
