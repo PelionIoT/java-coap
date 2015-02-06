@@ -431,13 +431,14 @@ public class LinkFormat implements Serializable {
 
     /**
      * Interface description 'if' attribute.
-     * <p/>
-     *
+     * 
+     * <p>
      * The interface description attribute is used to provide a name, URI or URN
      * indicating a specific interface definition used to interact with the
      * target resource. One can think of this as describing verbs usable on a
      * resource. The interface description attribute is meant to describe the
      * generic REST interface to interact with a resource or a set of resources.
+     * </p>
      *
      * @return array with interface description
      */
@@ -459,10 +460,11 @@ public class LinkFormat implements Serializable {
      * Returns the Resource Type 'rt' attribute. It is used to assign an
      * application-specific semantic type to a resource. Multiple Resource Types
      * MAY be included in the value of this parameter
-     * <p/>
+     * <p>
      * The Resource Type attribute is not meant to be used to assign a
      * human-readable name to a resource. The "title" attribute defined in
      * [RFC5988] is meant for that purpose.
+     * </p>
      *
      * @return array with resource types
      */
@@ -482,7 +484,7 @@ public class LinkFormat implements Serializable {
 
     /**
      * Content-type code 'ct' attribute
-     * <p/>
+     * <p>
      * The Content-type code "ct" attribute provides a hint about the Internet
      * media type this resource returns. Note that this is only a hint, and does
      * not override the Content-type Option of a CoAP response obtained by
@@ -491,7 +493,7 @@ public class LinkFormat implements Serializable {
      * application/xml would be indicated as "ct=41". If no Content-type code
      * attribute is present then nothing about the type can be assumed. The
      * Content-type code attribute MUST NOT appear more than once in a link.
-     * <p/>
+     * </p>
      * Alternatively, the "type" attribute MAY be used to indicate an Internet
      * media type as a quoted-string [RFC5988]. It is not however expected that
      * constrained implementations are able to parse quoted- string Content-type
@@ -506,14 +508,14 @@ public class LinkFormat implements Serializable {
 
     /**
      * Maximum size estimate 'sz' attribute
-     * <p/>
-     * <p/>
+     * <p>
      * The maximum size estimate attribute "sz" gives an indication of the
      * maximum size of the resource indicated by the target URI. This attribute
      * is not expected to be included for small resources that can comfortably
      * by carried in a single Maximum Transmission Unit (MTU), but SHOULD be
      * included for resources larger than that. The maximum size estimate
      * attribute MUST NOT appear more than once in a link.
+     * </p>
      *
      * @return Maximum size estimate
      */

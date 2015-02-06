@@ -53,8 +53,7 @@ import org.mbed.coap.utils.EventLoggerCoapPacket;
  * Implements CoAP server ( RFC 7252)
  *
  * @author szymon
- * @see <a href="http://www.rfc-editor.org/rfc/rfc7252.txt"
- * >http://www.rfc-editor.org/rfc/rfc7252.txt</a>
+ * @see <a href="http://www.rfc-editor.org/rfc/rfc7252.txt" >http://www.rfc-editor.org/rfc/rfc7252.txt</a>
  */
 public class CoapServer extends CoapServerAbstract implements Closeable {
 
@@ -272,8 +271,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     }
 
     /**
-     * Sets CoAP transmission timeout settings, use this to change default CoAP
-     * timeout
+     * Sets CoAP transmission timeout settings, use this to change default CoAP timeout
      *
      * @param transmissionTimeout transmission timeout
      */
@@ -291,9 +289,8 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     }
 
     /**
-     * Adds handler for incoming requests. URI context can be absolute or with
-     * postfix. Postfix can be a star sign (*) for example: /s/temp*, it means
-     * that all request under /s/temp/ will be directed to a given handler.
+     * Adds handler for incoming requests. URI context can be absolute or with postfix. Postfix can be a star sign (*)
+     * for example: /s/temp*, it means that all request under /s/temp/ will be directed to a given handler.
      *
      * @param uri URI of a resource
      * @param coapHandler Handler object
@@ -354,11 +351,11 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     }
 
     /**
-     * Makes CoAP request. Sends given packet to specified address. Reply is
-     * called through asynchronous Callback interface.
-     * <p/>
+     * Makes CoAP request. Sends given packet to specified address. Reply is called through asynchronous Callback
+     * interface.
+     * <p>
      * <i>Asynchronous method</i>
-     * <p/>
+     * </p>
      * NOTE: If exception is thrown then callback will never be invoked.
      *
      * @param packet request packet
@@ -370,17 +367,16 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     }
 
     /**
-     * Makes CoAP request. Sends given packet to specified address. Reply is
-     * called through asynchronous Callback interface.
-     * <p/>
+     * Makes CoAP request. Sends given packet to specified address. Reply is called through asynchronous Callback
+     * interface.
+     * <p>
      * <i>Asynchronous method</i>
-     * <p/>
+     * </p>
      * NOTE: If exception is thrown then callback will never be invoked.
      *
      * @param packet request packet
      * @param callback handles response
-     * @param transContext transport context that will be passed to transport
-     * connector
+     * @param transContext transport context that will be passed to transport connector
      * @throws CoapException throws exception if request can not be send
      */
     public void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext) throws CoapException {
@@ -657,9 +653,8 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     }
 
     /**
-     * Enable or disable test for critical options. If enabled and incoming coap
-     * packet contains non-recognized critical option, server will send error
-     * message (4.02 bad option)
+     * Enable or disable test for critical options. If enabled and incoming coap packet contains non-recognized critical
+     * option, server will send error message (4.02 bad option)
      */
     public void useCriticalOptionTest(boolean enable) {
         this.enabledCriticalOptTest = enable;
