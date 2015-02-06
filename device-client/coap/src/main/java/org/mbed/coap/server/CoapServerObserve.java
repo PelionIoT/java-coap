@@ -17,8 +17,7 @@ import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.utils.Callback;
 
 /**
- * Implements CoAP observe mechanism for CoAP Server.
- * (draft-ietf-core-observe-11)
+ * Implements CoAP observe mechanism for CoAP Server. (draft-ietf-core-observe-11)
  *
  * @author szymon
  */
@@ -41,8 +40,9 @@ public class CoapServerObserve extends CoapServerBlocks {
     /**
      * Initialize observation.
      *
-     * <p/>
+     * <p>
      * <i>Asynchronous method</i>
+     * </p>
      *
      * @param uri resource path for observation
      * @param destination destination address
@@ -57,8 +57,9 @@ public class CoapServerObserve extends CoapServerBlocks {
     /**
      * Initialize observation.
      *
-     * <p/>
+     * <p>
      * <i>Asynchronous method</i>
+     * </p>
      *
      * @param uri resource path for observation
      * @param destination destination address
