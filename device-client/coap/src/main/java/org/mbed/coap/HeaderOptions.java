@@ -447,12 +447,13 @@ public class HeaderOptions implements Serializable {
      * cache control in seconds. The option value is represented as a variable
      * length unsigned integer between 8 and 32 bits. A default value of 60
      * seconds is assumed in the absence of this option.
-     * <p/>
+     * <p>
      * When included in a request, Max-age indicates the maximum age of a cached
      * representation of that resource the client will accept. When included in
      * a response, Max-age indicates the maximum time the representation may be
      * cached before it MUST be discarded. This option MUST NOT occur more than
      * once in a header.
+     * </p>
      *
      * @return max-age in seconds or null if absent
      */
