@@ -171,7 +171,7 @@ public class StubCoapServer {
                 continue;
             }
             try {
-                if (!ruleHead.getUriQueryMap().equals(request.headers().getUriQueryMap())) {
+                if (!ruleHead.getUriQueryMap().isEmpty() && !ruleHead.getUriQueryMap().equals(request.headers().getUriQueryMap())) {
                     continue;
                 }
             } catch (ParseException e) {
