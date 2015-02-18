@@ -538,8 +538,18 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
                 LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
             }
         } else {
-            LOGGER.warning("Can not process CoAP message [" + packet + "]");
+            handleNotProcessedMessageWeAreNotRespondingTo(packet);
         }
+    }
+
+    private static void handleNotProcessedMessageWeAreNotRespondingTo(CoapPacket packet) {
+        if (MessageType.Acknowledgement.equals(packet.getMessageType())) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Discarding extra ACK: " + packet);
+            }
+            return;
+        }
+        LOGGER.warning("Can not process CoAP message [" + packet + "]");
     }
 
     private boolean handleDelayedResponse(CoapPacket packet) {
