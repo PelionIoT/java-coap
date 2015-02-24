@@ -15,15 +15,16 @@ import java.util.logging.Logger;
  * @author szymon
  */
 public class TransportWorkerWrapper implements Runnable, TransportConnector {
+
     private static final AtomicInteger THREAD_INDEX = new AtomicInteger(0);
     private static final Logger LOGGER = Logger.getLogger(TransportWorkerWrapper.class.getName());
     private final TransportConnectorTask wrappedConnector;
     protected boolean isRunning;
     private Thread[] transportThreads;
-    private int transThreadsCount = 1;
+    private final int transThreadsCount;
 
     public TransportWorkerWrapper(TransportConnectorTask wrappedConnector) {
-        this.wrappedConnector = wrappedConnector;
+        this(wrappedConnector, 1);
     }
 
     public TransportWorkerWrapper(TransportConnectorTask wrappedConnector, int transThreadsCount) {
