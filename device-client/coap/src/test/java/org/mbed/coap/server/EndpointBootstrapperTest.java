@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -74,12 +74,9 @@ public class EndpointBootstrapperTest {
     }
 
     private void setupBootstrapRequestErrorHandler(final Code code) {
-        bsServer.addRequestHandler("/bs", new CoapHandler() {
-            @Override
-            public void handle(CoapExchange exchange) throws CoapException {
-                exchange.setResponseCode(code);
-                exchange.sendResponse();
-            }
+        bsServer.addRequestHandler("/bs", exchange -> {
+            exchange.setResponseCode(code);
+            exchange.sendResponse();
         });
     }
 
