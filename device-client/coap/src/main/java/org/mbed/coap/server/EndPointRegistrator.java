@@ -302,12 +302,7 @@ public class EndPointRegistrator {
 
             // randomize re-registrer time based on min and max difference
             long delay = getReregisterDelay();
-            nextRegistrationSchedule = server.getScheduledExecutor().schedule(new Runnable() {
-                @Override
-                public void run() {
-                    register(callback);
-                }
-            }, delay, TimeUnit.MILLISECONDS);
+            nextRegistrationSchedule = server.getScheduledExecutor().schedule(() -> register(callback), delay, TimeUnit.MILLISECONDS);
 
             registeredLinks = links;
             logState();
