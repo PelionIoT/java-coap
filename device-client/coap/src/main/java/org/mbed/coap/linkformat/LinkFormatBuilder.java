@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.linkformat;
 
@@ -35,7 +35,7 @@ public class LinkFormatBuilder {
      *
      * @param linkValueList textual representation of link value list
      * @return array of link format
-     * @throws ParseException
+     * @throws ParseException when link is malformed
      */
     public static LinkFormat[] parseList(String linkValueList) throws ParseException {
         List<LinkFormat> linkFormats = parseLinkAsList(linkValueList);
@@ -47,7 +47,7 @@ public class LinkFormatBuilder {
      *
      * @param linkValueList textual representation of link value list
      * @return list with parsed link value objects
-     * @throws ParseException
+     * @throws ParseException when link is malformed
      */
     public static List<LinkFormat> parseLinkAsList(String linkValueList) throws ParseException {
         List<LinkFormat> linkHeaderList = new LinkedList<>();
@@ -63,7 +63,7 @@ public class LinkFormatBuilder {
      *
      * @param ln link value text representation
      * @return LinkFormat parsed object
-     * @throws ParseException
+     * @throws ParseException when link is malformed
      */
     public static LinkFormat parse(String ln) throws ParseException {
         String[] subLn = ln.split(";");

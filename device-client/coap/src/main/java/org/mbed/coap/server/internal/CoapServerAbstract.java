@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
@@ -58,8 +58,8 @@ public abstract class CoapServerAbstract implements TransportReceiver {
      * @param coapPacket CoAP packet
      * @param adr destination address
      * @param tranContext transport context
-     * @throws CoapException
-     * @throws IOException
+     * @throws CoapException exception from CoAP layer
+     * @throws IOException exception from transport layer
      */
     protected abstract void send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException;
 

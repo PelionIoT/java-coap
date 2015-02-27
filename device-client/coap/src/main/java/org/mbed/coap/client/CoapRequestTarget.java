@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
 
@@ -39,6 +39,7 @@ public class CoapRequestTarget {
      *
      * @param payload payload
      * @param contentFormat content-format
+     * @return this instance
      */
     public CoapRequestTarget payload(byte[] payload, short contentFormat) {
         return payload(payload, (int) contentFormat);
@@ -144,6 +145,7 @@ public class CoapRequestTarget {
      * Sets transport context that will be passed to transport connector.
      *
      * @param context transport context
+     * @return this instance
      */
     public CoapRequestTarget context(TransportContext context) {
         this.transContext = context;
@@ -152,6 +154,7 @@ public class CoapRequestTarget {
 
     /**
      * Marks request as non-confirmable.
+     * @return this instance
      */
     public CoapRequestTarget non() {
         requestPacket.setMessageType(MessageType.NonConfirmable);
@@ -160,6 +163,7 @@ public class CoapRequestTarget {
 
     /**
      * Marks request as confirmable (default).
+     * @return this instance
      */
     public CoapRequestTarget con() {
         requestPacket.setMessageType(MessageType.Confirmable);

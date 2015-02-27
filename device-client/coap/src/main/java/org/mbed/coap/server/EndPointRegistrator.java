@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -75,6 +75,7 @@ public class EndPointRegistrator {
 
     /**
      * Sets domain attribute
+     * @param domain domain name
      */
     public void setDomain(String domain) {
         this.domain = domain;
@@ -82,6 +83,7 @@ public class EndPointRegistrator {
 
     /**
      * Sets host name attribute
+     * @param hostName host name
      */
     public void setHostName(String hostName) {
         this.hostName = hostName;
@@ -89,6 +91,7 @@ public class EndPointRegistrator {
 
     /**
      * Sets queue mode attribute
+     * @param queueMode queue mode
      */
     public void setQueueMode(boolean queueMode) {
         this.queueMode = queueMode;
@@ -96,6 +99,7 @@ public class EndPointRegistrator {
 
     /**
      * Sets context attribute
+     * @param context context
      */
     public void setContext(String context) {
         this.context = context;
@@ -103,6 +107,7 @@ public class EndPointRegistrator {
 
     /**
      * Sets instance attribute
+     * @param instance instance
      */
     public void setInstance(String instance) {
         this.instance = instance;
@@ -110,6 +115,7 @@ public class EndPointRegistrator {
 
     /**
      * Sets resource type attribute
+     * @param type type
      */
     public void setType(String type) {
         this.type = type;
@@ -117,6 +123,7 @@ public class EndPointRegistrator {
 
     /**
      * Test use only
+     * @return current retry count
      */
     public int getCurrentRetryCount() {
         return currentRetryCount;
@@ -124,6 +131,7 @@ public class EndPointRegistrator {
 
     /**
      * Test use only
+     * @param currentRetryCount current retry count
      */
     public void setCurrentRetryCount(int currentRetryCount) {
         this.currentRetryCount = currentRetryCount;
@@ -131,6 +139,7 @@ public class EndPointRegistrator {
 
     /**
      * Returns registration state.
+     * @return registration state
      */
     public RegistrationState getState() {
         return state;
@@ -164,6 +173,7 @@ public class EndPointRegistrator {
 
     /**
      * Sets resource directory uri path that registration will be made on
+     * @param rdPath resource directory path
      */
     public void setRdPath(String rdPath) {
         this.rdPath = rdPath;
@@ -383,6 +393,7 @@ public class EndPointRegistrator {
 
     /**
      * Removes registration from NanoServicePlatform
+     * @param callback registration state callback
      */
     public void unregister(final Callback<RegistrationState> callback) {
         if (nextRegistrationSchedule != null) {
