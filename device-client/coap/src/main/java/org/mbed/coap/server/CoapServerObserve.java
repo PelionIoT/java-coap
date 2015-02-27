@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -48,7 +48,7 @@ public class CoapServerObserve extends CoapServerBlocks {
      * @param destination destination address
      * @param respCallback handles observation response
      * @return observation identification (token)
-     * @throws CoapException
+     * @throws CoapException coap exception
      */
     public byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback) throws CoapException {
         return observe(uri, destination, respCallback, observationIDGenerator.nextObservationID(uri));
@@ -66,7 +66,7 @@ public class CoapServerObserve extends CoapServerBlocks {
      * @param respCallback handles observation response
      * @param token observation identification (token)
      * @return observation identification
-     * @throws CoapException
+     * @throws CoapException coap exception
      */
     public byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token) throws CoapException {
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, uri, destination);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -74,6 +74,8 @@ public class CoapServerBuilder {
 
     /**
      * Sets maximum number or requests to be kept for duplication detection.
+     * @param duplicationMaxSize maximum size
+     * @return this instance
      */
     public CoapServerBuilder duplicateMsgCacheSize(int duplicationMaxSize) {
         if (duplicationMaxSize <= 0) {
