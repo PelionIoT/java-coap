@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap;
 
@@ -36,6 +36,7 @@ public class CoapPacket implements CoapMessage, Serializable {
 
     /**
      * CoAP packet constructor.
+     * @param remoteAddress remote address
      */
     public CoapPacket(InetSocketAddress remoteAddress) {
         this.remoteAddress = remoteAddress;
@@ -88,6 +89,7 @@ public class CoapPacket implements CoapMessage, Serializable {
     /**
      * Reads CoAP packet from raw data.
      *
+     * @param remoteAddress remote address
      * @param rawData data
      * @param length data length
      * @return CoapPacket instance
@@ -103,6 +105,7 @@ public class CoapPacket implements CoapMessage, Serializable {
     /**
      * Reads CoAP packet from raw data.
      *
+     * @param remoteAddress remote address
      * @param rawData data
      * @return CoapPacket instance
      * @throws CoapException if can not parse
@@ -118,6 +121,7 @@ public class CoapPacket implements CoapMessage, Serializable {
     /**
      * De-serialize CoAP message from input stream.
      *
+     * @param remoteAddress remote address
      * @param inputStream input stream
      * @return CoapPacket instance
      * @throws CoapException if can not parse
@@ -133,7 +137,7 @@ public class CoapPacket implements CoapMessage, Serializable {
      *
      * @param coapPacket CoAP packet object
      * @return serialized data
-     * @throws CoapException
+     * @throws CoapException exception if coap packet can not be serialized
      */
     public static byte[] serialize(CoapPacket coapPacket) throws CoapException {
         ByteArrayBackedOutputStream outputStream = new ByteArrayBackedOutputStream();
@@ -339,7 +343,7 @@ public class CoapPacket implements CoapMessage, Serializable {
      * Writes serialized CoAP packet to given OutputStream.
      *
      * @param outputStream output stream
-     * @throws CoapException
+     * @throws CoapException serialization exception
      */
     public void writeTo(OutputStream outputStream) throws CoapException {
         try {
@@ -384,7 +388,7 @@ public class CoapPacket implements CoapMessage, Serializable {
      * Creates a CoAP packet and Returns array of bytes.
      *
      * @return serialized CoAP packet
-     * @throws CoapException
+     * @throws CoapException serialization exception
      */
     public byte[] toByteArray() throws CoapException {
         ByteArrayBackedOutputStream outputStream = new ByteArrayBackedOutputStream();

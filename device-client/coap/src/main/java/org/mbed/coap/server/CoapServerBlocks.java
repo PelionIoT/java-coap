@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -119,6 +119,7 @@ class CoapServerBlocks extends CoapServer {
     }
 
     /**
+     * @param blockRequest block request
      * @throws CoapException may be thrown by an overriding implementation
      */
     protected void addBlockRequest(BlockRequest blockRequest) throws CoapException {

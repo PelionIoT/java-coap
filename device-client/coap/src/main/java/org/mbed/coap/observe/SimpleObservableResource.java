@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.observe;
 
@@ -36,7 +36,8 @@ public class SimpleObservableResource extends AbstractObservableResource {
     /**
      * Changes body for this resource, sends notification to all subscribers.
      *
-     * @throws CoapException
+     * @param body new payload
+     * @throws CoapException coap exception
      */
     public void setBody(String body) throws CoapException {
         this.body = body;

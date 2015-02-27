@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap;
 
@@ -168,7 +168,7 @@ public class HeaderOptions implements Serializable {
      * Tests for unknown critical options. If any of critical option is unknown
      * then throws CoapUnknownOptionException
      *
-     * @throws CoapUnknownOptionException
+     * @throws CoapUnknownOptionException when critical option is unknown
      */
     public void criticalOptTest() throws CoapUnknownOptionException {
         if (unrecognizedOptions == null) {
@@ -305,6 +305,7 @@ public class HeaderOptions implements Serializable {
     /**
      * Converts given byte array to Long number.
      *
+     * @param data byte array
      * @return converted number
      */
     public static Long readVariableULong(byte[] data) {
@@ -336,6 +337,7 @@ public class HeaderOptions implements Serializable {
     /**
      * Converts given number into byte array.
      *
+     * @param value number to convert
      * @return converted byte array
      */
     public static byte[] convertVariableUInt(Long value) {

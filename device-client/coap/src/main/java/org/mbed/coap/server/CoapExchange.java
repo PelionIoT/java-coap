@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -62,6 +62,7 @@ public abstract class CoapExchange {
 
     /**
      * Returns request coap headers
+     * @return request headers
      */
     public ExHeaderOptions getRequestHeaders() {
         return request.headers();
@@ -73,6 +74,7 @@ public abstract class CoapExchange {
 
     /**
      * Returns request body
+     * @return payload body as string
      */
     public String getRequestBodyString() {
         return request.getPayloadString();
@@ -80,11 +82,13 @@ public abstract class CoapExchange {
 
     /**
      * Returns source address of incoming message
+     * @return remote address
      */
     public abstract InetSocketAddress getRemoteAddress();
 
     /**
      * Returns response headers that will be sent to requester
+     * @return response headers
      */
     public ExHeaderOptions getResponseHeaders() {
         return response.headers();
@@ -94,6 +98,7 @@ public abstract class CoapExchange {
 
     /**
      * Sets response content type of a body
+     * @param contentType response content type
      */
     public abstract void setResponseContentType(short contentType);
 
@@ -112,6 +117,7 @@ public abstract class CoapExchange {
 
     /**
      * Sets response CoAP code
+     * @param code CoAP code
      */
     public abstract void setResponseCode(Code code);
 
@@ -196,7 +202,7 @@ public abstract class CoapExchange {
      *
      * @param uriPath uri-path
      * @param callback callback
-     * @throws CoapException
+     * @throws CoapException coap exception
      */
     public void retrieveNotificationBlocks(final String uriPath, final Callback<CoapPacket> callback) throws CoapException {
         if (request.headers().getObserve() == null || request.headers().getBlock2Res() == null) {
