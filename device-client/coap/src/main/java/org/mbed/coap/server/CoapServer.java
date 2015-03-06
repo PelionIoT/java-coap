@@ -398,7 +398,9 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
                 //send NON message without waiting for piggy-backed response
                 delayedTransMagr.add(new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress()), new CoapTransaction(callback, packet, this, transContext));
                 this.send(packet, packet.getRemoteAddress(), transContext);
-                LOGGER.warning("Sent NON request without token: " + packet);
+                if (packet.getToken() == null || packet.getToken().length == 0) {
+                    LOGGER.warning("Sent NON request without token: " + packet);
+                }
             }
 
         } catch (Throwable ex) {    //NOPMD it needs to catch anything, no control on customer resource implementation
