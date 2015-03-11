@@ -5,7 +5,6 @@ package org.mbed.coap.stubtest;
 
 import static org.junit.Assert.*;
 import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -109,13 +108,7 @@ public class StubCoapServerTest {
     public void verify_timeout() throws Exception {
         stub.when("/test").thenReturn();
         assertNull(stub.verifyPUT("/test"));
-        Future<CoapPacket> fiut = Executors.newSingleThreadExecutor().submit(new Callable<CoapPacket>() {
-
-            @Override
-            public CoapPacket call() throws Exception {
-                return stub.verifyPUT("/test", 10);
-            }
-        });
+        Future<CoapPacket> fiut = Executors.newSingleThreadExecutor().submit(() -> stub.verifyPUT("/test", 10));
         //Thread.sleep(1000);
         client.resource("/test").maxAge(265758953).sync().put();
         assertNotNull(fiut.get(10, TimeUnit.SECONDS));

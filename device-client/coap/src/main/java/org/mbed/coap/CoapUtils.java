@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap;
 
@@ -24,7 +24,9 @@ public class CoapUtils {
     }
 
     /**
-     * Returns callback implementation that will ignore all calls
+     * Returns callback instance that will ignore all calls
+     *
+     * @return callback instance
      */
     public synchronized static CoapCallback getCallbackNull() {
         if (nullCallback == null) {

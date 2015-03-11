@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
@@ -17,7 +17,7 @@ public interface TransportConnector {
      * Starts connector.
      *
      * @param transReceiver transport receiver
-     * @throws IOException
+     * @throws IOException io exception
      */
     void start(TransportReceiver transReceiver) throws IOException;
 
@@ -33,7 +33,7 @@ public interface TransportConnector {
      * @param len length
      * @param destinationAddress destination address
      * @param transContext transport context
-     * @throws IOException
+     * @throws IOException io exception
      */
     void send(byte[] data, int len, InetSocketAddress destinationAddress, TransportContext transContext) throws IOException;
 

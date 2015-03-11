@@ -28,7 +28,6 @@ import org.mbed.coap.Method;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapExchange;
-import org.mbed.coap.server.CoapHandler;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.ObservationHandler;
@@ -84,12 +83,7 @@ public class StubCoapServer {
             executorCreatedByUs = new ThreadPoolExecutor(0, 20, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
             server = CoapServerBuilder.newBuilder().transport(transportConnector).blockSize(blockSize).disableDuplicateCheck().timeout(transTimeout).executor(executorCreatedByUs).build();
         }
-        server.addRequestHandler("/*", new CoapHandler() {
-            @Override
-            public void handle(CoapExchange exchange) throws CoapException {
-                StubCoapServer.this.handle(exchange);
-            }
-        });
+        server.addRequestHandler("/*", StubCoapServer.this::handle);
 
         server.start();
     }

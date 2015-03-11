@@ -173,8 +173,9 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     /**
      * Starts CoAP server
      *
-     * @throws IOException
+     * @throws IOException exception from transport initialization
      * @throws IllegalStateException if server is already running
+     * @return this instance
      */
     public synchronized CoapServer start() throws IOException, IllegalStateException {
         assertNotRunning();
@@ -397,7 +398,9 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
                 //send NON message without waiting for piggy-backed response
                 delayedTransMagr.add(new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress()), new CoapTransaction(callback, packet, this, transContext));
                 this.send(packet, packet.getRemoteAddress(), transContext);
-                LOGGER.warning("Sent NON request without token: " + packet);
+                if (packet.getToken() == null || packet.getToken().length == 0) {
+                    LOGGER.warning("Sent NON request without token: " + packet);
+                }
             }
 
         } catch (Throwable ex) {    //NOPMD it needs to catch anything, no control on customer resource implementation
@@ -410,6 +413,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
 
     /**
      * Sets handler for receiving notifications.
+     * @param observationHandler observation handler
      */
     public void setObservationHandler(ObservationHandler observationHandler) {
         this.observationHandler = observationHandler;
@@ -665,6 +669,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     /**
      * Enable or disable test for critical options. If enabled and incoming coap packet contains non-recognized critical
      * option, server will send error message (4.02 bad option)
+     * @param enable if true then critical option verification is enabled
      */
     public void useCriticalOptionTest(boolean enable) {
         this.enabledCriticalOptTest = enable;

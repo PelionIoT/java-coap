@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.observe;
 
@@ -128,7 +128,7 @@ public abstract class AbstractObservableResource extends CoapResource {
     /**
      * Terminates all observations sending RESET notification to all observers.
      *
-     * @throws org.mbed.coap.exception.CoapException
+     * @throws org.mbed.coap.exception.CoapException coap exception
      */
     public final void notifyTermination() throws CoapException {
         notifyTermination(null);
@@ -138,7 +138,7 @@ public abstract class AbstractObservableResource extends CoapResource {
      * Terminates all observations sending error notification to all observers.
      *
      * @param code error code
-     * @throws org.mbed.coap.exception.CoapException
+     * @throws org.mbed.coap.exception.CoapException coap exception
      */
     public final void notifyTermination(Code code) throws CoapException {
 
@@ -184,7 +184,7 @@ public abstract class AbstractObservableResource extends CoapResource {
      * @param etag etag
      * @param maxAge max age
      * @param deliveryListener notification delivery listener
-     * @throws CoapException
+     * @throws CoapException coap exception
      */
     protected final void notifyChange(byte[] payload, Short contentType, byte[] etag, Long maxAge, NotificationDeliveryListener deliveryListener) throws CoapException {
         if (deliveryListener == null) {

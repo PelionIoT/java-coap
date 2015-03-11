@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.linkformat;
 
@@ -263,6 +263,7 @@ public class LinkFormat implements Serializable {
     /**
      * Sets link relations
      *
+     * @param relations array with relations data
      * @throws IllegalArgumentException when contains illegal characters
      */
     public void setRelations(String... relations) throws IllegalArgumentException {
@@ -422,16 +423,16 @@ public class LinkFormat implements Serializable {
 
     public boolean isObservable() {
         return getParamBoolean(LINK_OBSERVABLE);
-//        Object val = params.get(LINK_OBSERVABLE);
-//        if (val != null && val instanceof Boolean) {
-//            return (Boolean) val;
-//        }
-//        return false;
+        //        Object val = params.get(LINK_OBSERVABLE);
+        //        if (val != null && val instanceof Boolean) {
+        //            return (Boolean) val;
+        //        }
+        //        return false;
     }
 
     /**
      * Interface description 'if' attribute.
-     * 
+     *
      * <p>
      * The interface description attribute is used to provide a name, URI or URN
      * indicating a specific interface definition used to interact with the
