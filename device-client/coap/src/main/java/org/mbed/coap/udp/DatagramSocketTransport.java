@@ -82,8 +82,8 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
             transReceiver.onReceive((InetSocketAddress) datagramPacket.getSocketAddress(), buffer, TransportContext.NULL);
             return true;
         } catch (IOException ex) {
-            if ("socket closed".equals(ex.getMessage())) {
-                LOGGER.warning("DatagramSocket was closed.");
+            if (!isRunning() && "socket closed".equalsIgnoreCase(ex.getMessage())) {
+                LOGGER.fine("DatagramSocket was closed.");
             } else {
                 LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
             }
