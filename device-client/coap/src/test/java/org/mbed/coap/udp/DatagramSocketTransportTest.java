@@ -12,22 +12,22 @@ import java.net.InetSocketAddress;
 import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
-import org.mbed.coap.test.StubCoapServer;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
 
 /**
- *
  * @author szymon
  */
 public class DatagramSocketTransportTest {
 
     @Test
     public void clientServerTest() throws Exception {
-        StubCoapServer server = new StubCoapServer(new DatagramSocketTransport(new InetSocketAddress(0)));
+        CoapServer server = CoapServerBuilder.newBuilder().transport(new DatagramSocketTransport(0)).build();
         server.start();
 
-        CoapClient client = CoapClientBuilder.newBuilder(server.getAddress()).transport(new DatagramSocketTransport(0)).build();
+        CoapClient client = CoapClientBuilder.newBuilder(server.getLocalSocketAddress().getPort()).transport(new DatagramSocketTransport(0)).build();
 
         assertNotNull(client.ping().get());
         server.stop();
