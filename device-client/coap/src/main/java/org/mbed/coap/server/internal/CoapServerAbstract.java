@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mbed.coap.CoapPacket;
@@ -50,6 +51,11 @@ public abstract class CoapServerAbstract implements TransportReceiver {
                         + " out of " + ((ThreadPoolExecutor) executor).getQueue().size());
             }
         }
+    }
+
+    @Override
+    public void onConnectionClosed(InetSocketAddress remoteAddress) {
+        LOGGER.fine("Connection with " + remoteAddress + " was closed");
     }
 
     /**

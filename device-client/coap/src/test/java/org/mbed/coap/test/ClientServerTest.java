@@ -414,6 +414,11 @@ public class ClientServerTest {
                 wrappedTransReceiver.onReceive(adr, buffer, transportContext);
             }
         }
+
+        @Override
+        public void onConnectionClosed(InetSocketAddress remoteAddress) {
+            //ignore
+        }
     }
 
 }

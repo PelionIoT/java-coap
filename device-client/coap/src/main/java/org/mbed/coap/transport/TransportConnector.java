@@ -5,6 +5,7 @@ package org.mbed.coap.transport;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Interface for transport layer.

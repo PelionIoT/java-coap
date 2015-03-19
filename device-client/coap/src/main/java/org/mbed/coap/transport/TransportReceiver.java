@@ -7,11 +7,10 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
 /**
- *
  * @author szymon
  */
 public interface TransportReceiver {
-    
+
     /**
      * Handle data just received from transport layer.
      * Implementation MUST not block.
@@ -21,4 +20,12 @@ public interface TransportReceiver {
      * @param transportContext transport context
      */
     void onReceive(InetSocketAddress adr, ByteBuffer buffer, TransportContext transportContext);
+
+    /**
+     * Connection with a remote has been closed. It is used only by transport that supports connection (like TCP).
+     *
+     * @param remoteAddress remote address
+     */
+    void onConnectionClosed(InetSocketAddress remoteAddress);
+
 }
