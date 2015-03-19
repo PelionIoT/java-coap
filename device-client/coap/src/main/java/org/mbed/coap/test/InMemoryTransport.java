@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
