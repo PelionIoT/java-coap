@@ -61,9 +61,9 @@ public final class MulticastSocketTransport extends AbstractTransportConnector {
             if (LOGGER.isLoggable(Level.FINE) && adr.getAddress().isMulticastAddress()) {
                 LOGGER.fine("Received multicast message from: " + datagramPacket.getSocketAddress());
             }
-            buffer.position(datagramPacket.getLength());
-            //adr = new MulticastInetSocketAddress(((InetSocketAddress) adr).getAddress(), ((InetSocketAddress) adr).getPort());
-            transReceiver.onReceive(adr, buffer, TransportContext.NULL);
+            byte[] packetData = createCopyOfPacketData(buffer, datagramPacket.getLength());
+
+            transReceiver.onReceive(adr, packetData, TransportContext.NULL);
             return true;
         } catch (SocketException ex) {
             if (isRunning()) {

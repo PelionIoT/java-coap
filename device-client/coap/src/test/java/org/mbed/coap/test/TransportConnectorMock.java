@@ -5,7 +5,6 @@ package org.mbed.coap.test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import org.mbed.coap.CoapPacket;
@@ -47,10 +46,7 @@ public class TransportConnectorMock implements TransportConnector {
 
     public void receive(CoapPacket coapPacket, InetSocketAddress sourceAddress) {
         try {
-            byte[] coapRawData = coapPacket.toByteArray();
-            ByteBuffer byteBuffer = ByteBuffer.wrap(coapRawData);
-            byteBuffer.position(coapRawData.length);
-            transReceiver.onReceive(sourceAddress, byteBuffer, null);
+            transReceiver.onReceive(sourceAddress, coapPacket.toByteArray(), null);
         } catch (CoapException e) {
             e.printStackTrace();
         }

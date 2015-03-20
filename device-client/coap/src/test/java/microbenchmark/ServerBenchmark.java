@@ -1,16 +1,6 @@
 package microbenchmark;
 
-import org.mbed.coap.server.CoapServerBuilder;
-
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.transport.TransportConnector;
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
-import org.mbed.coap.utils.SimpleCoapResource;
+import static org.mbed.coap.udp.AbstractTransportConnector.createCopyOfPacketData;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -20,6 +10,16 @@ import org.apache.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.CoapPacket;
+import org.mbed.coap.MessageType;
+import org.mbed.coap.Method;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
+import org.mbed.coap.transport.TransportConnector;
+import org.mbed.coap.transport.TransportContext;
+import org.mbed.coap.transport.TransportReceiver;
+import org.mbed.coap.utils.SimpleCoapResource;
 
 /**
  *
@@ -100,7 +100,7 @@ public class ServerBenchmark {
         }
 
         public synchronized void receive(ByteBuffer data) throws InterruptedException {
-            udpReceiver.onReceive(addr, data, null);
+            udpReceiver.onReceive(addr, createCopyOfPacketData(data, data.position()), null);
             while (!sendCalled) {
                 this.wait();
             }

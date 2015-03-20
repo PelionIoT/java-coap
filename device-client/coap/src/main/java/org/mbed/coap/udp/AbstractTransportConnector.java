@@ -72,27 +72,13 @@ public abstract class AbstractTransportConnector implements TransportConnectorTa
 
     @Override
     public void performReceive() {
-        //ByteBuffer buf = getBuffer();
         while (true) {
             if (!receive(transReceiver)) {
                 break;
             }
         }
-//        while (adr != null) {
-//            udpReceiver.onReceive(createUnresolvedInetSocketAddress(adr), buf, getAndClearTransportContext());
-//            buf = getBuffer();
-//            adr = receive(buf);
-//        }
     }
 
-//    protected static InetSocketAddress createUnresolvedInetSocketAddress(SocketAddress socAddress) {
-//        InetSocketAddress addr = (InetSocketAddress) socAddress;
-//        try {
-//            return new InetSocketAddress(InetAddress.getByAddress(addr.getAddress().getAddress()), addr.getPort());
-//        } catch (UnknownHostException ex) {
-//            throw new RuntimeException(ex);
-//        }
-//    }
     protected ByteBuffer getBuffer() {
 
         if (buffer.get() == null) {
@@ -100,6 +86,13 @@ public abstract class AbstractTransportConnector implements TransportConnectorTa
         }
         return (ByteBuffer) buffer.get().clear();
     }
+
+    public static byte[] createCopyOfPacketData(ByteBuffer buffer, int len) {
+        byte[] packetData = new byte[len];
+        System.arraycopy(buffer.array(), 0, packetData, 0, packetData.length);
+        return packetData;
+    }
+
 
     protected final boolean isRunning() {
         return isRunning;

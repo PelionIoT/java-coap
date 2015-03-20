@@ -5,11 +5,9 @@ package org.mbed.coap.server.internal;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mbed.coap.CoapPacket;
@@ -41,9 +39,9 @@ public abstract class CoapServerAbstract implements TransportReceiver {
     }
 
     @Override
-    public void onReceive(InetSocketAddress adr, ByteBuffer buffer, TransportContext transportContext) {
+    public void onReceive(InetSocketAddress adr, byte[] data, TransportContext transportContext) {
         try {
-            executor.execute(new MessageHandlerTask(buffer, adr, transportContext, this));
+            executor.execute(new MessageHandlerTask(data, adr, transportContext, this));
         } catch (RejectedExecutionException ex) {
             LOGGER.warning("Executor queue is full, message from " + adr + " is rejected");
             if (LOGGER.isLoggable(Level.FINEST) && executor instanceof ThreadPoolExecutor) {
