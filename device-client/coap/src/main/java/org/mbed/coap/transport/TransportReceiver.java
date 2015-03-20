@@ -4,22 +4,23 @@
 package org.mbed.coap.transport;
 
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 
 /**
+ * Transport receiver interface.
+ *
  * @author szymon
  */
 public interface TransportReceiver {
 
     /**
-     * Handle data just received from transport layer.
+     * Handle data received from transport layer.
      * Implementation MUST not block.
      *
      * @param adr source address
-     * @param buffer packet raw data
+     * @param data packet raw data
      * @param transportContext transport context
      */
-    void onReceive(InetSocketAddress adr, ByteBuffer buffer, TransportContext transportContext);
+    void onReceive(InetSocketAddress adr, byte[] data, TransportContext transportContext);
 
     /**
      * Connection with a remote has been closed. It is used only by transport that supports connection (like TCP).

@@ -139,7 +139,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
             if (channel != null) {
                 InetSocketAddress sourceAddress = (InetSocketAddress) channel.receive(buffer);
                 if (sourceAddress != null) {
-                    transReceiver.onReceive(sourceAddress, buffer, TransportContext.NULL);
+                    transReceiver.onReceive(sourceAddress, createCopyOfPacketData(buffer, buffer.position()), TransportContext.NULL);
                     return true;
                 } else {
                     return false;

@@ -5,13 +5,10 @@ package org.mbed.coap.test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -109,11 +106,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
         try {
             DatagramMessage msg = queue.poll(1, TimeUnit.SECONDS);
             if (msg != null) {
-                byte[] msgArray = msg.getMessage().array();
-                int len = msg.getMessage().limit();
-                ByteBuffer buffer = getBuffer();
-                buffer.put(msgArray, 0, len < this.bufferSize ? len : this.bufferSize);
-                transReceiver.onReceive(msg.getSource().toInetSocketAddress(), buffer, getTransportContext());
+                transReceiver.onReceive(msg.source.toInetSocketAddress(), msg.packetData, getTransportContext());
                 return true;
             }
         } catch (InterruptedException ex) {
@@ -126,7 +119,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
     public void send(byte[] data, int len, InetSocketAddress adr, TransportContext transContext) throws IOException {
         BlockingQueue<DatagramMessage> q = BIND_CONNECTORS.get(new IpPortAddress(adr));
         if (q != null) {
-            q.add(new DatagramMessage(new IpPortAddress(getBindSocket()), ByteBuffer.wrap(data, 0, len)));
+            q.add(new DatagramMessage(new IpPortAddress(getBindSocket()), data, len));
         }
     }
 
@@ -146,19 +139,17 @@ public class InMemoryTransport extends AbstractTransportConnector {
     private static class DatagramMessage {
 
         private final IpPortAddress source;
-        private final ByteBuffer message;
+        private final byte[] packetData;
 
-        public DatagramMessage(IpPortAddress source, ByteBuffer message) {
+        public DatagramMessage(IpPortAddress source, byte[] packetData, int packetLen) {
             this.source = source;
-            this.message = message;
+            if (packetData.length == packetLen) {
+                this.packetData = packetData;
+            } else {
+                this.packetData = new byte[packetLen];
+                System.arraycopy(packetData, 0, this.packetData, 0, packetLen);
+            }
         }
 
-        public ByteBuffer getMessage() {
-            return message;
-        }
-
-        public IpPortAddress getSource() {
-            return source;
-        }
     }
 }
