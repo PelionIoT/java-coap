@@ -40,9 +40,7 @@ import org.mbed.coap.server.internal.TransactionManager;
 import org.mbed.coap.transmission.CoapTimeout;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportConnector;
-import org.mbed.coap.transport.TransportConnectorTask;
 import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportWorkerWrapper;
 import org.mbed.coap.utils.ByteArrayBackedOutputStream;
 import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.CoapResource;
@@ -99,10 +97,6 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     final void init(final int duplicationListSize) {
         if (transport == null) {
             throw new NullPointerException();
-        }
-        if (transport instanceof TransportConnectorTask) {
-            transport = new TransportWorkerWrapper((TransportConnectorTask) transport);
-            LOGGER.finest("Created worker for transport");
         }
 
         if (executor == null) {
@@ -173,9 +167,9 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     /**
      * Starts CoAP server
      *
-     * @throws IOException exception from transport initialization
-     * @throws IllegalStateException if server is already running
      * @return this instance
+     * @throws IOException           exception from transport initialization
+     * @throws IllegalStateException if server is already running
      */
     public synchronized CoapServer start() throws IOException, IllegalStateException {
         assertNotRunning();
@@ -413,6 +407,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
 
     /**
      * Sets handler for receiving notifications.
+     *
      * @param observationHandler observation handler
      */
     public void setObservationHandler(ObservationHandler observationHandler) {
@@ -669,6 +664,7 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
     /**
      * Enable or disable test for critical options. If enabled and incoming coap packet contains non-recognized critical
      * option, server will send error message (4.02 bad option)
+     *
      * @param enable if true then critical option verification is enabled
      */
     public void useCriticalOptionTest(boolean enable) {
