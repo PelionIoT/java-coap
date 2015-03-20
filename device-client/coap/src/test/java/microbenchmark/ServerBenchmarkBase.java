@@ -1,7 +1,5 @@
 package microbenchmark;
 
-import org.mbed.coap.server.CoapServerBuilder;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -17,9 +15,11 @@ import org.mbed.coap.MessageType;
 import org.mbed.coap.Method;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
+import org.mbed.coap.udp.AbstractTransportConnector;
 import org.mbed.coap.utils.SimpleCoapResource;
 
 /**
@@ -121,7 +121,8 @@ public abstract class ServerBenchmarkBase {
         private int addIndex = 0;
 
         public boolean receive(ByteBuffer data) {
-            udpReceiver.onReceive(addrArr[addIndex++ % addrArr.length], data, null);
+            byte[] packetData = AbstractTransportConnector.createCopyOfPacketData(data, data.position());
+            udpReceiver.onReceive(addrArr[addIndex++ % addrArr.length], packetData, null);
             return addIndex % addrArr.length == 0;
         }
     }

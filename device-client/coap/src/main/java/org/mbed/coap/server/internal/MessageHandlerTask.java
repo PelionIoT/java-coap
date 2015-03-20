@@ -4,7 +4,6 @@
 package org.mbed.coap.server.internal;
 
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mbed.coap.CoapPacket;
@@ -20,15 +19,14 @@ import org.mbed.coap.utils.HexArray;
 final class MessageHandlerTask implements Runnable {
 
     private static final Logger LOGGER = Logger.getLogger(MessageHandlerTask.class.getName());
-    private byte[] packet;
+    private final byte[] packet;
     private final InetSocketAddress address;
     private final TransportContext transportContext;
     private final CoapServerAbstract coapServer;
 
-    MessageHandlerTask(ByteBuffer buffer, InetSocketAddress inetSocketAddress, TransportContext transportContext, final CoapServerAbstract coapServer) {
+    MessageHandlerTask(byte[] data, InetSocketAddress inetSocketAddress, TransportContext transportContext, final CoapServerAbstract coapServer) {
         this.coapServer = coapServer;
-        packet = new byte[buffer.position()];
-        System.arraycopy(buffer.array(), 0, packet, 0, buffer.position());
+        packet = data;
         address = inetSocketAddress;
         this.transportContext = transportContext;
     }
@@ -45,9 +43,6 @@ final class MessageHandlerTask implements Runnable {
             }
             coapServer.handleException(packet, ex, transportContext);
         }
-        
-        //(hopefully) free memory by removing reference
-        packet = null;
     }
 
 }

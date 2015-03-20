@@ -78,8 +78,10 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
         DatagramPacket datagramPacket = new DatagramPacket(buffer.array(), buffer.limit());
         try {
             socket.receive(datagramPacket);
-            buffer.position(datagramPacket.getLength());
-            transReceiver.onReceive((InetSocketAddress) datagramPacket.getSocketAddress(), buffer, TransportContext.NULL);
+
+            byte[] packetData = createCopyOfPacketData(buffer, datagramPacket.getLength());
+
+            transReceiver.onReceive((InetSocketAddress) datagramPacket.getSocketAddress(), packetData, TransportContext.NULL);
             return true;
         } catch (IOException ex) {
             if (!isRunning() && "socket closed".equalsIgnoreCase(ex.getMessage())) {

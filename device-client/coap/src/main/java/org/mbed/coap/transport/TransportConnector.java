@@ -5,7 +5,6 @@ package org.mbed.coap.transport;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.CompletionStage;
 
 /**
  * Interface for transport layer.
@@ -23,7 +22,7 @@ public interface TransportConnector {
     void start(TransportReceiver transReceiver) throws IOException;
 
     /**
-     * Stops UDP connector, removes binding.
+     * Stops transport connector, release port.
      */
     void stop();
 

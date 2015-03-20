@@ -9,7 +9,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.Future;
 import org.junit.After;
@@ -317,13 +316,13 @@ public class ClientServerTest {
         CoapServer cnn = CoapServerBuilder.newBuilder()
                 .transport(new DroppingPacketsTransportWrapper(InMemoryTransport.create(), (byte) 0) {
                     @Override
-                    public void onReceive(InetSocketAddress adr, ByteBuffer buffer, TransportContext transportContext) {
+                    public void onReceive(InetSocketAddress adr, byte[] packetData, TransportContext transportContext) {
                         try {
                             Thread.sleep(100);
                         } catch (InterruptedException e) {
                             throw new RuntimeException();
                         }
-                        super.onReceive(adr, buffer, transportContext);
+                        super.onReceive(adr, packetData, transportContext);
                     }
                 })
                 .build();
@@ -409,9 +408,9 @@ public class ClientServerTest {
         }
 
         @Override
-        public void onReceive(InetSocketAddress adr, ByteBuffer buffer, TransportContext transportContext) {
+        public void onReceive(InetSocketAddress adr, byte[] packetData, TransportContext transportContext) {
             if (!drop()) {
-                wrappedTransReceiver.onReceive(adr, buffer, transportContext);
+                wrappedTransReceiver.onReceive(adr, packetData, transportContext);
             }
         }
 
