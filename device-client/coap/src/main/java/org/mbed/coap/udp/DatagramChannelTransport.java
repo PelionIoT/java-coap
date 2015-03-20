@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.udp;
 
@@ -12,7 +12,6 @@ import java.nio.channels.DatagramChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
 
 /**
  * @author szymon
@@ -25,6 +24,15 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
     protected boolean channelConfigureBlocking = true;
     private int socketBufferSize = -1;
 
+    /**
+     * Creates instance of DatagramChannelTransport that will bind to any local address on random port.
+     *
+     * @return instance of DatagramChannelTransport
+     */
+    public static DatagramChannelTransport ofRandomPort() {
+        return new DatagramChannelTransport(0);
+    }
+
     public DatagramChannelTransport(int localPort) {
         super(localPort);
     }
@@ -34,8 +42,22 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
     }
 
     public DatagramChannelTransport(InetSocketAddress bindingSocket, boolean useBlockingMode) {
-        super(bindingSocket);
+        this(bindingSocket, useBlockingMode, true);
+    }
+
+    /**
+     * Constructs DatagramChannelTransport.
+     *
+     * @param bindingSocket binding socket address
+     * @param useBlockingMode if true then uses blocking mode
+     * @param initThreadReader if true then initialize internal thread that reads incoming packets
+     */
+    public DatagramChannelTransport(InetSocketAddress bindingSocket, boolean useBlockingMode, boolean initThreadReader) {
+        super(bindingSocket, initThreadReader);
         this.channelConfigureBlocking = useBlockingMode;
+        if (!useBlockingMode && initThreadReader) {
+            throw new IllegalStateException("Using internal thread reader without blocking mode would be highly CPU consuming.");
+        }
     }
 
     /**
@@ -83,17 +105,6 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
         super.stop();
         try {
             channel.close();
-            if (channel.isOpen()) {
-                LOGGER.warning("DatagramChannel stays open");
-                try {
-                    Thread.sleep(300);
-                    if (channel.isOpen()) {
-                        LOGGER.warning("DatagramChannel is still open!");
-                    }
-                } catch (InterruptedException ex) {
-                    //do nothing
-                }
-            }
             channel = null;
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
@@ -103,17 +114,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
     @Override
     public void send(byte[] data, int len, InetSocketAddress adr, TransportContext transContext) throws IOException {
         if (channel == null) {
-            if (this.isRunning) {
-                LOGGER.severe("UDPConnectorChannel is NULL, reinitializing");
-                initialize();
-                if (channel == null) {
-                    LOGGER.severe("DatagramChannel is still NULL I give up!!!!!!");
-                    return;
-                }
-            } else {
-                LOGGER.severe("UDPConnectorChannel is closed");
-                return;
-            }
+            throw new IllegalStateException("Sending when DatagramChannel is not started.");
         }
 
         try {
@@ -133,7 +134,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
     }
 
     @Override
-    protected boolean receive(TransportReceiver transReceiver) {
+    public boolean performReceive() {
         ByteBuffer buffer = getBuffer();
         try {
             if (channel != null) {

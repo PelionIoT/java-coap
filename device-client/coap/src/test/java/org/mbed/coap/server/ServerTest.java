@@ -1,5 +1,9 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.server;
 
+import static org.junit.Assert.*;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -12,10 +16,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.CoapConstants;
@@ -33,7 +33,6 @@ import org.mbed.coap.linkformat.LinkFormat;
 import org.mbed.coap.linkformat.LinkFormatBuilder;
 import org.mbed.coap.test.InMemoryTransport;
 import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.transport.TransportWorkerWrapper;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
 import org.mbed.coap.utils.SyncCallback;
@@ -65,7 +64,7 @@ public class ServerTest {
     }
 
     @Test
-    public void resourceManipulationTest() throws CoapException, UnknownHostException, IOException {
+    public void resourceManipulationTest() throws CoapException, IOException {
         //Connection cnn = new Connection(Inet4Address.getLocalHost());
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
 
@@ -213,7 +212,7 @@ public class ServerTest {
         udpConnector1.setBufferSize(messageSize + 100);
         TestResource testResource = new TestResource();
 
-        CoapServer srv1 = CoapServerBuilder.newBuilder().transport(new TransportWorkerWrapper(udpConnector1)).build();
+        CoapServer srv1 = CoapServerBuilder.newBuilder().transport(udpConnector1).build();
         srv1.addRequestHandler("/test", testResource);
         srv1.start();
 

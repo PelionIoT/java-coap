@@ -92,7 +92,7 @@ public class CoapServerBuilder {
 
     public CoapServer build() {
         if (server.getTransport() == null) {
-            server.setTransportConnector(new DatagramChannelTransport(0));
+            server.setTransportConnector(DatagramChannelTransport.ofRandomPort());
         }
         server.init(duplicationMaxSize);
         return server;
