@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.test;
 
@@ -14,8 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
-import org.mbed.coap.transport.TransportWorkerWrapper;
 import org.mbed.coap.udp.AbstractTransportConnector;
 import org.mbed.coap.utils.IpPortAddress;
 
@@ -62,15 +60,15 @@ public class InMemoryTransport extends AbstractTransportConnector {
     }
 
     public static TransportConnector create(int port) {
-        return new TransportWorkerWrapper(new InMemoryTransport(createAddress(port)));
+        return new InMemoryTransport(createAddress(port));
     }
 
     public static TransportConnector create() {
-        return new TransportWorkerWrapper(new InMemoryTransport(createAddress(getFreePort())));
+        return new InMemoryTransport(createAddress(getFreePort()));
     }
 
     public static TransportConnector create(InetSocketAddress bindSocket) {
-        return new TransportWorkerWrapper(new InMemoryTransport(bindSocket));
+        return new InMemoryTransport(bindSocket);
     }
 
     public InMemoryTransport(int port) {
@@ -102,7 +100,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
     }
 
     @Override
-    public boolean receive(TransportReceiver transReceiver) {
+    public boolean performReceive() {
         try {
             DatagramMessage msg = queue.poll(1, TimeUnit.SECONDS);
             if (msg != null) {

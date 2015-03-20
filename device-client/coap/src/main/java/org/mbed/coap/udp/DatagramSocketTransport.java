@@ -12,7 +12,6 @@ import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
 
 /**
  * Datagram transport based on DatagramSocket. Not thread-save.
@@ -73,7 +72,7 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
     }
 
     @Override
-    protected boolean receive(TransportReceiver transReceiver) {
+    public boolean performReceive() {
         ByteBuffer buffer = getBuffer();
         DatagramPacket datagramPacket = new DatagramPacket(buffer.array(), buffer.limit());
         try {

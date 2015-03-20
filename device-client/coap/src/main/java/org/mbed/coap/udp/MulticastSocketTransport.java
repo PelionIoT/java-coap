@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.udp;
 
@@ -14,7 +14,6 @@ import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
 
 /**
  *
@@ -52,7 +51,7 @@ public final class MulticastSocketTransport extends AbstractTransportConnector {
     }
 
     @Override
-    protected boolean receive(TransportReceiver transReceiver) {
+    public boolean performReceive() {
         try {
             ByteBuffer buffer = getBuffer();
             DatagramPacket datagramPacket = new DatagramPacket(buffer.array(), buffer.limit());
