@@ -9,7 +9,6 @@ import java.net.MulticastSocket;
 import static org.junit.Assert.assertEquals;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mbed.coap.packet.CoapMessage;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Method;
 import org.mbed.coap.client.CoapClient;
@@ -50,17 +49,17 @@ public class MulticastTest {
 
         // multicast request
         CoapClient cnn = CoapClientBuilder.clientFor(address, cnnServer);
-        CoapMessage msg = cnn.resource("/multicast").sync().get();
+        CoapPacket msg = cnn.resource("/multicast").sync().get();
         assertEquals("multicast", msg.getPayloadString());
 
         // IPv6 request
         CoapClient cnn3 = CoapClientBuilder.clientFor(new InetSocketAddress("::1", port), cnnServer);
-        CoapMessage msg3 = cnn3.resource("/multicast").sync().get();
+        CoapPacket msg3 = cnn3.resource("/multicast").sync().get();
         assertEquals("multicast", msg3.getPayloadString());
 
         // IPv4 request
         CoapClient cnn4 = CoapClientBuilder.clientFor(new InetSocketAddress("127.0.0.1", port), cnnServer);
-        CoapMessage msg4 = cnn4.resource("/multicast").sync().get();
+        CoapPacket msg4 = cnn4.resource("/multicast").sync().get();
         assertEquals("multicast", msg4.getPayloadString());
 
         // IPv4 request (using Datagram channel)

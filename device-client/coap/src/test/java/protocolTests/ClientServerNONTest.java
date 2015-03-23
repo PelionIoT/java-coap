@@ -140,7 +140,7 @@ public class ClientServerNONTest {
             if (ex.getRequestHeaders().getUriQuery() != null && ex.getRequestHeaders().getUriQuery().equals("timeout=t")) {
                 return;
             }
-            if (ex.getRequest().getMustAcknowladge()) {
+            if (ex.getRequest().getMustAcknowledge()) {
                 ex.sendDelayedAck();
                 try {
                     Thread.sleep(400);
@@ -150,7 +150,7 @@ public class ClientServerNONTest {
             }
 
             CoapPacket resp = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, ex.getRemoteAddress());
-            if (!ex.getRequest().getMustAcknowladge()) {
+            if (!ex.getRequest().getMustAcknowledge()) {
                 resp.setMessageType(MessageType.NonConfirmable);
             }
             resp.setPayload(body);

@@ -15,7 +15,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.CoapConstants;
-import org.mbed.coap.packet.CoapMessage;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.MessageType;
@@ -174,7 +173,7 @@ public class ClientServerTest {
 
         try (CoapClient client = CoapClientBuilder.newBuilder(new InetSocketAddress(adr, ipv6Server.getLocalSocketAddress().getPort())).build()) {
 
-            CoapMessage coapResp = client.resource("/resource").sync().get();
+            CoapPacket coapResp = client.resource("/resource").sync().get();
             assertEquals("1234qwerty", coapResp.getPayloadString());
 
         }
@@ -229,7 +228,7 @@ public class ClientServerTest {
                 })
                 .timeout(new CoapTimeout(100)).build()) {
 
-            CoapMessage resp = cnn.resource("/dropping").sync().get();
+            CoapPacket resp = cnn.resource("/dropping").sync().get();
             assertEquals("dropped", resp.getPayloadString());
         }
     }

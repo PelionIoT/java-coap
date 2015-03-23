@@ -413,7 +413,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
 
         CoapTransaction trans = null;
         try {
-            if (packet.getMustAcknowladge()) {
+            if (packet.getMustAcknowledge()) {
                 trans = new CoapTransaction(callback, packet, this, transContext);
                 transMgr.add(trans);
                 trans.send(System.currentTimeMillis());
@@ -588,7 +588,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             delayedTransMagr.remove(delayedTransactionId);
             try {
                 trans.getCallback().call(packet);
-                if (packet.getMustAcknowladge()) {
+                if (packet.getMustAcknowledge()) {
                     send(packet.createResponse(), packet.getRemoteAddress(), TransportContext.NULL);
                 }
             } catch (Exception ex) {
