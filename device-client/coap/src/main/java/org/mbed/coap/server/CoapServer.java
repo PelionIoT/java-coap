@@ -53,7 +53,7 @@ import org.mbed.coap.utils.EventLoggerCoapPacket;
  * @author szymon
  * @see <a href="http://www.rfc-editor.org/rfc/rfc7252.txt" >http://www.rfc-editor.org/rfc/rfc7252.txt</a>
  */
-public class CoapServer extends CoapServerAbstract implements Closeable {
+public abstract class CoapServer extends CoapServerAbstract implements Closeable {
 
     private static final Logger LOGGER = Logger.getLogger(CoapServer.class.getName());
     private static final EventLogger EVENT_LOGGER = EventLogger.getLogger("coap");
@@ -867,4 +867,21 @@ public class CoapServer extends CoapServerAbstract implements Closeable {
         return linkFormats;
     }
 
+    /**
+     * Initialize observation.
+     *
+     * <p>
+     * <i>Asynchronous method</i>
+     * </p>
+     *
+     * @param uri resource path for observation
+     * @param destination destination address
+     * @param respCallback handles observation response
+     * @param token observation identification (token)
+     * @return observation identification
+     * @throws CoapException coap exception
+     */
+    public abstract byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token) throws CoapException;
+
+    public abstract byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback) throws CoapException;
 }

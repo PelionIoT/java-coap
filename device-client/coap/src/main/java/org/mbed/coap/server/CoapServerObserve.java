@@ -25,49 +25,15 @@ public class CoapServerObserve extends CoapServerBlocks {
 
     private ObservationIDGenerator observationIDGenerator = new SimpleObservationIDGenerator();
 
-    protected CoapServerObserve(TransportConnector trans, Executor executor) {
-        super(trans, executor, new CoapIdContextImpl());
-    }
-
     protected CoapServerObserve(TransportConnector udp, Executor executor, CoapIdContext idContext) {
         super(udp, executor, idContext);
     }
 
-    public CoapServerObserve() {
+    protected CoapServerObserve() {
         super();
     }
 
-    /**
-     * Initialize observation.
-     *
-     * <p>
-     * <i>Asynchronous method</i>
-     * </p>
-     *
-     * @param uri resource path for observation
-     * @param destination destination address
-     * @param respCallback handles observation response
-     * @return observation identification (token)
-     * @throws CoapException coap exception
-     */
-    public byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback) throws CoapException {
-        return observe(uri, destination, respCallback, observationIDGenerator.nextObservationID(uri));
-    }
-
-    /**
-     * Initialize observation.
-     *
-     * <p>
-     * <i>Asynchronous method</i>
-     * </p>
-     *
-     * @param uri resource path for observation
-     * @param destination destination address
-     * @param respCallback handles observation response
-     * @param token observation identification (token)
-     * @return observation identification
-     * @throws CoapException coap exception
-     */
+    @Override
     public byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token) throws CoapException {
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, uri, destination);
         request.setToken(token);
@@ -75,6 +41,7 @@ public class CoapServerObserve extends CoapServerBlocks {
         return observe(request, respCallback);
     }
 
+    @Override
     public byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback) throws CoapException {
         if (request.headers().getObserve() == null) {
             request.headers().setObserve(0);
