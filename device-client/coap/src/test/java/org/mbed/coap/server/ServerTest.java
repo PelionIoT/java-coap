@@ -35,10 +35,8 @@ import org.mbed.coap.test.InMemoryTransport;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
-import org.mbed.coap.utils.SyncCallback;
 
 /**
- *
  * @author szymon
  */
 public class ServerTest {
@@ -69,7 +67,7 @@ public class ServerTest {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
 
         //Getting resources
-        assertEquals("Dziala", client.resource("/test/1").sync().get().getPayloadString());
+        assertEquals("Dziala", client.resource("/test/1").get().join().getPayloadString());
         //assertEquals("Dziala2", cnn.get("/test2").getPayloadString());
 
         //posting to a resource with error
@@ -99,9 +97,7 @@ public class ServerTest {
         short[] acceptList = {MediaTypes.CT_APPLICATION_JSON};
         request.headers().setAccept(acceptList);
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<>();
-        cnn.makeRequest(request, callback);
-        assertEquals(Code.C406_NOT_ACCEPTABLE, callback.getResponse().getCode());
+        assertEquals(Code.C406_NOT_ACCEPTABLE, cnn.makeRequest(request).get().getCode());
         cnn.stop();
     }
 
@@ -118,9 +114,7 @@ public class ServerTest {
         short[] acceptList = {MediaTypes.CT_APPLICATION_JSON, MediaTypes.CT_APPLICATION_XML, MediaTypes.CT_TEXT_PLAIN};
         request.headers().setAccept(acceptList);
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<>();
-        cnn.makeRequest(request, callback);
-        assertEquals(Code.C205_CONTENT, callback.getResponse().getCode());
+        assertEquals(Code.C205_CONTENT, cnn.makeRequest(request).get().getCode());
         cnn.stop();
     }
 

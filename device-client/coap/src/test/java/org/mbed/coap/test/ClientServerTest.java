@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.test;
 
@@ -31,9 +31,9 @@ import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
 import org.mbed.coap.udp.MulticastSocketTransport;
+import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.FutureCallbackAdapter;
 import org.mbed.coap.utils.SimpleCoapResource;
-import org.mbed.coap.utils.SyncCallback;
 
 /**
  * @author szymon
@@ -138,9 +138,7 @@ public class ClientServerTest {
         request.headers().setUriPath("/");
         request.setMessageId(1648);
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<>();
-        cnn.makeRequest(request, callback);
-        assertEquals("Shortest path", callback.getResponse().getPayloadString());
+        assertEquals("Shortest path", cnn.makeRequest(request).join().getPayloadString());
         cnn.stop();
     }
 
@@ -240,10 +238,8 @@ public class ClientServerTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<>();
         CoapClient client = CoapClientBuilder.clientFor(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT), cnn);
-        client.resource("/test/1").maxAge(2635593050L).get(callback);
-        assertEquals("Dziala", callback.getResponse().getPayloadString());
+        assertEquals("Dziala", client.resource("/test/1").maxAge(2635593050L).get().join().getPayloadString());
         cnn.stop();
     }
 
@@ -355,7 +351,7 @@ public class ClientServerTest {
 
     @Test(expected = NullPointerException.class)
     public void testMakeRequestWithNullCallback() throws CoapException {
-        server.makeRequest(new CoapPacket(null), null);
+        server.makeRequest(new CoapPacket(null), (Callback<CoapPacket>) null);
     }
 
     @Test(expected = NullPointerException.class)

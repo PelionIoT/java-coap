@@ -1,29 +1,32 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.server;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.mbed.coap.CoapPacket;
+import org.junit.rules.ExpectedException;
 import org.mbed.coap.Code;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
-import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
 import org.mbed.coap.test.InMemoryTransport;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.CoapResource;
-import org.mbed.coap.utils.SyncCallback;
 
 /**
- *
  * @author szymon
  */
 public class CoapServerExecutorTest {
@@ -32,69 +35,60 @@ public class CoapServerExecutorTest {
 
     @Before
     public void setUp() throws IOException {
-        ThreadPoolExecutor es = new ThreadPoolExecutor(1, 1,
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(2));
+        ThreadPoolExecutor es = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(2));
 
         srv = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(5683)).executor(es).build();
         srv.addRequestHandler("/slow", new SlowResource());
         srv.start();
     }
+
     final Object monitor = new Object();
-    final Object monitor2 = new Object();
-    AtomicInteger atomicInt = new AtomicInteger(0);
 
     @After
     public void tearDown() {
         srv.stop();
     }
 
-    @Test(expected = CoapTimeoutException.class)
-    public void testQueueFull() throws IOException, CoapException, Exception {
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @Test
+    public void testQueueFull() throws Throwable {
         CoapClient client1 = CoapClientBuilder.newBuilder(5683).transport(InMemoryTransport.create(1001)).timeout(new SingleTimeout(600)).build();
         CoapClient client2 = CoapClientBuilder.newBuilder(5683).transport(InMemoryTransport.create(1002)).timeout(new SingleTimeout(600)).build();
         CoapClient client3 = CoapClientBuilder.newBuilder(5683).transport(InMemoryTransport.create(1003)).timeout(new SingleTimeout(600)).build();
         CoapClient client4 = CoapClientBuilder.newBuilder(5683).transport(InMemoryTransport.create(1004)).timeout(new SingleTimeout(600)).build();
         CoapClient client5 = CoapClientBuilder.newBuilder(5683).transport(InMemoryTransport.create(1005)).timeout(new SingleTimeout(600)).build();
 
-        SyncCallback<CoapPacket> cl = new SyncCallback<>();
-        SyncCallback<CoapPacket> cl2 = new SyncCallback<>();
-        SyncCallback<CoapPacket> cl3 = new SyncCallback<>();
-        SyncCallback<CoapPacket> cl4 = new SyncCallback<>();
-        SyncCallback<CoapPacket> cl5 = new SyncCallback<>();
-
+        CompletableFuture[] cl;
         synchronized (monitor) {
-            client1.resource("/slow").get(cl);
-            client2.resource("/slow").get(cl2);
-            client3.resource("/slow").get(cl3);
-            client4.resource("/slow").get(cl4);
-            client5.resource("/slow").get(cl5);
+            cl = new CompletableFuture[]{
+                    client1.resource("/slow").get(), client2.resource("/slow").get(), client3.resource("/slow").get(),
+                    client4.resource("/slow").get(), client5.resource("/slow").get()
+            };
         }
 
-        cl.getAndClear();
-        cl2.getAndClear();
-        cl3.getAndClear();
-        cl4.getAndClear();
-        cl5.getAndClear();
+        exception.expectCause(instanceOf(CoapTimeoutException.class));
+        Arrays.stream(cl).forEach(CompletableFuture::join);
     }
 
     @Test
-    public void testQueueNoTimeout() throws IOException, CoapException, Exception {
+    public void testQueueNoTimeout() throws Exception {
         CoapClient client1 = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(5683))
                 .transport(InMemoryTransport.create(1001)).timeout(new SingleTimeout(600)).build();
         CoapClient client2 = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(5683))
                 .transport(InMemoryTransport.create(1002)).timeout(new SingleTimeout(600)).build();
 
-        SyncCallback<CoapPacket> cl = new SyncCallback<>();
-        SyncCallback<CoapPacket> cl2 = new SyncCallback<>();
+        CompletableFuture cl;
+        CompletableFuture cl2;
 
         synchronized (monitor) {
-            client1.resource("/slow").get(cl);
-            client2.resource("/slow").get(cl2);
+            cl = client1.resource("/slow").get();
+            cl2 = client2.resource("/slow").get();
         }
 
-        cl.getAndClear();
-        cl2.getAndClear();
+        cl.join();
+        cl2.join();
     }
 
     private class SlowResource extends CoapResource {

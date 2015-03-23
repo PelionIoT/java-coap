@@ -1,10 +1,13 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.test;
 
+import static org.junit.Assert.assertEquals;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Random;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.CoapPacket;
@@ -23,7 +26,6 @@ import org.mbed.coap.server.internal.DelayedTransactionId;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
-import org.mbed.coap.utils.SyncCallback;
 
 /**
  * @author szymon
@@ -107,9 +109,7 @@ public class ClientServerNONTest {
         CoapPacket request = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, serverAddr);
         request.setToken(nextToken());
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<>();
-        client.makeRequest(request, callback);
-        assertEquals(MessageType.Reset, callback.getResponse().getMessageType());
+        assertEquals(MessageType.Reset, client.makeRequest(request).join().getMessageType());
 
         client.close();
     }
@@ -121,9 +121,7 @@ public class ClientServerNONTest {
         CoapPacket request = new CoapPacket(Code.C205_CONTENT, MessageType.NonConfirmable, serverAddr);
         request.setToken(nextToken());
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<>();
-        cnn.makeRequest(request, callback);
-        assertEquals(MessageType.Reset, callback.getResponse().getMessageType());
+        assertEquals(MessageType.Reset, cnn.makeRequest(request).join().getMessageType());
 
         cnn.stop();
     }
