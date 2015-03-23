@@ -10,9 +10,12 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.server.CoapErrorCallback;
+import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
@@ -71,4 +74,36 @@ public abstract class CoapServerAbstract implements TransportReceiver {
 
     protected abstract void handleException(byte[] packet, CoapException exception, TransportContext transportContext);
 
+    protected abstract int getNextMID();
+
+    protected abstract DuplicationDetector getDuplicationDetector();
+
+    protected void sendResponse(CoapExchange exchange) {
+        try {
+            CoapPacket resp = exchange.getResponse();
+            if (resp == null) {
+                //nothing to send
+                return;
+            }
+            if (resp.getMessageType() == MessageType.NonConfirmable) {
+                resp.setMessageId(getNextMID());
+            }
+            this.send(resp, exchange.getRemoteAddress(), exchange.getResponseTransportContext());
+            if (getDuplicationDetector() != null) {
+                getDuplicationDetector().putResponse(exchange.getRequest(), resp);
+            }
+
+        } catch (CoapException ex) {
+            LOGGER.warning(ex.getMessage());
+            try {
+                send(exchange.getRequest().createResponse(Code.C500_INTERNAL_SERVER_ERROR), exchange.getRemoteAddress(), exchange.getResponseTransportContext());
+
+            } catch (CoapException | IOException ex1) {
+                //impossible ;)
+                LOGGER.log(Level.SEVERE, ex1.getMessage(), ex1);
+            }
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+        }
+    }
 }

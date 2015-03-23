@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
-package org.mbed.coap.server;
+package org.mbed.coap.server.internal;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;

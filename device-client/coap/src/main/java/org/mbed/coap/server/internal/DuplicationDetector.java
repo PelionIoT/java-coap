@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
-package org.mbed.coap.server;
+package org.mbed.coap.server.internal;
 
 import java.net.InetSocketAddress;
 import java.util.Iterator;
@@ -22,7 +22,7 @@ import org.mbed.coap.packet.CoapPacket;
  *
  * @author szymon
  */
-class DuplicationDetector implements Runnable {
+public class DuplicationDetector implements Runnable {
 
     public static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket(null);
     private static final Logger LOGGER = Logger.getLogger(DuplicationDetector.class.getName());
