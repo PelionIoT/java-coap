@@ -26,6 +26,9 @@ public interface Callback<T> {
 
     /**
      * Returns callback instance that will ignore all calls
+     *
+     * @param <T> generic type
+     * @return Callback instance
      */
     @SuppressWarnings("unchecked")
     static <T> Callback<T> ignore() {

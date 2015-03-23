@@ -38,8 +38,8 @@ import org.mbed.coap.server.internal.CoapTransactionId;
 import org.mbed.coap.server.internal.DelayedTransactionId;
 import org.mbed.coap.server.internal.DelayedTransactionManager;
 import org.mbed.coap.server.internal.DuplicationDetector;
-import org.mbed.coap.server.internal.HandlerURI;
 import org.mbed.coap.server.internal.TransactionManager;
+import org.mbed.coap.server.internal.UriMatcher;
 import org.mbed.coap.transmission.CoapTimeout;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportConnector;
@@ -59,11 +59,13 @@ import org.mbed.coap.utils.FutureCallbackAdapter;
  */
 public abstract class CoapServer extends CoapServerAbstract implements Closeable {
 
+    private final static long TRANSACTION_TIMEOUT_DELAY = 1000;
     private static final Logger LOGGER = Logger.getLogger(CoapServer.class.getName());
     private static final EventLogger EVENT_LOGGER = EventLogger.getLogger("coap");
-    private boolean isRunning;
-    private final Map<HandlerURI, CoapHandler> handlers = new HashMap<>();
+    private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
     private static final int DEFAULT_DUPLICATION_TIMEOUT = 30000;
+    private boolean isRunning;
+    private final Map<UriMatcher, CoapHandler> handlers = new HashMap<>();
     private ScheduledExecutorService scheduledExecutor;
     private TransportConnector transport;
     private BlockSize blockOptionSize; //null: no blocking
@@ -76,29 +78,15 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     private boolean enabledCriticalOptTest = true;
     private ScheduledFuture<?> transactionTimeoutWorkerFut;
 
-    protected CoapServer() {
-        // nothing to initialize
+    public static CoapServerBuilder builder() {
+        return new CoapServerBuilder();
     }
 
-    /**
-     * Constructor for CoAP server.
-     *
-     * @param trans UDPConnector instance
-     * @param executor executor instance
-     * @param idContext CoapIdContext instance
-     */
-    protected CoapServer(TransportConnector trans, Executor executor, MessageIdSupplier idContext) {
-        this.idContext = idContext;
-        this.transport = trans;
-        this.executor = executor;
-        init();
+    protected final void init() {
+        init(DEFAULT_MAX_DUPLICATION_LIST_SIZE);
     }
 
-    final void init() {
-        init(10000);
-    }
-
-    final void init(final int duplicationListSize) {
+    protected final void init(final int duplicationListSize) {
         if (transport == null) {
             throw new NullPointerException();
         }
@@ -138,7 +126,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         this.executor = executor;
     }
 
-    void setCoapIdContext(MessageIdSupplier idContext) {
+    protected void setMidSupplier(MessageIdSupplier idContext) {
         assertNotRunning();
         this.idContext = idContext;
     }
@@ -189,12 +177,12 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         }
     }
 
-    protected void startTransactionTimeoutWorker() {
-        transactionTimeoutWorkerFut = scheduledExecutor.scheduleWithFixedDelay(new TransactionTimeoutWorker(),
-                0, TransactionTimeoutWorker.DELAY, TimeUnit.MILLISECONDS);
+    private void startTransactionTimeoutWorker() {
+        transactionTimeoutWorkerFut = scheduledExecutor.scheduleWithFixedDelay(this::resendTimeouts,
+                0, TRANSACTION_TIMEOUT_DELAY, TimeUnit.MILLISECONDS);
     }
 
-    protected void stopTransactionTimeoutWorker() {
+    private void stopTransactionTimeoutWorker() {
         if (transactionTimeoutWorkerFut != null) {
             transactionTimeoutWorkerFut.cancel(false);
             transactionTimeoutWorkerFut = null;
@@ -292,7 +280,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @param coapHandler Handler object
      */
     public void addRequestHandler(String uri, CoapHandler coapHandler) {
-        handlers.put(new HandlerURI(uri), coapHandler);
+        handlers.put(new UriMatcher(uri), coapHandler);
         LOGGER.fine("Handler added on " + uri);
     }
 
@@ -302,7 +290,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @param requestHandler request handler
      */
     public void removeRequestHandler(CoapHandler requestHandler) {
-        HandlerURI url = findKey(requestHandler);
+        UriMatcher url = findKey(requestHandler);
         if (url != null) {
             handlers.remove(url);
         }
@@ -336,9 +324,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         return transport.getLocalSocketAddress();
     }
 
-    private HandlerURI findKey(CoapHandler requestHandler) {
-        //TODO: return multiple keys
-        for (HandlerURI url : handlers.keySet()) {
+    private UriMatcher findKey(CoapHandler requestHandler) {
+        for (UriMatcher url : handlers.keySet()) {
             if (handlers.get(url) == requestHandler) {
                 return url;
             }
@@ -560,7 +547,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             try {
                 send(resp, packet.getRemoteAddress(), TransportContext.NULL);
                 LOGGER.warning("Can not process CoAP message [" + packet + "] sent RESET message");
-                return;
             } catch (Exception ex) {
                 LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
             }
@@ -648,10 +634,10 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
 
     private CoapHandler findHandler(String uri) {
 
-        CoapHandler handler = handlers.get(new HandlerURI(uri));
+        CoapHandler handler = handlers.get(new UriMatcher(uri));
 
         if (handler == null) {
-            for (HandlerURI uriKey : handlers.keySet()) {
+            for (UriMatcher uriKey : handlers.keySet()) {
                 if (uriKey.isMatching(uri)) {
                     return handlers.get(uriKey);
                 }
@@ -756,67 +742,56 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         coapHandler.handle(exchange);
     }
 
-    void setTransportConnector(TransportConnector transportConnector) {
+    protected void setTransportConnector(TransportConnector transportConnector) {
         assertNotRunning();
         this.transport = transportConnector;
     }
 
     protected void resendTimeouts() {
-        //find timeouts
+        try {
+            //find timeouts
 
-        final long currentTime = System.currentTimeMillis();
-        Collection<CoapTransaction> transTimeOut = transMgr.findTimeoutTransactions(currentTime);
-        for (CoapTransaction trans : transTimeOut) {
-            if (trans.isTimedOut(currentTime)) {
-                try {
-                    if (!trans.send(currentTime)) {
-                        //final timeout, cannot resend, remove transaction
+            final long currentTime = System.currentTimeMillis();
+            Collection<CoapTransaction> transTimeOut = transMgr.findTimeoutTransactions(currentTime);
+            for (CoapTransaction trans : transTimeOut) {
+                if (trans.isTimedOut(currentTime)) {
+                    try {
+                        if (!trans.send(currentTime)) {
+                            //final timeout, cannot resend, remove transaction
+                            removeCoapTransId(trans.getTransactionId());
+                            //transactions.remove(trans.getTransactionId());
+                            if (LOGGER.isLoggable(Level.FINEST)) {
+                                LOGGER.finest("CoAP transaction timeout [" + trans.getTransactionId() + "]");  //[" + trans.coapRequest + "]");
+                            }
+                            trans.getCallback().callException(new CoapTimeoutException());
+
+                        } else {
+                            if (trans.getCallback() instanceof CoapTransactionCallback) {
+                                ((CoapTransactionCallback) trans.getCallback()).messageResent();
+                            }
+                        }
+                    } catch (Exception ex) {
                         removeCoapTransId(trans.getTransactionId());
-                        //transactions.remove(trans.getTransactionId());
-                        if (LOGGER.isLoggable(Level.FINEST)) {
-                            LOGGER.finest("CoAP transaction timeout [" + trans.getTransactionId() + "]");  //[" + trans.coapRequest + "]");
-                        }
-                        trans.getCallback().callException(new CoapTimeoutException());
-
-                    } else {
-                        if (trans.getCallback() instanceof CoapTransactionCallback) {
-                            ((CoapTransactionCallback) trans.getCallback()).messageResent();
-                        }
+                        LOGGER.warning("CoAP transaction [" + trans.getTransactionId() + "] retransmission caused exception: " + ex.getMessage());
+                        trans.getCallback().callException(ex);
                     }
-                } catch (Exception ex) {
-                    removeCoapTransId(trans.getTransactionId());
-                    LOGGER.warning("CoAP transaction [" + trans.getTransactionId() + "] retransmission caused exception: " + ex.getMessage());
-                    trans.getCallback().callException(ex);
                 }
             }
-        }
 
-        Collection<CoapTransaction> delayedTransTimeOut = delayedTransMagr.findTimeoutTransactions(currentTime);
-        for (CoapTransaction trans : delayedTransTimeOut) {
-            if (trans.isTimedOut(currentTime)) {
-                //delayed timeout, remove transaction
-                delayedTransMagr.remove(trans.getDelayedTransId());
-                if (LOGGER.isLoggable(Level.FINEST)) {
-                    LOGGER.finest("CoAP delayed transaction timeout [" + trans.getDelayedTransId() + "]");
+            Collection<CoapTransaction> delayedTransTimeOut = delayedTransMagr.findTimeoutTransactions(currentTime);
+            for (CoapTransaction trans : delayedTransTimeOut) {
+                if (trans.isTimedOut(currentTime)) {
+                    //delayed timeout, remove transaction
+                    delayedTransMagr.remove(trans.getDelayedTransId());
+                    if (LOGGER.isLoggable(Level.FINEST)) {
+                        LOGGER.finest("CoAP delayed transaction timeout [" + trans.getDelayedTransId() + "]");
+                    }
+                    trans.getCallback().callException(new CoapTimeoutException());
+
                 }
-                trans.getCallback().callException(new CoapTimeoutException());
-
             }
-        }
-
-    }
-
-    private class TransactionTimeoutWorker implements Runnable {
-
-        public final static long DELAY = 1000;
-
-        @Override
-        public void run() {
-            try {
-                resendTimeouts();
-            } catch (Exception ex) {
-                LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
-            }
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
 
@@ -837,8 +812,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     public List<LinkFormat> getResourceLinks() {
         List<LinkFormat> linkFormats = new LinkedList<>();
         //List<LinkFormat> linkFormats = new
-        for (Entry<HandlerURI, CoapHandler> entry : handlers.entrySet()) {
-            HandlerURI uri = entry.getKey();
+        for (Entry<UriMatcher, CoapHandler> entry : handlers.entrySet()) {
+            UriMatcher uri = entry.getKey();
             if (uri.getUri().equals(CoapConstants.WELL_KNOWN_CORE)) {
                 continue;
             }

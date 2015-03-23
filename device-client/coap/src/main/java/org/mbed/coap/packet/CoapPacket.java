@@ -193,6 +193,7 @@ public class CoapPacket implements Serializable {
 
     /**
      * Returns CoAP header options instance.
+     * @return header options instance
      */
     public final HeaderOptions headers() {
         return options;

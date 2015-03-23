@@ -4,18 +4,16 @@
 package protocolTests;
 
 import static org.junit.Assert.assertEquals;
-import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import java.net.InetSocketAddress;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mbed.coap.client.CoapClient;
+import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.MediaTypes;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.CoapServerObserve;
 import org.mbed.coap.server.MessageIdSupplierImpl;
 import protocolTests.utils.CoapPacketBuilder;
@@ -34,7 +32,7 @@ public class BlockTest {
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
-        CoapServer coapServer = CoapServerBuilder.newBuilder().transport(transport).context(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
+        CoapServer coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
                 .executor(new CurrentThreadExecutor())
                 .observerIdGenerator(new CoapServerObserve.SimpleObservationIDGenerator(0)).build();
         coapServer.start();

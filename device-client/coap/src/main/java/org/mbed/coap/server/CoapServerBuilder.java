@@ -47,8 +47,8 @@ public class CoapServerBuilder {
         return this;
     }
 
-    public CoapServerBuilder context(MessageIdSupplier context) {
-        server.setCoapIdContext(context);
+    public CoapServerBuilder midSupplier(MessageIdSupplier context) {
+        server.setMidSupplier(context);
         return this;
     }
 
