@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.observe;
 
@@ -8,13 +8,13 @@ import java.util.logging.Logger;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.exception.CoapTimeoutException;
-import org.mbed.coap.utils.CoapCallback;
+import org.mbed.coap.utils.Callback;
 
 /**
  *
  * @author szymon
  */
-class NotificationAckCallback implements CoapCallback {
+class NotificationAckCallback implements Callback<CoapPacket> {
 
     private static final Logger LOGGER = Logger.getLogger(NotificationAckCallback.class.getName());
     private final ObservationRelation sub;
