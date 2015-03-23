@@ -47,7 +47,7 @@ public class CoapServerBuilder {
         return this;
     }
 
-    public CoapServerBuilder context(CoapIdContext context) {
+    public CoapServerBuilder context(MessageIdSupplier context) {
         server.setCoapIdContext(context);
         return this;
     }
