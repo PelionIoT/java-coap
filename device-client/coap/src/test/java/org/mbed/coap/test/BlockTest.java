@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.test;
 
@@ -14,10 +14,10 @@ import org.mbed.coap.Code;
 import org.mbed.coap.MediaTypes;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
-import org.mbed.coap.server.CoapIdContextImpl;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.CoapServerObserve;
+import org.mbed.coap.server.MessageIdSupplierImpl;
 
 /**
  * Created by szymon
@@ -31,7 +31,7 @@ public class BlockTest {
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
-        CoapServer coapServer = CoapServerBuilder.newBuilder().transport(transport).context(new CoapIdContextImpl(0)).blockSize(BlockSize.S_32)
+        CoapServer coapServer = CoapServerBuilder.newBuilder().transport(transport).context(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
                 .executor(new CurrentThreadExecutor())
                 .observerIdGenerator(new CoapServerObserve.SimpleObservationIDGenerator(0)).build();
         coapServer.start();

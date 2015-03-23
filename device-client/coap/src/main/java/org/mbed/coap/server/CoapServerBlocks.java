@@ -36,8 +36,8 @@ abstract class CoapServerBlocks extends CoapServer {
         super();
     }
 
-    CoapServerBlocks(TransportConnector trans, Executor executor, CoapIdContext coapIdContext) {
-        super(trans, executor, coapIdContext);
+    CoapServerBlocks(TransportConnector trans, Executor executor, MessageIdSupplier messageIdSupplier) {
+        super(trans, executor, messageIdSupplier);
     }
 
     @Override

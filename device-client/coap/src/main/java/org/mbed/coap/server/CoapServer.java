@@ -68,7 +68,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     private final DelayedTransactionManager delayedTransMagr = new DelayedTransactionManager();
     private ObservationHandler observationHandler;
     private DuplicationDetector duplicationDetector;
-    private CoapIdContext idContext;
+    private MessageIdSupplier idContext;
     private boolean enabledCriticalOptTest = true;
     private ScheduledFuture<?> transactionTimeoutWorkerFut;
 
@@ -83,7 +83,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @param executor executor instance
      * @param idContext CoapIdContext instance
      */
-    protected CoapServer(TransportConnector trans, Executor executor, CoapIdContext idContext) {
+    protected CoapServer(TransportConnector trans, Executor executor, MessageIdSupplier idContext) {
         this.idContext = idContext;
         this.transport = trans;
         this.executor = executor;
@@ -115,7 +115,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         }
 
         if (idContext == null) {
-            idContext = new CoapIdContextImpl();
+            idContext = new MessageIdSupplierImpl();
         }
         if (transmissionTimeout == null) {
             this.transmissionTimeout = new CoapTimeout();
@@ -134,7 +134,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         this.executor = executor;
     }
 
-    void setCoapIdContext(CoapIdContext idContext) {
+    void setCoapIdContext(MessageIdSupplier idContext) {
         assertNotRunning();
         this.idContext = idContext;
     }
