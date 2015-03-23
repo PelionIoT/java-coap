@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mbed.coap.exception.CoapCodeException;
@@ -15,10 +14,10 @@ import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.DataConvertingUtility;
 import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.packet.Method;
 import org.mbed.coap.server.internal.CoapExchangeImpl;
-import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
 
@@ -35,10 +34,6 @@ abstract class CoapServerBlocks extends CoapServer {
 
     CoapServerBlocks() {
         super();
-    }
-
-    CoapServerBlocks(TransportConnector trans, Executor executor, MessageIdSupplier messageIdSupplier) {
-        super(trans, executor, messageIdSupplier);
     }
 
     @Override
@@ -90,7 +85,8 @@ abstract class CoapServerBlocks extends CoapServer {
         super.sendResponse(exchange);
     }
 
-    private static void updateBlockResponse(BlockOption block2Res, CoapPacket resp, CoapExchange exchange) {
+    private static void updateBlockResponse(final BlockOption block2Response, final CoapPacket resp, final CoapExchange exchange) {
+        BlockOption block2Res = block2Response;
         int blFrom = block2Res.getNr() * block2Res.getSize();
         int blTo = blFrom + block2Res.getSize();
 
@@ -274,7 +270,7 @@ abstract class CoapServerBlocks extends CoapServer {
             if (response == null) {
                 response = blResponse;
             } else {
-                this.response.setPayload(combine(response.getPayload(), blResponse.getPayload()));
+                this.response.setPayload(DataConvertingUtility.combine(response.getPayload(), blResponse.getPayload()));
                 this.response.headers().setBlock2Res(blResponse.headers().getBlock2Res());
                 this.response.setCode(blResponse.getCode());
             }
@@ -347,13 +343,6 @@ abstract class CoapServerBlocks extends CoapServer {
                 ((CoapTransactionCallback) reqCallback).blockReceived();
             }
         }
-    }
-
-    private static byte[] combine(byte[] arr1, byte[] arr2) {
-        byte[] newArr = new byte[arr1.length + arr2.length];
-        System.arraycopy(arr1, 0, newArr, 0, arr1.length);
-        System.arraycopy(arr2, 0, newArr, arr1.length, arr2.length);
-        return newArr;
     }
 
     protected static class BlockRequestId {
