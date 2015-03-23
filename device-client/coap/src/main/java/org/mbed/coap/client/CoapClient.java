@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
 
 import java.io.Closeable;
 import java.net.InetSocketAddress;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import org.mbed.coap.CoapPacket;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.exception.CoapException;
@@ -48,11 +48,11 @@ public class CoapClient implements Closeable {
         return new CoapRequestTarget(path, this);
     }
 
-    public Future<CoapPacket> ping() throws CoapException {
-        FutureCallbackAdapter<CoapPacket> rsp = new FutureCallbackAdapter<>();
+    public CompletableFuture<CoapPacket> ping() throws CoapException {
+        FutureCallbackAdapter<CoapPacket> response = new FutureCallbackAdapter<>();
         CoapPacket pingRequest = new CoapPacket(null, MessageType.Confirmable, destination);
-        coapServer.makeRequest(pingRequest, rsp);
-        return rsp;
+        coapServer.makeRequest(pingRequest, response);
+        return response;
     }
 
     public void ping(Callback<CoapPacket> callback) throws CoapException {

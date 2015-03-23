@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,6 +47,7 @@ import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.EventLogger;
 import org.mbed.coap.utils.EventLoggerCoapPacket;
+import org.mbed.coap.utils.FutureCallbackAdapter;
 
 /**
  * Implements CoAP server ( RFC 7252)
@@ -343,6 +345,33 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             }
         }
         return null;
+    }
+
+    /**
+     * Makes asynchronous CoAP request. Sends given packet to specified address..
+     *
+     * @param requestPacket request packet
+     * @return CompletableFuture with response promise
+     */
+    public final CompletableFuture<CoapPacket> makeRequest(CoapPacket requestPacket) {
+        return makeRequest(requestPacket, TransportContext.NULL);
+    }
+
+    /**
+     * Makes asynchronous CoAP request. Sends given packet to specified address..
+     *
+     * @param requestPacket request packet
+     * @param transContext transport context that will be passed to transport connector
+     * @return CompletableFuture with response promise
+     */
+    public final CompletableFuture<CoapPacket> makeRequest(CoapPacket requestPacket, final TransportContext transContext) {
+        FutureCallbackAdapter<CoapPacket> completableFuture = new FutureCallbackAdapter<>();
+        try {
+            makeRequest(requestPacket, completableFuture, transContext);
+        } catch (Exception e) {
+            completableFuture.callException(e);
+        }
+        return completableFuture;
     }
 
     /**

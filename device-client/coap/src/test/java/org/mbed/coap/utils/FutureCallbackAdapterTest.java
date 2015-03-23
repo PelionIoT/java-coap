@@ -1,11 +1,12 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.utils;
 
+import static org.junit.Assert.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
@@ -17,7 +18,6 @@ public class FutureCallbackAdapterTest {
     @Test
     public void test() throws InterruptedException, ExecutionException, TimeoutException {
         FutureCallbackAdapter<String> f = new FutureCallbackAdapter<>();
-        assertFalse(f.cancel(true));
         assertFalse(f.isDone());
         assertFalse(f.isCancelled());
 

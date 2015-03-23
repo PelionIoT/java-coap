@@ -1,13 +1,15 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.test;
 
+import static org.junit.Assert.*;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mbed.coap.CoapPacket;
@@ -20,7 +22,6 @@ import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.FutureCallbackAdapter;
-import org.mbed.coap.utils.SyncCallback;
 
 /**
  *
@@ -40,7 +41,7 @@ public class TimeoutTest {
 
     @Test
     @Ignore
-    public void timeoutTestIgn() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
+    public void timeoutTestIgn() throws Exception {
         CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616).executor(Executors.newCachedThreadPool()).build();
         cnn.start();
 
@@ -49,14 +50,10 @@ public class TimeoutTest {
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
 
-        SyncCallback<CoapPacket> callback = new SyncCallback<>();
-        cnn.makeRequest(request, callback);
-
-        //assertEquals("Wrong number of transactions", 1, cnn.getNumberOfTransactions());
         try {
-            callback.getResponse();
-            assertTrue("Exception was expected", false);
-        } catch (CoapException ex) {
+            cnn.makeRequest(request).join();
+            fail("Exception was expected");
+        } catch (CompletionException ex) {
             //expected
         }
         assertEquals("Wrong number of transactions", 0, cnn.getNumberOfTransactions());
@@ -65,7 +62,7 @@ public class TimeoutTest {
     }
 
     @Test
-    public void timeoutTest() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
+    public void timeoutTest() throws Exception {
         CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create())
                 .executor(Executors.newCachedThreadPool()).timeout(new SingleTimeout(100)).build();
         cnn.start();
