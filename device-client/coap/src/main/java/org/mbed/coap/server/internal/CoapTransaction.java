@@ -4,7 +4,7 @@
 package org.mbed.coap.server.internal;
 
 import java.io.IOException;
-import org.mbed.coap.CoapPacket;
+import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;

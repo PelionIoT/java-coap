@@ -5,8 +5,8 @@ package org.mbed.coap.server;
 
 import java.net.InetSocketAddress;
 import java.util.logging.Logger;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.transport.TransportContext;
 
 /**

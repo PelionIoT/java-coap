@@ -1,14 +1,11 @@
 package org.mbed.coap.linkformat;
 
-import org.mbed.coap.HeaderOptions;
-import org.mbed.coap.linkformat.LinkFormat;
-import org.mbed.coap.linkformat.LinkFormatBuilder;
-import org.mbed.coap.linkformat.PToken;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Random;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.mbed.coap.packet.DataConvertingUtility;
 
 /**
  *
@@ -294,28 +291,28 @@ public class LinkFormatTest {
 
         List<LinkFormat> list = LinkFormatBuilder.parseLinkAsList(LINK);
 
-        List<LinkFormat> links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("rt=dummy-rt3"));
+        List<LinkFormat> links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("rt=dummy-rt3"));
         assertNotNull(links);
         assertEquals(1, links.size());
         assertEquals("/test/3", links.get(0).getUri());
 
-        links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("rt=dummy-rt"));
+        links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("rt=dummy-rt"));
         assertNotNull(links);
         assertEquals(2, links.size());
         assertEquals("/test/1", links.get(0).getUri());
         assertEquals("/test/2", links.get(1).getUri());
 
-        links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("rt=dummy-rt3&obs=true"));
+        links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("rt=dummy-rt3&obs=true"));
         assertNotNull(links);
         assertEquals(1, links.size());
         assertEquals("/test/3", links.get(0).getUri());
 
-        links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("media=text/plain"));
+        links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("media=text/plain"));
         assertNotNull(links);
         assertEquals(1, links.size());
         assertEquals("/test/2", links.get(0).getUri());
 
-        links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("rt=dummy-rt3&media=text/plain"));
+        links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("rt=dummy-rt3&media=text/plain"));
         assertNotNull(links);
         assertEquals(0, links.size());
     }
@@ -329,32 +326,32 @@ public class LinkFormatTest {
 
         List<LinkFormat> list = LinkFormatBuilder.parseLinkAsList(LINK);
 
-        List<LinkFormat> links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("rt=dummy-*"));
+        List<LinkFormat> links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("rt=dummy-*"));
         assertNotNull(links);
         assertEquals(3, links.size());
 
-        links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("rt=*"));
+        links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("rt=*"));
         assertNotNull(links);
         assertEquals(3, links.size());
 
-        links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("obs=*"));
+        links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("obs=*"));
         assertNotNull(links);
         assertEquals(2, links.size());
 
-        links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("media=text*"));
+        links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("media=text*"));
         assertNotNull(links);
         assertEquals(1, links.size());
         assertEquals("/test/2", links.get(0).getUri());
 
-        links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("rt=dummy*&media=text/plain"));
+        links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("rt=dummy*&media=text/plain"));
         assertNotNull(links);
         assertEquals(1, links.size());
 
-        links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("href=/test/1"));
+        links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("href=/test/1"));
         assertNotNull(links);
         assertEquals(1, links.size());
 
-        links = LinkFormatBuilder.filter(list, HeaderOptions.parseUriQuery("href=/test*"));
+        links = LinkFormatBuilder.filter(list, DataConvertingUtility.parseUriQuery("href=/test*"));
         assertNotNull(links);
         assertEquals(4, links.size());
     }

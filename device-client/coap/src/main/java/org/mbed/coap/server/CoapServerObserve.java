@@ -6,13 +6,13 @@ package org.mbed.coap.server;
 import java.net.InetSocketAddress;
 import java.util.Random;
 import java.util.concurrent.Executor;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
-import org.mbed.coap.HeaderOptions;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.MessageType;
+import org.mbed.coap.packet.Method;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.ObservationNotEstablishedException;
+import org.mbed.coap.packet.DataConvertingUtility;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.utils.Callback;
 
@@ -109,7 +109,7 @@ public class CoapServerObserve extends CoapServerBlocks {
 
         @Override
         public synchronized byte[] nextObservationID(String uri) {
-            return HeaderOptions.convertVariableUInt(++token);
+            return DataConvertingUtility.convertVariableUInt(++token);
         }
     }
 }

@@ -3,7 +3,7 @@
  */
 package org.mbed.coap.exception;
 
-import org.mbed.coap.Code;
+import org.mbed.coap.packet.Code;
 
 /**
  *

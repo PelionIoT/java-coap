@@ -4,14 +4,14 @@
 package org.mbed.coap.client;
 
 import java.util.concurrent.CompletableFuture;
-import org.mbed.coap.BlockOption;
-import org.mbed.coap.BlockSize;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.HeaderOptions;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
+import org.mbed.coap.packet.BlockOption;
+import org.mbed.coap.packet.BlockSize;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.MessageType;
+import org.mbed.coap.packet.Method;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.ObservationNotEstablishedException;
+import org.mbed.coap.packet.DataConvertingUtility;
 import org.mbed.coap.server.CoapServerObserve;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
@@ -73,7 +73,7 @@ public class CoapRequestTarget {
     }
 
     public CoapRequestTarget token(long token) {
-        requestPacket.setToken(HeaderOptions.convertVariableUInt(token));
+        requestPacket.setToken(DataConvertingUtility.convertVariableUInt(token));
         return this;
     }
 

@@ -15,7 +15,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.mbed.coap.CoapPacket;
+import org.mbed.coap.packet.CoapPacket;
 
 /**
  * Checks if incoming request has been repeated
