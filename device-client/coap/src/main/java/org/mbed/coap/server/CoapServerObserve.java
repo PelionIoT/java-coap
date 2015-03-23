@@ -25,7 +25,7 @@ public class CoapServerObserve extends CoapServerBlocks {
 
     private ObservationIDGenerator observationIDGenerator = new SimpleObservationIDGenerator();
 
-    protected CoapServerObserve(TransportConnector udp, Executor executor, CoapIdContext idContext) {
+    protected CoapServerObserve(TransportConnector udp, Executor executor, MessageIdSupplier idContext) {
         super(udp, executor, idContext);
     }
 
