@@ -150,7 +150,7 @@ public abstract class CoapExchange {
             response = null;
         } else {
             try {
-                this.getCoapServer().makeRequest(response, CoapUtils.getCallbackNull());
+                this.getCoapServer().makeRequest(response, Callback.IGNORE);
             } catch (CoapException ex) {
                 LOGGER.warning("Error while sending delayed response: " + ex.getMessage());
             }
