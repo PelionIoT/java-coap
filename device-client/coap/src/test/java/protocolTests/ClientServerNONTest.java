@@ -10,15 +10,15 @@ import java.util.Random;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.DataConvertingUtility;
+import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
@@ -45,7 +45,7 @@ public class ClientServerNONTest {
         assertEquals(dti1.hashCode(), dti2.hashCode());
         assertEquals(dti1, dti2);
 
-        server = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create())
+        server = CoapServer.builder().transport(InMemoryTransport.create())
                 .timeout(new SingleTimeout(1000))
                 .build();
         server.addRequestHandler("/temp", new SimpleCoapResource("23 C"));

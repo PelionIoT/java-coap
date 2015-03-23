@@ -5,19 +5,19 @@ package protocolTests;
 
 import static org.junit.Assert.assertEquals;
 import static org.mbed.coap.server.CoapServerObserve.SimpleObservationIDGenerator;
-import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import java.net.InetSocketAddress;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.packet.BlockSize;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.client.ObservationListener;
+import org.mbed.coap.packet.BlockSize;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.MessageIdSupplierImpl;
@@ -40,7 +40,7 @@ public class ObservationWithBlockTest {
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
-        CoapServer coapServer = CoapServerBuilder.newBuilder().transport(transport).context(new MessageIdSupplierImpl(0))
+        CoapServer coapServer = CoapServerBuilder.newBuilder().transport(transport).midSupplier(new MessageIdSupplierImpl(0))
                 .executor(new CurrentThreadExecutor())
                 .observerIdGenerator(new SimpleObservationIDGenerator(0)).build();
         coapServer.start();

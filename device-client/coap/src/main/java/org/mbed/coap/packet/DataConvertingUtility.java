@@ -17,7 +17,7 @@ import org.mbed.coap.CoapConstants;
  *
  * @author szymon
  */
-public class DataConvertingUtility {
+public final class DataConvertingUtility {
 
     private DataConvertingUtility(){
         //keep private
@@ -56,7 +56,7 @@ public class DataConvertingUtility {
         return val;
     }
 
-    protected static byte[][] writeVariableUInt(short[] value) {
+    static byte[][] writeVariableUInt(short[] value) {
         List<byte[]> btList = new ArrayList<>();
 
         for (short aValue : value) {
@@ -145,7 +145,7 @@ public class DataConvertingUtility {
         return writeVariableUInt(value, 1);
     }
 
-    protected static byte[] writeVariableUInt(long value, int minBytes) {
+    static byte[] writeVariableUInt(long value, int minBytes) {
         int len = 1;
         if (value > 0) {
             len = (int) Math.ceil((Math.log10(value + 1) / Math.log10(2)) / 8); //calculates needed minimum length
@@ -209,5 +209,12 @@ public class DataConvertingUtility {
             (byte) (value >>> 16),
             (byte) (value >>> 8),
             (byte) value};
+    }
+
+    public static byte[] combine(byte[] arr1, byte[] arr2) {
+        byte[] newArr = new byte[arr1.length + arr2.length];
+        System.arraycopy(arr1, 0, newArr, 0, arr1.length);
+        System.arraycopy(arr2, 0, newArr, arr1.length, arr2.length);
+        return newArr;
     }
 }

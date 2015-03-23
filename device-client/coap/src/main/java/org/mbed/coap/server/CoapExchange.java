@@ -141,11 +141,11 @@ public interface CoapExchange {
      *
      * @return transport context or null if does not exist.
      */
-    public abstract TransportContext getRequestTransportContext();
+    TransportContext getRequestTransportContext();
 
-    public abstract TransportContext getResponseTransportContext();
+    TransportContext getResponseTransportContext();
 
-    public abstract void setResponseTransportContext(TransportContext responseTransportContext);
+    void setResponseTransportContext(TransportContext responseTransportContext);
 
     /**
      * Retrieves full notification payload. Applies only when handling notification with block2.
@@ -154,6 +154,6 @@ public interface CoapExchange {
      * @param callback callback
      * @throws CoapException coap exception
      */
-    public void retrieveNotificationBlocks(final String uriPath, final Callback<CoapPacket> callback) throws CoapException;
+    void retrieveNotificationBlocks(final String uriPath, final Callback<CoapPacket> callback) throws CoapException;
 
 }

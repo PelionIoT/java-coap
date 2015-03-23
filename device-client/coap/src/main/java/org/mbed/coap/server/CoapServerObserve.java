@@ -5,15 +5,13 @@ package org.mbed.coap.server;
 
 import java.net.InetSocketAddress;
 import java.util.Random;
-import java.util.concurrent.Executor;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.packet.Method;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.ObservationNotEstablishedException;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.DataConvertingUtility;
-import org.mbed.coap.transport.TransportConnector;
+import org.mbed.coap.packet.MessageType;
+import org.mbed.coap.packet.Method;
 import org.mbed.coap.utils.Callback;
 
 /**
@@ -24,10 +22,6 @@ import org.mbed.coap.utils.Callback;
 public class CoapServerObserve extends CoapServerBlocks {
 
     private ObservationIDGenerator observationIDGenerator = new SimpleObservationIDGenerator();
-
-    protected CoapServerObserve(TransportConnector udp, Executor executor, MessageIdSupplier idContext) {
-        super(udp, executor, idContext);
-    }
 
     protected CoapServerObserve() {
         super();

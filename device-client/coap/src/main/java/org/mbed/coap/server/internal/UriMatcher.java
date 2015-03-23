@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
@@ -7,11 +7,11 @@ package org.mbed.coap.server.internal;
  *
  * @author szymon
  */
-public final class HandlerURI {
+public final class UriMatcher {
     private String uri = "";
     private final boolean isPrefix;
 
-    public HandlerURI(String uri) {
+    public UriMatcher(String uri) {
         if (uri.endsWith("*")) {
             isPrefix = true;
             this.uri = uri.substring(0, uri.length() - 1);
@@ -37,7 +37,7 @@ public final class HandlerURI {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final HandlerURI other = (HandlerURI) obj;
+        final UriMatcher other = (UriMatcher) obj;
         if ((this.uri == null) ? (other.uri != null) : !this.uri.equals(other.uri)) {
             return false;
         }

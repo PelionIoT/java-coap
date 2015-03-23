@@ -4,8 +4,6 @@
 package org.mbed.coap.transport;
 
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 /**
  * This class provides transport context information.
