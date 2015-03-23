@@ -3,7 +3,7 @@
  */
 package org.mbed.coap.client;
 
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import org.mbed.coap.BlockOption;
 import org.mbed.coap.BlockSize;
 import org.mbed.coap.CoapPacket;
@@ -154,6 +154,7 @@ public class CoapRequestTarget {
 
     /**
      * Marks request as non-confirmable.
+     *
      * @return this instance
      */
     public CoapRequestTarget non() {
@@ -163,6 +164,7 @@ public class CoapRequestTarget {
 
     /**
      * Marks request as confirmable (default).
+     *
      * @return this instance
      */
     public CoapRequestTarget con() {
@@ -170,7 +172,7 @@ public class CoapRequestTarget {
         return this;
     }
 
-    public Future<CoapPacket> get() throws CoapException {
+    public CompletableFuture<CoapPacket> get() throws CoapException {
         updatePacketWithBlock2();
         return request();
     }
@@ -180,7 +182,7 @@ public class CoapRequestTarget {
         request(callback);
     }
 
-    public Future<CoapPacket> post() throws CoapException {
+    public CompletableFuture<CoapPacket> post() throws CoapException {
         updatePacketWithBlock1();
         requestPacket.setMethod(Method.POST);
         return request();
@@ -192,7 +194,7 @@ public class CoapRequestTarget {
         request(callback);
     }
 
-    public Future<CoapPacket> delete() throws CoapException {
+    public CompletableFuture<CoapPacket> delete() throws CoapException {
         requestPacket.setMethod(Method.DELETE);
         return request();
     }
@@ -202,7 +204,7 @@ public class CoapRequestTarget {
         request(callback);
     }
 
-    public Future<CoapPacket> put() throws CoapException {
+    public CompletableFuture<CoapPacket> put() throws CoapException {
         updatePacketWithBlock1();
         requestPacket.setMethod(Method.PUT);
         return request();
@@ -214,7 +216,7 @@ public class CoapRequestTarget {
         request(callback);
     }
 
-    public Future<CoapPacket> observe(ObservationListener observationListener) throws CoapException {
+    public CompletableFuture<CoapPacket> observe(ObservationListener observationListener) throws CoapException {
         if (coapClient.coapServer instanceof CoapServerObserve) {
 
             requestPacket.headers().setObserve(0);
@@ -231,10 +233,8 @@ public class CoapRequestTarget {
         return requestPacket;
     }
 
-    private Future<CoapPacket> request() throws CoapException {
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-        request(callback);
-        return callback;
+    private CompletableFuture<CoapPacket> request() throws CoapException {
+        return coapClient.coapServer.makeRequest(requestPacket, transContext);
     }
 
     private void request(Callback<CoapPacket> callback) throws CoapException {

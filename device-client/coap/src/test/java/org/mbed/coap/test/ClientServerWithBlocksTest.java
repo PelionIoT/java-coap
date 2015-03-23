@@ -1,13 +1,14 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.test;
 
+import static org.junit.Assert.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.CompletableFuture;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.BlockOption;
@@ -29,7 +30,6 @@ import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.test.utils.Utils;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
-import org.mbed.coap.utils.SyncCallback;
 
 /**
  * @author szymon
@@ -189,13 +189,12 @@ public class ClientServerWithBlocksTest {
         request.headers().setBlock2Res(new BlockOption(0, BlockSize.S_256, true));
         request.headers().setSize1(0);
 
-        SyncCallback<CoapPacket> syncCallback = new SyncCallback<>();
-        cnn.makeRequest(request, syncCallback);
+        CompletableFuture<CoapPacket> resp = cnn.makeRequest(request);
 
-        assertEquals(Code.C205_CONTENT, syncCallback.getResponse().getCode());
-        assertEquals(BODY.length(), syncCallback.getResponse().getPayloadString().length());
-        assertEquals(BODY, syncCallback.getResponse().getPayloadString());
-        assertEquals((Integer) BODY.length(), syncCallback.getResponse().headers().getSize1());
+        assertEquals(Code.C205_CONTENT, resp.join().getCode());
+        assertEquals(BODY.length(), resp.join().getPayloadString().length());
+        assertEquals(BODY, resp.join().getPayloadString());
+        assertEquals((Integer) BODY.length(), resp.join().headers().getSize1());
     }
 
     @Test
@@ -224,9 +223,7 @@ public class ClientServerWithBlocksTest {
         CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.setPayload(body);
         request.headers().setBlock1Req(new BlockOption(1, BlockSize.S_128, true));
-        SyncCallback<CoapPacket> syncCallback = new SyncCallback<>();
-        cnn.makeRequest(request, syncCallback);
-        CoapPacket resp = syncCallback.getResponse();
+        CoapPacket resp = cnn.makeRequest(request).join();
 
         assertEquals(Code.C408_REQUEST_ENTITY_INCOMPLETE, resp.getCode());
         assertFalse(changeableBigResource.body.equals(body));
@@ -282,9 +279,7 @@ public class ClientServerWithBlocksTest {
     }
 
     private static CoapPacket makeRequest(CoapServer client, CoapPacket request) throws Exception {
-        SyncCallback<CoapPacket> syncCallback = new SyncCallback<>();
-        client.makeRequest(request, syncCallback);
-        return syncCallback.getResponse();
+        return client.makeRequest(request).join();
     }
 
     @Test
