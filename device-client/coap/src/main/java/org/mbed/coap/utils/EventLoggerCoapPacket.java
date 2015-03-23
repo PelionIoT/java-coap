@@ -1,6 +1,6 @@
 package org.mbed.coap.utils;
 
-import org.mbed.coap.CoapPacket;
+import org.mbed.coap.packet.CoapPacket;
 
 /**
  *

@@ -4,7 +4,7 @@
 package org.mbed.coap.server.internal;
 
 import java.net.InetSocketAddress;
-import org.mbed.coap.CoapPacket;
+import org.mbed.coap.packet.CoapPacket;
 
 /**
  * Identifies CoAP transaction

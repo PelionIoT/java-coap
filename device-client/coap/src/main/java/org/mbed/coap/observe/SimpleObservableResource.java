@@ -3,7 +3,7 @@
  */
 package org.mbed.coap.observe;
 
-import org.mbed.coap.Code;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapExchange;

@@ -10,7 +10,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.mbed.coap.CoapPacket;
+import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapErrorCallback;
 import org.mbed.coap.transmission.TransmissionTimeout;

@@ -6,10 +6,10 @@ package org.mbed.coap.server;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
-import org.mbed.coap.BlockSize;
+import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportConnector;
-import org.mbed.coap.udp.DatagramChannelTransport;
+import org.mbed.coap.transport.udp.DatagramChannelTransport;
 
 /**
  * @author szymon

@@ -13,14 +13,14 @@ import java.net.InetSocketAddress;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.BlockSize;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.Code;
+import org.mbed.coap.packet.BlockSize;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.test.InMemoryTransport;
+import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.CoapResource;
 

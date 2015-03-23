@@ -17,12 +17,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mbed.coap.Code;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapTimeoutException;
-import org.mbed.coap.test.InMemoryTransport;
+import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.CoapResource;
 

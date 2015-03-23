@@ -7,12 +7,12 @@ import org.apache.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.BlockOption;
-import org.mbed.coap.BlockSize;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.MediaTypes;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
+import org.mbed.coap.packet.BlockOption;
+import org.mbed.coap.packet.BlockSize;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.MediaTypes;
+import org.mbed.coap.packet.MessageType;
+import org.mbed.coap.packet.Method;
 import org.mbed.coap.exception.CoapException;
 
 /**

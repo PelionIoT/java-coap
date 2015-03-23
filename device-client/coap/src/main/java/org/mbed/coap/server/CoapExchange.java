@@ -6,15 +6,15 @@ package org.mbed.coap.server;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.logging.Logger;
-import org.mbed.coap.BlockOption;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.CoapUtils;
-import org.mbed.coap.Code;
-import org.mbed.coap.ExHeaderOptions;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
+import org.mbed.coap.packet.BlockOption;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.HeaderOptions;
+import org.mbed.coap.packet.MessageType;
+import org.mbed.coap.packet.Method;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.packet.DataConvertingUtility;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.ByteArrayBackedOutputStream;
 import org.mbed.coap.utils.Callback;
@@ -64,7 +64,7 @@ public abstract class CoapExchange {
      * Returns request coap headers
      * @return request headers
      */
-    public ExHeaderOptions getRequestHeaders() {
+    public HeaderOptions getRequestHeaders() {
         return request.headers();
     }
 
@@ -90,7 +90,7 @@ public abstract class CoapExchange {
      * Returns response headers that will be sent to requester
      * @return response headers
      */
-    public ExHeaderOptions getResponseHeaders() {
+    public HeaderOptions getResponseHeaders() {
         return response.headers();
     }
 
@@ -112,7 +112,7 @@ public abstract class CoapExchange {
      * @param body response body
      */
     public void setResponseBody(String body) {
-        setResponseBody(CoapUtils.encodeString(body));
+        setResponseBody(DataConvertingUtility.encodeString(body));
     }
 
     /**

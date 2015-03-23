@@ -6,6 +6,7 @@ package org.mbed.coap;
 import java.nio.charset.Charset;
 
 /**
+ * CoAP constants that are defined in RFC 7252 document
  *
  * @author szymon
  */
