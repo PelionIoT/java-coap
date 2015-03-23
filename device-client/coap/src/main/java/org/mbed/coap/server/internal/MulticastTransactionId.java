@@ -3,7 +3,7 @@
  */
 package org.mbed.coap.server.internal;
 
-import org.mbed.coap.CoapPacket;
+import org.mbed.coap.packet.CoapPacket;
 
 /**
  *

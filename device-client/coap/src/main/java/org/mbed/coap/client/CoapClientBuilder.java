@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import org.mbed.coap.BlockSize;
+import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transmission.TransmissionTimeout;

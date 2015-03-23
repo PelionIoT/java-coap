@@ -4,10 +4,10 @@ import java.net.InetSocketAddress;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import org.junit.Test;
-import org.mbed.coap.BlockSize;
-import org.mbed.coap.CoapPacket;
-import org.mbed.coap.MessageType;
-import org.mbed.coap.Method;
+import org.mbed.coap.packet.BlockSize;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.MessageType;
+import org.mbed.coap.packet.Method;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

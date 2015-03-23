@@ -3,8 +3,8 @@
  */
 package org.mbed.coap.server;
 
-import org.mbed.coap.Code;
-import org.mbed.coap.MediaTypes;
+import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.MediaTypes;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.linkformat.LinkFormat;
 import org.mbed.coap.linkformat.LinkFormatBuilder;

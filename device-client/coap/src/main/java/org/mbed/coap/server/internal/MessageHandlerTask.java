@@ -6,7 +6,7 @@ package org.mbed.coap.server.internal;
 import java.net.InetSocketAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.mbed.coap.CoapPacket;
+import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.HexArray;

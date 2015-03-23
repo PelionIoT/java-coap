@@ -11,7 +11,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
-import org.mbed.coap.CoapPacket;
+import org.mbed.coap.packet.CoapPacket;
 
 /**
  *
