@@ -19,7 +19,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.CoapConstants;
-import org.mbed.coap.packet.CoapMessage;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.MediaTypes;
@@ -77,7 +76,7 @@ public class ServerTest {
         //getting non-existing resource
         assertEquals(Code.C404_NOT_FOUND, client.resource("/do-not-exist").sync().get().getCode());
 
-        CoapMessage msg = client.resource("/.well-known/core").sync().get();
+        CoapPacket msg = client.resource("/.well-known/core").sync().get();
         assertNotNull(msg);
 
         client.close();
@@ -157,7 +156,7 @@ public class ServerTest {
     @Test
     public void wellKnownResourcesTest() throws IOException, CoapException, ParseException {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
-        CoapMessage msg = client.resource(CoapConstants.WELL_KNOWN_CORE).sync().get();
+        CoapPacket msg = client.resource(CoapConstants.WELL_KNOWN_CORE).sync().get();
 
         assertNotNull(msg);
         LinkFormat[] links = LinkFormatBuilder.parseList(msg.getPayloadString());
@@ -167,7 +166,7 @@ public class ServerTest {
     @Test
     public void wellKnownResourcesFilterTest() throws IOException, CoapException, ParseException {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).timeout(new SingleTimeout(100000)).build();
-        CoapMessage msg = client.resource(CoapConstants.WELL_KNOWN_CORE).query("rt", "simple").sync().get();
+        CoapPacket msg = client.resource(CoapConstants.WELL_KNOWN_CORE).query("rt", "simple").sync().get();
 
         assertNotNull(msg);
         assertNotNull(msg.getPayloadString());

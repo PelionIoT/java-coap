@@ -20,7 +20,7 @@ import org.mbed.coap.utils.HexArray;
  *
  * @author szymon
  */
-public class CoapPacket implements CoapMessage, Serializable {
+public class CoapPacket implements Serializable {
 
     static final int PAYLOAD_MARKER = 0xFF;
     public static final byte[] DEFAULT_TOKEN = new byte[]{};
@@ -36,6 +36,7 @@ public class CoapPacket implements CoapMessage, Serializable {
 
     /**
      * CoAP packet constructor.
+     *
      * @param remoteAddress remote address
      */
     public CoapPacket(InetSocketAddress remoteAddress) {
@@ -191,9 +192,8 @@ public class CoapPacket implements CoapMessage, Serializable {
     }
 
     /**
-     * Returns header options
+     * Returns CoAP header options instance.
      */
-    @Override
     public final HeaderOptions headers() {
         return options;
     }
@@ -246,7 +246,11 @@ public class CoapPacket implements CoapMessage, Serializable {
         return version;
     }
 
-    @Override
+    /**
+     * Returns CoAP message type.
+     *
+     * @return message type
+     */
     public MessageType getMessageType() {
         return messageType;
     }
@@ -260,7 +264,11 @@ public class CoapPacket implements CoapMessage, Serializable {
         this.messageType = messageType;
     }
 
-    @Override
+    /**
+     * Returns method.
+     *
+     * @return method
+     */
     public Method getMethod() {
         return method;
     }
@@ -292,12 +300,20 @@ public class CoapPacket implements CoapMessage, Serializable {
         return messageId;
     }
 
-    @Override
+    /**
+     * Return payload as byte array.
+     *
+     * @return payload
+     */
     public byte[] getPayload() {
         return payload;
     }
 
-    @Override
+    /**
+     * Returns payload as String.
+     *
+     * @return payload as String or null if payload is empty
+     */
     public String getPayloadString() {
         if (payload.length > 0) {
             return DataConvertingUtility.decodeToString(payload);
@@ -334,7 +350,6 @@ public class CoapPacket implements CoapMessage, Serializable {
         }
     }
 
-    @Override
     public byte[] getToken() {
         return token;
     }
@@ -396,7 +411,11 @@ public class CoapPacket implements CoapMessage, Serializable {
         return outputStream.toByteArray();
     }
 
-    @Override
+    /**
+     * Returns CoAP code.
+     *
+     * @return code value or null
+     */
     public Code getCode() {
         return code;
     }
@@ -407,7 +426,6 @@ public class CoapPacket implements CoapMessage, Serializable {
      * @param code CoAP code
      */
     public void setCode(Code code) {
-
         this.code = code;
     }
 
@@ -416,7 +434,7 @@ public class CoapPacket implements CoapMessage, Serializable {
      *
      * @return true if this message must be acknowledged
      */
-    public boolean getMustAcknowladge() {
+    public boolean getMustAcknowledge() {
         return this.messageType == MessageType.Confirmable;
     }
 
