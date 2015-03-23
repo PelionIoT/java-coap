@@ -216,11 +216,10 @@ public class CoapRequestTarget {
 
     public Future<CoapPacket> observe(ObservationListener observationListener) throws CoapException {
         if (coapClient.coapServer instanceof CoapServerObserve) {
-            CoapServerObserve obsServer = (CoapServerObserve) coapClient.coapServer;
 
             requestPacket.headers().setObserve(0);
             FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-            coapClient.putObservationListener(observationListener, obsServer.observe(requestPacket, callback), requestPacket.headers().getUriPath());
+            coapClient.putObservationListener(observationListener, coapClient.coapServer.observe(requestPacket, callback), requestPacket.headers().getUriPath());
 
             return callback;
         } else {

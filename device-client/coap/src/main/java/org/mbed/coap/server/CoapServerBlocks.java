@@ -26,7 +26,7 @@ import org.mbed.coap.utils.Callback;
  *
  * @author szymon
  */
-class CoapServerBlocks extends CoapServer {
+abstract class CoapServerBlocks extends CoapServer {
 
     private static final Logger LOGGER = Logger.getLogger(CoapServerBlocks.class.getName());
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;
