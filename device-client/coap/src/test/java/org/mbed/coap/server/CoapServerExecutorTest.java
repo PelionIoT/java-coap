@@ -17,13 +17,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mbed.coap.packet.Code;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapTimeoutException;
-import org.mbed.coap.transport.InMemoryTransport;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.transmission.SingleTimeout;
+import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.utils.CoapResource;
 
 /**
@@ -103,7 +103,7 @@ public class CoapServerExecutorTest {
             } catch (InterruptedException ex1) {
                 Logger.getLogger(CoapServerExecutorTest.class.getName()).log(Level.SEVERE, null, ex1);
             }
-            ex.send();
+            ex.sendResponse();
         }
     }
 }

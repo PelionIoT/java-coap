@@ -21,21 +21,23 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.CoapConstants;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
 import org.mbed.coap.exception.ObservationTerminatedException;
 import org.mbed.coap.linkformat.LinkFormat;
+import org.mbed.coap.packet.BlockSize;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.MessageType;
+import org.mbed.coap.server.internal.CoapExchangeImpl;
 import org.mbed.coap.server.internal.CoapServerAbstract;
 import org.mbed.coap.server.internal.CoapTransaction;
 import org.mbed.coap.server.internal.CoapTransactionId;
 import org.mbed.coap.server.internal.DelayedTransactionId;
 import org.mbed.coap.server.internal.DelayedTransactionManager;
+import org.mbed.coap.server.internal.DuplicationDetector;
 import org.mbed.coap.server.internal.HandlerURI;
 import org.mbed.coap.server.internal.TransactionManager;
 import org.mbed.coap.transmission.CoapTimeout;
@@ -141,12 +143,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         this.idContext = idContext;
     }
 
-    /**
-     * Disables duplicate detector. Use with caution.
-     */
-    public void disableDuplicationDetector() {
-        assertNotRunning();
-        duplicationDetector = null;
+    @Override
+    protected DuplicationDetector getDuplicationDetector() {
+        return duplicationDetector;
     }
 
     /**
@@ -659,35 +658,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             }
         }
         return handler;
-    }
-
-    protected void sendResponse(CoapExchange exchange) {
-        try {
-            CoapPacket resp = exchange.getResponse();
-            if (resp == null) {
-                //nothing to send
-                return;
-            }
-            if (resp.getMessageType() == MessageType.NonConfirmable) {
-                resp.setMessageId(getNextMID());
-            }
-            this.send(resp, exchange.getRemoteAddress(), exchange.getResponseTransportContext());
-            if (duplicationDetector != null) {
-                duplicationDetector.putResponse(exchange.getRequest(), resp);
-            }
-
-        } catch (CoapException ex) {
-            LOGGER.warning(ex.getMessage());
-            try {
-                send(exchange.getRequest().createResponse(Code.C500_INTERNAL_SERVER_ERROR), exchange.getRemoteAddress(), exchange.getResponseTransportContext());
-
-            } catch (CoapException | IOException ex1) {
-                //impossible ;)
-                LOGGER.log(Level.SEVERE, ex1.getMessage(), ex1);
-            }
-        } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
-        }
     }
 
     /**
