@@ -97,7 +97,7 @@ public abstract class AbstractObservableResource extends CoapResource {
         }
         if (request.headers().getBlock2Res() == null && request.headers().getBlock1Req() == null) {
 
-            ObservationRelation subs = new ObservationRelation(request.getToken(), request.getRemoteAddress(), request.headers().getObserve(), request.getMustAcknowladge());
+            ObservationRelation subs = new ObservationRelation(request.getToken(), request.getRemoteAddress(), request.headers().getObserve(), request.getMustAcknowledge());
 
             addObservationRelation(subs, request.headers().getUriPath());
             exchange.getResponseHeaders().setObserve(subs.getObserveSeq());
