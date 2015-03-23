@@ -13,12 +13,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mbed.coap.BlockOption;
 import org.mbed.coap.CoapPacket;
-import org.mbed.coap.CoapUtils;
 import org.mbed.coap.Code;
 import org.mbed.coap.MessageType;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.HexArray;
 
@@ -160,7 +160,8 @@ public abstract class AbstractObservableResource extends CoapResource {
                 } else {
                     coapNotif.setMessageType(sub.getIsConfirmable() ? MessageType.Confirmable : MessageType.NonConfirmable);
                 }
-                this.coapServer.makeRequest(coapNotif, CoapUtils.getCallbackNull());
+
+                this.coapServer.makeRequest(coapNotif, Callback.ignore());
 
                 //remove subscriber
                 iter.remove();
@@ -221,7 +222,7 @@ public abstract class AbstractObservableResource extends CoapResource {
             this.coapServer.makeRequest(coapNotif, new NotificationAckCallback(sub, deliveryListener, this));
         } else {
             coapNotif.setMessageType(MessageType.NonConfirmable);
-            this.coapServer.makeRequest(coapNotif, CoapUtils.getCallbackNull());
+            this.coapServer.makeRequest(coapNotif, Callback.IGNORE);
         }
 
         if (LOGGER.isLoggable(Level.FINEST)) {
