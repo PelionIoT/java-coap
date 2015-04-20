@@ -11,6 +11,7 @@ import java.util.Arrays;
  * Created by szymon
  */
 public class TransportContext {
+
     private final Integer trafficClass;
     private final String certificateCN;
     private final byte[] preSharedKeyId;
@@ -87,4 +88,10 @@ public class TransportContext {
         result = 31 * result + (preSharedKeyId != null ? Arrays.hashCode(preSharedKeyId) : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "TransportContext [trafficClass=" + trafficClass + ", certificateCN=" + certificateCN + ", preSharedKeyId=" + Arrays.toString(preSharedKeyId) + ", msisdn=" + msisdn + "]";
+    }
+
 }
