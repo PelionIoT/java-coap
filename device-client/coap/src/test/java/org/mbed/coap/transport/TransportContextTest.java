@@ -3,7 +3,10 @@
  */
 package org.mbed.coap.transport;
 
-import static org.junit.Assert.*;
+import java.io.UnsupportedEncodingException;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import org.junit.Test;
 
 /**
@@ -34,6 +37,13 @@ public class TransportContextTest {
 
         assertEquals(new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222"), tc);
         assertEquals(new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222").hashCode(), tc.hashCode());
+    }
+
+    @Test
+    public void toStringMentionsPskIdOrCertSubjectNameIfAvailable() throws UnsupportedEncodingException {
+        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null]", new TransportContext(null, null, null, null).toString());
+        assertEquals("TransportContext [trafficClass=null, certificateCN=cname, preSharedKeyId=null, msisdn=null]", new TransportContext(null, "cname", null, null).toString());
+        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=[112, 115, 107, 45, 105, 100], msisdn=null]", new TransportContext(null, null, "psk-id".getBytes("UTF-8"), null).toString());
     }
 
 }
