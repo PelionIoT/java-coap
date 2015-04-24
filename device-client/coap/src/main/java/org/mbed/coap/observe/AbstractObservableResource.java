@@ -11,11 +11,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.utils.Callback;
@@ -222,7 +222,7 @@ public abstract class AbstractObservableResource extends CoapResource {
             this.coapServer.makeRequest(coapNotif, new NotificationAckCallback(sub, deliveryListener, this));
         } else {
             coapNotif.setMessageType(MessageType.NonConfirmable);
-            this.coapServer.makeRequest(coapNotif, Callback.IGNORE);
+            this.coapServer.makeRequest(coapNotif, Callback.ignore());
         }
 
         if (LOGGER.isLoggable(Level.FINEST)) {
