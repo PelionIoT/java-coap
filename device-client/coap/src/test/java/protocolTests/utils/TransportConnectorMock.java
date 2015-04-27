@@ -1,14 +1,15 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package protocolTests.utils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import org.mbed.coap.packet.CoapPacket;
+import java.util.Optional;
 import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
@@ -19,7 +20,7 @@ import org.mbed.coap.transport.TransportReceiver;
 public class TransportConnectorMock implements TransportConnector {
 
     private TransportReceiver transReceiver;
-    private final Map<CoapPacket, CoapPacket> conversationMap = new HashMap<>();
+    private final Map<CoapPacket, CoapPacket[]> conversationMap = new LinkedHashMap<>(); //order is important
 
     @Override
     public void start(TransportReceiver transReceiver) throws IOException {
@@ -35,9 +36,13 @@ public class TransportConnectorMock implements TransportConnector {
     public void send(final byte[] data, final int len, final InetSocketAddress destinationAddress, TransportContext transContext) throws IOException {
         try {
             CoapPacket request = CoapPacket.read(data, len, null);
-            CoapPacket resp = findResponse(request);
+            CoapPacket[] resp = findResponse(request);
             if (resp != null) {
-                receive(resp, destinationAddress);
+                for (CoapPacket r : resp) {
+                    if (r != null) {
+                        receive(r, destinationAddress);
+                    }
+                }
             }
         } catch (CoapException e) {
             e.printStackTrace();
@@ -53,8 +58,12 @@ public class TransportConnectorMock implements TransportConnector {
 
     }
 
-    private CoapPacket findResponse(CoapPacket coapPacket) {
-        return conversationMap.get(coapPacket);
+    private CoapPacket[] findResponse(CoapPacket coapPacket) {
+        Optional<CoapPacket> first = conversationMap.keySet().stream().findFirst();
+        if (!first.isPresent() || !first.get().equals(coapPacket)) {
+            return null;
+        }
+        return conversationMap.remove(first.get());
     }
 
     @Override
@@ -73,8 +82,16 @@ public class TransportConnectorMock implements TransportConnector {
             this.incomingPacket = incomingPacket;
         }
 
+        public void thenNothing() {
+            conversationMap.put(incomingPacket, null);
+        }
+
         public void then(CoapPacket responsePacket) {
-            conversationMap.put(incomingPacket, responsePacket);
+            conversationMap.put(incomingPacket, new CoapPacket[]{responsePacket});
+        }
+
+        public void then(CoapPacket responsePacket1, CoapPacket responsePacket2) {
+            conversationMap.put(incomingPacket, new CoapPacket[]{responsePacket1, responsePacket2});
         }
     }
 }
