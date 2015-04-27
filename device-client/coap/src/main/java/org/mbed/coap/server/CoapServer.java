@@ -572,10 +572,10 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         if (trans != null) {
             delayedTransMagr.remove(delayedTransactionId);
             try {
-                trans.getCallback().call(packet);
                 if (packet.getMustAcknowledge()) {
                     send(packet.createResponse(), packet.getRemoteAddress(), TransportContext.NULL);
                 }
+                trans.getCallback().call(packet);
             } catch (Exception ex) {
                 try {
                     send(packet.createResponse(Code.C500_INTERNAL_SERVER_ERROR), packet.getRemoteAddress(), TransportContext.NULL);

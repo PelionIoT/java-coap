@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package protocolTests.utils;
 
@@ -7,9 +7,9 @@ import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.DataConvertingUtility;
 import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.packet.Method;
-import org.mbed.coap.packet.DataConvertingUtility;
 
 /**
  * Created by szymon
@@ -94,4 +94,9 @@ public class CoapPacketBuilder {
         return this;
     }
 
+    public CoapPacketBuilder con(Code code) {
+        coapPacket.setMessageType(MessageType.Confirmable);
+        coapPacket.setCode(code);
+        return this;
+    }
 }
