@@ -9,5 +9,5 @@ package com.arm.mbed.commons.lwm2m;
  */
 public enum LWM2MResourceType {
 
-    STRING, INTEGER, FLOAT, BOOLEAN, OPAQUE, TIME
+    STRING, INTEGER, FLOAT, BOOLEAN, OPAQUE, TIME, OBJECTLINK
 }

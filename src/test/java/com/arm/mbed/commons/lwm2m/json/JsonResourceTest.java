@@ -6,7 +6,6 @@ package com.arm.mbed.commons.lwm2m.json;
 
 import static org.junit.Assert.*;
 import com.arm.mbed.commons.lwm2m.LWM2MResourceType;
-import com.arm.mbed.commons.lwm2m.json.JsonResource;
 import org.junit.Test;
 
 /**
@@ -23,10 +22,10 @@ public class JsonResourceTest {
         assertNull(resource.getNumericalValue());
         assertNull(resource.getBooleanValue());
         assertEquals("alma", resource.getValue() );
-        
+
         assertEquals(LWM2MResourceType.STRING, resource.getType());
     }
-    
+
     @Test
     public void testNumericalValue() throws Exception {
         JsonResource resource = new JsonResource(NAME, 42);
@@ -34,7 +33,7 @@ public class JsonResourceTest {
         assertEquals(42, resource.getNumericalValue());
         assertNull(resource.getBooleanValue());
         assertEquals("42", resource.getValue() );
-        
+
         assertEquals(LWM2MResourceType.INTEGER, resource.getType());
         assertEquals(LWM2MResourceType.INTEGER, new JsonResource(NAME, 42L).getType() );
         assertEquals(LWM2MResourceType.INTEGER, new JsonResource(NAME, (short) 42).getType() );
@@ -42,7 +41,7 @@ public class JsonResourceTest {
         assertEquals(LWM2MResourceType.FLOAT, new JsonResource(NAME, 42.0).getType() );
         assertEquals(LWM2MResourceType.FLOAT, new JsonResource(NAME, (float) 42.0).getType() );
     }
-    
+
     @Test
     public void testBooleanValue() throws Exception {
         JsonResource resource = new JsonResource(NAME, true);
@@ -51,10 +50,10 @@ public class JsonResourceTest {
         assertTrue(resource.getBooleanValue());
         assertEquals("1", resource.getValue() );
         assertEquals("0", new JsonResource(NAME, false).getValue() );
-        
+
         assertEquals(LWM2MResourceType.BOOLEAN, resource.getType());
     }
-    
+
     @Test
     public void testNullValue() throws Exception {
         JsonResource resource = new JsonResource(NAME, (String) null);
@@ -62,14 +61,15 @@ public class JsonResourceTest {
         assertNull(resource.getNumericalValue());
         assertNull(resource.getBooleanValue());
         assertNull(resource.getValue());
+        assertNull(resource.getObjectLinkValue());
         assertNull(resource.getType());
     }
-    
+
     @Test
     public void testTimeAttribute() throws Exception {
         JsonResource resource = new JsonResource(NAME, (String) null);
         assertNull (resource.getTime());
-        
+
         resource.setTime(42);
         assertEquals(new Integer(42), resource.getTime());
     }
