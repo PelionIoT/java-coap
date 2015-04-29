@@ -407,6 +407,51 @@
                 "type":             STRING,
                 "range":            "[U,UQ,S,SQ]",
                 "description":      ""
+            },
+            {
+                "resource-id":      17,
+                "resource-name":    "Device Type",
+                "operations":       "R",
+                "instances":        SINGLE,
+                "type":             STRING,
+                "range":            "",
+                "description":      ""
+            },
+            {
+                "resource-id":      18,
+                "resource-name":    "Hardware Version",
+                "operations":       "R",
+                "instances":        SINGLE,
+                "type":             STRING,
+                "range":            "",
+                "description":      ""
+            },
+            {
+                "resource-id":      19,
+                "resource-name":    "Software Version",
+                "operations":       "R",
+                "instances":        SINGLE,
+                "type":             STRING,
+                "range":            "",
+                "description":      ""
+            },
+            {
+                "resource-id":      20,
+                "resource-name":    "Battery Status",
+                "operations":       "R",
+                "instances":        SINGLE,
+                "type":             INTEGER,
+                "range":            "[0-6]",
+                "description":      ""
+            },
+            {
+                "resource-id":      21,
+                "resource-name":    "Memory Total (kB)",
+                "operations":       "R",
+                "instances":        SINGLE,
+                "type":             INTEGER,
+                "range":            "",
+                "description":      ""
             }
         ]
     },
@@ -575,6 +620,24 @@
                 "instances":        SINGLE,
                 "type":             INTEGER,
                 "range":            "[0-6]",
+                "description":      ""
+            },
+            {
+                "resource-id":      6,
+                "resource-name":    "Package Name",
+                "operations":       "R",
+                "instances":        SINGLE,
+                "type":             STRING,
+                "range":            "{0-255}",
+                "description":      ""
+            },
+            {
+                "resource-id":      7,
+                "resource-name":    "Package Version",
+                "operations":       "R",
+                "instances":        SINGLE,
+                "type":             STRING,
+                "range":            "{0-255}",
                 "description":      ""
             }
         ]
