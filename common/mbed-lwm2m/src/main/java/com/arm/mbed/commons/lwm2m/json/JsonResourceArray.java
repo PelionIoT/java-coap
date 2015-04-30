@@ -64,7 +64,7 @@ public class JsonResourceArray {
             b.append("bt:").append(baseTime).append(",\n");
         }
         if (baseName != null) {
-            b.append("bn:").append("\"").append(baseName).append("\",\n");
+            b.append("bn:\"").append(baseName).append("\",\n");
         }
         return b.length()> 0 ? b.substring(0, b.length()-2) : "";
     }
