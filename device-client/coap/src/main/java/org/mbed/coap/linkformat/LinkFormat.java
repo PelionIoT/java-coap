@@ -353,12 +353,12 @@ public class LinkFormat implements Serializable {
 
     void toString(StringBuilder sb) {
         sb.append('<').append(uri).append('>');
-        for (String key : params.keySet()) {
-            Object val = params.get(key);
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            Object val = entry.getValue();
             if (val == null) {
                 continue;
             }
-            sb.append(';').append(key);
+            sb.append(';').append(entry.getKey());
             if (val instanceof Integer) {
                 sb.append('=').append(val.toString());
             } else if (val instanceof PToken) {
