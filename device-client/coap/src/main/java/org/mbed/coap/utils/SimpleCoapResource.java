@@ -1,10 +1,10 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.utils;
 
-import org.mbed.coap.packet.Code;
 import org.mbed.coap.exception.CoapCodeException;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.server.CoapExchange;
 
 /**
@@ -55,7 +55,7 @@ public class SimpleCoapResource extends CoapResource {
         if (contentType != null) {
             ex.setResponseContentType(contentType);
         }
-        if (maxAgeSeconds != null && maxAgeSeconds >= 0) {
+        if (maxAgeSeconds != null) {
             ex.getResponseHeaders().setMaxAge((long) maxAgeSeconds);
         }
         ex.sendResponse();

@@ -325,9 +325,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     }
 
     private UriMatcher findKey(CoapHandler requestHandler) {
-        for (UriMatcher url : handlers.keySet()) {
-            if (handlers.get(url) == requestHandler) {
-                return url;
+        for (Entry<UriMatcher, CoapHandler> entry : handlers.entrySet()) {
+            if (entry.getValue() == requestHandler) {
+                return entry.getKey();
             }
         }
         return null;
@@ -637,9 +637,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         CoapHandler handler = handlers.get(new UriMatcher(uri));
 
         if (handler == null) {
-            for (UriMatcher uriKey : handlers.keySet()) {
-                if (uriKey.isMatching(uri)) {
-                    return handlers.get(uriKey);
+            for (Entry<UriMatcher, CoapHandler> entry : handlers.entrySet()) {
+                if (entry.getKey().isMatching(uri)) {
+                    return entry.getValue();
                 }
             }
         }
