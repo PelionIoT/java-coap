@@ -4,6 +4,7 @@
 package com.arm.mbed.commons.lwm2m;
 
 import com.arm.mbed.commons.lwm2m.utils.HexArray;
+import com.arm.mbed.commons.string.Utf8Bytes;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 
@@ -16,7 +17,7 @@ public class LWM2MResourceInstance {
     private LWM2MResourceType type;
     private LWM2MResourceType repType;
 
-    protected LWM2MResourceInstance (LWM2MID id) {
+    protected LWM2MResourceInstance(LWM2MID id) {
         if (id != null) {
             this.id = id;
         } else {
@@ -24,7 +25,7 @@ public class LWM2MResourceInstance {
         }
     }
 
-    public LWM2MResourceInstance (LWM2MID id, byte[] value) {
+    public LWM2MResourceInstance(LWM2MID id, byte[] value) {
         this(id);
         this.value = value;
 
@@ -34,17 +35,23 @@ public class LWM2MResourceInstance {
         this.repType = LWM2MResourceType.OPAQUE;
     }
 
-    public LWM2MResourceInstance (LWM2MID id, String value) {
-        this (id, value.getBytes() );
+    public LWM2MResourceInstance(LWM2MID id, String value) {
+        this(id, Utf8Bytes.of(value));
         this.repType = LWM2MResourceType.STRING;
     }
 
-    public LWM2MResourceInstance (LWM2MID id, int value) {
-        this (id);
+    public LWM2MResourceInstance(LWM2MID id, int value) {
+        this(id);
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        if ( (value & 0xFF000000) !=0) { stream.write( (value & 0xFF000000) >> 24); }
-        if ( (value & 0xFFFF0000) !=0) { stream.write( (value & 0x00FF0000) >> 16); }
-        if ( (value & 0xFFFFFF00) !=0) { stream.write( (value & 0x0000FF00) >> 8); }
+        if ((value & 0xFF000000) != 0) {
+            stream.write((value & 0xFF000000) >> 24);
+        }
+        if ((value & 0xFFFF0000) != 0) {
+            stream.write((value & 0x00FF0000) >> 16);
+        }
+        if ((value & 0xFFFFFF00) != 0) {
+            stream.write((value & 0x0000FF00) >> 8);
+        }
         stream.write(value & 0x000000FF);
 
         this.value = stream.toByteArray();
@@ -62,7 +69,7 @@ public class LWM2MResourceInstance {
     public String getStringValue() {
         if (repType == LWM2MResourceType.INTEGER) {
             long longValue = 0L;
-            for (int i=0; i<value.length; i++) {
+            for (int i = 0; i < value.length; i++) {
                 longValue = (longValue << 8) + (value[i] & 0xFF);
             }
             return String.valueOf(longValue);

@@ -15,6 +15,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.arm.mbed</groupId>
+            <artifactId>commons</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
