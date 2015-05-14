@@ -19,19 +19,19 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mbed.coap.CoapConstants;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.MediaTypes;
-import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.packet.Method;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.linkformat.LinkFormat;
 import org.mbed.coap.linkformat.LinkFormatBuilder;
-import org.mbed.coap.transport.InMemoryTransport;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.MediaTypes;
+import org.mbed.coap.packet.MessageType;
+import org.mbed.coap.packet.Method;
 import org.mbed.coap.transmission.SingleTimeout;
+import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
 
@@ -84,7 +84,7 @@ public class ServerTest {
     }
 
     @Test
-    public void requestWithAccept() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
+    public void requestWithAccept() throws UnknownHostException, IOException, InterruptedException, Exception {
         CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
@@ -101,7 +101,7 @@ public class ServerTest {
     }
 
     @Test
-    public void requestWithAccept2() throws CoapException, UnknownHostException, IOException, InterruptedException, Exception {
+    public void requestWithAccept2() throws UnknownHostException, IOException, InterruptedException, Exception {
         CoapServer cnn = CoapServerBuilder.newBuilder().build();
         cnn.start();
 
