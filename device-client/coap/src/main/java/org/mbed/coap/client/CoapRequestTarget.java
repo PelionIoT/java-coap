@@ -4,14 +4,14 @@
 package org.mbed.coap.client;
 
 import java.util.concurrent.CompletableFuture;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.exception.ObservationNotEstablishedException;
 import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.DataConvertingUtility;
 import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.packet.Method;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.exception.ObservationNotEstablishedException;
-import org.mbed.coap.packet.DataConvertingUtility;
 import org.mbed.coap.server.CoapServerObserve;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
@@ -172,7 +172,7 @@ public class CoapRequestTarget {
         return this;
     }
 
-    public CompletableFuture<CoapPacket> get() throws CoapException {
+    public CompletableFuture<CoapPacket> get() {
         updatePacketWithBlock2();
         return request();
     }
@@ -182,7 +182,7 @@ public class CoapRequestTarget {
         request(callback);
     }
 
-    public CompletableFuture<CoapPacket> post() throws CoapException {
+    public CompletableFuture<CoapPacket> post() {
         updatePacketWithBlock1();
         requestPacket.setMethod(Method.POST);
         return request();
@@ -194,7 +194,7 @@ public class CoapRequestTarget {
         request(callback);
     }
 
-    public CompletableFuture<CoapPacket> delete() throws CoapException {
+    public CompletableFuture<CoapPacket> delete() {
         requestPacket.setMethod(Method.DELETE);
         return request();
     }
@@ -204,7 +204,7 @@ public class CoapRequestTarget {
         request(callback);
     }
 
-    public CompletableFuture<CoapPacket> put() throws CoapException {
+    public CompletableFuture<CoapPacket> put() {
         updatePacketWithBlock1();
         requestPacket.setMethod(Method.PUT);
         return request();
@@ -233,7 +233,7 @@ public class CoapRequestTarget {
         return requestPacket;
     }
 
-    private CompletableFuture<CoapPacket> request() throws CoapException {
+    private CompletableFuture<CoapPacket> request() {
         return coapClient.coapServer.makeRequest(requestPacket, transContext);
     }
 
