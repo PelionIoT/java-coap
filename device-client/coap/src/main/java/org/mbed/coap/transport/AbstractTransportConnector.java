@@ -67,8 +67,8 @@ public abstract class AbstractTransportConnector implements TransportConnector {
         while (isRunning) {
             try {
                 performReceive();
-            } catch (Throwable ex) {    //NOPMD  bug in executor when any Exception is thrown
-                LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+            } catch (Exception ex) {
+                LOGGER.log(Level.SEVERE, ex.getMessage());
             }
         }
     }
