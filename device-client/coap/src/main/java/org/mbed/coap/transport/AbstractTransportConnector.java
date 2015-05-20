@@ -76,7 +76,6 @@ public abstract class AbstractTransportConnector implements TransportConnector {
         }
     }
 
-
     protected final InetSocketAddress getBindSocket() {
         return bindSocket;
     }
@@ -94,8 +93,10 @@ public abstract class AbstractTransportConnector implements TransportConnector {
      * to use blocking mode.
      *
      * @return true if new message was received otherwise false
+     *
+     * @throws ReceiveException for anticipated errors in handling the receive, see TransportReceiver.onReceive
      */
-    public abstract boolean performReceive();
+    public abstract boolean performReceive() throws ReceiveException;
 
     protected ByteBuffer getBuffer() {
 
@@ -110,7 +111,6 @@ public abstract class AbstractTransportConnector implements TransportConnector {
         System.arraycopy(buffer.array(), 0, packetData, 0, packetData.length);
         return packetData;
     }
-
 
     protected final boolean isRunning() {
         return isRunning;
