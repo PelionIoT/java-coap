@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.mbed.coap.exception.ReceiveException;
 
 /**
  * @author szymon
@@ -67,8 +68,10 @@ public abstract class AbstractTransportConnector implements TransportConnector {
         while (isRunning) {
             try {
                 performReceive();
-            } catch (Exception ex) {
-                LOGGER.log(Level.SEVERE, ex.getMessage());
+            } catch (ReceiveException ex) {
+                LOGGER.log(Level.WARNING, ex.getMessage());
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, e.getMessage(), e);
             }
         }
     }
