@@ -51,7 +51,7 @@ public class TLVDeserializerTest {
         TLVDeserializer.deserialiseObjectInstances(createResourceTLV());
     }
 
-    private byte[] createResourceTLV() {
+    private static byte[] createResourceTLV() {
         return new byte[]{
             (byte) 0b11_0_00_011,
             (byte) 0,
@@ -155,7 +155,7 @@ public class TLVDeserializerTest {
         assertThat(instance.getResource(LWM2MID.$0).getStringValue(), equalTo("coap://localhost"));
     }
 
-    private byte[] createObjectInstanceTLV() {
+    private static byte[] createObjectInstanceTLV() {
         LWM2MObjectInstance aco1 = new LWM2MObjectInstance(Arrays.asList(
                 new LWM2MResource(LWM2MID.from(0), 0x3),
                 new LWM2MResource(LWM2MID.from(2), Arrays.asList(
