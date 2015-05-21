@@ -1,7 +1,5 @@
 package com.arm.mbed.commons.lwm2m.transport;
 
-import com.arm.mbed.commons.lwm2m.transport.TransportBinding;
-import com.arm.mbed.commons.lwm2m.transport.TransportBindingParseException;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -26,7 +24,7 @@ public class TransportBindingTest {
         assertParseFails("UqS");
     }
 
-    private void assertParseFails(String transBinding) {
+    private static void assertParseFails(String transBinding) {
         try {
             TransportBinding.parse(transBinding);
             fail();

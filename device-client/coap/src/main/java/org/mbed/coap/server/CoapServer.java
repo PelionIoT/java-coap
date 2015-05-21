@@ -157,7 +157,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * Starts CoAP server
      *
      * @return this instance
-     * @throws IOException           exception from transport initialization
+     * @throws IOException exception from transport initialization
      * @throws IllegalStateException if server is already running
      */
     public synchronized CoapServer start() throws IOException, IllegalStateException {
@@ -268,6 +268,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      *
      * @return message id
      */
+    @Override
     public int getNextMID() {
         return idContext.getNextMID();
     }
