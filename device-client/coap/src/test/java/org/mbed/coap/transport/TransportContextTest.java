@@ -3,11 +3,9 @@
  */
 package org.mbed.coap.transport;
 
+import static org.testng.Assert.*;
 import java.io.UnsupportedEncodingException;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 /**
  * @author szymon
@@ -20,7 +18,7 @@ public class TransportContextTest {
 
         assertEquals("+358000111222", tc.getMsisdn());
         assertEquals("node001", tc.getCertificateCN());
-        assertArrayEquals("dupa".getBytes(), tc.getPreSharedKeyID());
+        assertEquals("dupa".getBytes(), tc.getPreSharedKeyID());
 
         //null
         assertNull(TransportContext.NULL.getCertificateCN());

@@ -1,6 +1,7 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package microbenchmark;
-
-import org.mbed.coap.server.CoapServerBuilder;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -8,16 +9,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.ObservationHandler;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
  *
@@ -34,7 +36,7 @@ public class ServerNotifBenchmark {
     private CoapServer server;
     private long stTime, endTime;
 
-    @Before
+    @BeforeMethod
     public void warmUp() throws CoapException, IOException {
         LogManager.getRootLogger().setLevel(Level.ERROR);
         CoapPacket coapReq = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, null);
@@ -57,7 +59,7 @@ public class ServerNotifBenchmark {
         //Thread.sleep(4000);
     }
 
-    @After
+    @AfterMethod
     public void coolDown() {
         System.out.println("RUN-TIME: " + (endTime - stTime) + "ms, MSG-PER-SEC: " + (MAX * 1000L / (endTime - stTime)));
         server.stop();

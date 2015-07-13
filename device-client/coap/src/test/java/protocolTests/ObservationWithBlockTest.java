@@ -3,15 +3,13 @@
  */
 package protocolTests;
 
-import static org.junit.Assert.assertEquals;
-import static org.mbed.coap.server.CoapServerObserve.SimpleObservationIDGenerator;
+import static org.mbed.coap.server.CoapServerObserve.*;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
-import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
+import static org.testng.Assert.*;
+import static protocolTests.utils.CoapPacketBuilder.*;
 import java.net.InetSocketAddress;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.client.ObservationListener;
@@ -22,6 +20,9 @@ import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.MessageIdSupplierImpl;
 import org.mockito.ArgumentMatcher;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 import protocolTests.utils.CurrentThreadExecutor;
 import protocolTests.utils.TransportConnectorMock;
 
@@ -36,7 +37,7 @@ public class ObservationWithBlockTest {
     private CoapClient client;
     private ObservationListener observationListener;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
@@ -56,7 +57,7 @@ public class ObservationWithBlockTest {
         reset(observationListener);
     }
 
-    @After
+    @AfterMethod
     public void tearDown() throws Exception {
         client.close();
     }
