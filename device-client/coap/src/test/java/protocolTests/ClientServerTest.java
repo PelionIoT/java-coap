@@ -3,7 +3,7 @@
  */
 package protocolTests;
 
-import static org.junit.Assert.*;
+import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -11,9 +11,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Random;
 import java.util.concurrent.Future;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.mbed.coap.CoapConstants;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
@@ -34,6 +31,9 @@ import org.mbed.coap.transport.udp.MulticastSocketTransport;
 import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.FutureCallbackAdapter;
 import org.mbed.coap.utils.SimpleCoapResource;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
  * @author szymon
@@ -43,7 +43,7 @@ public class ClientServerTest {
     private CoapServer server = null;
     private int SERVER_PORT;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws IOException {
         server = CoapServer.builder().build();
         server.addRequestHandler("/test/1", new SimpleCoapResource("Dziala"));
@@ -54,7 +54,7 @@ public class ClientServerTest {
         SERVER_PORT = server.getLocalSocketAddress().getPort();
     }
 
-    @After
+    @AfterMethod
     public void tearDown() {
         server.stop();
     }
@@ -198,7 +198,7 @@ public class ClientServerTest {
         datagramSocket.send(packet);
         datagramSocket.receive(recPacket2);
         datagramSocket.close();
-        assertArrayEquals(recPacket.getData(), recPacket2.getData());
+        assertEquals(recPacket.getData(), recPacket2.getData());
 
     }
 
@@ -290,13 +290,13 @@ public class ClientServerTest {
         srv.stop();
     }
 
-    @Test(expected = java.lang.IllegalStateException.class)
+    @Test(expectedExceptions = java.lang.IllegalStateException.class)
     public void stopNonRunningServer() {
         CoapServer srv = CoapServerBuilder.newBuilder().build();
         srv.stop();
     }
 
-    @Test(expected = java.lang.IllegalStateException.class)
+    @Test(expectedExceptions = java.lang.IllegalStateException.class)
     public void startRunningServer() throws IOException {
         CoapServer srv = CoapServerBuilder.newBuilder().build();
         srv.start();
@@ -335,7 +335,7 @@ public class ClientServerTest {
         cnn.stop();
     }
 
-    @Test(expected = org.mbed.coap.exception.CoapTimeoutException.class)
+    @Test(expectedExceptions = org.mbed.coap.exception.CoapTimeoutException.class)
     public void testRequestWithPacketDropping() throws IOException, CoapException {
         CoapServer srv = CoapServerBuilder.newBuilder()
                 .transport(new DroppingPacketsTransportWrapper(InMemoryTransport.create(CoapConstants.DEFAULT_PORT), (byte) 100))
@@ -349,17 +349,17 @@ public class ClientServerTest {
         assertNotNull(cnn.resource("/test").sync().get());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void testMakeRequestWithNullCallback() throws CoapException {
         server.makeRequest(new CoapPacket(null), (Callback<CoapPacket>) null);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void testMakeRequestWithNullAddress() throws CoapException {
         server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null), new FutureCallbackAdapter<CoapPacket>());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void testMakeRequestNullRequest() throws CoapException {
         server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null), new FutureCallbackAdapter<CoapPacket>());
     }

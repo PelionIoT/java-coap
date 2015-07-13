@@ -1,11 +1,14 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.linkformat;
 
+import static org.testng.Assert.*;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Random;
-import static org.junit.Assert.*;
-import org.junit.Test;
 import org.mbed.coap.packet.DataConvertingUtility;
+import org.testng.annotations.Test;
 
 /**
  *
@@ -29,7 +32,7 @@ public class LinkFormatTest {
         lf = LinkFormatBuilder.parse("</temp>;rt=\"test\"");
         assertEquals("/temp", lf.getUri());
         assertEquals(null, lf.getContentType());
-        assertArrayEquals(new String[]{"test"}, lf.getResourceTypeArray());
+        assertEquals(new String[]{"test"}, lf.getResourceTypeArray());
         assertNull(lf.getInterfaceDescriptionArray());
         assertEquals(false, lf.isObservable());
 
@@ -57,14 +60,14 @@ public class LinkFormatTest {
         LinkFormat lf2 = lfArr[1];
         assertEquals("/power", lf1.getUri());
         assertEquals(null, lf1.getContentType());
-        assertArrayEquals(new String[]{"rt-test"}, lf1.getResourceTypeArray());
+        assertEquals(new String[]{"rt-test"}, lf1.getResourceTypeArray());
         assertNull(lf1.getInterfaceDescriptionArray());
         assertEquals(false, lf1.isObservable());
 
         assertEquals("/temp", lf2.getUri());
         assertEquals(null, lf2.getContentType());
         assertNull(lf2.getResourceTypeArray());
-        assertArrayEquals(new String[]{"if-test"}, lf2.getInterfaceDescriptionArray());
+        assertEquals(new String[]{"if-test"}, lf2.getInterfaceDescriptionArray());
         assertEquals(true, lf2.isObservable());
 
     }
@@ -89,8 +92,8 @@ public class LinkFormatTest {
         assertEquals(lf, lf2);
         assertEquals(lf.getUri(), lf2.getUri());
         assertEquals(lf.getContentType(), lf2.getContentType());
-        assertArrayEquals(lf.getResourceTypeArray(), lf2.getResourceTypeArray());
-        assertArrayEquals(lf.getInterfaceDescriptionArray(), lf2.getInterfaceDescriptionArray());
+        assertEquals(lf.getResourceTypeArray(), lf2.getResourceTypeArray());
+        assertEquals(lf.getInterfaceDescriptionArray(), lf2.getInterfaceDescriptionArray());
         assertEquals(lf.isObservable(), lf2.isObservable());
         assertEquals(lf.getMaxSize(), lf2.getMaxSize());
         assertEquals(lf.getResourceInstance(), lf2.getResourceInstance());
@@ -120,8 +123,8 @@ public class LinkFormatTest {
         assertEquals(lf, lf2);
         assertEquals(lf.getUri(), lf2.getUri());
         assertEquals(lf.getContentType(), lf2.getContentType());
-        assertArrayEquals(lf.getResourceTypeArray(), lf2.getResourceTypeArray());
-        assertArrayEquals(lf.getInterfaceDescriptionArray(), lf2.getInterfaceDescriptionArray());
+        assertEquals(lf.getResourceTypeArray(), lf2.getResourceTypeArray());
+        assertEquals(lf.getInterfaceDescriptionArray(), lf2.getInterfaceDescriptionArray());
         assertEquals(lf.isObservable(), lf2.isObservable());
         assertEquals(lf.getMaxSize(), lf2.getMaxSize());
         assertEquals(lf.getResourceInstance(), lf2.getResourceInstance());
@@ -148,8 +151,8 @@ public class LinkFormatTest {
         assertEquals(lf.getParam("atr3"), lf2.getParam("atr3"));
         assertEquals(lf.getUri(), lf2.getUri());
         assertEquals(lf.getContentType(), lf2.getContentType());
-        assertArrayEquals(lf.getResourceTypeArray(), lf2.getResourceTypeArray());
-        assertArrayEquals(lf.getInterfaceDescriptionArray(), lf2.getInterfaceDescriptionArray());
+        assertEquals(lf.getResourceTypeArray(), lf2.getResourceTypeArray());
+        assertEquals(lf.getInterfaceDescriptionArray(), lf2.getInterfaceDescriptionArray());
         assertEquals(lf.isObservable(), lf2.isObservable());
     }
 
@@ -159,22 +162,22 @@ public class LinkFormatTest {
         lf.setRelations("rel1");
 
         LinkFormat lf2 = LinkFormatBuilder.parse(lf.toString());
-        assertArrayEquals(new String[]{"rel1"}, lf2.getRelations());
+        assertEquals(new String[]{"rel1"}, lf2.getRelations());
 
         //multiple relations
         lf.setRelations("rel1", "rel2", "rel3");
 
         lf2 = LinkFormatBuilder.parse(lf.toString());
-        assertArrayEquals(new String[]{"rel1", "rel2", "rel3"}, lf2.getRelations());
+        assertEquals(new String[]{"rel1", "rel2", "rel3"}, lf2.getRelations());
 
         //parse
-        assertArrayEquals(new String[]{"rel1", "rel2"}, LinkFormatBuilder.parse("</dd>;rel=\"rel1 rel2\"").getRelations());
-        assertArrayEquals(new String[]{"relation-example-one"}, LinkFormatBuilder.parse("</dd>;rel=\"relation-example-one\"").getRelations());
-        assertArrayEquals(new String[]{""}, LinkFormatBuilder.parse("</dd>;rel=\"\"").getRelations());
+        assertEquals(new String[]{"rel1", "rel2"}, LinkFormatBuilder.parse("</dd>;rel=\"rel1 rel2\"").getRelations());
+        assertEquals(new String[]{"relation-example-one"}, LinkFormatBuilder.parse("</dd>;rel=\"relation-example-one\"").getRelations());
+        assertEquals(new String[]{""}, LinkFormatBuilder.parse("</dd>;rel=\"\"").getRelations());
         assertNull(LinkFormatBuilder.parse("</dd>").getRelations());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testFailureLinkRelations() {
         LinkFormat lf = new LinkFormat("/test");
         lf.setRelations("fdsfs", "rel1 rel2");
@@ -201,18 +204,18 @@ public class LinkFormatTest {
         lf.setRev("rev1", "rev2");
 
         LinkFormat lf2 = LinkFormatBuilder.parse(lf.toString());
-        assertArrayEquals(new String[]{"rev1", "rev2"}, lf2.getRev());
+        assertEquals(new String[]{"rev1", "rev2"}, lf2.getRev());
 
         //multiple relations
         lf.setRev("rev1", "rev2", "rev3");
 
         lf2 = LinkFormatBuilder.parse(lf.toString());
-        assertArrayEquals(new String[]{"rev1", "rev2", "rev3"}, lf2.getRev());
+        assertEquals(new String[]{"rev1", "rev2", "rev3"}, lf2.getRev());
 
         //parse
-        assertArrayEquals(new String[]{"rev1", "rev2"}, LinkFormatBuilder.parse("</dd>;rev=\"rev1 rev2\"").getRev());
-        assertArrayEquals(new String[]{"rev-example-one"}, LinkFormatBuilder.parse("</dd>;rev=\"rev-example-one\"").getRev());
-        assertArrayEquals(new String[]{""}, LinkFormatBuilder.parse("</dd>;rev=\"\"").getRev());
+        assertEquals(new String[]{"rev1", "rev2"}, LinkFormatBuilder.parse("</dd>;rev=\"rev1 rev2\"").getRev());
+        assertEquals(new String[]{"rev-example-one"}, LinkFormatBuilder.parse("</dd>;rev=\"rev-example-one\"").getRev());
+        assertEquals(new String[]{""}, LinkFormatBuilder.parse("</dd>;rev=\"\"").getRev());
         assertNull(LinkFormatBuilder.parse("</dd>").getRev());
     }
 
@@ -233,22 +236,22 @@ public class LinkFormatTest {
         assertNull(LinkFormatBuilder.parse("</dd>").getHRefLang());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testFailHReflang1() {
         new LinkFormat("/test").setHRefLang(" LANG-PL");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testFailHReflang2() {
         new LinkFormat("/test").setHRefLang("LANG-PL" + (char) 128);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testFailHReflang3() {
         new LinkFormat("/test").setHRefLang("LAN,G;P\\L");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailHReflang4() throws ParseException {
         LinkFormatBuilder.parse("</test>;hreflang=LANGP L");
     }
@@ -356,52 +359,52 @@ public class LinkFormatTest {
         assertEquals(4, links.size());
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailParse1() throws ParseException {
         LinkFormatBuilder.parse("</test>;rt=DUpa");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailParse2() throws ParseException {
         LinkFormatBuilder.parse("</test>;hreflang=\"LAng-PL\"");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailParse3() throws ParseException {
         LinkFormatBuilder.parse("</test>;sz=\"seven\"");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailParse4() throws ParseException {
         LinkFormatBuilder.parse("</test>;title");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailParse4_1() throws ParseException {
         LinkFormatBuilder.parse("</test>;rt");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailParse5_missing_uri() throws ParseException {
         LinkFormatBuilder.parse("/fds>;title=\"tytul\"");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailParse6() throws ParseException {
         LinkFormatBuilder.parse("/fds>;title=\"tytul\"fds");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailParse7() throws ParseException {
         LinkFormatBuilder.parse("</fds>;title=\"tytul\"dfdss\"");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailParse8() throws ParseException {
         LinkFormatBuilder.parse("</fds>;obs=\"true\"");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expectedExceptions = ParseException.class)
     public void testFailParse9() throws ParseException {
         LinkFormatBuilder.parse("</fds>;=\"true\"");
     }
@@ -433,7 +436,7 @@ public class LinkFormatTest {
 
             try {
                 LinkFormatBuilder.parse(fuzzyLf);
-                assertFalse("exception ParseException is expected", false);
+                assertFalse(false, "exception ParseException is expected");
             } catch (ParseException ex) {
                 //only ParseException is expected
             }
@@ -502,7 +505,7 @@ public class LinkFormatTest {
         lf2.set("unknown3", Boolean.TRUE);
 
 //        assertEquals("/deva/temp", lf[0].getUri());
-//        assertArrayEquals(new String[]{"ns.wadl#c"}, lf[0].getInterfaceDescription());
+        //        assertEquals(new String[]{"ns.wadl#c"}, lf[0].getInterfaceDescription());
 //        assertNull(lf[0].getResourceType());
 //        assertEquals((Short) (short) 1398, lf[0].getContentType());
         assertEquals("param-value", lf.getParam("unknown"));

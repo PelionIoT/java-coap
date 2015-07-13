@@ -1,23 +1,15 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
-import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
+import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mbed.coap.packet.BlockSize;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.client.ObservationListener;
@@ -25,10 +17,17 @@ import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.ObservationNotEstablishedException;
 import org.mbed.coap.exception.ObservationTerminatedException;
 import org.mbed.coap.observe.SimpleObservableResource;
+import org.mbed.coap.packet.BlockSize;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.SimpleCoapResource;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 /**
  *
@@ -59,7 +58,7 @@ public class ObservationTest {
         server.stop();
     }
 
-    @Test(expected = ObservationNotEstablishedException.class)
+    @Test(expectedExceptions = ObservationNotEstablishedException.class)
     public void observationAttemptOnNonObsResource() throws IOException, CoapException {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
         try {
@@ -135,7 +134,7 @@ public class ObservationTest {
 
         OBS_RESOURCE_1.terminateObservations();
         assertEquals(MessageType.Reset, obsListener.take().getMessageType());
-        assertEquals("Number of observation did not change", 0, OBS_RESOURCE_1.getObservationsAmount());
+        assertEquals(0, OBS_RESOURCE_1.getObservationsAmount(), "Number of observation did not change");
 
         client.close();
         System.out.println("-- END");
@@ -159,7 +158,7 @@ public class ObservationTest {
         assertEquals(MessageType.Confirmable, terminObserv.getMessageType());
         assertEquals(Code.C404_NOT_FOUND, terminObserv.getCode());
         assertTrue(terminObserv.headers().getObserve() >= 0);
-        assertEquals("Number of observation did not change", 0, OBS_RESOURCE_1.getObservationsAmount());
+        assertEquals(0, OBS_RESOURCE_1.getObservationsAmount(), "Number of observation did not change");
 
         client.close();
         System.out.println("-- END");
@@ -182,7 +181,7 @@ public class ObservationTest {
             Thread.sleep(100);
         }
 
-        assertTrue("Observation did not terminate", obsNum > OBS_RESOURCE_1.getObservationsAmount());
+        assertTrue(obsNum > OBS_RESOURCE_1.getObservationsAmount(), "Observation did not terminate");
         System.out.println("\n-- END");
     }
 
@@ -202,7 +201,7 @@ public class ObservationTest {
         //terminate observation by doing get
         client.resource(RES_OBS_PATH1).sync().get();
 
-        assertFalse("Observation terminated", obsNum > OBS_RESOURCE_1.getObservationsAmount());
+        assertFalse(obsNum > OBS_RESOURCE_1.getObservationsAmount(), "Observation terminated");
 
         client.close();
 
@@ -225,7 +224,7 @@ public class ObservationTest {
         OBS_RESOURCE_1.setBody("keho");
 
         Thread.sleep(100);
-        assertTrue("Observation not terminated", obsNum > OBS_RESOURCE_1.getObservationsAmount());
+        assertTrue(obsNum > OBS_RESOURCE_1.getObservationsAmount(), "Observation not terminated");
 
         client.close();
         System.out.println("\n-- END");

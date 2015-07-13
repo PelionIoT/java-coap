@@ -3,11 +3,11 @@
  */
 package org.mbed.coap.utils;
 
-import static org.junit.Assert.*;
+import static org.testng.Assert.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 /**
  *
@@ -52,7 +52,7 @@ public class FutureCallbackAdapterTest {
         }
     }
 
-    @Test(expected = java.util.concurrent.TimeoutException.class)
+    @Test(expectedExceptions = java.util.concurrent.TimeoutException.class)
     public void timeoutTest() throws Exception {
 
         FutureCallbackAdapter<String> f = new FutureCallbackAdapter<>();

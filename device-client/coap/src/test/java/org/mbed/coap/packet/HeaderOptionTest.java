@@ -1,18 +1,17 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.packet;
 
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.exception.CoapMessageFormatException;
-import org.mbed.coap.utils.HexArray;
+import static org.testng.Assert.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.exception.CoapMessageFormatException;
+import org.mbed.coap.utils.HexArray;
+import org.testng.annotations.Test;
 
 /**
  *
@@ -38,7 +37,7 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
 
         byte[] expected = new byte[]{(byte) 0xD8, 0x16, '/', 't', 'e', 's', 't', 'u', 'r', 'i'};
-        assertArrayEquals(expected, baos.toByteArray());
+        assertEquals(expected, baos.toByteArray());
         BasicHeaderOptions hdr2 = new BasicHeaderOptions();
         hdr2.deserialize(new ByteArrayInputStream(expected));
         assertEquals(hdr.getProxyUri(), hdr2.getProxyUri());
@@ -51,7 +50,7 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
 
         expected = new byte[]{(byte) 0xE4, 0x00, 0x1F, 't', 'e', 's', 't'};
-        assertArrayEquals(expected, baos.toByteArray());
+        assertEquals(expected, baos.toByteArray());
     }
 
     @Test
@@ -321,7 +320,7 @@ public class HeaderOptionTest {
         assertTrue(hdr3.equals(hdr4));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testIllegalLocationPath() {
         BasicHeaderOptions hdr = new BasicHeaderOptions();
         hdr.setLocationPath(".");
@@ -352,11 +351,11 @@ public class HeaderOptionTest {
         assertEquals(2, DataConvertingUtility.convertVariableUInt(257).length);
         assertEquals(2, DataConvertingUtility.convertVariableUInt(65535).length);
         assertEquals(3, DataConvertingUtility.convertVariableUInt(65536).length);
-        assertArrayEquals(new byte[]{(byte) 0xFF}, DataConvertingUtility.convertVariableUInt(255));
-        assertArrayEquals(new byte[]{0x01, 0x00}, DataConvertingUtility.convertVariableUInt(256));
+        assertEquals(new byte[]{(byte) 0xFF}, DataConvertingUtility.convertVariableUInt(255));
+        assertEquals(new byte[]{0x01, 0x00}, DataConvertingUtility.convertVariableUInt(256));
     }
 
-    @Test(expected = CoapMessageFormatException.class)
+    @Test(expectedExceptions = CoapMessageFormatException.class)
     public void malformedHeaderWithIllegalDelta() throws IOException, CoapMessageFormatException {
         BasicHeaderOptions hdr = new BasicHeaderOptions();
         hdr.deserialize(new ByteArrayInputStream(new byte[]{(byte) 0xF3}));
@@ -364,14 +363,14 @@ public class HeaderOptionTest {
 
     @Test
     public void split() {
-        assertArrayEquals(new String[]{"", "3", "", ""}, DataConvertingUtility.split("/3//", '/'));
-        assertArrayEquals(new String[]{"", "3", "", "7"}, DataConvertingUtility.split("/3//7", '/'));
-        assertArrayEquals(new String[]{"", "3", "20", "7"}, DataConvertingUtility.split("/3/20/7", '/'));
+        assertEquals(new String[]{"", "3", "", ""}, DataConvertingUtility.split("/3//", '/'));
+        assertEquals(new String[]{"", "3", "", "7"}, DataConvertingUtility.split("/3//7", '/'));
+        assertEquals(new String[]{"", "3", "20", "7"}, DataConvertingUtility.split("/3/20/7", '/'));
 
-        assertArrayEquals("/1/2/3".split("/"), DataConvertingUtility.split("/1/2/3", '/'));
-        assertArrayEquals("/1//3".split("/"), DataConvertingUtility.split("/1//3", '/'));
-        assertArrayEquals("/1/432fsdfs/3fds".split("/"), DataConvertingUtility.split("/1/432fsdfs/3fds", '/'));
-        assertArrayEquals("boo:and:foo".split("x"), DataConvertingUtility.split("boo:and:foo", 'x'));
+        assertEquals("/1/2/3".split("/"), DataConvertingUtility.split("/1/2/3", '/'));
+        assertEquals("/1//3".split("/"), DataConvertingUtility.split("/1//3", '/'));
+        assertEquals("/1/432fsdfs/3fds".split("/"), DataConvertingUtility.split("/1/432fsdfs/3fds", '/'));
+        assertEquals("boo:and:foo".split("x"), DataConvertingUtility.split("boo:and:foo", 'x'));
     
     }
     
