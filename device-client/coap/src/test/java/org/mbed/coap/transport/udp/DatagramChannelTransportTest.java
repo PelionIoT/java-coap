@@ -3,11 +3,12 @@
  */
 package org.mbed.coap.transport.udp;
 
-import static org.junit.Assert.*;
-import static org.mockito.AdditionalMatchers.aryEq;
+import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.DatagramSocket;
@@ -15,13 +16,10 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.packet.Method;
-import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transport.TransportContext;
@@ -29,16 +27,14 @@ import org.mbed.coap.transport.TransportReceiver;
 import org.mbed.coap.utils.FutureCallbackAdapter;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.testng.PowerMockTestCase;
+import org.testng.annotations.Test;
 
 /**
- *
  * @author szymon
  */
-@RunWith(value = PowerMockRunner.class)
-
 @PrepareForTest({DatagramChannel.class, DatagramChannelTransport.class, DatagramSocket.class})
-public class DatagramChannelTransportTest {
+public class DatagramChannelTransportTest extends PowerMockTestCase {
 
     @Test
     public void initTest() throws IOException {
@@ -73,7 +69,7 @@ public class DatagramChannelTransportTest {
         verify(transportReceiver2).onReceive(isA(InetSocketAddress.class), aryEq("data2".getBytes()), eq(TransportContext.NULL));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void initWithIllegalState() throws Exception {
         new DatagramChannelTransport(new InetSocketAddress("localhost", 0), false, true);
 
@@ -90,7 +86,7 @@ public class DatagramChannelTransportTest {
         verify(ch).close();
     }
 
-    @Test(expected = ClosedChannelException.class)
+    @Test(expectedExceptions = ClosedChannelException.class)
     public void initFailedTest() throws IOException {
         DatagramChannel ch = PowerMockito.mock(DatagramChannel.class);
         when(ch.configureBlocking(anyBoolean())).thenThrow(new ClosedChannelException());
@@ -99,7 +95,7 @@ public class DatagramChannelTransportTest {
         srv.start();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void initBindFailedTest() throws IOException {
         DatagramChannel ch = PowerMockito.mock(DatagramChannel.class);
         DatagramSocket datSocket = PowerMockito.mock(DatagramSocket.class);
@@ -111,7 +107,7 @@ public class DatagramChannelTransportTest {
         CoapServer srv = CoapServerBuilder.newBuilder().transport(new DatagramConnectorChannelMock(ch, new InetSocketAddress(5683))).build();
         try {
             srv.start();
-            Assert.fail("Expected: BindException()");
+            fail("Expected: BindException()");
         } catch (IOException ex) {
             //expected
         }

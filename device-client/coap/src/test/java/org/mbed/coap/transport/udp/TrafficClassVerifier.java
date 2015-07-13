@@ -1,13 +1,16 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.transport.udp;
 
+import static org.testng.Assert.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import static org.junit.Assert.*;
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 /**
  * IPv6 traffic-class verification class, not ment for regular unit testing.

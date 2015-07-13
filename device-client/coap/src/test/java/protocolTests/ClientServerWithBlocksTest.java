@@ -3,31 +3,31 @@
  */
 package protocolTests;
 
-import static org.junit.Assert.*;
+import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.CompletableFuture;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mbed.coap.packet.BlockOption;
-import org.mbed.coap.packet.BlockSize;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.MediaTypes;
-import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.packet.Method;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.packet.BlockOption;
+import org.mbed.coap.packet.BlockSize;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.DataConvertingUtility;
+import org.mbed.coap.packet.MediaTypes;
+import org.mbed.coap.packet.MessageType;
+import org.mbed.coap.packet.Method;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
  * @author szymon
@@ -42,7 +42,7 @@ public class ClientServerWithBlocksTest {
 
     CoapServer server = null;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws UnknownHostException, IOException {
 
         server = CoapServerBuilder.newBuilder().build();
@@ -63,7 +63,7 @@ public class ClientServerWithBlocksTest {
 //        server.start();
     }
 
-    @After
+    @AfterMethod
     public void tearDown() {
         server.stop();
     }
@@ -129,7 +129,7 @@ public class ClientServerWithBlocksTest {
         } finally {
             client.close();
         }
-        assertTrue("Exception expected", true);
+        assertTrue(true, "Exception expected");
 
     }
 
@@ -248,7 +248,7 @@ public class ClientServerWithBlocksTest {
         request.setToken(DataConvertingUtility.convertVariableUInt(1235L));
         resp = makeRequest(client, request);
 
-        assertFalse("Error code expected", Code.C204_CHANGED == resp.getCode());
+        assertFalse(Code.C204_CHANGED == resp.getCode(), "Error code expected");
 
     }
 
@@ -272,7 +272,7 @@ public class ClientServerWithBlocksTest {
 
         resp = makeRequest(client, request);
 
-        assertFalse("Error code expected", Code.C204_CHANGED == resp.getCode());
+        assertFalse(Code.C204_CHANGED == resp.getCode(), "Error code expected");
 
     }
 

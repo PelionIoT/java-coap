@@ -1,22 +1,24 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package microbenchmark;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.MediaTypes;
 import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.packet.Method;
-import org.mbed.coap.exception.CoapException;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
- *
  * @author szymon
  */
 public class ParsingBenchmark {
@@ -25,7 +27,7 @@ public class ParsingBenchmark {
 
     private CoapPacket packet;
 
-    @Before
+    @BeforeMethod
     public void warmUp() throws CoapException {
         LogManager.getRootLogger().setLevel(Level.INFO);
 
@@ -48,7 +50,7 @@ public class ParsingBenchmark {
         System.out.println("MSG SIZE: " + packet.toByteArray().length);
     }
 
-    @After
+    @AfterMethod
     public void coolDown() {
         System.out.println("TIME: " + (endTime - stTime) + " MSG-PER-SEC: " + (1000000 / ((endTime - stTime))) + "k");
     }

@@ -3,26 +3,25 @@
  */
 package protocolTests;
 
-import static org.junit.Assert.*;
+import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Method;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Method;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.utils.FutureCallbackAdapter;
+import org.testng.annotations.Test;
 
 /**
  *
@@ -30,7 +29,7 @@ import org.mbed.coap.utils.FutureCallbackAdapter;
  */
 public class TimeoutTest {
 
-    @Test(expected = CoapTimeoutException.class)
+    @Test(expectedExceptions = CoapTimeoutException.class)
     public void testTimeout() throws IOException, CoapException {
         CoapClient client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(0))
                 .transport(InMemoryTransport.create())
@@ -40,8 +39,7 @@ public class TimeoutTest {
         client.resource("/non/existing").sync().get();
     }
 
-    @Test
-    @Ignore
+    @Test(enabled = false)
     public void timeoutTestIgn() throws Exception {
         CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616).executor(Executors.newCachedThreadPool()).build();
         cnn.start();
@@ -57,7 +55,7 @@ public class TimeoutTest {
         } catch (CompletionException ex) {
             //expected
         }
-        assertEquals("Wrong number of transactions", 0, cnn.getNumberOfTransactions());
+        assertEquals(0, cnn.getNumberOfTransactions(), "Wrong number of transactions");
         cnn.stop();
 
     }
@@ -79,11 +77,11 @@ public class TimeoutTest {
         //assertEquals("Wrong number of transactions", 1, cnn.getNumberOfTransactions());
         try {
             callback.get();
-            assertTrue("Exception was expected", false);
+            assertTrue(false, "Exception was expected");
         } catch (ExecutionException ex) {
             assertTrue(ex.getCause() instanceof CoapException);
         }
-        assertEquals("Wrong number of transactions", 0, cnn.getNumberOfTransactions());
+        assertEquals(0, cnn.getNumberOfTransactions(), "Wrong number of transactions");
         cnn.stop();
 
     }

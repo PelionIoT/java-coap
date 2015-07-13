@@ -1,10 +1,10 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.transmission;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.mbed.coap.transmission.CoapTimeout;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.junit.Test;
+import static org.testng.Assert.*;
+import org.testng.annotations.Test;
 
 /**
  *
@@ -49,7 +49,7 @@ public class TransmissionTimeoutTest {
 
         try {
             coapTimeout.getTimeout(-1);
-            assertTrue("Exception expected", false);
+            assertTrue(false, "Exception expected");
         } catch (IllegalArgumentException ex) {
             //expected
         }
@@ -103,13 +103,13 @@ public class TransmissionTimeoutTest {
 
         try {
             singleTimeout.getTimeout(0);
-            assertTrue("Exception expected", false);
+            assertTrue(false, "Exception expected");
         } catch (IllegalArgumentException ex) {
             //expected
         }
         try {
             singleTimeout.getTimeout(-1);
-            assertTrue("Exception expected", false);
+            assertTrue(false, "Exception expected");
         } catch (IllegalArgumentException ex) {
             //expected
         }

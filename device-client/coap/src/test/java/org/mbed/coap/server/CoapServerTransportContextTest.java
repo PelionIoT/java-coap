@@ -3,16 +3,13 @@
  */
 package org.mbed.coap.server;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
+import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
@@ -23,6 +20,9 @@ import org.mbed.coap.packet.Code;
 import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.CoapResource;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
  * @author szymon
@@ -33,14 +33,14 @@ public class CoapServerTransportContextTest {
     private final CoapResourceTest coapResourceTest = new CoapResourceTest();
     private final InMemoryTransport srvTransport = spy(new InMemoryTransport(5683));
 
-    @Before
+    @BeforeMethod
     public void setUp() throws IOException {
         server = CoapServerBuilder.newBuilder().transport(srvTransport).build();
         server.addRequestHandler("/test", coapResourceTest);
         server.start();
     }
 
-    @After
+    @AfterMethod
     public void tearDown() {
         server.stop();
     }

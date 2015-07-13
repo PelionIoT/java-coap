@@ -1,19 +1,19 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.packet;
 
+import static org.testng.Assert.*;
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import org.junit.Assert;
-import org.junit.Test;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.linkformat.LinkFormat;
 import org.mbed.coap.linkformat.LinkFormatBuilder;
+import org.testng.annotations.Test;
 
 /**
  *
@@ -28,8 +28,8 @@ public class CoapPacketTest {
         LinkFormat[] lf = LinkFormatBuilder.parseList(linkFormatString);
         assertEquals(1, lf.length);
         assertEquals("/a/relay", lf[0].getUri());
-        assertArrayEquals(new String[]{"ns.wadl#a"}, lf[0].getInterfaceDescriptionArray());
-        assertArrayEquals(new String[]{"ns:relay"}, lf[0].getResourceTypeArray());
+        assertEquals(new String[]{"ns.wadl#a"}, lf[0].getInterfaceDescriptionArray());
+        assertEquals(new String[]{"ns:relay"}, lf[0].getResourceTypeArray());
         assertEquals((Short) (short) 0, lf[0].getContentType());
 
         linkFormatString = "</a/relay>;if=\"ns.wadl#a\";rt=\"ns:relay\";ct=\"0\","
@@ -47,7 +47,7 @@ public class CoapPacketTest {
         byte[] rawCp = CoapPacket.serialize(cp);
         CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
 
-        assertArrayEquals(rawCp, CoapPacket.serialize(cp2));
+        assertEquals(rawCp, CoapPacket.serialize(cp2));
         assertEquals(Method.GET, cp2.getMethod());
         assertEquals(MessageType.Confirmable, cp2.getMessageType());
         assertEquals("/test", cp2.headers().getUriPath());
@@ -65,7 +65,7 @@ public class CoapPacketTest {
         byte[] rawCp = CoapPacket.serialize(cp);
         CoapPacket cp2 = CoapPacket.read(addr, rawCp);
 
-        assertArrayEquals(rawCp, CoapPacket.serialize(cp2));
+        assertEquals(rawCp, CoapPacket.serialize(cp2));
         assertSimilar(cp, cp2);
     }
 
@@ -82,7 +82,7 @@ public class CoapPacketTest {
 
         System.out.println(cp);
         System.out.println(cp2);
-        assertArrayEquals(rawCp, CoapPacket.serialize(cp2));
+        assertEquals(rawCp, CoapPacket.serialize(cp2));
         assertEquals(Method.PUT, cp2.getMethod());
         assertEquals(MessageType.Confirmable, cp2.getMessageType());
         assertEquals("/test2", cp2.headers().getUriPath());
@@ -170,17 +170,17 @@ public class CoapPacketTest {
         assertEquals(cp1.headers().getLocationPath(), cp2.headers().getLocationPath());
         assertEquals(cp1.headers().getLocationQuery(), cp2.headers().getLocationQuery());
 
-        assertArrayEquals(cp1.headers().getAccept(), cp2.headers().getAccept());
-        assertArrayEquals(cp1.headers().getIfMatch(), cp2.headers().getIfMatch());
-        assertArrayEquals(cp1.headers().getEtagArray(), cp2.headers().getEtagArray());
+        assertEquals(cp1.headers().getAccept(), cp2.headers().getAccept());
+        assertEquals(cp1.headers().getIfMatch(), cp2.headers().getIfMatch());
+        assertEquals(cp1.headers().getEtagArray(), cp2.headers().getEtagArray());
 
         assertEquals(cp1.headers().getIfNonMatch(), cp2.headers().getIfNonMatch());
         assertEquals(cp1.headers().getContentFormat(), cp2.headers().getContentFormat());
-        assertArrayEquals(cp1.headers().getEtag(), cp2.headers().getEtag());
+        assertEquals(cp1.headers().getEtag(), cp2.headers().getEtag());
         assertEquals(cp1.headers().getMaxAge(), cp2.headers().getMaxAge());
         assertEquals(cp1.headers().getObserve(), cp2.headers().getObserve());
         assertEquals(cp1.headers().getProxyUri(), cp2.headers().getProxyUri());
-        assertArrayEquals(cp1.getToken(), cp2.getToken());
+        assertEquals(cp1.getToken(), cp2.getToken());
         assertEquals(cp1.headers().getUriPort(), cp2.headers().getUriPort());
 
         assertEquals(cp1.getPayloadString(), cp2.getPayloadString());
@@ -213,7 +213,7 @@ public class CoapPacketTest {
         assertEquals(1, cp2.getVersion());
     }
 
-    @Test(expected = org.mbed.coap.exception.CoapException.class)
+    @Test(expectedExceptions = org.mbed.coap.exception.CoapException.class)
     public void versionTest() throws CoapException {
         CoapPacket.read(null, new byte[]{(byte) 0x85});
     }
@@ -223,7 +223,7 @@ public class CoapPacketTest {
         Map<String, String> q = new HashMap<>();
         q.put("par1", "12");
 
-        Assert.assertEquals(q, DataConvertingUtility.parseUriQuery("par1=12"));
+        assertEquals(q, DataConvertingUtility.parseUriQuery("par1=12"));
         assertEquals(q, DataConvertingUtility.parseUriQuery("?par1=12"));
 
         q.put("par2", "14");
@@ -240,7 +240,7 @@ public class CoapPacketTest {
         byte[] hdrVal = new byte[]{1, 2, 3, 4, 5, 6, 7};
         int hdrType = 100;
         cp.headers().put(hdrType, hdrVal);
-        assertArrayEquals(hdrVal, cp.headers().getCustomOption(hdrType));
+        assertEquals(hdrVal, cp.headers().getCustomOption(hdrType));
 
         byte[] rawCp = CoapPacket.serialize(cp);
 
@@ -248,7 +248,7 @@ public class CoapPacketTest {
         System.out.println(cp);
         System.out.println(cp2);
         //assertEquals(1, cp2.headers().getUnrecognizedOptions().size());
-        assertArrayEquals(hdrVal, cp2.headers().getCustomOption(hdrType));
+        assertEquals(hdrVal, cp2.headers().getCustomOption(hdrType));
         assertEquals(cp.headers(), cp2.headers());
     }
 
