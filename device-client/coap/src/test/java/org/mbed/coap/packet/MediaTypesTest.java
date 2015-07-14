@@ -7,7 +7,6 @@ import static org.testng.Assert.*;
 import org.testng.annotations.Test;
 
 /**
- *
  * @author szymon
  */
 public class MediaTypesTest {

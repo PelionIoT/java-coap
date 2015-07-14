@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
 
@@ -8,12 +8,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.mbed.coap.packet.BlockOption;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.ObservationTerminatedException;
+import org.mbed.coap.packet.BlockOption;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.ObservationHandler;
 import org.mbed.coap.utils.Callback;

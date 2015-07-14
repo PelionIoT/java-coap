@@ -4,7 +4,6 @@
 package org.mbed.coap.server.internal;
 
 /**
- *
  * @author szymon
  */
 public final class UriMatcher {

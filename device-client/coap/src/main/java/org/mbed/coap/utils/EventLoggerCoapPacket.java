@@ -1,9 +1,11 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.utils;
 
 import org.mbed.coap.packet.CoapPacket;
 
 /**
- *
  * @author szymon
  */
 public class EventLoggerCoapPacket {

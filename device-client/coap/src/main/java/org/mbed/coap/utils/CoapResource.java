@@ -1,17 +1,16 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.utils;
 
-import org.mbed.coap.packet.Code;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.linkformat.LinkFormat;
+import org.mbed.coap.packet.Code;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapHandler;
 
 /**
- *
  * @author szymon
  */
 public abstract class CoapResource implements CoapHandler {

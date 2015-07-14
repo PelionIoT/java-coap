@@ -1,22 +1,21 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.MediaTypes;
-import org.mbed.coap.exception.CoapCodeException;
-import org.mbed.coap.linkformat.LinkFormat;
-import org.mbed.coap.linkformat.LinkFormatBuilder;
-import org.mbed.coap.utils.CoapResource;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import org.mbed.coap.exception.CoapCodeException;
+import org.mbed.coap.linkformat.LinkFormat;
+import org.mbed.coap.linkformat.LinkFormatBuilder;
+import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.MediaTypes;
+import org.mbed.coap.utils.CoapResource;
 
 /**
- *
  * @author szymon
  */
 class ResourceLinks extends CoapResource {

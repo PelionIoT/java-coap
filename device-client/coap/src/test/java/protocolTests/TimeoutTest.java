@@ -24,7 +24,6 @@ import org.mbed.coap.utils.FutureCallbackAdapter;
 import org.testng.annotations.Test;
 
 /**
- *
  * @author szymon
  */
 public class TimeoutTest {

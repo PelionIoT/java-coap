@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.utils;
 
@@ -67,8 +67,8 @@ public final class HexArray implements Serializable {
      */
     public static byte[] fromHex(String hex) {
         byte[] b = new byte[hex.length() / 2];
-        for (int i=0; i<hex.length(); i+=2) {
-            b[i/2] = (byte) (HEX_DIGIT_STRING.indexOf(hex.charAt(i))*16 + HEX_DIGIT_STRING.indexOf(hex.charAt(i+1)) );
+        for (int i = 0; i < hex.length(); i += 2) {
+            b[i / 2] = (byte) (HEX_DIGIT_STRING.indexOf(hex.charAt(i)) * 16 + HEX_DIGIT_STRING.indexOf(hex.charAt(i + 1)));
         }
 
         return b;
