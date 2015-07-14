@@ -19,7 +19,7 @@ import org.mbed.coap.CoapConstants;
  */
 public final class DataConvertingUtility {
 
-    private DataConvertingUtility(){
+    private DataConvertingUtility() {
         //keep private
     }
 
@@ -205,10 +205,10 @@ public final class DataConvertingUtility {
 
     public static byte[] intToByteArray(int value) {
         return new byte[]{
-            (byte) (value >>> 24),
-            (byte) (value >>> 16),
-            (byte) (value >>> 8),
-            (byte) value};
+                (byte) (value >>> 24),
+                (byte) (value >>> 16),
+                (byte) (value >>> 8),
+                (byte) value};
     }
 
     public static byte[] combine(byte[] arr1, byte[] arr2) {

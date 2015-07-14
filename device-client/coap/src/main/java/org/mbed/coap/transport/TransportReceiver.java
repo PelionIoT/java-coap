@@ -19,9 +19,8 @@ public interface TransportReceiver {
      * @param adr source address
      * @param data packet raw data
      * @param transportContext transport context
-     *
      * @throws ReceiveException for anticipated errors in handling the receive, not to be regarded as bugs (so e.g. no
-     * stacktrace is needed in the catch)
+     *                          stacktrace is needed in the catch)
      */
     void onReceive(InetSocketAddress adr, byte[] data, TransportContext transportContext) throws ReceiveException;
 

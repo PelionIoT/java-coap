@@ -11,7 +11,6 @@ import org.mbed.coap.packet.DataConvertingUtility;
 import org.testng.annotations.Test;
 
 /**
- *
  * @author szymon
  */
 public class LinkFormatTest {
@@ -504,10 +503,10 @@ public class LinkFormatTest {
         lf2.set("unknown2", new PToken("TEST-TOKEN"));
         lf2.set("unknown3", Boolean.TRUE);
 
-//        assertEquals("/deva/temp", lf[0].getUri());
+        //        assertEquals("/deva/temp", lf[0].getUri());
         //        assertEquals(new String[]{"ns.wadl#c"}, lf[0].getInterfaceDescription());
-//        assertNull(lf[0].getResourceType());
-//        assertEquals((Short) (short) 1398, lf[0].getContentType());
+        //        assertNull(lf[0].getResourceType());
+        //        assertEquals((Short) (short) 1398, lf[0].getContentType());
         assertEquals("param-value", lf.getParam("unknown"));
         assertEquals(lf2, lf);
     }

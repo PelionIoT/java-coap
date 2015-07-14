@@ -29,7 +29,7 @@ import org.testng.annotations.Test;
 public class MulticastTest {
 
     @Test
-//    @Ignore
+    //    @Ignore
     public void multicastConnection() throws IOException, CoapException {
         CoapServer server = CoapServerBuilder.newBuilder()
                 .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES)).build();
@@ -121,7 +121,7 @@ public class MulticastTest {
             soc = new DatagramSocket(61620);
             DatagramPacket reqDatagram = new DatagramPacket(
                     "Wiadomosc".getBytes(), 9, new InetSocketAddress("FF02::1",
-                            61619)
+                    61619)
             );
 
             msoc = new MulticastSocket(61619);

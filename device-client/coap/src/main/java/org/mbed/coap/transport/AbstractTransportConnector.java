@@ -93,7 +93,6 @@ public abstract class AbstractTransportConnector implements TransportConnector {
      * to use blocking mode.
      *
      * @return true if new message was received otherwise false
-     *
      * @throws ReceiveException for anticipated errors in handling the receive, see TransportReceiver.onReceive
      */
     public abstract boolean performReceive() throws ReceiveException;

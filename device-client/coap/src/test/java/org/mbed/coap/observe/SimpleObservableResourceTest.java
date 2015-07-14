@@ -24,7 +24,6 @@ import org.testng.annotations.Test;
 import protocolTests.ObservationTest;
 
 /**
- *
  * @author szymon
  */
 public class SimpleObservableResourceTest {

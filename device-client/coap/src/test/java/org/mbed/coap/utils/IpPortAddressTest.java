@@ -10,7 +10,6 @@ import java.net.UnknownHostException;
 import org.testng.annotations.Test;
 
 /**
- *
  * @author szymon
  */
 public class IpPortAddressTest {
@@ -25,13 +24,13 @@ public class IpPortAddressTest {
         assertEquals(addr.hashCode(), new IpPortAddress(new byte[]{127, 0, 0, 1}, 5683).hashCode());
 
         assertEquals(addr, new IpPortAddress(new InetSocketAddress(InetAddress.getByAddress("perse", new byte[]{127, 0, 0, 1}), 5683)));
-        
+
         assertFalse(addr.equals(null));
         assertFalse(addr.equals("dsa"));
         assertFalse(addr.equals(new IpPortAddress(new byte[]{127, 0, 0, 46}, 5683)));
         assertFalse(addr.equals(new IpPortAddress(new byte[]{127, 0, 0, 1}, 1)));
-        
-        assertEquals(new InetSocketAddress("127.0.0.1", 5683), new IpPortAddress(new byte[]{127, 0, 0, 1}, 5683).toInetSocketAddress() );
+
+        assertEquals(new InetSocketAddress("127.0.0.1", 5683), new IpPortAddress(new byte[]{127, 0, 0, 1}, 5683).toInetSocketAddress());
     }
 
     @SuppressWarnings("unused")
@@ -39,7 +38,7 @@ public class IpPortAddressTest {
     public void wrongIp() {
         new IpPortAddress(new byte[8], 65);
     }
-    
+
     @SuppressWarnings("unused")
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void wrongPort() {
@@ -51,7 +50,7 @@ public class IpPortAddressTest {
         //v6
         IpPortAddress addr = new IpPortAddress(new InetSocketAddress("[2001::1:0:1234]", 4321));
         assertEquals("[2001::1:0:1234]:4321", addr.toString());
-        assertEquals("[2001::1:0:1234]:4321", new IpPortAddress(new InetSocketAddress("[2001:0000:0000:0000:0000:0001:0000:1234]", 4321)).toString() );
+        assertEquals("[2001::1:0:1234]:4321", new IpPortAddress(new InetSocketAddress("[2001:0000:0000:0000:0000:0001:0000:1234]", 4321)).toString());
 
         //v4
         addr = new IpPortAddress(new InetSocketAddress("127.0.0.1", 61616));

@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * @author szymon
  */
 public class LinkFormatBuilder {

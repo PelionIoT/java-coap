@@ -4,8 +4,8 @@
 package org.mbed.coap.client;
 
 import java.util.concurrent.ExecutionException;
-import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.packet.CoapPacket;
 
 /**
  * @author szymon
