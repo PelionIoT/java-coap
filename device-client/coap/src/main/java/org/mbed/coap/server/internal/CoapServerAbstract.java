@@ -21,7 +21,6 @@ import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
 
 /**
- *
  * @author szymon
  */
 public abstract class CoapServerAbstract implements TransportReceiver {
@@ -66,7 +65,7 @@ public abstract class CoapServerAbstract implements TransportReceiver {
      * @param adr destination address
      * @param tranContext transport context
      * @throws CoapException exception from CoAP layer
-     * @throws IOException exception from transport layer
+     * @throws IOException   exception from transport layer
      */
     protected abstract void send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException;
 

@@ -4,12 +4,12 @@
 
 package org.mbed.coap.server;
 
-import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.packet.CoapPacket;
 
 /**
  * Callback interface for Coap Server error cases.
- * 
+ *
  * @author nordav01
  */
 public interface CoapErrorCallback {

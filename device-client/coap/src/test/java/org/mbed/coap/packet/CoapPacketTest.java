@@ -16,7 +16,6 @@ import org.mbed.coap.linkformat.LinkFormatBuilder;
 import org.testng.annotations.Test;
 
 /**
- *
  * @author szymon
  */
 public class CoapPacketTest {

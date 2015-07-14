@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.packet;
 
@@ -98,9 +98,9 @@ public final class BlockOption implements Serializable {
             retPayload = origPayload;
         }
         System.arraycopy(block, 0, retPayload, blockNr * getSize(), block.length);
-//        for (int i=0;i<block.length;i++){
-//            retPayload[i+blockNr*getSize()] = block[i];
-//        }
+        //        for (int i=0;i<block.length;i++){
+        //            retPayload[i+blockNr*getSize()] = block[i];
+        //        }
         //LOGGER.trace("appendPayload() origPayload-len: " + origPayload.length + " block-len: " +block.length + " size: " + size +  " nr: " + blockNr );
         return retPayload;
     }

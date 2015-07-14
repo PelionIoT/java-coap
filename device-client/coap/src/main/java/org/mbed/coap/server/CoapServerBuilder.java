@@ -74,6 +74,7 @@ public class CoapServerBuilder {
 
     /**
      * Sets maximum number or requests to be kept for duplication detection.
+     *
      * @param duplicationMaxSize maximum size
      * @return this instance
      */

@@ -5,13 +5,12 @@ package org.mbed.coap.observe;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.mbed.coap.exception.CoapTimeoutException;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.exception.CoapTimeoutException;
 import org.mbed.coap.utils.Callback;
 
 /**
- *
  * @author szymon
  */
 class NotificationAckCallback implements Callback<CoapPacket> {

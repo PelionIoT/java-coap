@@ -26,7 +26,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
- *
  * @author szymon
  */
 public abstract class ServerBenchmarkBase {
@@ -121,6 +120,7 @@ public abstract class ServerBenchmarkBase {
         public InetSocketAddress getLocalSocketAddress() {
             return addrArr[0];
         }
+
         private int addIndex = 0;
 
         public boolean receive(ByteBuffer data) {

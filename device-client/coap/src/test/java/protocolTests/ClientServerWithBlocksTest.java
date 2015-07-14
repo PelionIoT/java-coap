@@ -56,11 +56,11 @@ public class ClientServerWithBlocksTest {
         server.setBlockSize(BlockSize.S_128);
         server.start();
         SERVER_PORT = server.getLocalSocketAddress().getPort();
-//        server = new CoapServerOLD();
-//        server.addHandler("/test/1", new SimpleCoapResource("Dziala"));
-//        server.addHandler("/test2", new TestResource());
-//        server.addHandler("/bigResource", new BigResource() );
-//        server.start();
+        //        server = new CoapServerOLD();
+        //        server.addHandler("/test/1", new SimpleCoapResource("Dziala"));
+        //        server.addHandler("/test2", new TestResource());
+        //        server.addHandler("/bigResource", new BigResource() );
+        //        server.start();
     }
 
     @AfterMethod
@@ -215,9 +215,9 @@ public class ClientServerWithBlocksTest {
     public void incompleteBlockRequest() throws Exception {
         String body = "gdfgdjgdfgdj";
         CoapServer cnn = CoapServerBuilder.newBuilder().build().start();
-//        CoapConnection cnn = CoapConnection.create(new InetSocketAddress("127.0.0.1", SERVER_PORT));
+        //        CoapConnection cnn = CoapConnection.create(new InetSocketAddress("127.0.0.1", SERVER_PORT));
 
-//        CoapPacket request = cnn.makeCoapMessage(Method.PUT, "/chang-res", body.getBytes(), 0);
+        //        CoapPacket request = cnn.makeCoapMessage(Method.PUT, "/chang-res", body.getBytes(), 0);
         CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.setPayload(body);
         request.headers().setBlock1Req(new BlockOption(1, BlockSize.S_128, true));
@@ -231,9 +231,9 @@ public class ClientServerWithBlocksTest {
     public void blockRequestWithWrongToken() throws Exception {
         String body = "gdfgdjgdfgdj";
         CoapServer client = CoapServerBuilder.newBuilder().build().start();
-//        CoapConnection cnn = CoapConnection.create(new InetSocketAddress("127.0.0.1", SERVER_PORT));
+        //        CoapConnection cnn = CoapConnection.create(new InetSocketAddress("127.0.0.1", SERVER_PORT));
 
-//        CoapPacket request = cnn.makeCoapMessage(Method.PUT, "/chang-res", body.getBytes(), 0);
+        //        CoapPacket request = cnn.makeCoapMessage(Method.PUT, "/chang-res", body.getBytes(), 0);
         CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
         request.setPayload(body);
         request.headers().setBlock1Req(new BlockOption(0, BlockSize.S_128, true));

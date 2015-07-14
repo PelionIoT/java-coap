@@ -1,9 +1,7 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
-
-import org.mbed.coap.server.CoapServerBuilder;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -11,12 +9,12 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportConnector;
 
 /**
- *
  * @author szymon
  */
 public final class CoapClientBuilder {

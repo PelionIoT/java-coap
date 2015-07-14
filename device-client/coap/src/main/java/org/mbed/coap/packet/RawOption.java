@@ -7,8 +7,8 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 /**
-* @author szymon
-*/
+ * @author szymon
+ */
 class RawOption implements Comparable<RawOption>, Serializable {
 
     int optNumber;

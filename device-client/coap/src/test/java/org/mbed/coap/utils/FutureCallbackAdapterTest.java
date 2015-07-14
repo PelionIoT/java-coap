@@ -10,7 +10,6 @@ import java.util.concurrent.TimeoutException;
 import org.testng.annotations.Test;
 
 /**
- *
  * @author szymon
  */
 public class FutureCallbackAdapterTest {

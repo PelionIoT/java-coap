@@ -8,7 +8,6 @@ import org.mbed.coap.packet.Code;
 import org.mbed.coap.server.CoapExchange;
 
 /**
- *
  * @author szymon
  */
 public class SimpleCoapResource extends CoapResource {
@@ -33,9 +32,9 @@ public class SimpleCoapResource extends CoapResource {
         this(body, resourceType, null, -1);
     }
 
-//    public SimpleCoapResource(String body, String resourceType, Short contentType) {
-//        this(body, resourceType, contentType, -1);
-//    }
+    //    public SimpleCoapResource(String body, String resourceType, Short contentType) {
+    //        this(body, resourceType, contentType, -1);
+    //    }
     public SimpleCoapResource(String body, String resourceType, Short contentType, int maxAgeSeconds) {
         this.resourceBody = body;
         if (maxAgeSeconds >= 0) {

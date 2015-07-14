@@ -14,7 +14,6 @@ import org.mbed.coap.utils.HexArray;
 import org.testng.annotations.Test;
 
 /**
- *
  * @author szymon
  */
 public class HeaderOptionTest {
@@ -359,7 +358,7 @@ public class HeaderOptionTest {
     public void malformedHeaderWithIllegalDelta() throws IOException, CoapMessageFormatException {
         BasicHeaderOptions hdr = new BasicHeaderOptions();
         hdr.deserialize(new ByteArrayInputStream(new byte[]{(byte) 0xF3}));
-    }    
+    }
 
     @Test
     public void split() {
@@ -371,9 +370,9 @@ public class HeaderOptionTest {
         assertEquals("/1//3".split("/"), DataConvertingUtility.split("/1//3", '/'));
         assertEquals("/1/432fsdfs/3fds".split("/"), DataConvertingUtility.split("/1/432fsdfs/3fds", '/'));
         assertEquals("boo:and:foo".split("x"), DataConvertingUtility.split("boo:and:foo", 'x'));
-    
+
     }
-    
+
     @Test
     public void uriPath_withMultipleEmptyPathSegments() throws Exception {
         HeaderOptions hdr = new HeaderOptions();

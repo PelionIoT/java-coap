@@ -17,7 +17,6 @@ import org.mbed.coap.transport.AbstractTransportConnector;
 import org.mbed.coap.transport.TransportContext;
 
 /**
- *
  * @author szymon
  */
 public final class MulticastSocketTransport extends AbstractTransportConnector {
