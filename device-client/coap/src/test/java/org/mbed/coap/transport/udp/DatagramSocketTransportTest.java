@@ -64,8 +64,8 @@ public class DatagramSocketTransportTest {
     }
 
     @Test
-    public void initializeWithParameters() throws IOException {
-        DatagramSocketTransport trans = new DatagramSocketTransport(0);
+    public void initializeWithParameters() throws Exception {
+        DatagramSocketTransport trans = new DatagramSocketTransport(new InetSocketAddress(0), false);
         trans.setReuseAddress(false);
         trans.setSocketBufferSize(12345);
         trans.start(mock(TransportReceiver.class));
