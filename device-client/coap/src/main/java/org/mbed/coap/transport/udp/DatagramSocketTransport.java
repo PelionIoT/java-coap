@@ -26,8 +26,8 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
     private int socketBufferSize = -1;
     protected boolean reuseAddress;
 
-    public DatagramSocketTransport(InetSocketAddress bindSocket) {
-        super(bindSocket);
+    public DatagramSocketTransport(InetSocketAddress bindSocket, boolean initReaderThread) {
+        super(bindSocket, initReaderThread);
     }
 
     public DatagramSocketTransport(int localPort) {
