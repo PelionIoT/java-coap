@@ -30,6 +30,10 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
         super(bindSocket, initReaderThread);
     }
 
+    public DatagramSocketTransport(InetSocketAddress bindSocket) {
+        super(bindSocket);
+    }
+
     public DatagramSocketTransport(int localPort) {
         super(localPort);
     }
