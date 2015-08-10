@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.utils;
 
@@ -21,7 +21,7 @@ public class ByteArrayBackedInputStream extends InputStream {
     public ByteArrayBackedInputStream(ByteArrayBackedOutputStream stream) {
         this.buffer = stream.buffer;
         this.position = 0;
-        this.count = buffer.length;
+        this.count = stream.position;
     }
 
     public ByteArrayBackedInputStream(byte buf[]) {
