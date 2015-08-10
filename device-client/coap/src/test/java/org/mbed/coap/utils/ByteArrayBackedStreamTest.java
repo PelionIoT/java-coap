@@ -71,4 +71,19 @@ public class ByteArrayBackedStreamTest {
         assertEquals(3, stream.skip(3));
         stream.skip(2);
     }
+
+    @Test
+    public void babInputFromBabOuput() throws Exception {
+        ByteArrayBackedOutputStream output = new ByteArrayBackedOutputStream();
+        output.write(1);
+        output.write(2);
+        output.write(3);
+
+        ByteArrayBackedInputStream input = new ByteArrayBackedInputStream(output);
+        assertEquals(1, input.read());
+        assertEquals(2, input.read());
+        assertEquals(3, input.read());
+
+        assertEquals(0, input.available());
+    }
 }
