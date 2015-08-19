@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.packet;
 
@@ -119,7 +119,6 @@ public class HeaderOptions extends BasicHeaderOptions {
     }
 
     @Override
-    @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.NPathComplexity", "PMD.PrematureDeclaration"})
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;
@@ -127,10 +126,10 @@ public class HeaderOptions extends BasicHeaderOptions {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final HeaderOptions other = (HeaderOptions) obj;
         if (!super.equals(obj)) {
             return false;
         }
+        final HeaderOptions other = (HeaderOptions) obj;
         if (this.observe != other.observe && (this.observe == null || !this.observe.equals(other.observe))) {
             return false;
         }
