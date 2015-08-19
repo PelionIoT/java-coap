@@ -76,7 +76,7 @@ public class LinkFormatBuilder {
         try {
             lf.uri = subLn[0].substring(subLn[0].indexOf('<') + 1, subLn[0].indexOf('>'));
         } catch (StringIndexOutOfBoundsException ex) {
-            throw new ParseException("Can not parse URI-Reference", 0); //NOPMD
+            throw new ParseException("Can not parse URI-Reference", 0);
         }
 
         for (int i = 1; i < subLn.length; i++) {
