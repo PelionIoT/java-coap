@@ -523,7 +523,6 @@ public class CoapPacket implements Serializable {
     }
 
     @Override
-    @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.NPathComplexity"})
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;
