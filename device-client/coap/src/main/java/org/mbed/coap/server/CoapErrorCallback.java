@@ -13,8 +13,7 @@ import org.mbed.coap.packet.CoapPacket;
  * @author nordav01
  */
 public interface CoapErrorCallback {
-    @SuppressWarnings("PMD.UnusedModifier") //bug in pmd
-    static final CoapErrorCallback NULL = new CoapErrorCallback() {
+    CoapErrorCallback NULL = new CoapErrorCallback() {
         @Override
         public void parserError(byte[] packet, CoapException exception) {
             //ignore

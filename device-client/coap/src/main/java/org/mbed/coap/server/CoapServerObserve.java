@@ -75,7 +75,7 @@ public class CoapServerObserve extends CoapServerBlocks {
     /**
      * Interface for generating observation IDs.
      */
-    public static interface ObservationIDGenerator {    //NOPMD
+    public interface ObservationIDGenerator {
 
         /**
          * Returns next observation id.
