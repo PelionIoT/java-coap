@@ -11,8 +11,7 @@ public interface Callback<T> {
     /**
      * Callback instance that will ignore all calls
      */
-    @SuppressWarnings("PMD.UnusedModifier")
-    static final Callback IGNORE = new Callback() {
+    Callback IGNORE = new Callback() {
         @Override
         public void callException(Exception ex) {
             //ignore

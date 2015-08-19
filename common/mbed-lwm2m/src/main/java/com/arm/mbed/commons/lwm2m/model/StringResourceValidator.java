@@ -1,12 +1,12 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package com.arm.mbed.commons.lwm2m.model;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author nordav01
@@ -71,11 +71,10 @@ import java.util.HashSet;
          }
      }
      
-     @SuppressWarnings("PMD.SimplifyStartsWith")
      static ResourceValidator createResourceValidator (String range) {
-         if (range.startsWith("{") && range.endsWith("}")) {
+         if (!range.isEmpty() && range.charAt(0) == '{' && range.endsWith("}")) {
              return new StringLengthValidator(range.substring(1, range.length()-1));
-         } else if (range.startsWith("[") && range.endsWith("]")) {
+         } else if (!range.isEmpty() && range.charAt(0) == '[' && range.endsWith("]")) {
              return new StringOptionsValidator(range.substring(1, range.length()-1));
          }
          

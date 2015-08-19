@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package com.arm.mbed.commons.lwm2m.model;
 
@@ -56,9 +56,8 @@ public class OpaqueResourceValidator {
 
     }
 
-    @SuppressWarnings("PMD.SimplifyStartsWith")
     static ResourceValidator createResourceValidator(String range) {
-        if (range.startsWith("{") && range.endsWith("}")) {
+        if (!range.isEmpty() && range.charAt(0) == '{' && range.endsWith("}")) {
             return new OpaqueLengthValidator(range.substring(1, range.length() - 1));
         }
 

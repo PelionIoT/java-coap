@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package com.arm.mbed.commons.lwm2m.tlv;
 
@@ -7,8 +7,8 @@ import static com.arm.mbed.commons.lwm2m.tlv.TLV.*;
 import com.arm.mbed.commons.lwm2m.LWM2MObjectInstance;
 import com.arm.mbed.commons.lwm2m.LWM2MResource;
 import com.arm.mbed.commons.lwm2m.LWM2MResourceInstance;
-import java.util.Arrays;
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -128,12 +128,10 @@ public class TLVSerializer {
         return stream.toByteArray();
     }
 
-    @SuppressWarnings("PMD.UnusedPrivateMethod")    // PMD bug?
     private static ByteArrayOutputStream serialize(int id, LWM2MObjectInstance object, ByteArrayOutputStream stream) {
         return serializeTILV(TYPE_OBJECT_INSTANCE, id, serializeResources(object.getResources() ), stream);
     }
     
-    @SuppressWarnings("PMD.UnusedPrivateMethod")    // PMD bug?
     private static ByteArrayOutputStream serialize (LWM2MResource resource, ByteArrayOutputStream stream) {
         return resource.hasNestedInstances() 
                 ? serializeMultipleResource(resource, stream) 
