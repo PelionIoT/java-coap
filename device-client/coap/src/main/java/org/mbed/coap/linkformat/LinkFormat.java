@@ -61,15 +61,15 @@ public class LinkFormat implements Serializable {
             }
             parse(paramName, lf, val);
         } catch (NumberFormatException ex) {
-            throw new ParseException(ex.getMessage(), 0);   //NOPMD
+            throw new ParseException(ex.getMessage(), 0);
         } catch (IllegalArgumentException ex) {
-            throw new ParseException(ex.getMessage(), 0);   //NOPMD
+            throw new ParseException(ex.getMessage(), 0);
         } catch (ClassCastException ex) {
-            throw new ParseException("Expected ptoken value (without quotes)", 0);  //NOPMD
+            throw new ParseException("Expected ptoken value (without quotes)", 0);
         } catch (NullPointerException ex) {     //NOPMD
-            throw new ParseException("Expected value for parameter", 0);    //NOPMD
+            throw new ParseException("Expected value for parameter", 0);
         } catch (Exception ex) {
-            throw new ParseException(ex.getMessage(), 0);   //NOPMD
+            throw new ParseException(ex.getMessage(), 0);
         }
     }
 
