@@ -23,6 +23,7 @@ public class SimpleCallbackAdapter<V> implements Callback<V> {
         this.exception = exception;
     }
 
+    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     public V get() throws Exception {
         if (exception != null) {
             throw exception;
