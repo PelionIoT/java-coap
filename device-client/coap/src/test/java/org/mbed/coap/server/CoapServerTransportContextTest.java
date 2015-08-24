@@ -12,8 +12,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
+import org.mbed.coap.client.ObservationListener;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.observe.SimpleObservableResource;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
@@ -37,6 +39,7 @@ public class CoapServerTransportContextTest {
     public void setUp() throws IOException {
         server = CoapServerBuilder.newBuilder().transport(srvTransport).build();
         server.addRequestHandler("/test", coapResourceTest);
+        server.addRequestHandler("/obs", new SimpleObservableResource("A", server));
         server.start();
     }
 
@@ -79,6 +82,22 @@ public class CoapServerTransportContextTest {
         verify(cliTransport, times(3)).send(isA(byte[].class), anyInt(), isA(InetSocketAddress.class), eq(new TextTransportContext("client-block")));
 
         client.close();
+    }
+
+    @Test
+    public void shouldObserveWithTransportContext() throws Exception {
+        InMemoryTransport cliTransport = spy(new InMemoryTransport());
+        CoapClient client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(5683)).transport(cliTransport).build();
+
+        srvTransport.setTransportContext(new TextTransportContext("dupa"));
+        CoapPacket resp = client.resource("/obs").context(new TextTransportContext("client-block")).sync().observe(mock(ObservationListener.class));
+
+        assertEquals(Code.C205_CONTENT, resp.getCode());
+
+        verify(cliTransport).send(isA(byte[].class), anyInt(), isA(InetSocketAddress.class), eq(new TextTransportContext("client-block")));
+
+        client.close();
+
     }
 
     private static class TextTransportContext extends TransportContext {

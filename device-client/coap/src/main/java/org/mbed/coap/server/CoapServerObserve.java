@@ -12,6 +12,7 @@ import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.DataConvertingUtility;
 import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.packet.Method;
+import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
 
 /**
@@ -28,15 +29,15 @@ public class CoapServerObserve extends CoapServerBlocks {
     }
 
     @Override
-    public byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token) throws CoapException {
+    public byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) throws CoapException {
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, uri, destination);
         request.setToken(token);
         request.headers().setObserve(0);
-        return observe(request, respCallback);
+        return observe(request, respCallback, transportContext);
     }
 
     @Override
-    public byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback) throws CoapException {
+    public byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback, TransportContext transportContext) throws CoapException {
         if (request.headers().getObserve() == null) {
             request.headers().setObserve(0);
         }
@@ -58,7 +59,7 @@ public class CoapServerObserve extends CoapServerBlocks {
                 }
                 respCallback.call(resp);
             }
-        });
+        }, transportContext);
         return request.getToken();
     }
 
