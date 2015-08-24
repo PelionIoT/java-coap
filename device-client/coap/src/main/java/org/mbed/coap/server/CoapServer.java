@@ -856,7 +856,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @return observation identification
      * @throws CoapException coap exception
      */
-    public abstract byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token) throws CoapException;
+    public abstract byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) throws CoapException;
 
-    public abstract byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback) throws CoapException;
+    public abstract byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback, TransportContext transportContext) throws CoapException;
 }
