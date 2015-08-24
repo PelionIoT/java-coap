@@ -221,7 +221,7 @@ public class CoapRequestTarget {
 
             requestPacket.headers().setObserve(0);
             FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-            coapClient.putObservationListener(observationListener, coapClient.coapServer.observe(requestPacket, callback), requestPacket.headers().getUriPath());
+            coapClient.putObservationListener(observationListener, coapClient.coapServer.observe(requestPacket, callback, transContext), requestPacket.headers().getUriPath());
 
             return callback;
         } else {
