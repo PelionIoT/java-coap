@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
  */
 package com.arm.mbed.commons.lwm2m.transport;
 
@@ -13,6 +13,8 @@ public final class TransportBinding {
     private final boolean isUDP;
     private final boolean isSMS;
     private final boolean isQueueMode;
+
+    public static final TransportBinding DEFAULT = new TransportBinding(true, false, false);
 
     TransportBinding(boolean isUDP, boolean isSMS, boolean isQueueMode) {
         this.isUDP = isUDP;
