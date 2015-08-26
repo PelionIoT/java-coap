@@ -578,11 +578,13 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
                 if (packet.getMustAcknowledge()) {
                     send(packet.createResponse(), packet.getRemoteAddress(), TransportContext.NULL);
                 }
-                trans.getCallback().call(packet);
+                if (trans.getCallback() != null) {
+                    trans.getCallback().call(packet);
+                }
             } catch (Exception ex) {
                 try {
-                    send(packet.createResponse(Code.C500_INTERNAL_SERVER_ERROR), packet.getRemoteAddress(), TransportContext.NULL);
                     LOGGER.log(Level.SEVERE, "Error while handling delayed response: " + ex.getMessage(), ex);
+                    send(packet.createResponse(Code.C500_INTERNAL_SERVER_ERROR), packet.getRemoteAddress(), TransportContext.NULL);
                 } catch (CoapException | IOException ex1) {
                     LOGGER.log(Level.SEVERE, ex1.getMessage(), ex1);
                 }
