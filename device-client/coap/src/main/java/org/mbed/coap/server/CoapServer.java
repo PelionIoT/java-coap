@@ -438,7 +438,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
 
         transport.send(stream.getByteArray(), stream.size(), adr, tranContext);
         if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest("CoAP sent [" + coapPacket + "]");
+            LOGGER.finest("CoAP sent [" + coapPacket.toString(true) + "]");
+        } else if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("CoAP sent [" + coapPacket.toString(false) + "]");
         }
         EVENT_LOGGER.info(EventLogger.COAP_SENT, adr, new EventLoggerCoapPacket(coapPacket));
     }
