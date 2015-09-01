@@ -59,7 +59,7 @@ public abstract class AbstractTransportConnector implements TransportConnector {
 
         if (initReaderThread) {
             //start reading thread
-            readerThread = new Thread(this::receiveWhileRunning);
+            readerThread = new Thread(this::receiveWhileRunning, "transport-receiver");
             readerThread.start();
         }
     }
