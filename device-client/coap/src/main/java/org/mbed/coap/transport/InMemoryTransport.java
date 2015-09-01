@@ -5,10 +5,10 @@ package org.mbed.coap.transport;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -24,7 +24,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
 
     private static final Logger LOGGER = Logger.getLogger(InMemoryTransport.class.getName());
     public final static String LOCALHOST = "localhost";
-    private static final Map<IpPortAddress, BlockingQueue<DatagramMessage>> BIND_CONNECTORS = new HashMap<>();
+    private static final Map<IpPortAddress, BlockingQueue<DatagramMessage>> BIND_CONNECTORS = new ConcurrentHashMap<>();
     private TransportContext transportContext;
     private BlockingQueue<DatagramMessage> queue;
 
