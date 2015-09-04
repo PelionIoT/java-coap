@@ -8,7 +8,7 @@
     <parent>
         <artifactId>device-client</artifactId>
         <groupId>org.mbed</groupId>
-        <version>2.5.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
     <packaging>jar</packaging>
 
