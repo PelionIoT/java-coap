@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.utils;
 
 import java.io.Serializable;
@@ -32,6 +35,10 @@ public class IpPortAddress implements Serializable {
 
     public IpPortAddress(InetSocketAddress address) {
         this(address.getAddress().getAddress(), address.getPort());
+    }
+
+    public static IpPortAddress of(InetSocketAddress address) {
+        return new IpPortAddress(address);
     }
 
     public byte[] getIp() {
