@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>com.mbed</groupId>
-            <artifactId>commons</artifactId>
+            <artifactId>mbed-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
