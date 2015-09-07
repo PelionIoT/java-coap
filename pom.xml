@@ -6,7 +6,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.arm.mbed</groupId>
+        <groupId>com.mbed</groupId>
         <artifactId>mbed-commons-aggregate</artifactId>
         <version>3.0.0-SNAPSHOT</version>
     </parent>
@@ -15,7 +15,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.arm.mbed</groupId>
+            <groupId>com.mbed</groupId>
             <artifactId>commons</artifactId>
             <version>${project.version}</version>
         </dependency>
