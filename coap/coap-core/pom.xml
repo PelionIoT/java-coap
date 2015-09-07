@@ -6,13 +6,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>device-client</artifactId>
-        <groupId>org.mbed</groupId>
+        <artifactId>coap-root</artifactId>
+        <groupId>com.mbed</groupId>
         <version>3.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>jar</packaging>
 
-    <artifactId>coap</artifactId>
+    <artifactId>coap-core</artifactId>
 
     <build>
         <plugins>
