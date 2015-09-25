@@ -479,7 +479,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
                 return;
             } else if (handleDelayedResponse(packet)) {
                 return;
-            } else if (handleObservation(packet)) {
+            } else if (handleObservation(packet, transportContext)) {
                 return;
             }
         }
@@ -513,7 +513,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         return false;
     }
 
-    private boolean handleObservation(CoapPacket packet) {
+    private boolean handleObservation(CoapPacket packet, TransportContext context) {
         if (packet.headers().getObserve() != null || (observationHandler != null && observationHandler.hasObservation(packet.getToken()))) {
             if (packet.getMessageType() == MessageType.Reset || packet.headers().getObserve() == null
                     || (packet.getCode() != Code.C205_CONTENT && packet.getCode() != Code.C203_VALID)) {
@@ -531,7 +531,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
                     if (LOGGER.isLoggable(Level.FINEST)) {
                         LOGGER.finest("Notification [" + packet.getRemoteAddress() + "]");
                     }
-                    CoapExchange exchange = new CoapExchangeImpl(packet, this);
+                    CoapExchange exchange = new CoapExchangeImpl(packet, this, context);
                     observationHandler.call(exchange);
                 }
                 return true;
