@@ -24,36 +24,13 @@ public class InMemoryTransport extends AbstractTransportConnector {
 
     private static final Logger LOGGER = Logger.getLogger(InMemoryTransport.class.getName());
     public final static String LOCALHOST = "localhost";
-    private static final Map<IpPortAddress, BlockingQueue<DatagramMessage>> BIND_CONNECTORS = new ConcurrentHashMap<>();
     private TransportContext transportContext;
     private BlockingQueue<DatagramMessage> queue;
+    private final static BindingManager BINDING_MANAGER = new BindingManager();
+
 
     public static InetSocketAddress createAddress(int port) {
-        if (port == 0) {
-            return new InetSocketAddress(LOCALHOST, getFreePort());
-        }
-        return new InetSocketAddress(LOCALHOST, port);
-    }
-
-    private static void bind(IpPortAddress addr, BlockingQueue<DatagramMessage> queue) {
-        BIND_CONNECTORS.put(addr, queue);
-    }
-
-    private static int getFreePort() {
-        Random rnd = new Random();
-        int port;
-        while (true) {
-            port = rnd.nextInt(0xFFFF);
-            if (!BIND_CONNECTORS.containsKey(new IpPortAddress(createAddress(port)))) {
-                LOGGER.finest("getFreePort() " + port);
-                return port;
-            }
-        }
-
-    }
-
-    private static void unbind(IpPortAddress addr) {
-        BIND_CONNECTORS.remove(addr);
+        return BINDING_MANAGER.createAddress(port);
     }
 
     public static TransportConnector create(int port) {
@@ -61,7 +38,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
     }
 
     public static TransportConnector create() {
-        return new InMemoryTransport(createAddress(getFreePort()));
+        return new InMemoryTransport(BINDING_MANAGER.createRandomPortAddress());
     }
 
     public static TransportConnector create(InetSocketAddress bindSocket) {
@@ -73,7 +50,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
     }
 
     public InMemoryTransport() {
-        this(createAddress(getFreePort()));
+        this(BINDING_MANAGER.createRandomPortAddress());
     }
 
     private InMemoryTransport(InetSocketAddress bindSocket) {
@@ -83,7 +60,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
     @Override
     protected void initialize() throws IOException {
         queue = new LinkedBlockingQueue<>();
-        bind(new IpPortAddress(getBindSocket()), queue);
+        BINDING_MANAGER.bind(new IpPortAddress(getBindSocket()), queue);
     }
 
     public void start() throws IOException {
@@ -92,7 +69,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
 
     @Override
     public void stop() {
-        unbind(new IpPortAddress(getBindSocket()));
+        BINDING_MANAGER.unbind(new IpPortAddress(getBindSocket()));
         super.stop();
     }
 
@@ -112,7 +89,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
 
     @Override
     public void send(byte[] data, int len, InetSocketAddress adr, TransportContext transContext) throws IOException {
-        BlockingQueue<DatagramMessage> q = BIND_CONNECTORS.get(new IpPortAddress(adr));
+        BlockingQueue<DatagramMessage> q = BINDING_MANAGER.getQueueByAddress(adr);
         if (q != null) {
             q.add(new DatagramMessage(new IpPortAddress(getBindSocket()), data, len));
         }
@@ -146,5 +123,52 @@ public class InMemoryTransport extends AbstractTransportConnector {
             }
         }
 
+    }
+
+    static class BindingManager {
+        private final Random random;
+        private final Map<IpPortAddress, BlockingQueue<DatagramMessage>> BIND_CONNECTORS = new ConcurrentHashMap<>();
+
+        BindingManager() {
+            this(new Random());
+        }
+
+        BindingManager(Random rnd) {
+            random = rnd;
+        }
+
+        public InetSocketAddress createAddress(int port) {
+            if (port == 0) {
+                return new InetSocketAddress(LOCALHOST, getFreePort());
+            }
+            return new InetSocketAddress(LOCALHOST, port);
+        }
+
+        public InetSocketAddress createRandomPortAddress() {
+            return createAddress(0);
+        }
+
+        public int getFreePort() {
+            while (true) {
+                int port = random.nextInt(0xFFFE) + 1;
+                if (!BIND_CONNECTORS.containsKey(new IpPortAddress(createAddress(port)))) {
+                    LOGGER.finest("getFreePort() " + port);
+                    return port;
+                }
+            }
+
+        }
+
+        public void bind(IpPortAddress addr, BlockingQueue<DatagramMessage> queue) {
+            BIND_CONNECTORS.put(addr, queue);
+        }
+
+        public void unbind(IpPortAddress addr) {
+            BIND_CONNECTORS.remove(addr);
+        }
+
+        public BlockingQueue<DatagramMessage> getQueueByAddress(InetSocketAddress adr) {
+            return BIND_CONNECTORS.get(new IpPortAddress(adr));
+        }
     }
 }
