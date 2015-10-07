@@ -45,4 +45,8 @@ final class MessageHandlerTask implements Runnable {
         }
     }
 
+    @Override
+    public String toString() {
+        return String.format("CoAP message handler[src=%s, size=%d]", address, packet.length);
+    }
 }
