@@ -48,9 +48,9 @@ public class TLVSerializer {
     /**
      * Serialises given resources with no information about the parent object
      * instance. This method must be used when an operation targets an object
-     * instance like "GET /1/0" or a single-instance object like "GET /3//".
+     * instance like "GET /1/0" or a single-instance object like "GET /3/0/".
      * Resources may have single or multiple instances. The generated TLV will 
-     * contain the following data as response to "GET /3//":
+     * contain the following data as response to "GET /3/0/":
      * <ul>
      * <li> ./0
      * <li> ./1
@@ -103,9 +103,9 @@ public class TLVSerializer {
     /**
      * Serialises a list of resources with no information about the parent object
      * instance. This method must be used when an operation targets an object
-     * instance like "GET /1/0" or a single-instance object like "GET /3//".
+     * instance like "GET /1/0" or a single-instance object like "GET /3/0/".
      * Resources may have single or multiple instances. The generated TLV will 
-     * contain the following data as response to "GET /3//":
+     * contain the following data as response to "GET /3/0/":
      * <ul>
      * <li> ./0
      * <li> ./1
