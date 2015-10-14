@@ -254,14 +254,14 @@ public class CoapPacketTest {
     @Test
     public void uriPathWithDoubleSlashes() throws CoapException {
         CoapPacket cp = new CoapPacket(null);
-        cp.headers().setUriPath("/3/13//");
+        cp.headers().setUriPath("/3/13/0/");
         cp.headers().setLocationPath("/2//1");
         cp.headers().setUriQuery("te=12&&ble=14");
         cp.toByteArray();
 
         CoapPacket cp2 = CoapPacket.read(null, cp.toByteArray());
         assertEquals(cp, cp2);
-        assertEquals("/3/13//", cp2.headers().getUriPath());
+        assertEquals("/3/13/0/", cp2.headers().getUriPath());
         assertEquals("/2//1", cp2.headers().getLocationPath());
     }
 }
