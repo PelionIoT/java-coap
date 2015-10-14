@@ -1,13 +1,7 @@
 package com.arm.mbed.commons.lwm2m.model;
 
-import static com.arm.mbed.commons.lwm2m.model.Type.EXECUTABLE;
-import static com.arm.mbed.commons.lwm2m.model.Type.STRING;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import com.arm.mbed.commons.lwm2m.model.InvalidResourceURIException;
-import com.arm.mbed.commons.lwm2m.model.ObjectRegistry;
-import com.arm.mbed.commons.lwm2m.model.Type;
+import static com.arm.mbed.commons.lwm2m.model.Type.*;
+import static org.junit.Assert.*;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -35,7 +29,7 @@ public class ObjectRegistryTest {
 
     @Test
     public void getTypeOfResourceOfSingleObject() throws Exception {
-        Type type = registry.getOmaResourceType("/3//4");
+        Type type = registry.getOmaResourceType("/3/0/4");
         assertEquals(EXECUTABLE, type);
     }
 
