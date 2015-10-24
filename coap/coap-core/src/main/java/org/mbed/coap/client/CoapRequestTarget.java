@@ -72,6 +72,11 @@ public class CoapRequestTarget {
         return this;
     }
 
+    public CoapRequestTarget contentFormat(int contentFormat) {
+        requestPacket.headers().setContentFormat(((short) contentFormat));
+        return this;
+    }
+
     public CoapRequestTarget token(long token) {
         requestPacket.setToken(DataConvertingUtility.convertVariableUInt(token));
         return this;

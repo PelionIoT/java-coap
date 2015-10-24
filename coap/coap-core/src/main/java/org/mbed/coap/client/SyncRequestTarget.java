@@ -6,6 +6,7 @@ package org.mbed.coap.client;
 import java.util.concurrent.ExecutionException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.Method;
 
 /**
  * @author szymon
@@ -23,6 +24,21 @@ public class SyncRequestTarget {
             return coapRequestTarget.put().get();
         } catch (Exception ex) {
             throw handleException(ex);
+        }
+    }
+
+    public CoapPacket invokeMethod(Method method) throws CoapException {
+        switch (method) {
+            case GET:
+                return get();
+            case DELETE:
+                return delete();
+            case PUT:
+                return put();
+            case POST:
+                return post();
+            default:
+                throw new RuntimeException("Method not supported");
         }
     }
 
