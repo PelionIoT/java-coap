@@ -290,6 +290,10 @@ public class CoapPacket implements Serializable {
      * @param messageID message ID
      */
     public synchronized void setMessageId(int messageID) {
+        if (messageID > 65535 || messageID < 0) {
+            throw new IllegalArgumentException("invalid messageid, should be within range 0-65535: " + messageID);
+        }
+
         this.messageId = messageID;
     }
 

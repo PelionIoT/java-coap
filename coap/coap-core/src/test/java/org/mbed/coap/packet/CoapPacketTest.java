@@ -264,4 +264,30 @@ public class CoapPacketTest {
         assertEquals("/3/13/0/", cp2.headers().getUriPath());
         assertEquals("/2//1", cp2.headers().getLocationPath());
     }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void messageIdTooBig() {
+        CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
+        cp.setMessageId(65536);
+    }
+
+    @Test
+    public void messageIdMaxLimit() {
+        CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
+        cp.setMessageId(65535);
+        assertEquals(65535, cp.getMessageId());
+    }
+
+    @Test
+    public void messageIdMinLimit() {
+        CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
+        cp.setMessageId(0);
+        assertEquals(0, cp.getMessageId());
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void messageIdNegative() {
+        CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
+        cp.setMessageId(-1);
+    }
 }
