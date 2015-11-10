@@ -232,7 +232,10 @@ public class CoapPacket implements Serializable {
             response.setMessageId(this.messageId);
             response.setMessageType(MessageType.Acknowledgement);
             response.setCode(responseCode);
-            response.setToken(getToken());
+            if (responseCode != null) {
+                response.setToken(getToken());
+                //do not put token into empty-ack
+            }
             return response;
         }
 

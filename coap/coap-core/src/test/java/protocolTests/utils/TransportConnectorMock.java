@@ -21,6 +21,7 @@ public class TransportConnectorMock implements TransportConnector {
 
     private TransportReceiver transReceiver;
     private final Map<CoapPacket, CoapPacket[]> conversationMap = new LinkedHashMap<>(); //order is important
+    private CoapPacket lastOutgoingMessage = null;
 
     @Override
     public void start(TransportReceiver transReceiver) throws IOException {
@@ -44,6 +45,7 @@ public class TransportConnectorMock implements TransportConnector {
                     }
                 }
             }
+            lastOutgoingMessage = request;
         } catch (CoapException e) {
             e.printStackTrace();
         }
@@ -56,6 +58,10 @@ public class TransportConnectorMock implements TransportConnector {
             e.printStackTrace();
         }
 
+    }
+
+    public CoapPacket getLastOutgoingMessage() {
+        return lastOutgoingMessage;
     }
 
     private CoapPacket[] findResponse(CoapPacket coapPacket) {

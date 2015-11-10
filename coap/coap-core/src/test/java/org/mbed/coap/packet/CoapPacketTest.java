@@ -4,6 +4,7 @@
 package org.mbed.coap.packet;
 
 import static org.testng.Assert.*;
+import static protocolTests.utils.CoapPacketBuilder.*;
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.text.ParseException;
@@ -289,5 +290,16 @@ public class CoapPacketTest {
     public void messageIdNegative() {
         CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
         cp.setMessageId(-1);
+    }
+
+    @Test
+    public void createResponse() throws Exception {
+        //CON 205 MID:321 Token:0x3131
+        assertEquals(newCoapPacket(321).con(Code.C205_CONTENT).token(0x3131).build().createResponse(),
+                newCoapPacket(321).ack(null).build()); //note, no token!
+
+        //CON GET MID:321 Token:0x3131
+        assertEquals(newCoapPacket(321).get().token(0x3131).build().createResponse(),
+                newCoapPacket(321).ack(Code.C205_CONTENT).token(0x3131).build());
     }
 }
