@@ -25,6 +25,7 @@ public class DuplicationDetector implements Runnable {
 
     public static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket(null);
     private static final Logger LOGGER = Logger.getLogger(DuplicationDetector.class.getName());
+    public static final int WARN_FREQ_MILLI = 10000; //show warning message maximum every 10 seconds
 
     private final Lock REDUCE_LOCK = new ReentrantLock();
     private final long requestIdTimeout;
@@ -34,6 +35,7 @@ public class DuplicationDetector implements Runnable {
     private final ScheduledExecutorService scheduledExecutor;
     private ScheduledFuture<?> cleanWorkerFut;
     private final long overSizeMargin;
+    private long nextWarnMessage;
 
     public void setCleanDelayMili(long cleanDelayMili) {
         this.cleanDelayMili = cleanDelayMili;
@@ -75,7 +77,11 @@ public class DuplicationDetector implements Runnable {
                 } catch (Exception e) {
                     LOGGER.log(Level.SEVERE, e.getMessage(), e);
                 }
-                LOGGER.warning("CoAP request duplicate list has reached max size (" + maxSize + "), reduced by " + overSizeMargin);
+
+                if (nextWarnMessage < System.currentTimeMillis()) {
+                    LOGGER.warning("CoAP request duplicate list has reached max size (" + maxSize + "), reduced by " + overSizeMargin);
+                    nextWarnMessage = System.currentTimeMillis() + WARN_FREQ_MILLI;
+                }
             } finally {
                 REDUCE_LOCK.unlock();
             }
