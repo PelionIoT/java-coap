@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -26,17 +25,15 @@ public class DuplicationDetector implements Runnable {
 
     public static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket(null);
     private static final Logger LOGGER = Logger.getLogger(DuplicationDetector.class.getName());
-    private static final long DEFAULT_REQUEST_ID_TIMEOUT = 30000;
-    private static final int DEFAULT_MAX_SIZE = 100000;
-    //
+
     private final Lock REDUCE_LOCK = new ReentrantLock();
     private final long requestIdTimeout;
     private final long maxSize;
     private final ConcurrentMap<CoapRequestId, CoapPacket> requestMap = new ConcurrentHashMap<>();
     private long cleanDelayMili = 10000;
-    private ScheduledExecutorService scheduledExecutor;
+    private final ScheduledExecutorService scheduledExecutor;
     private ScheduledFuture<?> cleanWorkerFut;
-    private long overSizeMargin = 100;
+    private final long overSizeMargin;
 
     public void setCleanDelayMili(long cleanDelayMili) {
         this.cleanDelayMili = cleanDelayMili;
@@ -48,10 +45,6 @@ public class DuplicationDetector implements Runnable {
         this.overSizeMargin = maxSize / 100; //1%
         this.scheduledExecutor = scheduledExecutor;
         LOGGER.fine("Coap duplicate detector init (max traffic: " + (int) (maxSize / (requestIdTimeout / 1000.0d)) + " msg/sec)");
-    }
-
-    public DuplicationDetector() {
-        this(TimeUnit.MILLISECONDS, DEFAULT_REQUEST_ID_TIMEOUT, DEFAULT_MAX_SIZE, Executors.newSingleThreadScheduledExecutor());
     }
 
     public void start() {
