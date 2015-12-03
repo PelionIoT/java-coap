@@ -91,6 +91,17 @@ public class CoapServerExecutorTest {
         cl2.join();
     }
 
+    @Test
+    public void shouldCloseExecutorOnShutdown() throws Exception {
+        CoapServer coapServer = CoapServerBuilder.newBuilder().build();
+        coapServer.start();
+
+        assertFalse(coapServer.getScheduledExecutor().isShutdown());
+
+        coapServer.stop();
+        assertTrue(coapServer.getScheduledExecutor().isShutdown());
+    }
+
     private class SlowResource extends CoapResource {
 
         @Override

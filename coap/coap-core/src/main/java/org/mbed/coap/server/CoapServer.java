@@ -212,6 +212,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             ExecutorService srv = (ExecutorService) executor;
             srv.shutdown();
         }
+        if (isSelfCreatedExecutor) {
+            scheduledExecutor.shutdown();
+        }
         LOGGER.fine("CoAP Server stopped");
     }
 
