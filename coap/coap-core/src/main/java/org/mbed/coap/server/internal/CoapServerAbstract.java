@@ -67,7 +67,14 @@ public abstract class CoapServerAbstract implements TransportReceiver {
      * @throws CoapException exception from CoAP layer
      * @throws IOException   exception from transport layer
      */
-    protected abstract void send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException;
+    protected final void send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+        if (coapPacket.getMessageType() == MessageType.NonConfirmable) {
+            coapPacket.setMessageId(getNextMID());
+        }
+        sendPacket(coapPacket, adr, tranContext);
+    }
+
+    protected abstract void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException;
 
     protected abstract void handle(CoapPacket packet, TransportContext transportContext);
 
@@ -77,6 +84,12 @@ public abstract class CoapServerAbstract implements TransportReceiver {
 
     protected abstract DuplicationDetector getDuplicationDetector();
 
+    protected final void putToDuplicationDetector(CoapPacket request, CoapPacket response) {
+        if (getDuplicationDetector() != null) {
+            getDuplicationDetector().putResponse(request, response);
+        }
+    }
+
     protected void sendResponse(CoapExchange exchange) {
         try {
             CoapPacket resp = exchange.getResponse();
@@ -84,19 +97,14 @@ public abstract class CoapServerAbstract implements TransportReceiver {
                 //nothing to send
                 return;
             }
-            if (resp.getMessageType() == MessageType.NonConfirmable) {
-                resp.setMessageId(getNextMID());
-            }
-            this.send(resp, exchange.getRemoteAddress(), exchange.getResponseTransportContext());
-            if (getDuplicationDetector() != null) {
-                getDuplicationDetector().putResponse(exchange.getRequest(), resp);
-            }
-
+            send(resp, exchange.getRemoteAddress(), exchange.getResponseTransportContext());
+            putToDuplicationDetector(exchange.getRequest(), resp);
         } catch (CoapException ex) {
             LOGGER.warning(ex.getMessage());
             try {
-                send(exchange.getRequest().createResponse(Code.C500_INTERNAL_SERVER_ERROR), exchange.getRemoteAddress(), exchange.getResponseTransportContext());
-
+                CoapPacket errorResp = exchange.getRequest().createResponse(Code.C500_INTERNAL_SERVER_ERROR);
+                send(errorResp, exchange.getRemoteAddress(), exchange.getResponseTransportContext());
+                putToDuplicationDetector(exchange.getRequest(), errorResp);
             } catch (CoapException | IOException ex1) {
                 //impossible ;)
                 LOGGER.log(Level.SEVERE, ex1.getMessage(), ex1);
