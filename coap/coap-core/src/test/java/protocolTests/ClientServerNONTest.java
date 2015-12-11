@@ -127,6 +127,49 @@ public class ClientServerNONTest {
         cnn.stop();
     }
 
+    @Test
+    public void shouldReceveNonResponse_withDifferenMID() throws Exception {
+        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
+
+        //------ success
+        CoapPacket resp1 = client.resource("/seperate").token(nextToken()).non().sync().get();
+        System.out.println(resp1);
+        assertEquals("test-content", resp1.getPayloadString());
+        CoapPacket resp2 = client.resource("/seperate").token(nextToken()).non().sync().get();
+        System.out.println(resp2);
+        assertEquals("test-content", resp2.getPayloadString());
+        assertNotEquals(resp1.getMessageId(), resp2.getMessageId());
+
+        //------ error
+        resp1 = client.resource("/non-existing").token(nextToken()).non().sync().get();
+        System.out.println(resp1);
+        resp2 = client.resource("/non-existing").token(nextToken()).non().sync().get();
+        System.out.println(resp2);
+        assertNotEquals(resp1.getMessageId(), resp2.getMessageId());
+
+        client.close();
+    }
+
+    @Test
+    public void shouldReceveResetResponse_withDifferenMID() throws Exception {
+        CoapServer client = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create()).build().start();
+
+        CoapPacket badReq = new CoapPacket(Code.C404_NOT_FOUND, MessageType.NonConfirmable, serverAddr);
+        badReq.setToken("1".getBytes());
+
+        CoapPacket resp1 = client.makeRequest(badReq).get();
+        System.out.println(resp1);
+        assertEquals(MessageType.Reset, resp1.getMessageType());
+
+        CoapPacket resp2 = client.makeRequest(badReq).get();
+        System.out.println(resp2);
+        assertEquals(MessageType.Reset, resp2.getMessageType());
+
+        assertNotEquals(resp1.getMessageId(), resp2.getMessageId());
+
+        client.close();
+    }
+
     private static class CoapResourceSeparateRespImpl extends CoapResource {
 
         private final String body;
@@ -163,7 +206,7 @@ public class ClientServerNONTest {
     /**
      * Returns random token number
      *
-     * @return
+     * @return random token
      */
     private static byte[] nextToken() {
         return DataConvertingUtility.convertVariableUInt((new Random().nextInt(0xFFFFF)));
