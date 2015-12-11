@@ -435,7 +435,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     }
 
     @Override
-    protected void send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+    protected final void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
         ByteArrayBackedOutputStream stream = new ByteArrayBackedOutputStream(coapPacket.getPayload() != null ? coapPacket.getPayload().length + 8 : 16);
         coapPacket.writeTo(stream);
 
@@ -503,11 +503,12 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             LOGGER.fine("CoAP ping received.");
             CoapPacket resp = packet.createResponse(null);
             resp.setMessageType(MessageType.Reset);
-            if (resp.getMessageType() == MessageType.NonConfirmable) {
+            if (packet.getMessageType() == MessageType.NonConfirmable) {
                 resp.setMessageId(getNextMID());
             }
             try {
                 send(resp, packet.getRemoteAddress(), TransportContext.NULL);
+                putToDuplicationDetector(packet, resp);
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, e.getMessage(), e);
             }
@@ -547,11 +548,12 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         CoapPacket resp = packet.createResponse(null);
         if (resp != null) {
             resp.setMessageType(MessageType.Reset);
-            if (resp.getMessageType() == MessageType.NonConfirmable) {
+            if (packet.getMessageType() == MessageType.NonConfirmable) {
                 resp.setMessageId(getNextMID());
             }
             try {
                 send(resp, packet.getRemoteAddress(), TransportContext.NULL);
+                putToDuplicationDetector(packet, resp);
                 LOGGER.warning("Can not process CoAP message [" + packet + "] sent RESET message");
             } catch (Exception ex) {
                 LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
@@ -579,7 +581,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             delayedTransMagr.remove(delayedTransactionId);
             try {
                 if (packet.getMustAcknowledge()) {
-                    send(packet.createResponse(), packet.getRemoteAddress(), TransportContext.NULL);
+                    CoapPacket resp = packet.createResponse();
+                    send(resp, packet.getRemoteAddress(), TransportContext.NULL);
+                    putToDuplicationDetector(packet, resp);
                 }
                 if (trans.getCallback() != null) {
                     trans.getCallback().call(packet);
@@ -587,7 +591,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             } catch (Exception ex) {
                 try {
                     LOGGER.log(Level.SEVERE, "Error while handling delayed response: " + ex.getMessage(), ex);
-                    send(packet.createResponse(Code.C500_INTERNAL_SERVER_ERROR), packet.getRemoteAddress(), TransportContext.NULL);
+                    CoapPacket resp = packet.createResponse(Code.C500_INTERNAL_SERVER_ERROR);
+                    send(resp, packet.getRemoteAddress(), TransportContext.NULL);
+                    putToDuplicationDetector(packet, resp);
                 } catch (CoapException | IOException ex1) {
                     LOGGER.log(Level.SEVERE, ex1.getMessage(), ex1);
                 }
@@ -700,9 +706,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             if (errorResponse != null) {
                 try {
                     send(errorResponse, request.getRemoteAddress(), TransportContext.NULL);
-                    if (duplicationDetector != null) {
-                        duplicationDetector.putResponse(request, errorResponse);
-                    }
+                    putToDuplicationDetector(request, errorResponse);
                 } catch (CoapException ex) {
                     //problems with parsing
                     LOGGER.warning(ex.getMessage());
@@ -724,7 +728,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             if (duplResp != null) {
                 if (duplResp != DuplicationDetector.EMPTY_COAP_PACKET) {
                     try {
-                        send(duplResp, request.getRemoteAddress(), TransportContext.NULL);
+                        sendPacket(duplResp, request.getRemoteAddress(), TransportContext.NULL);
                     } catch (CoapException | IOException coapException) {
                         LOGGER.log(Level.SEVERE, coapException.getMessage(), coapException);
                     }
