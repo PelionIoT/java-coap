@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mbed.coap.transport.AbstractTransportConnector;
@@ -20,7 +21,7 @@ import org.mbed.coap.transport.TransportContext;
 public class DatagramChannelTransport extends AbstractTransportConnector {
 
     private static final Logger LOGGER = Logger.getLogger(DatagramChannelTransport.class.getName());
-    protected DatagramChannel channel;
+    protected AtomicReference<DatagramChannel> channel = new AtomicReference<>();
     protected boolean channelReuseAddress;
     protected boolean channelConfigureBlocking = true;
     private int socketBufferSize = -1;
@@ -67,7 +68,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
      * @param socketBufferSizeBytes socket buffer size in bytes
      */
     public void setSocketBufferSize(int socketBufferSizeBytes) {
-        if (channel != null) {
+        if (channel.get() != null) {
             throw new IllegalStateException();
         }
         this.socketBufferSize = socketBufferSizeBytes;
@@ -76,20 +77,21 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
     @Override
     protected void initialize() throws IOException {
         try {
-            channel = createChannel();
-            channel.configureBlocking(channelConfigureBlocking);
+            DatagramChannel newChannel = createChannel();
+            newChannel.configureBlocking(channelConfigureBlocking);
 
             if (socketBufferSize > 0) {
-                channel.socket().setReceiveBufferSize(socketBufferSize);
-                channel.socket().setSendBufferSize(socketBufferSize);
+                newChannel.socket().setReceiveBufferSize(socketBufferSize);
+                newChannel.socket().setSendBufferSize(socketBufferSize);
             }
-            channel.socket().setReuseAddress(channelReuseAddress);
-            channel.socket().bind(getBindSocket());
+            newChannel.socket().setReuseAddress(channelReuseAddress);
+            newChannel.socket().bind(getBindSocket());
 
-            LOGGER.info("CoAP server binds on " + channel.socket().getLocalSocketAddress());
+            LOGGER.info("CoAP server binds on " + newChannel.socket().getLocalSocketAddress());
             if (socketBufferSize > 0) {
-                LOGGER.fine("DatagramChannel [receiveBuffer: " + channel.socket().getReceiveBufferSize() + ", sendBuffer: " + channel.socket().getSendBufferSize() + "]");
+                LOGGER.fine("DatagramChannel [receiveBuffer: " + newChannel.socket().getReceiveBufferSize() + ", sendBuffer: " + newChannel.socket().getSendBufferSize() + "]");
             }
+            channel.set(newChannel);
 
         } catch (BindException ex) {
             LOGGER.severe("Can not bind on " + getBindSocket());
@@ -105,8 +107,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
     public void stop() {
         super.stop();
         try {
-            channel.close();
-            channel = null;
+            channel.getAndSet(null).close();
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
         }
@@ -119,7 +120,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
         }
 
         try {
-            int res = channel.send(ByteBuffer.wrap(data, 0, len), adr);
+            int res = channel.get().send(ByteBuffer.wrap(data, 0, len), adr);
             if (res != len) {
                 LOGGER.severe("Did not send full datagram " + res + " =! " + len);
             }
@@ -130,7 +131,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
             //this.channel = null;
             initialize();
             //try again to send
-            channel.send(ByteBuffer.wrap(data, 0, len), adr);
+            channel.get().send(ByteBuffer.wrap(data, 0, len), adr);
         }
     }
 
@@ -139,7 +140,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
         ByteBuffer buffer = getBuffer();
         try {
             if (channel != null) {
-                InetSocketAddress sourceAddress = (InetSocketAddress) channel.receive(buffer);
+                InetSocketAddress sourceAddress = (InetSocketAddress) channel.get().receive(buffer);
                 if (sourceAddress != null) {
                     transReceiver.onReceive(sourceAddress, createCopyOfPacketData(buffer, buffer.position()), TransportContext.NULL);
                     return true;
@@ -165,7 +166,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
 
     @Override
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) channel.socket().getLocalSocketAddress();
+        return (InetSocketAddress) channel.get().socket().getLocalSocketAddress();
     }
 
     public void setReuseAddress(boolean channelReuseAddress) {

@@ -188,7 +188,7 @@ public class DatagramChannelTransportTest extends PowerMockTestCase {
             if (!skipInit) {
                 super.initialize();
             } else {
-                this.channel = createChannel;
+                this.channel.set(createChannel);
             }
         }
     }
