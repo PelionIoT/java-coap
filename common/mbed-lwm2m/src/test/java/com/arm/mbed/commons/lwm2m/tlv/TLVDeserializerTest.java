@@ -58,6 +58,18 @@ public class TLVDeserializerTest {
             'A', 'R', 'M',};
     }
 
+    @Test
+    public void deserializeResourceWithZeroLength() throws Exception {
+        byte[] tlv = new byte[]{
+                (byte) 0b11_0_00_000,
+                (byte) 0 };
+
+        List<LWM2MResource> resources = TLVDeserializer.deserializeResources(tlv);
+        assertThat(resources, hasSize(1));
+        assertThat(resources.get(0).getId().intValue(), equalTo(0));
+        assertThat(resources.get(0).getStringValue(), equalTo(""));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void deserializeResourceWhereLengthFieldIsLess() throws Exception {
         byte[] tlv = new byte[]{

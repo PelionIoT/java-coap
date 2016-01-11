@@ -13,7 +13,7 @@ public class LWM2MResourceInstance {
     private static Charset defaultCharset = Charset.defaultCharset();
 
     private final LWM2MID id;
-    private byte[] value = new byte[0];
+    private byte[] value;
     private LWM2MResourceType type;
     private LWM2MResourceType repType;
 
@@ -29,7 +29,7 @@ public class LWM2MResourceInstance {
         this(id);
         this.value = value;
 
-        if (value == null || value.length == 0) {
+        if (value == null) {
             throw new IllegalArgumentException("Missing value from resource instance.");
         }
         this.repType = LWM2MResourceType.OPAQUE;
@@ -79,7 +79,7 @@ public class LWM2MResourceInstance {
     }
 
     public boolean hasValue() {
-        return value != null && value.length > 0;
+        return value != null;
     }
 
     public LWM2MResourceType getType() {
