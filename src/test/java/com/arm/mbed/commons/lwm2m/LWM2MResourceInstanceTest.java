@@ -1,5 +1,6 @@
 package com.arm.mbed.commons.lwm2m;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.*;
 import com.arm.mbed.commons.string.Utf8Bytes;
 import org.junit.Test;
@@ -71,9 +72,14 @@ public class LWM2MResourceInstanceTest {
     }
 
     @SuppressWarnings("unused")
-    @Test(expected = IllegalArgumentException.class)
     public void createWithEmptyValue() throws Exception {
-        new LWM2MResourceInstance(LWM2MID.from(1), new byte[0]);
+        LWM2MResourceInstance instance = new LWM2MResourceInstance(LWM2MID.from(1), new byte[0]);
+        assertThat(instance.getValue().length, equalTo(0));
+        assertThat(instance.getStringValue(), equalTo(""));
+
+        instance = new LWM2MResourceInstance(LWM2MID.from(1), "");
+        assertThat(instance.getStringValue(), equalTo(""));
+        assertThat(instance.getValue().length, equalTo(0));
     }
 
     @Test
