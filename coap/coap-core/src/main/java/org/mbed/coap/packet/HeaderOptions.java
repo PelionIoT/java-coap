@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.packet;
 
@@ -85,12 +85,12 @@ public class HeaderOptions extends BasicHeaderOptions {
     }
 
     /**
-     * Sets observer option value. Allowed value range: 0-65535.
+     * Sets observer option value. Allowed value range: 3 bytes.
      *
      * @param observe the subsLifetime to set
      */
     public void setObserve(Integer observe) {
-        if (observe < 0 || observe > 0xFFFF) {
+        if (observe < 0 || observe > 0xFFFFFF) {
             throw new IllegalArgumentException("Illegal observer argument: " + observe);
         }
         this.observe = observe;
