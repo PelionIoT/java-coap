@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.packet;
 
@@ -301,5 +301,21 @@ public class CoapPacketTest {
         //CON GET MID:321 Token:0x3131
         assertEquals(newCoapPacket(321).get().token(0x3131).build().createResponse(),
                 newCoapPacket(321).ack(Code.C205_CONTENT).token(0x3131).build());
+    }
+
+    @Test
+    public void shouldAllowObserveValueUpToThreeBytes() {
+        CoapPacket packet = new CoapPacket(null);
+        packet.headers().setObserve(0xFFFFFF);
+
+        assertEquals(new Integer(0xFFFFFF), packet.headers().getObserve());
+
+        //non valid
+        try {
+            packet.headers().setObserve(0xFFFFFF + 1);
+            fail();
+        } catch (IllegalArgumentException ex) {
+            //as expected
+        }
     }
 }
