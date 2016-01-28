@@ -5,7 +5,7 @@ package org.mbed.coap.observe;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertNotNull;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.mbed.coap.client.CoapClient;
@@ -78,6 +78,25 @@ public class SimpleObservableResourceTest {
         verify(delivListener, timeout(1000)).onFail(any(InetSocketAddress.class));
         verify(delivListener, never()).onSuccess(any(InetSocketAddress.class));
         verify(delivListener, never()).onNoObservers();
+    }
+
+    @Test
+    public void testDeliveryListener_successAfterFail() throws CoapException, IllegalStateException, IOException {
+        ObservationListener obsListener = mock(ObservationListener.class);
+        doThrow(new ObservationTerminatedException(null)).doNothing().when(obsListener).onObservation(any(CoapPacket.class));
+
+        assertNotNull(client.resource("/obs").sync().observe(obsListener));
+
+        NotificationDeliveryListener delivListener = mock(NotificationDeliveryListener.class);
+
+        obsResource.setBody("A", delivListener);
+        verify(delivListener, timeout(1000)).onFail(any(InetSocketAddress.class));
+
+        assertNotNull(client.resource("/obs").sync().observe(obsListener));
+        obsResource.setBody("B", delivListener);
+        verify(delivListener, timeout(1000)).onSuccess(any(InetSocketAddress.class));
+        verify(delivListener, never()).onNoObservers();
+
     }
 
     @Test
