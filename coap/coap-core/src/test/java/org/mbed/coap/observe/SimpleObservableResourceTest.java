@@ -59,8 +59,12 @@ public class SimpleObservableResourceTest {
         assertNotNull(client.resource("/obs").sync().observe(obsListener));
 
         NotificationDeliveryListener delivListener = mock(NotificationDeliveryListener.class);
-        obsResource.setBody("", delivListener);
+        obsResource.setBody("A", delivListener);
         verify(delivListener, timeout(1000)).onSuccess(any(InetSocketAddress.class));
+
+        obsResource.setBody("B", delivListener);
+        verify(delivListener, timeout(1000)).onSuccess(any(InetSocketAddress.class));
+
         verify(delivListener, never()).onFail(any(InetSocketAddress.class));
         verify(delivListener, never()).onNoObservers();
 
@@ -74,8 +78,14 @@ public class SimpleObservableResourceTest {
         assertNotNull(client.resource("/obs").sync().observe(obsListener));
 
         NotificationDeliveryListener delivListener = mock(NotificationDeliveryListener.class);
-        obsResource.setBody("", delivListener);
+
+        obsResource.setBody("A", delivListener);
         verify(delivListener, timeout(1000)).onFail(any(InetSocketAddress.class));
+
+        assertNotNull(client.resource("/obs").sync().observe(obsListener));
+        obsResource.setBody("B", delivListener);
+        verify(delivListener, timeout(1000)).onFail(any(InetSocketAddress.class));
+
         verify(delivListener, never()).onSuccess(any(InetSocketAddress.class));
         verify(delivListener, never()).onNoObservers();
     }
