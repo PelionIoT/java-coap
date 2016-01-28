@@ -219,7 +219,12 @@ public abstract class AbstractObservableResource extends CoapResource {
         if (isConfirmable || (sub.getObserveSeq() % FORCE_CON_FREQ) == 0) {
             coapNotif.setMessageType(MessageType.Confirmable);
             sub.setIsDelivering(true);
-            this.coapServer.makeRequest(coapNotif, new NotificationAckCallback(sub, deliveryListener, this));
+            try {
+                this.coapServer.makeRequest(coapNotif, new NotificationAckCallback(sub, deliveryListener, this));
+            } catch (CoapException exception) {
+                sub.setIsDelivering(false);
+                throw exception;
+            }
         } else {
             coapNotif.setMessageType(MessageType.NonConfirmable);
             this.coapServer.makeRequest(coapNotif, Callback.ignore());
