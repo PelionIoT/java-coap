@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
@@ -71,6 +71,61 @@ public class ObservationWithBlockTest {
         transport.receive(newCoapPacket(3).ack(Code.C205_CONTENT).obs(1).token(1).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
 
         verify(observationListener).onObservation(hasPayload("perse perse perse perse"));
+    }
+
+    @Test
+    public void blockObservation_noEtagDuplicateFirstBlock() throws Exception {
+        transport.when(newCoapPacket(2).get().uriPath("/path1").block2Res(1, BlockSize.S_16, false).build())
+                .then(newCoapPacket(2).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build());
+        transport.when(newCoapPacket(3).get().uriPath("/path1").block2Res(1, BlockSize.S_16, false).build())
+                .then(newCoapPacket(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build());
+
+        transport.receive(newCoapPacket(10).ack(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build(), SERVER_ADDRESS);
+
+        verify(observationListener, never()).onObservation(any(CoapPacket.class));
+        verify(observationListener, never()).onTermination(any(CoapPacket.class));
+    }
+
+    @Test
+    public void blockObservation_noEtagDuplicateFirstMultipleTimes() throws Exception {
+        int maxDuplicates = 10;
+
+        for (int i = 2; i < maxDuplicates; i++) {
+            transport.when(newCoapPacket(i).get().uriPath("/path1").block2Res(1, BlockSize.S_16, false).build())
+                    .then(newCoapPacket(i).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build());
+        }
+        transport.when(newCoapPacket(maxDuplicates).get().uriPath("/path1").block2Res(1, BlockSize.S_16, false).build())
+                .then(newCoapPacket(maxDuplicates).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build());
+
+        transport.receive(newCoapPacket(10).ack(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build(), SERVER_ADDRESS);
+
+        verify(observationListener, never()).onObservation(any(CoapPacket.class));
+        verify(observationListener, never()).onTermination(any(CoapPacket.class));
+    }
+
+    private String makeBlock(int msgId, int blockNum, boolean hasMore, String payload) {
+        transport.when(newCoapPacket(msgId).get().uriPath("/path1").block2Res(blockNum, BlockSize.S_16, false).build())
+                .then(newCoapPacket(msgId).ack(Code.C205_CONTENT).block2Res(blockNum, BlockSize.S_16, hasMore).payload(payload).build());
+        return payload;
+    }
+
+    @Test
+    public void blockObservation_noEtagManyBlocks() throws Exception {
+        // can fail with StackOverflowException if used CurrentThreadExecutor for test (see setUp() method) and blocks count bigger than 300 blocks (becomes flaky above 300 blocks)
+        int maxBlocks = 200;
+        StringBuilder expectedPayload = new StringBuilder();
+        expectedPayload.append("|block_0000_____");
+
+        for (int i = 1; i < maxBlocks; i++) {
+            // msgId and block num is "thin system of ropes" - msgId should start from 2 (it will be first GET request), blockNum from 1 (we send block 0 in initial notification)
+            expectedPayload.append(makeBlock(i + 1, i, true, String.format("|block_%04d_____", i)));
+        }
+        expectedPayload.append(makeBlock(maxBlocks + 1, maxBlocks, false, "|last_block"));
+
+        transport.receive(newCoapPacket(10).ack(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("|block_0000_____").build(), SERVER_ADDRESS);
+        // if default executor is used (asynchronous) - uncomment this line
+        //        Thread.sleep(10000);
+        verify(observationListener).onObservation(hasPayload(expectedPayload.toString()));
     }
 
     @Test
