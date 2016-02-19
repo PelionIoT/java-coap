@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -15,8 +15,6 @@ import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.DataConvertingUtility;
-import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.packet.Method;
 import org.mbed.coap.server.internal.CoapExchangeImpl;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
@@ -267,6 +265,15 @@ abstract class CoapServerBlocks extends CoapServer {
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.finest("Received CoAP block [" + blResponse.headers().getBlock2Res() + "]");
             }
+            BlockOption requestBlock = request.headers().getBlock2Res();
+            BlockOption responseBlock = blResponse.headers().getBlock2Res();
+            if (requestBlock != null
+                    && (responseBlock == null || requestBlock.getNr() != responseBlock.getNr())) {
+                String msg = "Requested and received block number mismatch: req=" + requestBlock + ", resp=" + responseBlock + ", stopping transaction";
+                LOGGER.severe(msg + " [req: " + request.toString() + ", resp: " + blResponse.toString() + "]");
+                throw new CoapException(msg);
+            }
+
             if (response == null) {
                 response = blResponse;
             } else {
@@ -315,9 +322,8 @@ abstract class CoapServerBlocks extends CoapServer {
                 LOGGER.finest("CoAP resource representation has changed while getting blocks");
             }
             response = null;
-            CoapPacket cpRequest = new CoapPacket(Method.GET, MessageType.Confirmable, requestUri, destination);
-            cpRequest.headers().setBlock2Res(new BlockOption(0, blResponse.headers().getBlock2Res().getSzx(), true));
-            makeRequest(cpRequest, outgoingTransContext);
+            request.headers().setBlock2Res(new BlockOption(0, blResponse.headers().getBlock2Res().getSzx(), false));
+            makeRequest(request, outgoingTransContext);
             return false;
         }
 
