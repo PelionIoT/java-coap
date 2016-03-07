@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
@@ -20,7 +20,7 @@ public abstract class AbstractTransportConnector implements TransportConnector {
     protected TransportReceiver transReceiver;
     protected boolean isRunning;
     protected int bufferSize = DEFAULT_BUFFER_SIZE;
-    private static final int DEFAULT_BUFFER_SIZE = 1080;
+    private static final int DEFAULT_BUFFER_SIZE = 1500;
     private final ThreadLocal<ByteBuffer> buffer = new ThreadLocal<>();
     private Thread readerThread;
     private final boolean initReaderThread;
