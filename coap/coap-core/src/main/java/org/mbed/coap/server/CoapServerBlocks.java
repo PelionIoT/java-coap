@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.mbed.coap.exception.CoapBlockException;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.BlockOption;
@@ -252,6 +253,8 @@ abstract class CoapServerBlocks extends CoapServer {
             if (response.headers().getBlock2Res() != null) {
                 try {
                     receiveBlock(response);
+                } catch (CoapBlockException ex) {
+                    reqCallback.callException(ex);
                 } catch (CoapException ex) {
                     LOGGER.log(Level.WARNING, ex.getLocalizedMessage(), ex);
                     reqCallback.callException(ex);
@@ -265,14 +268,8 @@ abstract class CoapServerBlocks extends CoapServer {
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.finest("Received CoAP block [" + blResponse.headers().getBlock2Res() + "]");
             }
-            BlockOption requestBlock = request.headers().getBlock2Res();
-            BlockOption responseBlock = blResponse.headers().getBlock2Res();
-            if (requestBlock != null
-                    && (responseBlock == null || requestBlock.getNr() != responseBlock.getNr())) {
-                String msg = "Requested and received block number mismatch: req=" + requestBlock + ", resp=" + responseBlock + ", stopping transaction";
-                LOGGER.severe(msg + " [req: " + request.toString() + ", resp: " + blResponse.toString() + "]");
-                throw new CoapException(msg);
-            }
+
+            verifyBlockResponse(request.headers().getBlock2Res(), blResponse);
 
             if (response == null) {
                 response = blResponse;
@@ -300,6 +297,19 @@ abstract class CoapServerBlocks extends CoapServer {
                 if (reqCallback instanceof CoapTransactionCallback) {
                     ((CoapTransactionCallback) reqCallback).blockReceived();
                 }
+            }
+        }
+
+        private void verifyBlockResponse(BlockOption requestBlock, CoapPacket blResponse) throws CoapBlockException {
+            BlockOption responseBlock = blResponse.headers().getBlock2Res();
+            if (requestBlock != null && (responseBlock == null || requestBlock.getNr() != responseBlock.getNr())) {
+                String msg = "Requested and received block number mismatch: req=" + requestBlock + ", resp=" + responseBlock + ", stopping transaction";
+                LOGGER.warning(msg + " [req: " + request.toString() + ", resp: " + blResponse.toString() + "]");
+                throw new CoapBlockException(msg);
+            }
+
+            if (responseBlock != null && responseBlock.hasMore() && responseBlock.getSize() != blResponse.getPayload().length) {
+                throw new CoapBlockException("Block size mismatch with payload size " + responseBlock.getSize() + " != " + blResponse.getPayload().length);
             }
         }
 

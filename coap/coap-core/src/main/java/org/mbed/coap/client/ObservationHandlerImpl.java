@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
 
@@ -14,6 +14,7 @@ import org.mbed.coap.exception.ObservationTerminatedException;
 import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.ObservationHandler;
 import org.mbed.coap.utils.Callback;
@@ -50,7 +51,13 @@ class ObservationHandlerImpl implements ObservationHandler {
         if (obsListContainer != null) {
             try {
                 BlockOption requestBlock2Res = t.getRequest().headers().getBlock2Res();
-                if (requestBlock2Res != null && requestBlock2Res.getNr() == 0) {
+                if (requestBlock2Res != null && requestBlock2Res.getNr() == 0 && requestBlock2Res.hasMore()) {
+                    if (requestBlock2Res.hasMore() && requestBlock2Res.getSize() != t.getRequestBody().length) {
+                        LOGGER.warning("Block size does not match payload size " + requestBlock2Res.getSize() + "!=" + t.getRequestBody().length);
+                        t.setResponse(resetResponse(t));
+                        t.sendResponse();
+                        return;
+                    }
                     t.sendResponse();
                     t.retrieveNotificationBlocks(obsListContainer.uriPath, new Callback<CoapPacket>() {
                         @Override
@@ -84,6 +91,13 @@ class ObservationHandlerImpl implements ObservationHandler {
             LOGGER.warning("Could not handle observation");
             t.sendResetResponse();
         }
+    }
+
+    private static CoapPacket resetResponse(CoapExchange t) {
+        CoapPacket resetResponse = new CoapPacket(t.getRemoteAddress());
+        resetResponse.setMessageType(MessageType.Reset);
+        resetResponse.setMessageId(t.getRequest().getMessageId());
+        return resetResponse;
     }
 
     void putObservationListener(ObservationListener observationListener, byte[] token, String uriPath) {

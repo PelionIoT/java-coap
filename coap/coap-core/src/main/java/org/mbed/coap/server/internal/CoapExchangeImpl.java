@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
@@ -72,7 +72,7 @@ public class CoapExchangeImpl implements CoapExchange {
         if (this.response != null) {
             message.setMessageId(this.response.getMessageId());
         } else {
-            LOGGER.warning("Coap messaging: trying to set response for request with type:" + this.getRequest().getMessageType());
+            LOGGER.fine("Coap messaging: trying to set response for request with type:" + this.getRequest().getMessageType());
         }
         this.response = message;
     }
