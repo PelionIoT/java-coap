@@ -10,12 +10,14 @@ import static org.mockito.Mockito.*;
 import static org.testng.Assert.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import java.net.InetSocketAddress;
+import org.hamcrest.Description;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.client.ObservationListener;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
+import org.mbed.coap.packet.MediaTypes;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.MessageIdSupplierImpl;
@@ -68,9 +70,31 @@ public class ObservationWithBlockTest {
                 .then(newCoapPacket(2).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("e perse").build());
 
         //send observation with block
-        transport.receive(newCoapPacket(3).ack(Code.C205_CONTENT).obs(1).token(1).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(101).ack(Code.C205_CONTENT).obs(1).token(1).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
 
         verify(observationListener).onObservation(hasPayload("perse perse perse perse"));
+    }
+
+    @Test
+    public void blockObservation_multipleBlocks() throws Exception {
+        transport.when(newCoapPacket(2).get().uriPath("/path1").block2Res(1, BlockSize.S_16, false).build())
+                .then(newCoapPacket(2).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, true).payload(" ----- 16 ------").build());
+
+        transport.when(newCoapPacket(3).get().uriPath("/path1").block2Res(2, BlockSize.S_16, false).build())
+                .then(newCoapPacket(3).ack(Code.C205_CONTENT).block2Res(2, BlockSize.S_16, false).payload("e perse").build());
+
+        //send observation with block
+        transport.receive(newCoapPacket(101).ack(Code.C205_CONTENT).obs(1).token(1).payload("------ 16 ------").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+
+        verify(observationListener).onObservation(hasPayload("------ 16 ------ ----- 16 ------e perse"));
+    }
+
+    @Test
+    public void blockObservation_singleBlock() throws Exception {
+        //send observation with single last block
+        transport.receive(newCoapPacket(101).ack(Code.C205_CONTENT).obs(1).token(1).payload("perse perse").block2Res(0, BlockSize.S_16, false).build(), SERVER_ADDRESS);
+
+        verify(observationListener).onObservation(hasPayload("perse perse"));
     }
 
     @Test
@@ -163,6 +187,34 @@ public class ObservationWithBlockTest {
         verify(observationListener, never()).onTermination(any(CoapPacket.class));
     }
 
+    @Test
+    public void blockObservation_wrongPayloadSize_firstBlock() throws Exception {
+        //send observation with too short block
+        transport.receive(newCoapPacket(3).ack(Code.C205_CONTENT)
+                .obs(1).token(1).payload("------ 15 ----x").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+
+        verify(observationListener, never()).onObservation(any(CoapPacket.class));
+
+        //send observation with too long block
+        reset(observationListener);
+        transport.receive(newCoapPacket(4).ack(Code.C205_CONTENT)
+                .obs(1).token(1).payload("------ 17 ------e").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+
+        verify(observationListener, never()).onObservation(any(CoapPacket.class));
+    }
+
+    @Test
+    public void blockObservation_wrongPayloadSize_secondBlock() throws Exception {
+        transport.when(newCoapPacket(2).get().uriPath("/path1").block2Res(1, BlockSize.S_16, false).build())
+                .then(newCoapPacket(2).ack(Code.C205_CONTENT).contFormat(MediaTypes.CT_TEXT_PLAIN).block2Res(1, BlockSize.S_16, true).payload("------ 15 ----x").build());
+
+        //send observation with block
+        transport.receive(newCoapPacket(3).ack(Code.C205_CONTENT).contFormat(MediaTypes.CT_TEXT_PLAIN)
+                .obs(1).token(1).payload("------ 16 ------").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+
+        verify(observationListener, never()).onObservation(any(CoapPacket.class));
+    }
+
     public static class HasPayloadMatcher extends ArgumentMatcher<CoapPacket> {
 
         private final String expectedPayload;
@@ -174,6 +226,11 @@ public class ObservationWithBlockTest {
         @Override
         public boolean matches(Object o) {
             return expectedPayload.equals(((CoapPacket) o).getPayloadString());
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText(expectedPayload);
         }
     }
 
