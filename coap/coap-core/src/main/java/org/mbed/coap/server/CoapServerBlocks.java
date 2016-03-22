@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -9,14 +9,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.mbed.coap.exception.CoapBlockException;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.DataConvertingUtility;
-import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.packet.Method;
 import org.mbed.coap.server.internal.CoapExchangeImpl;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
@@ -254,6 +253,8 @@ abstract class CoapServerBlocks extends CoapServer {
             if (response.headers().getBlock2Res() != null) {
                 try {
                     receiveBlock(response);
+                } catch (CoapBlockException ex) {
+                    reqCallback.callException(ex);
                 } catch (CoapException ex) {
                     LOGGER.log(Level.WARNING, ex.getLocalizedMessage(), ex);
                     reqCallback.callException(ex);
@@ -267,6 +268,9 @@ abstract class CoapServerBlocks extends CoapServer {
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.finest("Received CoAP block [" + blResponse.headers().getBlock2Res() + "]");
             }
+
+            verifyBlockResponse(request.headers().getBlock2Res(), blResponse);
+
             if (response == null) {
                 response = blResponse;
             } else {
@@ -296,6 +300,19 @@ abstract class CoapServerBlocks extends CoapServer {
             }
         }
 
+        private void verifyBlockResponse(BlockOption requestBlock, CoapPacket blResponse) throws CoapBlockException {
+            BlockOption responseBlock = blResponse.headers().getBlock2Res();
+            if (requestBlock != null && (responseBlock == null || requestBlock.getNr() != responseBlock.getNr())) {
+                String msg = "Requested and received block number mismatch: req=" + requestBlock + ", resp=" + responseBlock + ", stopping transaction";
+                LOGGER.warning(msg + " [req: " + request.toString() + ", resp: " + blResponse.toString() + "]");
+                throw new CoapBlockException(msg);
+            }
+
+            if (responseBlock != null && responseBlock.hasMore() && responseBlock.getSize() != blResponse.getPayload().length) {
+                throw new CoapBlockException("Block size mismatch with payload size " + responseBlock.getSize() + " != " + blResponse.getPayload().length);
+            }
+        }
+
         private boolean hasResourceChanged(CoapPacket blResponse) {
             return !(response.headers().getEtag() == null && blResponse.headers().getEtag() == null)
                     && response.headers().getEtag() != null && !(Arrays.equals(response.headers().getEtag(), blResponse.headers().getEtag()));
@@ -315,9 +332,8 @@ abstract class CoapServerBlocks extends CoapServer {
                 LOGGER.finest("CoAP resource representation has changed while getting blocks");
             }
             response = null;
-            CoapPacket cpRequest = new CoapPacket(Method.GET, MessageType.Confirmable, requestUri, destination);
-            cpRequest.headers().setBlock2Res(new BlockOption(0, blResponse.headers().getBlock2Res().getSzx(), true));
-            makeRequest(cpRequest, outgoingTransContext);
+            request.headers().setBlock2Res(new BlockOption(0, blResponse.headers().getBlock2Res().getSzx(), false));
+            makeRequest(request, outgoingTransContext);
             return false;
         }
 
