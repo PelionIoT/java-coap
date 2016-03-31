@@ -1,14 +1,17 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
+import static org.mockito.Mockito.*;
 import static org.testng.Assert.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import java.net.InetSocketAddress;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
+import org.mbed.coap.client.ObservationListener;
 import org.mbed.coap.packet.BlockSize;
+import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.MediaTypes;
 import org.mbed.coap.server.CoapServer;
@@ -112,4 +115,69 @@ public class BlockTest {
         assertEquals(Code.C204_CHANGED, client.resource("/path1").payload("123456789012345|123456789012345|dupa", MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
 
     }
+
+    @Test
+    public void block2_notification_success() throws Exception {
+        //establish observation
+        transport.when(newCoapPacket(1).get().token(1).uriPath("/test").obs(0).build())
+                .then(newCoapPacket(1).ack(Code.C205_CONTENT).token(1).obs(0).payload("12").build());
+
+        ObservationListener observationListener = mock(ObservationListener.class);
+        assertEquals("12", client.resource("/test").observe(observationListener).get().getPayloadString());
+
+        //notification with blocks
+        System.out.println("------");
+        transport.when(newCoapPacket(2).get().block2Res(1, BlockSize.S_16, false).uriPath("/test").build())
+                .then(newCoapPacket(2).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, true).payload("123456789012345|").build());
+
+        transport.when(newCoapPacket(3).get().block2Res(2, BlockSize.S_16, false).uriPath("/test").build())
+                .then(newCoapPacket(3).ack(Code.C205_CONTENT).block2Res(2, BlockSize.S_16, false).payload("12345").build());
+
+        transport.receive(newCoapPacket(101).con(Code.C205_CONTENT).obs(2).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build(), new InetSocketAddress("127.0.0.1", 61616));
+
+
+        verify(observationListener, timeout(1000))
+                .onObservation(eq(newCoapPacket(new InetSocketAddress("127.0.0.1", 61616)).mid(2).ack(Code.C205_CONTENT).block2Res(2, BlockSize.S_16, false)
+                        .payload("123456789012345|123456789012345|12345").build()));
+
+    }
+
+    @Test
+    public void block2_notification_secondBlock_wrongSize() throws Exception {
+        //establish observation
+        transport.when(newCoapPacket(1).get().token(1).uriPath("/test").obs(0).build())
+                .then(newCoapPacket(1).ack(Code.C205_CONTENT).token(1).obs(0).payload("12").build());
+
+        ObservationListener observationListener = mock(ObservationListener.class);
+        assertEquals("12", client.resource("/test").observe(observationListener).get().getPayloadString());
+
+        //notification with blocks
+        System.out.println("------");
+        transport.when(newCoapPacket(2).get().block2Res(1, BlockSize.S_16, false).uriPath("/test").build())
+                .then(newCoapPacket(2).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, true).payload("1234567890").build());
+
+        transport.receive(newCoapPacket(101).con(Code.C205_CONTENT).obs(2).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build(), new InetSocketAddress("127.0.0.1", 61616));
+
+
+        verify(observationListener, never()).onObservation(any(CoapPacket.class));
+    }
+
+    @Test
+    public void block2_notification_firstBlock_wrongSize() throws Exception {
+        //establish observation
+        transport.when(newCoapPacket(1).get().token(1).uriPath("/test").obs(0).build())
+                .then(newCoapPacket(1).ack(Code.C205_CONTENT).token(1).obs(0).payload("12").build());
+
+        ObservationListener observationListener = mock(ObservationListener.class);
+        assertEquals("12", client.resource("/test").observe(observationListener).get().getPayloadString());
+
+        //notification with blocks
+        System.out.println("------");
+
+        transport.receive(newCoapPacket(101).con(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345").build(), new InetSocketAddress("127.0.0.1", 61616));
+
+
+        verify(observationListener, never()).onObservation(any(CoapPacket.class));
+    }
+
 }

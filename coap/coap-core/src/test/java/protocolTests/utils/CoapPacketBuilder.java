@@ -1,8 +1,9 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package protocolTests.utils;
 
+import java.net.InetSocketAddress;
 import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.packet.CoapPacket;
@@ -15,15 +16,24 @@ import org.mbed.coap.packet.Method;
  * Created by szymon
  */
 public class CoapPacketBuilder {
-    private final CoapPacket coapPacket = new CoapPacket(null);
+    private final CoapPacket coapPacket;
+
+    private CoapPacketBuilder(InetSocketAddress address) {
+        coapPacket = new CoapPacket(address);
+    }
 
     public static CoapPacketBuilder newCoapPacket() {
-        return new CoapPacketBuilder();
+        return new CoapPacketBuilder(null);
     }
 
     public static CoapPacketBuilder newCoapPacket(int mid) {
-        CoapPacketBuilder coapPacketBuilder = new CoapPacketBuilder();
+        CoapPacketBuilder coapPacketBuilder = new CoapPacketBuilder(null);
         coapPacketBuilder.mid(mid);
+        return coapPacketBuilder;
+    }
+
+    public static CoapPacketBuilder newCoapPacket(InetSocketAddress address) {
+        CoapPacketBuilder coapPacketBuilder = new CoapPacketBuilder(address);
         return coapPacketBuilder;
     }
 
