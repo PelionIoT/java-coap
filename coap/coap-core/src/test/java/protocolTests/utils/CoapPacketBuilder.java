@@ -119,4 +119,15 @@ public class CoapPacketBuilder {
         coapPacket.setCode(code);
         return this;
     }
+
+    public CoapPacketBuilder con() {
+        coapPacket.setMessageType(MessageType.Confirmable);
+        return this;
+    }
+
+    public CoapPacketBuilder non(Code code) {
+        coapPacket.setMessageType(MessageType.NonConfirmable);
+        coapPacket.setCode(code);
+        return this;
+    }
 }
