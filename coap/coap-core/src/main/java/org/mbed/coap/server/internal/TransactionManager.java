@@ -1,14 +1,17 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.packet.MessageType;
 
 /**
  * @author szymon
@@ -46,6 +49,20 @@ public class TransactionManager {
         return trans;
     }
 
+    public CoapTransaction findMatchForSeparateResponse(CoapPacket req) {
+        if ((req.getMessageType() == MessageType.Confirmable || req.getMessageType() == MessageType.NonConfirmable)
+                && req.getCode() != null && req.getToken().length > 0) {
+
+            return transactions.values()
+                    .stream()
+                    .filter(trans -> isMatchForSeparateResponse(trans, req))
+                    .findFirst()
+                    .orElse(null);
+        } else {
+            return null;
+        }
+    }
+
     public void remove(CoapTransactionId coapTransId) {
         transactions.remove(coapTransId);
     }
@@ -60,4 +77,10 @@ public class TransactionManager {
         return transTimeOut;
     }
 
+    private static boolean isMatchForSeparateResponse(CoapTransaction trans, CoapPacket packet) {
+        return (packet.getMessageType() == MessageType.Confirmable || packet.getMessageType() == MessageType.NonConfirmable)
+                && packet.getCode() != null
+                && trans.coapRequest.getRemoteAddress().equals(packet.getRemoteAddress())
+                && Arrays.equals(trans.coapRequest.getToken(), packet.getToken());
+    }
 }
