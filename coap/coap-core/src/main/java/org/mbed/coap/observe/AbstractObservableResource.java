@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.observe;
 
@@ -208,6 +208,7 @@ public abstract class AbstractObservableResource extends CoapResource {
                     sendNotification(isConfirmable, sub, coapNotif, deliveryListener);
                 } else {
                     LOGGER.severe("Could not deliver notification to " + entry.getKey() + ", previous still not confirmed");
+                    deliveryListener.onFail(entry.getKey());
                 }
             }
         }
