@@ -76,19 +76,24 @@ public class BlockTest {
 
     @Test
     public void block1() throws Exception {
-        transport.when(newCoapPacket(1).put().block1Req(0, BlockSize.S_32, true).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("123456789012345|123456789012345|").build())
+        String payload = "123456789012345|123456789012345|dupa";
+
+        transport.when(newCoapPacket(1).put().block1Req(0, BlockSize.S_32, true).size1(payload.length()).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("123456789012345|123456789012345|").build())
                 .then(newCoapPacket(1).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_32, true).build());
 
         transport.when(newCoapPacket(2).put().block1Req(1, BlockSize.S_32, false).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("dupa").build())
                 .then(newCoapPacket(2).ack(Code.C204_CHANGED).block1Req(1, BlockSize.S_32, false).build());
 
-        assertEquals(Code.C204_CHANGED, client.resource("/path1").payload("123456789012345|123456789012345|dupa", MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
+        assertEquals(Code.C204_CHANGED, client.resource("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
 
     }
 
     @Test
     public void block1_separateMode() throws Exception {
-        transport.when(newCoapPacket(1).put().block1Req(0, BlockSize.S_32, true).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("123456789012345|123456789012345|").build())
+
+        String payload = "123456789012345|123456789012345|dupa";
+
+        transport.when(newCoapPacket(1).put().block1Req(0, BlockSize.S_32, true).size1(payload.length()).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("123456789012345|123456789012345|").build())
                 .then(newCoapPacket(1).ack(null).build(),
                         newCoapPacket(2).con(Code.C231_CONTINUE).block1Req(0, BlockSize.S_32, true).build());
 
@@ -98,12 +103,15 @@ public class BlockTest {
         transport.when(newCoapPacket(2).put().block1Req(1, BlockSize.S_32, false).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("dupa").build())
                 .then(newCoapPacket(2).ack(Code.C204_CHANGED).block1Req(1, BlockSize.S_16, false).build());
 
-        assertEquals(Code.C204_CHANGED, client.resource("/path1").payload("123456789012345|123456789012345|dupa", MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
+        assertEquals(Code.C204_CHANGED, client.resource("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
     }
 
     @Test
     public void block1_serverChangesBlockSize() throws Exception {
-        transport.when(newCoapPacket(1).put().block1Req(0, BlockSize.S_32, true).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("123456789012345|123456789012345|").build())
+
+        String payload = "123456789012345|123456789012345|dupa";
+
+        transport.when(newCoapPacket(1).put().block1Req(0, BlockSize.S_32, true).size1(payload.length()).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("123456789012345|123456789012345|").build())
                 .then(newCoapPacket(1).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, true).build());
 
         transport.when(newCoapPacket(2).put().block1Req(1, BlockSize.S_16, true).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("123456789012345|").build())
@@ -112,7 +120,7 @@ public class BlockTest {
         transport.when(newCoapPacket(3).put().block1Req(2, BlockSize.S_16, false).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("dupa").build())
                 .then(newCoapPacket(3).ack(Code.C204_CHANGED).block1Req(2, BlockSize.S_16, false).build());
 
-        assertEquals(Code.C204_CHANGED, client.resource("/path1").payload("123456789012345|123456789012345|dupa", MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
+        assertEquals(Code.C204_CHANGED, client.resource("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
 
     }
 

@@ -99,6 +99,16 @@ public class CoapPacketBuilder {
         return this;
     }
 
+    public CoapPacketBuilder size1(Integer size) {
+        coapPacket.headers().setSize1(size);
+        return this;
+    }
+
+    public CoapPacketBuilder size2Res(Integer size) {
+        coapPacket.headers().setSize2Res(size);
+        return this;
+    }
+
     public CoapPacketBuilder etag(int etag) {
         coapPacket.headers().setEtag(DataConvertingUtility.convertVariableUInt(etag));
         return this;
