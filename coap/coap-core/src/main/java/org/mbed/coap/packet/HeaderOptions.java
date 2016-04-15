@@ -16,9 +16,11 @@ public class HeaderOptions extends BasicHeaderOptions {
     private static final byte OBSERVE = 6;
     private static final byte BLOCK_1_REQ = 27;
     private static final byte BLOCK_2_RES = 23;
+    private static final byte SIZE_2_RES = 28;
     private Integer observe;
     private BlockOption block1Req;
     private BlockOption block2Res;
+    private Integer size2Res;
 
     @Override
     public boolean parseOption(int type, byte[] data) {
@@ -35,6 +37,9 @@ public class HeaderOptions extends BasicHeaderOptions {
                 break;
             case BLOCK_1_REQ:
                 setBlock1Req(new BlockOption(data));
+                break;
+            case SIZE_2_RES:
+                setSize2Res(DataConvertingUtility.readVariableULong(data).intValue());
                 break;
             default:
                 return false;
@@ -58,6 +63,9 @@ public class HeaderOptions extends BasicHeaderOptions {
         if (block2Res != null) {
             l.add(new RawOption(BLOCK_2_RES, new byte[][]{getBlock2Res().toBytes()}));
         }
+        if (size2Res != null) {
+            l.add(RawOption.fromUint(SIZE_2_RES, size2Res.longValue()));
+        }
 
         return l;
     }
@@ -74,6 +82,9 @@ public class HeaderOptions extends BasicHeaderOptions {
         }
         if (observe != null) {
             sb.append(" obs:").append(observe);
+        }
+        if (size2Res != null) {
+            sb.append(" sz2:").append(size2Res);
         }
     }
 
@@ -107,6 +118,10 @@ public class HeaderOptions extends BasicHeaderOptions {
         return block2Res;
     }
 
+    public Integer getSize2Res() {
+        return size2Res;
+    }
+
     /**
      * @param block the block to set
      */
@@ -118,36 +133,44 @@ public class HeaderOptions extends BasicHeaderOptions {
         this.block2Res = block;
     }
 
+    public void setSize2Res(Integer size2Res) {
+        this.size2Res = size2Res;
+    }
+
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (!super.equals(o)) {
             return false;
         }
-        if (!super.equals(obj)) {
+
+        HeaderOptions that = (HeaderOptions) o;
+
+        if (observe != null ? !observe.equals(that.observe) : that.observe != null) {
             return false;
         }
-        final HeaderOptions other = (HeaderOptions) obj;
-        if (this.observe != other.observe && (this.observe == null || !this.observe.equals(other.observe))) {
+        if (block1Req != null ? !block1Req.equals(that.block1Req) : that.block1Req != null) {
             return false;
         }
-        if (this.block1Req != other.block1Req && (this.block1Req == null || !this.block1Req.equals(other.block1Req))) {
+        if (block2Res != null ? !block2Res.equals(that.block2Res) : that.block2Res != null) {
             return false;
         }
-        if (this.block2Res != other.block2Res && (this.block2Res == null || !this.block2Res.equals(other.block2Res))) {
-            return false;
-        }
-        return true;
+        return size2Res != null ? size2Res.equals(that.size2Res) : that.size2Res == null;
+
     }
 
     @Override
     public int hashCode() {
-        int hash = super.hashCode();
-        hash = 29 * hash + (this.observe != null ? this.observe.hashCode() : 0);
-        hash = 29 * hash + (this.block1Req != null ? this.block1Req.hashCode() : 0);
-        hash = 29 * hash + (this.block2Res != null ? this.block2Res.hashCode() : 0);
-        return hash;
+        int result = super.hashCode();
+        result = 31 * result + (observe != null ? observe.hashCode() : 0);
+        result = 31 * result + (block1Req != null ? block1Req.hashCode() : 0);
+        result = 31 * result + (block2Res != null ? block2Res.hashCode() : 0);
+        result = 31 * result + (size2Res != null ? size2Res.hashCode() : 0);
+        return result;
     }
 }

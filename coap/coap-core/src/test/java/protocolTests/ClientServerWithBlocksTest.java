@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
@@ -185,14 +185,14 @@ public class ClientServerWithBlocksTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().blockSize(BlockSize.S_256).build().start();
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, "/small", new InetSocketAddress("localhost", SERVER_PORT));
         request.headers().setBlock2Res(new BlockOption(0, BlockSize.S_256, true));
-        request.headers().setSize1(0);
+        request.headers().setSize2Res(0);
 
         CompletableFuture<CoapPacket> resp = cnn.makeRequest(request);
 
         assertEquals(Code.C205_CONTENT, resp.join().getCode());
         assertEquals(BODY.length(), resp.join().getPayloadString().length());
         assertEquals(BODY, resp.join().getPayloadString());
-        assertEquals((Integer) BODY.length(), resp.join().headers().getSize1());
+        assertEquals((Integer) BODY.length(), resp.join().headers().getSize2Res());
     }
 
     @Test
