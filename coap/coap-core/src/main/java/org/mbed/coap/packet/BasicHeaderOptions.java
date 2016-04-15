@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.packet;
 
@@ -309,7 +309,7 @@ public class BasicHeaderOptions implements Serializable {
             sb.append(" accept:").append(accept[0]);
         }
         if (size1 != null) {
-            sb.append(" sz:").append(size1);
+            sb.append(" sz1:").append(size1);
         }
     }
 

@@ -51,6 +51,8 @@ abstract class CoapServerBlocks extends CoapServer {
                 && request.getPayload().length > this.getBlockSize().getSize()) {
             //request that needs to use blocks
 
+            int payloadSize = request.getPayload().length;
+            request.headers().setSize1(payloadSize);
             request.headers().setBlock1Req(new BlockOption(0, this.getBlockSize(), true));
             byte[] nwPayload = request.headers().getBlock1Req().createBlockPart(request.getPayload());
             request.setPayload(nwPayload);
@@ -99,8 +101,10 @@ abstract class CoapServerBlocks extends CoapServer {
         if (newLength < 0) {
             newLength = 0;
         }
-        if (exchange.getRequest().headers().getSize1() != null) {
-            resp.headers().setSize1(resp.getPayload().length);
+        // reply with payload size only in first block
+        // see https://tools.ietf.org/html/draft-ietf-core-block-18#section-4 , Implementation notes
+        if (exchange.getRequest().headers().getSize2Res() != null && block2Res.getNr() == 0) {
+            resp.headers().setSize2Res(resp.getPayload().length);
         }
         byte[] blockPayload = new byte[newLength];
         if (newLength > 0) {
@@ -236,6 +240,9 @@ abstract class CoapServerBlocks extends CoapServer {
                     //create new request
                     reqBlock = reqBlock.nextBlock(requestPayload);
                     request.headers().setBlock1Req(reqBlock);
+                    // reset size headers for all blocks except first
+                    // see https://tools.ietf.org/html/draft-ietf-core-block-18#section-4 , Implementation notes
+                    request.headers().setSize1(null);
                     request.setPayload(reqBlock.createBlockPart(requestPayload));
                     try {
                         makeRequest(request, outgoingTransContext);
@@ -247,7 +254,6 @@ abstract class CoapServerBlocks extends CoapServer {
                     }
 
                 }
-
             }
 
             if (response.headers().getBlock2Res() != null) {
