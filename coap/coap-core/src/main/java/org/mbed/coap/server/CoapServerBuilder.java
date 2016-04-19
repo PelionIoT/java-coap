@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -64,6 +64,11 @@ public class CoapServerBuilder {
 
     public CoapServerBuilder blockSize(BlockSize blockSize) {
         server.setBlockSize(blockSize);
+        return this;
+    }
+
+    public CoapServerBuilder maxIncomingBlockTransferSize(int size) {
+        server.setMaxIncomingBlockTransferSize(size);
         return this;
     }
 

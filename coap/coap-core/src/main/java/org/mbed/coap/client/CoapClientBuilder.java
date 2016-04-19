@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
 
@@ -119,6 +119,11 @@ public final class CoapClientBuilder {
 
     public CoapClientBuilder delayedTransTimeout(int delayedTransactionTimeout) {
         getOrCreateServer().setDelayedTransactionTimeout(delayedTransactionTimeout);
+        return this;
+    }
+
+    public CoapClientBuilder maxIncomingBlockTransferSize(int maxSize) {
+        getOrCreateServer().setMaxIncomingBlockTransferSize(maxSize);
         return this;
     }
 

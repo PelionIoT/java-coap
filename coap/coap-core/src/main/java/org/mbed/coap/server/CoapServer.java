@@ -77,6 +77,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     private MessageIdSupplier idContext;
     private boolean enabledCriticalOptTest = true;
     private ScheduledFuture<?> transactionTimeoutWorkerFut;
+    private int maxIncomingBlockTransferSize;
+
 
     public static CoapServerBuilder builder() {
         return new CoapServerBuilder();
@@ -306,7 +308,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @param blockSize block size
      */
     public final void setBlockSize(BlockSize blockSize) {
-
         this.blockOptionSize = blockSize;
     }
 
@@ -317,6 +318,20 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      */
     public final BlockSize getBlockSize() {
         return blockOptionSize;
+    }
+
+    /**
+     * Sets maximum incoming entity size during block transfer
+     * Zero means unlimited.
+     *
+     * @param maxBlockTransferSize - max transfer size
+     */
+    public final void setMaxIncomingBlockTransferSize(int maxBlockTransferSize) {
+        this.maxIncomingBlockTransferSize = maxBlockTransferSize;
+    }
+
+    public final int getMaxIncomingBlockTransferSize() {
+        return this.maxIncomingBlockTransferSize;
     }
 
     /**

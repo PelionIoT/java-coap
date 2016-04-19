@@ -10,12 +10,14 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mbed.coap.exception.CoapBlockException;
+import org.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.DataConvertingUtility;
+import org.mbed.coap.packet.Method;
 import org.mbed.coap.server.internal.CoapExchangeImpl;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
@@ -29,7 +31,7 @@ abstract class CoapServerBlocks extends CoapServer {
 
     private static final Logger LOGGER = Logger.getLogger(CoapServerBlocks.class.getName());
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;
-    protected Map<BlockRequestId, BlockRequest> blockReqMap = new HashMap<>();
+    private final Map<BlockRequestId, BlockRequest> blockReqMap = new HashMap<>();
 
     CoapServerBlocks() {
         super();
@@ -50,11 +52,21 @@ abstract class CoapServerBlocks extends CoapServer {
                 && this.getBlockSize() != null
                 && request.getPayload().length > this.getBlockSize().getSize()) {
             //request that needs to use blocks
-
+            BlockOption blockOption = new BlockOption(0, this.getBlockSize(), true);
             int payloadSize = request.getPayload().length;
-            request.headers().setSize1(payloadSize);
-            request.headers().setBlock1Req(new BlockOption(0, this.getBlockSize(), true));
-            byte[] nwPayload = request.headers().getBlock1Req().createBlockPart(request.getPayload());
+
+            if (request.getMethod() == Method.GET) {
+                request.headers().setBlock1Req(null);
+                request.headers().setBlock2Res(blockOption);
+                request.headers().setSize1(null);
+                request.headers().setSize2Res(payloadSize);
+            } else {
+                request.headers().setBlock1Req(blockOption);
+                request.headers().setBlock2Res(null);
+                request.headers().setSize1(payloadSize);
+                request.headers().setSize2Res(null);
+            }
+            byte[] nwPayload = blockOption.createBlockPart(request.getPayload());
             request.setPayload(nwPayload);
 
             super.makeRequest(request, blockCallback, outgoingTransContext);
@@ -151,8 +163,8 @@ abstract class CoapServerBlocks extends CoapServer {
                     //Could not find previous blocks
                     CoapExchangeImpl exchange = new CoapExchangeImpl(request, this);
                     exchange.setResponseCode(Code.C408_REQUEST_ENTITY_INCOMPLETE);
-                    exchange.getRequestHeaders().setBlock1Req(reqBlock);
-                    exchange.getRequest().setToken(request.getToken());
+                    exchange.getResponseHeaders().setBlock1Req(reqBlock);
+                    exchange.getResponse().setToken(request.getToken());
                     exchange.sendResponse();
                     return;
                 }
@@ -169,8 +181,8 @@ abstract class CoapServerBlocks extends CoapServer {
                 LOGGER.finest("callRequestHandler() block token mismatch " + reqBlock);
                 CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, incomingTransContext);
                 exchange.setResponseCode(Code.C408_REQUEST_ENTITY_INCOMPLETE);
-                exchange.getRequestHeaders().setBlock1Req(reqBlock);
-                exchange.getRequest().setToken(request.getToken());
+                exchange.getResponseHeaders().setBlock1Req(reqBlock);
+                exchange.getResponse().setToken(request.getToken());
                 exchange.setResponseBody("Token mismatch");
                 exchange.sendResponse();
 
@@ -181,6 +193,20 @@ abstract class CoapServerBlocks extends CoapServer {
             }
 
             blockRequest.appendBlock(request);
+
+            if (getMaxIncomingBlockTransferSize() > 0 && blockRequest.payload.length > getMaxIncomingBlockTransferSize()) {
+                CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, incomingTransContext);
+                exchange.setResponseCode(Code.C413_REQUEST_ENTITY_TOO_LARGE);
+                exchange.getResponseHeaders().setBlock1Req(reqBlock);
+                exchange.getResponseHeaders().setSize1(getMaxIncomingBlockTransferSize());
+                exchange.getResponse().setToken(request.getToken());
+                exchange.setResponseBody("Entity too large");
+                exchange.sendResponse();
+
+                removeBlockRequest(blockRequestId);
+                LOGGER.warning("Received request with too large entity: " + request.toString());
+                return;
+            }
 
             if (!reqBlock.hasMore()) {
                 //last block received
@@ -237,6 +263,13 @@ abstract class CoapServerBlocks extends CoapServer {
             if (request != null && request.headers().getBlock1Req() != null && response.headers().getBlock1Req() != null) {
                 BlockOption reqBlock = response.headers().getBlock1Req();
                 if (request.headers().getBlock1Req().hasMore()) {
+                    if (response.getCode() != Code.C231_CONTINUE) {
+                        // if server report code other than 231_CONTINUE - abort transfer
+                        // see https://tools.ietf.org/html/draft-ietf-core-block-19#section-2.9
+                        LOGGER.log(Level.WARNING, "Error in block transfer: response=" + response);
+                        reqCallback.call(response);
+                        return;
+                    }
                     //create new request
                     reqBlock = reqBlock.nextBlock(requestPayload);
                     request.headers().setBlock1Req(reqBlock);
@@ -252,7 +285,6 @@ abstract class CoapServerBlocks extends CoapServer {
                         reqCallback.callException(ex);
                         return;
                     }
-
                 }
             }
 
@@ -290,6 +322,11 @@ abstract class CoapServerBlocks extends CoapServer {
                 }
                 return;
             }
+
+            if (getMaxIncomingBlockTransferSize() > 0 && response.getPayload().length > getMaxIncomingBlockTransferSize()) {
+                throw new CoapBlockTooLargeEntityException("Received too large entity for request, max allowed " + getMaxIncomingBlockTransferSize() + ", received " + response.getPayload().length);
+            }
+
             if (!blResponse.headers().getBlock2Res().hasMore()) {
                 //isCompleted = true;
                 reqCallback.call(response);

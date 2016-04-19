@@ -298,6 +298,8 @@ public class ClientServerWithBlocksTest {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).blockSize(BlockSize.S_128).build();
         CoapPacket resp = client.resource("/chang-res").payload(body, MediaTypes.CT_TEXT_PLAIN).sync().post();
 
+        System.out.println(resp.getPayloadString());
+
         assertEquals(Code.C204_CHANGED, resp.getCode());
         assertEquals(body.length(), resp.getPayload().length);
         assertEquals(body, resp.getPayloadString());
