@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.client.ObservationListener;
@@ -265,7 +266,12 @@ public class ObservationTest {
 
         public CoapPacket take() throws InterruptedException {
             System.out.println("TAKE");
-            return queue.take();
+            return queue.poll(5, TimeUnit.SECONDS); // avoid test blocking
+            //            return queue.take();
+        }
+
+        public CoapPacket take(int timeout, TimeUnit timeUnit) throws InterruptedException {
+            return queue.poll(timeout, timeUnit);
         }
 
         @Override
