@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutionException;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapBlockException;
+import org.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.packet.Code;
 import org.mbed.coap.server.CoapServer;
@@ -76,7 +77,7 @@ public class Block2TransferMaxSizeTest {
                 .then(newCoapPacket(3).ack(Code.C205_CONTENT).block2Res(2, BlockSize.S_16, false).payload("2_3456789012345|").build());
 
         assertThatThrownBy(() -> client.resource("/path1").get().get().getPayloadString())
-                .hasCause(new CoapBlockException("Received too large entity for request, max allowed 32, received 48"));
+                .hasCause(new CoapBlockTooLargeEntityException("Received too large entity for request, max allowed 32, received 48"));
     }
 
     @Test
