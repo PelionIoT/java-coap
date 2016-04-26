@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.packet;
 
@@ -468,7 +468,7 @@ public class CoapPacket implements Serializable {
             sb.append(' ').append(method.toString());
         }
         if (code != null) {
-            sb.append(' ').append(code.getHttpCode());
+            sb.append(' ').append(code.codeToString());
         }
         sb.append(" MID:").append(this.messageId);
         if (this.token != null && this.token.length > 0) {
