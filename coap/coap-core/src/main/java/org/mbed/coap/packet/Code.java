@@ -47,6 +47,14 @@ public enum Code {
         return httpStatus;
     }
 
+    public String codeToString() {
+        try {
+            return name().substring(1, 4);
+        } catch (NumberFormatException numberFormatException) {
+            return "0";
+        }
+    }
+
     public int getCoapCode() {
         return coapCode;
     }
