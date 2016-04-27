@@ -483,7 +483,11 @@ public class BasicHeaderOptions implements Serializable {
      * @param uriQuery the uriQuery to set
      */
     public void setUriQuery(String uriQuery) {
-        this.uriQuery = uriQuery;
+        if (uriQuery.isEmpty()) {
+            this.uriQuery = null;
+        } else {
+            this.uriQuery = uriQuery;
+        }
     }
 
     public void setAccept(short[] accept) {
