@@ -638,18 +638,18 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         }
 
         if (packet.getCode() != null) {
-            removeCoapTransId(coapTransId);
+            removeCoapTransId(trans.getTransactionId());
             trans.getCallback().call(packet);
             return true;
         } else if (packet.getMessageType() == MessageType.Reset) {
-            removeCoapTransId(coapTransId);
+            removeCoapTransId(trans.getTransactionId());
             trans.getCallback().call(packet);
             return true;
         }
 
         if (packet.getMessageType() == MessageType.Acknowledgement
                 && packet.getCode() == null && (trans.getCoapRequest().getMethod() == null)) {
-            removeCoapTransId(coapTransId);
+            removeCoapTransId(trans.getTransactionId());
             //transMgr.remove(coapTransId);
             trans.getCallback().call(packet);
             return true;
@@ -659,7 +659,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
                 && packet.getCode() == null && packet.getToken() != null) {
             //delayed response
             DelayedTransactionId delayedTransactionId = new DelayedTransactionId(trans.getCoapRequest().getToken(), packet.getRemoteAddress());
-            removeCoapTransId(coapTransId);
+            removeCoapTransId(trans.getTransactionId());
             delayedTransMagr.add(delayedTransactionId, trans);
             return true;
         }
