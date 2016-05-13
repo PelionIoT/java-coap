@@ -541,7 +541,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
                 }
                 if (observationHandler != null) {
                     //CoapExchange exchange = new CoapExchangeImpl(packet, this);
-                    observationHandler.callException(new ObservationTerminatedException(packet));
+                    observationHandler.callException(new ObservationTerminatedException(packet, context));
                     return true;
                 }
             }
