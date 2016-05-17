@@ -220,7 +220,7 @@ public class ObservationTest {
         int obsNum = OBS_RESOURCE_1.getObservationsAmount();
 
         //notify
-        doThrow(new ObservationTerminatedException(null)).when(obsListener).onObservation(any(CoapPacket.class));
+        doThrow(new ObservationTerminatedException(null, null)).when(obsListener).onObservation(any(CoapPacket.class));
         OBS_RESOURCE_1.setBody("keho");
 
         Thread.sleep(100);

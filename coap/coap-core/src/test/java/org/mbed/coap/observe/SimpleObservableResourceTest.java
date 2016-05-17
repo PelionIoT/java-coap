@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.observe;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
-import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.mbed.coap.client.CoapClient;
@@ -73,7 +73,7 @@ public class SimpleObservableResourceTest {
     @Test
     public void testDeliveryListener_fail() throws CoapException {
         ObservationListener obsListener = mock(ObservationListener.class);
-        doThrow(new ObservationTerminatedException(null)).when(obsListener).onObservation(any(CoapPacket.class));
+        doThrow(new ObservationTerminatedException(null, null)).when(obsListener).onObservation(any(CoapPacket.class));
 
         assertNotNull(client.resource("/obs").sync().observe(obsListener));
 
@@ -93,7 +93,7 @@ public class SimpleObservableResourceTest {
     @Test
     public void testDeliveryListener_successAfterFail() throws CoapException, IllegalStateException, IOException {
         ObservationListener obsListener = mock(ObservationListener.class);
-        doThrow(new ObservationTerminatedException(null)).doNothing().when(obsListener).onObservation(any(CoapPacket.class));
+        doThrow(new ObservationTerminatedException(null, null)).doNothing().when(obsListener).onObservation(any(CoapPacket.class));
 
         assertNotNull(client.resource("/obs").sync().observe(obsListener));
 
