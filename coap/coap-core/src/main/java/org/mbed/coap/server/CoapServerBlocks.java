@@ -317,9 +317,7 @@ abstract class CoapServerBlocks extends CoapServer {
                 this.response.setCode(blResponse.getCode());
             }
             if (hasResourceChanged(blResponse)) {
-                if (restartBlockTransfer(blResponse)) {
-                    return;
-                }
+                restartBlockTransfer(blResponse);
                 return;
             }
 
