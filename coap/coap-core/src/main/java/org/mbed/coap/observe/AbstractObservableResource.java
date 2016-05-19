@@ -53,7 +53,10 @@ public abstract class AbstractObservableResource extends CoapResource {
     }
 
     public void setConNotifications(boolean conNotifications) {
-        this.conNotifications = conNotifications;
+
+        synchronized (obsRelations) {
+            this.conNotifications = conNotifications;
+        }
     }
 
     @Override
