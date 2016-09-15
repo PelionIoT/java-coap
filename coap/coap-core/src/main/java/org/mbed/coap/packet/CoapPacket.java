@@ -3,6 +3,7 @@
  */
 package org.mbed.coap.packet;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -568,4 +569,9 @@ public class CoapPacket implements Serializable {
         return true;
     }
 
+    public CoapPacket clonePacket() throws CoapException {
+        byte[] bytes = this.toByteArray();
+        ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+        return deserialize(this.remoteAddress, is);
+    }
 }

@@ -19,6 +19,7 @@ import org.mbed.coap.packet.Code;
 import org.mbed.coap.packet.DataConvertingUtility;
 import org.mbed.coap.packet.Method;
 import org.mbed.coap.server.internal.CoapExchangeImpl;
+import org.mbed.coap.server.internal.CoapTransaction;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
 
@@ -32,18 +33,27 @@ abstract class CoapServerBlocks extends CoapServer {
     private static final Logger LOGGER = Logger.getLogger(CoapServerBlocks.class.getName());
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;
     private final Map<BlockRequestId, BlockRequest> blockReqMap = new HashMap<>();
+    private CoapTransaction.Priority blockCoapTransactionPriority = CoapTransaction.Priority.HIGH;
 
     CoapServerBlocks() {
         super();
     }
 
+    public void setBlockCoapTransactionPriority(CoapTransaction.Priority blockCoapTransactionPriority) {
+        this.blockCoapTransactionPriority = blockCoapTransactionPriority;
+    }
+
     @Override
     public void makeRequest(CoapPacket request, Callback<CoapPacket> outerCallback, TransportContext outgoingTransContext) throws CoapException {
         if (outerCallback == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("CallBack is null");
         }
         if (outerCallback instanceof BlockCallback) {
-            super.makeRequest(request, outerCallback, outgoingTransContext);
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("makeRequest block: " + request.toString());
+            }
+            // make consequent requests with block priority and forces adding to queue even if it is full
+            super.makeRequestInternal(request, outerCallback, outgoingTransContext, blockCoapTransactionPriority, true);
             return;
         }
         BlockCallback blockCallback = new BlockCallback(request, outerCallback, outgoingTransContext);
@@ -69,8 +79,15 @@ abstract class CoapServerBlocks extends CoapServer {
             byte[] nwPayload = blockOption.createBlockPart(request.getPayload());
             request.setPayload(nwPayload);
 
+            // make first request with default priority and no forcing addition to queue
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("makeRequest first block: " + request.toString());
+            }
             super.makeRequest(request, blockCallback, outgoingTransContext);
         } else {
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("makeRequest no block: " + request.toString());
+            }
             super.makeRequest(request, blockCallback, outgoingTransContext);
         }
     }
@@ -260,6 +277,9 @@ abstract class CoapServerBlocks extends CoapServer {
 
         @Override
         public void call(CoapPacket response) {
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("BlockCallback.call(): " + response.toString(false));
+            }
             if (request != null && request.headers().getBlock1Req() != null && response.headers().getBlock1Req() != null) {
                 BlockOption reqBlock = response.headers().getBlock1Req();
                 if (request.headers().getBlock1Req().hasMore()) {
@@ -278,6 +298,9 @@ abstract class CoapServerBlocks extends CoapServer {
                     request.headers().setSize1(null);
                     request.setPayload(reqBlock.createBlockPart(requestPayload));
                     try {
+                        if (LOGGER.isLoggable(Level.FINEST)) {
+                            LOGGER.finest("BlockCallback.call() next block b1: " + request.toString(false));
+                        }
                         makeRequest(request, outgoingTransContext);
                         return;
                     } catch (CoapException ex) {
@@ -334,6 +357,9 @@ abstract class CoapServerBlocks extends CoapServer {
 
                 request.headers().setBlock2Res(new BlockOption(blResponse.headers().getBlock2Res().getNr() + 1, blResponse.headers().getBlock2Res().getSzx(), false));
                 request.headers().setBlock1Req(null);
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest("BlockCallback.call() make next b2: " + request.toString(false));
+                }
                 makeRequest(request, outgoingTransContext);
                 if (reqCallback instanceof CoapTransactionCallback) {
                     ((CoapTransactionCallback) reqCallback).blockReceived();

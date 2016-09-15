@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
@@ -17,6 +17,10 @@ public class CoapTransactionId {
     public CoapTransactionId(CoapPacket packet) {
         messageId = packet.getMessageId();
         address = packet.getRemoteAddress();
+    }
+
+    public boolean matches(CoapTransaction coapTransaction) {
+        return coapTransaction.isActive() && this.equals(coapTransaction.getTransactionId());
     }
 
     @Override
