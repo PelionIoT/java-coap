@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import org.mbed.coap.packet.BlockSize;
+import org.mbed.coap.server.internal.CoapTransaction;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.udp.DatagramChannelTransport;
@@ -74,6 +75,16 @@ public class CoapServerBuilder {
 
     public CoapServerBuilder errorCallback(CoapErrorCallback errorCallback) {
         server.setErrorCallback(errorCallback);
+        return this;
+    }
+
+    public CoapServerBuilder defaultTransactionQueuePriority(CoapTransaction.Priority priority) {
+        server.setDefaultCoapTransactionPriority(priority);
+        return this;
+    }
+
+    public CoapServerBuilder blockMessageTransactionQueuePriority(CoapTransaction.Priority priority) {
+        server.setBlockCoapTransactionPriority(priority);
         return this;
     }
 

@@ -26,8 +26,8 @@ import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.utils.SimpleCoapResource;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
@@ -35,13 +35,13 @@ import org.testng.annotations.Test;
  */
 public class ObservationTest {
 
-    private static final String RES_OBS_PATH1 = "/obs/path1";
-    private static CoapServer server;
-    private static InetSocketAddress SERVER_ADDRESS;
-    private static SimpleObservableResource OBS_RESOURCE_1;
+    private final String RES_OBS_PATH1 = "/obs/path1";
+    private CoapServer server;
+    private InetSocketAddress SERVER_ADDRESS;
+    private SimpleObservableResource OBS_RESOURCE_1;
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
+    @BeforeMethod
+    public void setUpClass() throws Exception {
         server = CoapServerBuilder.newBuilder().transport(0)
                 .timeout(new SingleTimeout(500)).blockSize(BlockSize.S_128).build();
 
@@ -53,8 +53,8 @@ public class ObservationTest {
         SERVER_ADDRESS = new InetSocketAddress("127.0.0.1", server.getLocalSocketAddress().getPort());
     }
 
-    @AfterClass
-    public static void tearDownClass() throws Exception {
+    @AfterMethod
+    public void tearDownClass() throws Exception {
         server.stop();
     }
 
@@ -119,7 +119,7 @@ public class ObservationTest {
         client.close();
     }
 
-    @Test
+    @Test(invocationCount = 50)
     public void terminateObservationByServer() throws Exception {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();

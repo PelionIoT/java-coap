@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -26,6 +27,7 @@ import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapTimeoutException;
 import org.mbed.coap.exception.ObservationTerminatedException;
+import org.mbed.coap.exception.TooManyRequestsForEndpointException;
 import org.mbed.coap.linkformat.LinkFormat;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.packet.CoapPacket;
@@ -78,6 +80,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     private boolean enabledCriticalOptTest = true;
     private ScheduledFuture<?> transactionTimeoutWorkerFut;
     private int maxIncomingBlockTransferSize;
+    private CoapTransaction.Priority defaultPriority = CoapTransaction.Priority.NORMAL;
 
 
     public static CoapServerBuilder builder() {
@@ -121,6 +124,14 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         if (errorCallback == null) {
             errorCallback = CoapErrorCallback.NULL;
         }
+    }
+
+    public void setEndpointQueueMaximumSize(int maximumEndpointQueueSize) {
+        transMgr.setMaximumEndpointQueueSize(maximumEndpointQueueSize);
+    }
+
+    public void setDefaultCoapTransactionPriority(CoapTransaction.Priority defaultPriority) {
+        this.defaultPriority = defaultPriority;
     }
 
     void setExecutor(Executor executor) {
@@ -409,6 +420,43 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @throws CoapException throws exception if request can not be send
      */
     public void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext) throws CoapException {
+        makeRequestInternal(packet, callback, transContext, defaultPriority);
+    }
+
+    /**
+     * Makes CoAP request. Sends given packet to specified address. Reply is called through asynchronous Callback
+     * interface.
+     * <p>
+     * <i>Asynchronous method</i>
+     * </p>
+     * NOTE: If exception is thrown then callback will never be invoked.
+     *
+     * @param packet request packet
+     * @param callback handles response
+     * @param transContext transport context that will be passed to transport connector
+     * @param transactionPriority defines transaction priority (used by CoapServerBlocks mostyl)
+     * @throws CoapException throws exception if request can not be send
+     */
+    protected void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext, CoapTransaction.Priority transactionPriority) throws CoapException {
+        makeRequestInternal(packet, callback, transContext, transactionPriority, false);
+    }
+
+    /**
+     * Makes CoAP request. Sends given packet to specified address. Reply is called through asynchronous Callback
+     * interface.
+     * <p>
+     * <i>Asynchronous method</i>
+     * </p>
+     * NOTE: If exception is thrown then callback will never be invoked.
+     *
+     * @param packet request packet
+     * @param callback handles response
+     * @param transContext transport context that will be passed to transport connector
+     * @param transactionPriority defines transaction priority (used by CoapServerBlocks mostyl)
+     * @param forceAddToQueue forces add to queue even if there is queue limit overflow (block requests)
+     * @throws CoapException throws exception if request can not be send
+     */
+    protected void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext, CoapTransaction.Priority transactionPriority, boolean forceAddToQueue) throws CoapException {
         if (callback == null || packet == null || packet.getRemoteAddress() == null) {
             throw new NullPointerException();
         }
@@ -419,18 +467,27 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         CoapTransaction trans = null;
         try {
             if (packet.getMustAcknowledge()) {
-                trans = new CoapTransaction(callback, packet, this, transContext);
-                transMgr.add(trans);
-                trans.send(System.currentTimeMillis());
+                trans = new CoapTransaction(callback, packet, this, transContext, transactionPriority);
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest("makeRequestInternal: adding transaction: " + trans.toString() + ", forceAdd=" + forceAddToQueue);
+                }
+                if (transMgr.addTransactionAndGetReadyToSend(trans, forceAddToQueue)) {
+                    if (LOGGER.isLoggable(Level.FINEST)) {
+                        LOGGER.finest("makeRequestInternal: sending transaction: " + trans.toString() + ", forceAdd=" + forceAddToQueue);
+                    }
+                    trans.send(System.currentTimeMillis());
+                }
             } else {
                 //send NON message without waiting for piggy-backed response
-                delayedTransMagr.add(new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress()), new CoapTransaction(callback, packet, this, transContext));
+                delayedTransMagr.add(new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress()), new CoapTransaction(callback, packet, this, transContext, transactionPriority));
                 this.send(packet, packet.getRemoteAddress(), transContext);
                 if (packet.getToken() == null || packet.getToken().length == 0) {
                     LOGGER.warning("Sent NON request without token: " + packet);
                 }
             }
 
+        } catch (TooManyRequestsForEndpointException ex) {
+            throw ex;
         } catch (Throwable ex) {    //NOPMD it needs to catch anything, no control on customer resource implementation
             if (trans != null) {
                 removeCoapTransId(trans.getTransactionId());
@@ -453,6 +510,10 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     protected final void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
         ByteArrayBackedOutputStream stream = new ByteArrayBackedOutputStream(coapPacket.getPayload() != null ? coapPacket.getPayload().length + 8 : 16);
         coapPacket.writeTo(stream);
+
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.finest("CoapServer.send(): MID:" + coapPacket.getMessageId() + "/" + adr);
+        }
 
         transport.send(stream.getByteArray(), stream.size(), adr, tranContext);
         if (LOGGER.isLoggable(Level.FINEST)) {
@@ -620,38 +681,71 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     }
 
     protected void removeCoapTransId(CoapTransactionId coapTransId) {
-        transMgr.remove(coapTransId);
+        boolean failed;
+        do {
+            failed = false;
+            Optional<CoapTransaction> maybeNextTransaction = transMgr.unlockOrRemoveAndGetNext(coapTransId);
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("next transaction: " + maybeNextTransaction);
+            }
+            if (!maybeNextTransaction.isPresent()) {
+                break;
+            }
+
+            CoapTransaction nextTransactionForEp = maybeNextTransaction.get();
+            try {
+                if (!nextTransactionForEp.send(System.currentTimeMillis())) {
+                    throw new CoapTimeoutException(nextTransactionForEp);
+                }
+            } catch (Exception ex) {
+                failed = true;
+                nextTransactionForEp.getCallback().callException(ex);
+                coapTransId = nextTransactionForEp.getTransactionId();
+                LOGGER.fine("Next transaction " + coapTransId + " sending on response, resulted in exception: " + ex.getMessage());
+            }
+        } while (failed);
+    }
+
+    private void invokeCallbackAndRemoveTransaction(CoapTransaction transaction, CoapPacket packet) {
+        // first call callback and only then remove transaction - important for CoapServerBlocks
+        // in other way block transfer will be interrupted by other messages in the queue
+        // of TransactionManager, because removeCoapTransId() also sends next message form the queue
+
+        try {
+            transaction.getCallback().call(packet);
+        } finally {
+            removeCoapTransId(transaction.getTransactionId());
+        }
+
     }
 
     protected boolean handleResponse(CoapPacket packet) {
         //find corresponding transaction
         CoapTransactionId coapTransId = new CoapTransactionId(packet);
 
-        CoapTransaction trans = transMgr.find(coapTransId);
-        if (trans == null && packet.getMessageType() == MessageType.Confirmable || packet.getMessageType() == MessageType.NonConfirmable) {
+        Optional<CoapTransaction> maybeTrans = transMgr.removeAndLock(coapTransId);
+        if (!maybeTrans.isPresent() && packet.getMessageType() == MessageType.Confirmable || packet.getMessageType() == MessageType.NonConfirmable) {
             //find if it is separate response
-            trans = transMgr.findMatchForSeparateResponse(packet);
+            maybeTrans = transMgr.findMatchAndRemoveForSeparateResponse(packet);
         }
 
-        if (trans == null) {
-            return false;
-        }
+        return maybeTrans
+                .map(trans -> handleResponse(trans, packet))
+                .orElse(false);
+    }
 
+    private boolean handleResponse(CoapTransaction trans, CoapPacket packet) {
         if (packet.getCode() != null) {
-            removeCoapTransId(trans.getTransactionId());
-            trans.getCallback().call(packet);
+            invokeCallbackAndRemoveTransaction(trans, packet);
             return true;
         } else if (packet.getMessageType() == MessageType.Reset) {
-            removeCoapTransId(trans.getTransactionId());
-            trans.getCallback().call(packet);
+            invokeCallbackAndRemoveTransaction(trans, packet);
             return true;
         }
 
         if (packet.getMessageType() == MessageType.Acknowledgement
                 && packet.getCode() == null && (trans.getCoapRequest().getMethod() == null)) {
-            removeCoapTransId(trans.getTransactionId());
-            //transMgr.remove(coapTransId);
-            trans.getCallback().call(packet);
+            invokeCallbackAndRemoveTransaction(trans, packet);
             return true;
         }
 
@@ -663,7 +757,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             delayedTransMagr.add(delayedTransactionId, trans);
             return true;
         }
-        return false;
+        throw new RuntimeException("not handled transaction");
+        //return false;
     }
 
     private CoapHandler findHandler(String uri) {
@@ -779,23 +874,28 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         this.transport = transportConnector;
     }
 
-    protected void resendTimeouts() {
+    private void resendTimeouts() {
         try {
             //find timeouts
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("resendTimeouts: " + System.identityHashCode(this) + ", time=" + System.currentTimeMillis());
+            }
 
             final long currentTime = System.currentTimeMillis();
             Collection<CoapTransaction> transTimeOut = transMgr.findTimeoutTransactions(currentTime);
             for (CoapTransaction trans : transTimeOut) {
                 if (trans.isTimedOut(currentTime)) {
                     try {
+                        if (LOGGER.isLoggable(Level.FINEST)) {
+                            LOGGER.finest("resendTimeouts: try to resend timed out transaction [" + trans.toString() + "]");  //[" + trans.coapRequest + "]");
+                        }
                         if (!trans.send(currentTime)) {
                             //final timeout, cannot resend, remove transaction
                             removeCoapTransId(trans.getTransactionId());
-                            //transactions.remove(trans.getTransactionId());
                             if (LOGGER.isLoggable(Level.FINEST)) {
-                                LOGGER.finest("CoAP transaction timeout [" + trans.getTransactionId() + "]");  //[" + trans.coapRequest + "]");
+                                LOGGER.finest("resendTimeouts: CoAP transaction final timeout [" + trans.toString() + "]");  //[" + trans.coapRequest + "]");
                             }
-                            trans.getCallback().callException(new CoapTimeoutException());
+                            trans.getCallback().callException(new CoapTimeoutException(trans));
 
                         } else {
                             if (trans.getCallback() instanceof CoapTransactionCallback) {
@@ -818,8 +918,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
                     if (LOGGER.isLoggable(Level.FINEST)) {
                         LOGGER.finest("CoAP delayed transaction timeout [" + trans.getDelayedTransId() + "]");
                     }
-                    trans.getCallback().callException(new CoapTimeoutException());
-
+                    trans.getCallback().callException(new CoapTimeoutException(trans));
                 }
             }
         } catch (Exception ex) {
