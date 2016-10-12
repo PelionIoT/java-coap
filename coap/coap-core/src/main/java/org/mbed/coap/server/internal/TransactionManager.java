@@ -4,7 +4,6 @@
 package org.mbed.coap.server.internal;
 
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -113,9 +112,9 @@ public class TransactionManager {
                 .filter(trans -> trans.isTimedOut(currentTime))
                 .collect(Collectors.toList());
 
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest("findTimeoutTransactions: " + System.identityHashCode(this) + Arrays.toString(ret.toArray()));
-        }
+        //        if (LOGGER.isLoggable(Level.FINEST)) {
+        //            LOGGER.finest("findTimeoutTransactions: " + System.identityHashCode(this) + Arrays.toString(ret.toArray()));
+        //        }
         return ret;
     }
 

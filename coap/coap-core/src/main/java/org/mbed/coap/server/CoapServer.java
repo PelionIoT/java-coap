@@ -877,9 +877,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     private void resendTimeouts() {
         try {
             //find timeouts
-            if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest("resendTimeouts: " + System.identityHashCode(this) + ", time=" + System.currentTimeMillis());
-            }
+            //            if (LOGGER.isLoggable(Level.FINEST)) {
+            //                LOGGER.finest("resendTimeouts: " + System.identityHashCode(this) + ", time=" + System.currentTimeMillis());
+            //            }
 
             final long currentTime = System.currentTimeMillis();
             Collection<CoapTransaction> transTimeOut = transMgr.findTimeoutTransactions(currentTime);
