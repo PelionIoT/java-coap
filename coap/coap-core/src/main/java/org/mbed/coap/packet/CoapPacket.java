@@ -458,6 +458,11 @@ public class CoapPacket implements Serializable {
     }
 
     public String toString(boolean printFullPayload, boolean printPayloadOnlyAsHex, boolean printAddress) {
+        return toString(printFullPayload, printPayloadOnlyAsHex, printAddress, false);
+    }
+
+    @SuppressWarnings("PMD.AvoidDuplicateLiterals")
+    public String toString(boolean printFullPayload, boolean printPayloadOnlyAsHex, boolean printAddress, boolean doNotPrintPayload) {
         StringBuilder sb = new StringBuilder();
 
         if (printAddress && this.getRemoteAddress() != null) {
@@ -479,7 +484,11 @@ public class CoapPacket implements Serializable {
         options.toString(sb);
 
         if (payload != null && payload.length > 0) {
-            payloadToString(printFullPayload, sb, printPayloadOnlyAsHex);
+            if (doNotPrintPayload) {
+                sb.append(" pl(").append(payload.length).append(')');
+            } else {
+                payloadToString(printFullPayload, sb, printPayloadOnlyAsHex);
+            }
         }
 
         return sb.toString();
