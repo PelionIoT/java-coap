@@ -49,8 +49,6 @@ import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.ByteArrayBackedOutputStream;
 import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.CoapResource;
-import org.mbed.coap.utils.EventLogger;
-import org.mbed.coap.utils.EventLoggerCoapPacket;
 import org.mbed.coap.utils.FutureCallbackAdapter;
 
 /**
@@ -63,7 +61,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
 
     private final static long TRANSACTION_TIMEOUT_DELAY = 1000;
     private static final Logger LOGGER = Logger.getLogger(CoapServer.class.getName());
-    private static final EventLogger EVENT_LOGGER = EventLogger.getLogger("coap");
     private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
     private static final int DEFAULT_DUPLICATION_TIMEOUT = 30000;
     private boolean isRunning;
@@ -520,8 +517,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             LOGGER.finest("CoAP sent [" + coapPacket.toString(true) + "]");
         } else if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.fine("CoAP sent [" + coapPacket.toString(false) + "]");
+        } else if (LOGGER.isLoggable(Level.INFO)) {
+            LOGGER.info("CoAP sent [" + coapPacket.toString(false, false, false, true) + "]");
         }
-        EVENT_LOGGER.info(EventLogger.COAP_SENT, adr, new EventLoggerCoapPacket(coapPacket));
     }
 
     /**
@@ -545,9 +543,11 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.finest("CoAP received [" + packet.toString(true) + "]");
         } else if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("CoAP received [" + packet.toString(false) + "]");
+            LOGGER.fine("[" + packet.getRemoteAddress() + "] CoAP received [" + packet.toString(false) + "]");
+        } else if (LOGGER.isLoggable(Level.INFO)) {
+            LOGGER.info("CoAP received [" + packet.toString(false, false, false, true) + "]");
         }
-        EVENT_LOGGER.info(EventLogger.COAP_RECEIVED, packet.getRemoteAddress(), new EventLoggerCoapPacket(packet));
+
         if (packet.getMethod() != null) {
 
             if (handleRequest(packet, transportContext)) {
