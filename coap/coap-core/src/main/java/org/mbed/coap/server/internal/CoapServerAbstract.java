@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
@@ -8,8 +8,6 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
@@ -19,13 +17,15 @@ import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.transmission.TransmissionTimeout;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 public abstract class CoapServerAbstract implements TransportReceiver {
 
-    private static final Logger LOGGER = Logger.getLogger(CoapServerAbstract.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerAbstract.class.getName());
     private static final long DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
     protected long delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
     protected TransmissionTimeout transmissionTimeout;
@@ -45,9 +45,9 @@ public abstract class CoapServerAbstract implements TransportReceiver {
         try {
             executor.execute(new MessageHandlerTask(data, adr, transportContext, this));
         } catch (RejectedExecutionException ex) {
-            LOGGER.warning("Executor queue is full, message from " + adr + " is rejected");
-            if (LOGGER.isLoggable(Level.FINEST) && executor instanceof ThreadPoolExecutor) {
-                LOGGER.finest("Executor Queue remaining capacity " + ((ThreadPoolExecutor) executor).getQueue().remainingCapacity()
+            LOGGER.warn("Executor queue is full, message from " + adr + " is rejected");
+            if (LOGGER.isTraceEnabled() && executor instanceof ThreadPoolExecutor) {
+                LOGGER.trace("Executor Queue remaining capacity " + ((ThreadPoolExecutor) executor).getQueue().remainingCapacity()
                         + " out of " + ((ThreadPoolExecutor) executor).getQueue().size());
             }
         }
@@ -55,7 +55,7 @@ public abstract class CoapServerAbstract implements TransportReceiver {
 
     @Override
     public void onConnectionClosed(InetSocketAddress remoteAddress) {
-        LOGGER.fine("Connection with " + remoteAddress + " was closed");
+        LOGGER.debug("Connection with " + remoteAddress + " was closed");
     }
 
     /**
@@ -100,17 +100,17 @@ public abstract class CoapServerAbstract implements TransportReceiver {
             send(resp, exchange.getRemoteAddress(), exchange.getResponseTransportContext());
             putToDuplicationDetector(exchange.getRequest(), resp);
         } catch (CoapException ex) {
-            LOGGER.warning(ex.getMessage());
+            LOGGER.warn(ex.getMessage());
             try {
                 CoapPacket errorResp = exchange.getRequest().createResponse(Code.C500_INTERNAL_SERVER_ERROR);
                 send(errorResp, exchange.getRemoteAddress(), exchange.getResponseTransportContext());
                 putToDuplicationDetector(exchange.getRequest(), errorResp);
             } catch (CoapException | IOException ex1) {
                 //impossible ;)
-                LOGGER.log(Level.SEVERE, ex1.getMessage(), ex1);
+                LOGGER.error(ex1.getMessage(), ex1);
             }
         } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+            LOGGER.error(ex.getMessage(), ex);
         }
     }
 }
