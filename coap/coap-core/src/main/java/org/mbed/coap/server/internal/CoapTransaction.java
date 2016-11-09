@@ -4,18 +4,18 @@
 package org.mbed.coap.server.internal;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Describes CoAP transaction
  */
 public class CoapTransaction {
-    private static final Logger LOGGER = Logger.getLogger(CoapTransaction.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(CoapTransaction.class.getName());
 
     protected Callback<CoapPacket> callback;
     private long timeout = -1;
@@ -36,8 +36,8 @@ public class CoapTransaction {
         this.coapServer = coapServer;
         this.callback = callback;
         this.coapRequest = coapRequest;
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest(".ctor #1: MID:" + coapRequest.getMessageId());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(".ctor #1: MID:" + coapRequest.getMessageId());
         }
         this.transactionPriority = transactionPriority;
         if (coapRequest.getRemoteAddress().getAddress().isMulticastAddress()) {
@@ -45,8 +45,8 @@ public class CoapTransaction {
         } else {
             this.transId = new CoapTransactionId(coapRequest);
         }
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest(".ctor #1: MID:" + coapRequest.getMessageId() + ", tid=" + transId);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(".ctor #1: MID:" + coapRequest.getMessageId() + ", tid=" + transId);
         }
         this.retrAttempts = 0;
         this.transContext = transContext;
@@ -76,7 +76,7 @@ public class CoapTransaction {
 
     public final boolean send(final long currentTime) throws CoapException, IOException {
         this.retrAttempts++;
-        if (LOGGER.isLoggable(Level.FINEST)) {
+        if (LOGGER.isTraceEnabled()) {
             logSend(currentTime, "begin");
         }
         long nextTimeout = 0;
@@ -85,21 +85,21 @@ public class CoapTransaction {
         } else {
             nextTimeout = coapServer.getTransmissionTimeout().getTimeout(this.retrAttempts);
         }
-        if (LOGGER.isLoggable(Level.FINEST)) {
+        if (LOGGER.isTraceEnabled()) {
             logSend(currentTime, "nextTimeout=" + nextTimeout);
         }
         if (nextTimeout <= 0) {
-            if (LOGGER.isLoggable(Level.FINEST)) {
+            if (LOGGER.isTraceEnabled()) {
                 logSend(currentTime, "failed, timeout");
             }
             return false;
         }
-        if (LOGGER.isLoggable(Level.FINEST)) {
+        if (LOGGER.isTraceEnabled()) {
             logSend(currentTime, "sending");
         }
         isActive = true;
         coapServer.send(coapRequest, coapRequest.getRemoteAddress(), transContext);
-        if (LOGGER.isLoggable(Level.FINEST)) {
+        if (LOGGER.isTraceEnabled()) {
             logSend(currentTime, "sent");
         }
         this.timeout = currentTime + nextTimeout;
@@ -107,7 +107,7 @@ public class CoapTransaction {
     }
 
     private void logSend(long currentTime, String distinguisher) {
-        LOGGER.finest("send(" + currentTime + "): " + toString() + ", MID:" + coapRequest.getMessageId() + ", attempt=" + retrAttempts + ", " + distinguisher);
+        LOGGER.trace("send(" + currentTime + "): " + toString() + ", MID:" + coapRequest.getMessageId() + ", attempt=" + retrAttempts + ", " + distinguisher);
     }
 
     public Callback<CoapPacket> getCallback() {

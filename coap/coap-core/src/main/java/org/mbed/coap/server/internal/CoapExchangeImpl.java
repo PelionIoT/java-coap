@@ -4,7 +4,6 @@
 package org.mbed.coap.server.internal;
 
 import java.util.Arrays;
-import java.util.logging.Logger;
 import org.mbed.coap.exception.CoapCodeException;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.BlockOption;
@@ -17,13 +16,15 @@ import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.ByteArrayBackedOutputStream;
 import org.mbed.coap.utils.Callback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 public class CoapExchangeImpl implements CoapExchange {
 
-    private static final Logger LOGGER = Logger.getLogger(CoapExchangeImpl.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(CoapExchangeImpl.class.getName());
     private CoapServer coapServer;
     private TransportContext requestTransportContext;
     private TransportContext responseTransportContext = TransportContext.NULL;
@@ -72,7 +73,7 @@ public class CoapExchangeImpl implements CoapExchange {
         if (this.response != null) {
             message.setMessageId(this.response.getMessageId());
         } else {
-            LOGGER.fine("Coap messaging: trying to set response for request with type:" + this.getRequest().getMessageType());
+            LOGGER.debug("Coap messaging: trying to set response for request with type:" + this.getRequest().getMessageType());
         }
         this.response = message;
     }
@@ -90,7 +91,7 @@ public class CoapExchangeImpl implements CoapExchange {
     public void sendResponse() {
         if (!isDelayedResponse) {
             if (request.getMessageType() == MessageType.NonConfirmable && request.getMethod() == null) {
-                LOGGER.finest("Send response ignored for NON response");
+                LOGGER.trace("Send response ignored for NON response");
             } else {
                 send();
             }
@@ -99,7 +100,7 @@ public class CoapExchangeImpl implements CoapExchange {
             try {
                 this.getCoapServer().makeRequest(response, Callback.ignore());
             } catch (CoapException ex) {
-                LOGGER.warning("Error while sending delayed response: " + ex.getMessage());
+                LOGGER.warn("Error while sending delayed response: " + ex.getMessage());
             }
         }
     }

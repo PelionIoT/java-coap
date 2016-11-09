@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport.udp;
 
@@ -9,10 +9,10 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.mbed.coap.transport.AbstractTransportConnector;
 import org.mbed.coap.transport.TransportContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Datagram transport based on DatagramSocket. Not thread-save.
@@ -21,7 +21,7 @@ import org.mbed.coap.transport.TransportContext;
  */
 public class DatagramSocketTransport extends AbstractTransportConnector {
 
-    private static final Logger LOGGER = Logger.getLogger(DatagramSocketTransport.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(DatagramSocketTransport.class.getName());
     private DatagramSocket socket;
     private int socketBufferSize = -1;
     protected boolean reuseAddress;
@@ -65,8 +65,8 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
         }
         socket.setReuseAddress(reuseAddress);
         LOGGER.info("CoAP server binds on " + socket.getLocalSocketAddress());
-        if (socketBufferSize > 0 && LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("DatagramSocket [receiveBuffer: " + socket.getReceiveBufferSize() + ", sendBuffer: " + socket.getSendBufferSize() + "]");
+        if (socketBufferSize > 0 && LOGGER.isDebugEnabled()) {
+            LOGGER.debug("DatagramSocket [receiveBuffer: " + socket.getReceiveBufferSize() + ", sendBuffer: " + socket.getSendBufferSize() + "]");
         }
     }
 
@@ -93,9 +93,9 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
             return true;
         } catch (IOException ex) {
             if (!isRunning() && "socket closed".equalsIgnoreCase(ex.getMessage())) {
-                LOGGER.fine("DatagramSocket was closed.");
+                LOGGER.debug("DatagramSocket was closed.");
             } else {
-                LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+                LOGGER.error(ex.getMessage(), ex);
             }
         }
         return false;

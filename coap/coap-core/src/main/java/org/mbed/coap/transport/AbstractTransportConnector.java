@@ -6,16 +6,16 @@ package org.mbed.coap.transport;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.mbed.coap.exception.ReceiveException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 public abstract class AbstractTransportConnector implements TransportConnector {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractTransportConnector.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTransportConnector.class);
     private InetSocketAddress bindSocket;
     protected TransportReceiver transReceiver;
     protected boolean isRunning;
@@ -75,9 +75,9 @@ public abstract class AbstractTransportConnector implements TransportConnector {
             try {
                 performReceive();
             } catch (ReceiveException ex) {
-                LOGGER.log(Level.WARNING, ex.getMessage());
+                LOGGER.warn(ex.getMessage());
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, e.getMessage(), e);
+                LOGGER.error(e.getMessage(), e);
             }
         }
     }

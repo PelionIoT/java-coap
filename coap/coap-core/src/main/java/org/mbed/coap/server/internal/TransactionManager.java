@@ -9,20 +9,20 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.mbed.coap.exception.TooManyRequestsForEndpointException;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.server.internal.TransactionQueue.QueueUpdateResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 public class TransactionManager {
 
-    private static final Logger LOGGER = Logger.getLogger(TransactionManager.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionManager.class.getName());
     private final ConcurrentHashMap<InetSocketAddress, TransactionQueue> transactionQueues = new ConcurrentHashMap<>();
     private int maximumEndpointQueueSize = 100;
 
@@ -99,8 +99,8 @@ public class TransactionManager {
 
             return transactionFound.get();
         } else {
-            if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest("findMatchAndRemoveForSeparateResponse(" + req.toString(false) + "): not found");
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("findMatchAndRemoveForSeparateResponse(" + req.toString(false) + "): not found");
             }
             return Optional.empty();
         }
@@ -111,10 +111,6 @@ public class TransactionManager {
                 .flatMap(TransactionQueue::stream)
                 .filter(trans -> trans.isTimedOut(currentTime))
                 .collect(Collectors.toList());
-
-        //        if (LOGGER.isLoggable(Level.FINEST)) {
-        //            LOGGER.finest("findTimeoutTransactions: " + System.identityHashCode(this) + Arrays.toString(ret.toArray()));
-        //        }
         return ret;
     }
 

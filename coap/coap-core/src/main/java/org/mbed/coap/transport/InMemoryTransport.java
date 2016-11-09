@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
@@ -11,8 +11,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import org.mbed.coap.utils.IpPortAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates instance of a TransportConnector that uses java internal memory as a
@@ -22,7 +23,7 @@ import org.mbed.coap.utils.IpPortAddress;
  */
 public class InMemoryTransport extends AbstractTransportConnector {
 
-    private static final Logger LOGGER = Logger.getLogger(InMemoryTransport.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryTransport.class.getName());
     public final static String LOCALHOST = "localhost";
     private TransportContext transportContext;
     private BlockingQueue<DatagramMessage> queue;
@@ -152,7 +153,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
             while (true) {
                 int port = random.nextInt(0xFFFE) + 1;
                 if (!BIND_CONNECTORS.containsKey(new IpPortAddress(createAddress(port)))) {
-                    LOGGER.finest("getFreePort() " + port);
+                    LOGGER.trace("getFreePort() " + port);
                     return port;
                 }
             }

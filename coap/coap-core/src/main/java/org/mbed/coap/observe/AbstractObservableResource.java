@@ -9,8 +9,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.BlockOption;
 import org.mbed.coap.packet.CoapPacket;
@@ -21,13 +19,15 @@ import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.HexArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 public abstract class AbstractObservableResource extends CoapResource {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractObservableResource.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractObservableResource.class);
     protected CoapServer coapServer;
     protected final Map<InetSocketAddress, ObservationRelation> obsRelations = Collections.synchronizedMap(new HashMap<InetSocketAddress, ObservationRelation>());
     protected boolean removeIfNoObsHeader;
@@ -87,14 +87,14 @@ public abstract class AbstractObservableResource extends CoapResource {
 
             if (request.headers().getBlock2Res() == null && request.headers().getBlock1Req() == null
                     && removeIfNoObsHeader && obsRelations.remove(exchange.getRemoteAddress()) != null
-                    && LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest("Observation removed: " + exchange.getRemoteAddress());
+                    && LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Observation removed: " + exchange.getRemoteAddress());
             }
             return true;
         }
 
         if (request.getToken() == null) {
-            LOGGER.severe("Observation registration without token, ignoring " + request);
+            LOGGER.warn("Observation registration without token, ignoring " + request);
             exchange.sendResetResponse();
             return false;
         }
@@ -117,10 +117,10 @@ public abstract class AbstractObservableResource extends CoapResource {
         for (ObservationRelation rel : obsRelations.values()) {
             if (rel.getAddress().equals(subs.getAddress())) {
                 if (Arrays.equals(rel.getToken(), subs.getToken())) {
-                    LOGGER.severe("Adding different observation from same ip [" + rel.getAddress() + "] on " + uriPath + ", token: 0x" + HexArray.toHex(rel.getToken()));
+                    LOGGER.warn("Adding different observation from same ip [" + rel.getAddress() + "] on " + uriPath + ", token: 0x" + HexArray.toHex(rel.getToken()));
                 } else {
-                    if (LOGGER.isLoggable(Level.FINEST)) {
-                        LOGGER.finest("Updating observation from ip [" + rel.getAddress() + "] on " + uriPath);
+                    if (LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("Updating observation from ip [" + rel.getAddress() + "] on " + uriPath);
                     }
                 }
             }
@@ -210,7 +210,7 @@ public abstract class AbstractObservableResource extends CoapResource {
                 if (!sub.isDelivering()) {
                     sendNotification(isConfirmable, sub, coapNotif, deliveryListener);
                 } else {
-                    LOGGER.severe("Could not deliver notification to " + entry.getKey() + ", previous still not confirmed");
+                    LOGGER.warn("Could not deliver notification to " + entry.getKey() + ", previous still not confirmed");
                     deliveryListener.onFail(entry.getKey());
                 }
             }
@@ -234,8 +234,8 @@ public abstract class AbstractObservableResource extends CoapResource {
             this.coapServer.makeRequest(coapNotif, Callback.ignore());
         }
 
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest("Sent notification [" + coapNotif.toString() + "]");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Sent notification [" + coapNotif.toString() + "]");
         }
     }
 
