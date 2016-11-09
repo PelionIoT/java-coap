@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport.udp;
 
@@ -11,17 +11,17 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.mbed.coap.transport.AbstractTransportConnector;
 import org.mbed.coap.transport.TransportContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 public final class MulticastSocketTransport extends AbstractTransportConnector {
 
-    private static final Logger LOGGER = Logger.getLogger(MulticastSocketTransport.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(MulticastSocketTransport.class.getName());
     private MulticastSocket mcastSocket;
     private final InetAddress mcastGroup;
     public final static String MCAST_LINKLOCAL_ALLNODES = "FF02::1";    //NOPMD
@@ -47,7 +47,7 @@ public final class MulticastSocketTransport extends AbstractTransportConnector {
     protected void initialize() throws IOException {
         mcastSocket = new MulticastSocket(getBindSocket());
         mcastSocket.joinGroup(mcastGroup);
-        LOGGER.fine("CoAP server binds on multicast " + mcastSocket.getLocalSocketAddress());
+        LOGGER.debug("CoAP server binds on multicast " + mcastSocket.getLocalSocketAddress());
     }
 
     @Override
@@ -57,8 +57,8 @@ public final class MulticastSocketTransport extends AbstractTransportConnector {
             DatagramPacket datagramPacket = new DatagramPacket(buffer.array(), buffer.limit());
             mcastSocket.receive(datagramPacket);
             InetSocketAddress adr = (InetSocketAddress) datagramPacket.getSocketAddress();
-            if (LOGGER.isLoggable(Level.FINE) && adr.getAddress().isMulticastAddress()) {
-                LOGGER.fine("Received multicast message from: " + datagramPacket.getSocketAddress());
+            if (LOGGER.isDebugEnabled() && adr.getAddress().isMulticastAddress()) {
+                LOGGER.debug("Received multicast message from: " + datagramPacket.getSocketAddress());
             }
             byte[] packetData = createCopyOfPacketData(buffer, datagramPacket.getLength());
 
@@ -66,11 +66,11 @@ public final class MulticastSocketTransport extends AbstractTransportConnector {
             return true;
         } catch (SocketException ex) {
             if (isRunning()) {
-                LOGGER.log(Level.WARNING, ex.getMessage(), ex);
+                LOGGER.warn(ex.getMessage(), ex);
             }
         } catch (IOException ex) {
 
-            LOGGER.log(Level.WARNING, ex.getMessage(), ex);
+            LOGGER.warn(ex.getMessage(), ex);
         }
         return false;
     }

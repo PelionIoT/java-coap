@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -10,8 +10,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
@@ -20,6 +18,7 @@ import org.mbed.coap.packet.Code;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.utils.CoapResource;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -112,7 +111,7 @@ public class CoapServerExecutorTest {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException ex1) {
-                Logger.getLogger(CoapServerExecutorTest.class.getName()).log(Level.SEVERE, null, ex1);
+                LoggerFactory.getLogger(CoapServerExecutorTest.class).warn("", ex1);
             }
             ex.sendResponse();
         }

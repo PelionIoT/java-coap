@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
@@ -8,22 +8,22 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
 public class DelayedTransactionManager {
 
-    private static final Logger LOGGER = Logger.getLogger(DelayedTransactionManager.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(DelayedTransactionManager.class.getName());
     private final ConcurrentMap<DelayedTransactionId, CoapTransaction> transactions = new ConcurrentHashMap<>();
 
     public void add(DelayedTransactionId delayedTransactionId, CoapTransaction trans) {
         trans.setDelayedTransId(delayedTransactionId);
         transactions.put(delayedTransactionId, trans);
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest("Added delayed transaction: " + delayedTransactionId);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Added delayed transaction: " + delayedTransactionId);
         }
     }
 
