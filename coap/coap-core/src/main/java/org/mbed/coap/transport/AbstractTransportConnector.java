@@ -24,10 +24,16 @@ public abstract class AbstractTransportConnector implements TransportConnector {
     private final ThreadLocal<ByteBuffer> buffer = new ThreadLocal<>();
     private Thread readerThread;
     private final boolean initReaderThread;
+    private final String readerThreadName;
 
-    public AbstractTransportConnector(InetSocketAddress bindSocket, boolean initReaderThread) {
+    public AbstractTransportConnector(InetSocketAddress bindSocket, boolean initReaderThread, String readerThreadName) {
         this.bindSocket = bindSocket;
         this.initReaderThread = initReaderThread;
+        this.readerThreadName = readerThreadName;
+    }
+
+    public AbstractTransportConnector(InetSocketAddress bindSocket, boolean initReaderThread) {
+        this(bindSocket, initReaderThread, "transport-receiver");
     }
 
     public AbstractTransportConnector(InetSocketAddress bindSocket) {
@@ -59,7 +65,7 @@ public abstract class AbstractTransportConnector implements TransportConnector {
 
         if (initReaderThread) {
             //start reading thread
-            readerThread = new Thread(this::receiveWhileRunning, "transport-receiver");
+            readerThread = new Thread(this::receiveWhileRunning, readerThreadName);
             readerThread.start();
         }
     }
