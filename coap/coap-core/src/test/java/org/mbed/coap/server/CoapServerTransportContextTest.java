@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -25,6 +25,7 @@ import org.mbed.coap.utils.CoapResource;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
 
 /**
  * @author szymon
@@ -105,7 +106,7 @@ public class CoapServerTransportContextTest {
         private final String text;
 
         public TextTransportContext(String text) {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
             this.text = text;
         }
 

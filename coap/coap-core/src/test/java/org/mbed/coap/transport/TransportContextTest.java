@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
@@ -14,7 +14,7 @@ public class TransportContextTest {
 
     @Test
     public void test() {
-        TransportContext tc = new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222");
+        TransportContext tc = new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222", null);
 
         assertEquals("+358000111222", tc.getMsisdn());
         assertEquals("node001", tc.getCertificateCN());
@@ -28,20 +28,26 @@ public class TransportContextTest {
 
     @Test
     public void testImmutable() throws Exception {
-        TransportContext tc = new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222");
+        TransportContext tc = new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222", null);
 
-        assertEquals(new TransportContext(100, "node002", "2".getBytes(), "+48000111222"),
+        assertEquals(new TransportContext(100, "node002", "2".getBytes(), "+48000111222", null),
                 tc.withCertificateCN("node002").withMsisdn("+48000111222").withPreSharedKeyID("2".getBytes()).withTrafficClass(100));
 
-        assertEquals(new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222"), tc);
-        assertEquals(new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222").hashCode(), tc.hashCode());
+        assertEquals(new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222", null), tc);
+        assertEquals(new TransportContext(2, "node001", "dupa".getBytes(), "+358000111222", null).hashCode(), tc.hashCode());
     }
 
     @Test
     public void toStringMentionsPskIdOrCertSubjectNameIfAvailable() throws UnsupportedEncodingException {
-        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null]", new TransportContext(null, null, null, null).toString());
-        assertEquals("TransportContext [trafficClass=null, certificateCN=cname, preSharedKeyId=null, msisdn=null]", new TransportContext(null, "cname", null, null).toString());
-        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=[112, 115, 107, 45, 105, 100], msisdn=null]", new TransportContext(null, null, "psk-id".getBytes("UTF-8"), null).toString());
+        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null, issuerCn=null]", new TransportContext(null, null, null, null, null).toString());
+        assertEquals("TransportContext [trafficClass=null, certificateCN=cname, preSharedKeyId=null, msisdn=null, issuerCn=null]", new TransportContext(null, "cname", null, null, null).toString());
+        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=[112, 115, 107, 45, 105, 100], msisdn=null, issuerCn=null]", new TransportContext(null, null, "psk-id".getBytes("UTF-8"), null, null).toString());
+    }
+
+    @Test
+    public void toStringMentionsIssuerCnIfAvailable() {
+        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null, issuerCn=null]", new TransportContext(null, null, null, null, null).toString());
+        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null, issuerCn=issuer]", new TransportContext(null, null, null, null, "issuer").toString());
     }
 
 }
