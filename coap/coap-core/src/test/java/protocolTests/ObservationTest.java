@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -129,11 +130,14 @@ public class ObservationTest {
 
         OBS_RESOURCE_1.setBody("duupabb");
         CoapPacket packet = obsListener.take();
+        byte[] obsToken = packet.getToken();
 
         assertEquals("duupabb", packet.getPayloadString());
 
         OBS_RESOURCE_1.terminateObservations();
-        assertEquals(MessageType.Reset, obsListener.take().getMessageType());
+        CoapPacket resetPacket = obsListener.take();
+        assertEquals(MessageType.Reset, resetPacket.getMessageType());
+        assertTrue(Arrays.equals(obsToken, resetPacket.getToken()));
         assertEquals(0, OBS_RESOURCE_1.getObservationsAmount(), "Number of observation did not change");
 
         client.close();

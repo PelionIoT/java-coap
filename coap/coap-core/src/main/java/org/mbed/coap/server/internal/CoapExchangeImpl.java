@@ -82,6 +82,7 @@ public class CoapExchangeImpl implements CoapExchange {
     public void sendResetResponse() {
         response = request.createResponse();
         response.setMessageType(MessageType.Reset);
+        response.setToken(request.getToken());
         response.setCode(null);
         this.getCoapServer().sendResponse(this);
         response = null;
