@@ -39,15 +39,15 @@ public class TransportContextTest {
 
     @Test
     public void toStringMentionsPskIdOrCertSubjectNameIfAvailable() throws UnsupportedEncodingException {
-        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null, issuerCn=null]", new TransportContext(null, null, null, null, null).toString());
-        assertEquals("TransportContext [trafficClass=null, certificateCN=cname, preSharedKeyId=null, msisdn=null, issuerCn=null]", new TransportContext(null, "cname", null, null, null).toString());
-        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=[112, 115, 107, 45, 105, 100], msisdn=null, issuerCn=null]", new TransportContext(null, null, "psk-id".getBytes("UTF-8"), null, null).toString());
+        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null, deviceCert=null]", new TransportContext(null, null, null, null, null).toString());
+        assertEquals("TransportContext [trafficClass=null, certificateCN=cname, preSharedKeyId=null, msisdn=null, deviceCert=null]", new TransportContext(null, "cname", null, null, null).toString());
+        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=[112, 115, 107, 45, 105, 100], msisdn=null, deviceCert=null]", new TransportContext(null, null, "psk-id".getBytes("UTF-8"), null, null).toString());
     }
 
     @Test
-    public void toStringMentionsIssuerCnIfAvailable() {
-        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null, issuerCn=null]", new TransportContext(null, null, null, null, null).toString());
-        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null, issuerCn=issuer]", new TransportContext(null, null, null, null, "issuer").toString());
+    public void toStringMentionsDeviceCertIfAvailable() {
+        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null, deviceCert=null]", new TransportContext(null, null, null, null, null).toString());
+        assertEquals("TransportContext [trafficClass=null, certificateCN=null, preSharedKeyId=null, msisdn=null, deviceCert=[1, 2]]", new TransportContext(null, null, null, null, new byte[] {1,2,}).toString());
     }
 
 }
