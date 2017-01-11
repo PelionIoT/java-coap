@@ -16,23 +16,23 @@ public class TransportContext {
     private final String certificateCN;
     private final byte[] preSharedKeyId;
     private final String msisdn;
-    private final String issuerCN;
+    private final byte[] deviceCert;
     public final static TransportContext NULL = new TransportContext(null, null, null, null, null);
 
-    public TransportContext(Integer trafficClass, String certificateCN, byte[] preSharedKeyId, String msisdn, String issuerCN) {
+    public TransportContext(Integer trafficClass, String certificateCN, byte[] preSharedKeyId, String msisdn, byte[] deviceCert) {
         this.trafficClass = trafficClass;
         this.certificateCN = certificateCN;
         this.preSharedKeyId = preSharedKeyId;
         this.msisdn = msisdn;
-        this.issuerCN = issuerCN;
+        this.deviceCert = deviceCert;
     }
 
     public String getCertificateCN() {
         return certificateCN;
     }
 
-    public String getIssuerCN() {
-        return issuerCN;
+    public byte[] getDeviceCert() {
+        return deviceCert;
     }
 
     public byte[] getPreSharedKeyID() {
@@ -48,19 +48,19 @@ public class TransportContext {
     }
 
     public TransportContext withCertificateCN(String certificateCN) {
-        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, issuerCN);
+        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, deviceCert);
     }
 
     public TransportContext withPreSharedKeyID(byte[] preSharedKeyId) {
-        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, issuerCN);
+        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, deviceCert);
     }
 
     public TransportContext withTrafficClass(Integer trafficClass) {
-        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, issuerCN);
+        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, deviceCert);
     }
 
     public TransportContext withMsisdn(String msisdn) {
-        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, issuerCN);
+        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, deviceCert);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class TransportContext {
         if (trafficClass != null ? !trafficClass.equals(that.trafficClass) : that.trafficClass != null) {
             return false;
         }
-        if (issuerCN != null ? !issuerCN.equals(that.issuerCN) : that.issuerCN != null) {
+        if (!Arrays.equals(deviceCert, that.deviceCert)) {
             return false;
         }
 
@@ -95,13 +95,13 @@ public class TransportContext {
         int result = trafficClass != null ? trafficClass.hashCode() : 0;
         result = 31 * result + (certificateCN != null ? certificateCN.hashCode() : 0);
         result = 31 * result + (preSharedKeyId != null ? Arrays.hashCode(preSharedKeyId) : 0);
-        result = 31 * result + (issuerCN != null ? issuerCN.hashCode() : 0);
+        result = 31 * result + (deviceCert != null ? deviceCert.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "TransportContext [trafficClass=" + trafficClass + ", certificateCN=" + certificateCN + ", preSharedKeyId=" + Arrays.toString(preSharedKeyId) + ", msisdn=" + msisdn + ", issuerCn=" + issuerCN + "]";
+        return "TransportContext [trafficClass=" + trafficClass + ", certificateCN=" + certificateCN + ", preSharedKeyId=" + Arrays.toString(preSharedKeyId) + ", msisdn=" + msisdn + ", deviceCert=" + Arrays.toString(deviceCert) + "]";
     }
 
 }
