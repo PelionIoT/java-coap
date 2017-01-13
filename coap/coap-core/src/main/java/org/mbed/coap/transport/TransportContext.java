@@ -95,7 +95,7 @@ public class TransportContext {
         int result = trafficClass != null ? trafficClass.hashCode() : 0;
         result = 31 * result + (certificateCN != null ? certificateCN.hashCode() : 0);
         result = 31 * result + (preSharedKeyId != null ? Arrays.hashCode(preSharedKeyId) : 0);
-        result = 31 * result + (deviceCert != null ? deviceCert.hashCode() : 0);
+        result = 31 * result + (deviceCert != null ? Arrays.hashCode(deviceCert) : 0);
         return result;
     }
 
