@@ -105,12 +105,12 @@ public class DatagramSocketTransportTest {
 
         trans.start(mock(TransportReceiver.class));
 
-        trans.send("dupa".getBytes(), 4, new InetSocketAddress("::1", 5683), new TransportContext(TrafficClassTransportContext.HIGH, null, null, null, null));
+        trans.send("dupa".getBytes(), 4, new InetSocketAddress("::1", 5683), TrafficClassTransportContext.create(TrafficClassTransportContext.HIGH, TransportContext.NULL));
         verify(socket).setTrafficClass(TrafficClassTransportContext.HIGH);
         verify(socket).setTrafficClass(0);
 
         reset(socket);
-        trans.send("dupa".getBytes(), 4, new InetSocketAddress("::1", 5683), new TransportContext(89, null, null, null, null));
+        trans.send("dupa".getBytes(), 4, new InetSocketAddress("::1", 5683), TrafficClassTransportContext.create(89, TransportContext.NULL));
         verify(socket).setTrafficClass(89);
         verify(socket).setTrafficClass(0);
 
@@ -131,7 +131,7 @@ public class DatagramSocketTransportTest {
 
         CoapClient client = CoapClientBuilder.newBuilder(5683).transport(trans).timeout(10000).build();
 
-        client.resource("/test").context(new TransportContext(TrafficClassTransportContext.HIGH, null, null, null, null)).get();
+        client.resource("/test").context(TrafficClassTransportContext.create(TrafficClassTransportContext.HIGH, TransportContext.NULL)).get();
         verify(socket).setTrafficClass(TrafficClassTransportContext.HIGH);
         verify(socket).setTrafficClass(0);
 
