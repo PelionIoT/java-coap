@@ -1,111 +1,51 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
+import java.util.function.Supplier;
 
 /**
  * This class provides transport context information.
  *
  * Created by szymon
  */
-public class TransportContext {
+@FunctionalInterface
+public interface TransportContext {
 
-    private final Integer trafficClass;
-    private final String certificateCN;
-    private final byte[] preSharedKeyId;
-    private final String msisdn;
-    private final X509Certificate deviceCert;
-    public final static TransportContext NULL = new TransportContext(null, null, null, null, null);
+    TransportContext NULL = key -> null;
 
-    public TransportContext(Integer trafficClass, String certificateCN, byte[] preSharedKeyId, String msisdn, X509Certificate deviceCert) {
-        this.trafficClass = trafficClass;
-        this.certificateCN = certificateCN;
-        this.preSharedKeyId = preSharedKeyId;
-        this.msisdn = msisdn;
-        this.deviceCert = deviceCert;
-    }
+    Object get(Object key);
 
-    public String getCertificateCN() {
-        return certificateCN;
-    }
-
-    public X509Certificate getDeviceCert() {
-        return deviceCert;
-    }
-
-    public byte[] getPreSharedKeyID() {
-        return preSharedKeyId;
-    }
-
-    public Integer getTrafficClass() {
-        return trafficClass;
-    }
-
-    public String getMsisdn() {
-        return msisdn;
-    }
-
-    public TransportContext withCertificateCN(String certificateCN) {
-        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, deviceCert);
-    }
-
-    public TransportContext withPreSharedKeyID(byte[] preSharedKeyId) {
-        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, deviceCert);
-    }
-
-    public TransportContext withTrafficClass(Integer trafficClass) {
-        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, deviceCert);
-    }
-
-    public TransportContext withMsisdn(String msisdn) {
-        return new TransportContext(trafficClass, certificateCN, preSharedKeyId, msisdn, deviceCert);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
+    default TransportContext add(Object key, Object val) {
+        if (val == null) {
+            return this;
+        } else {
+            return add(key, () -> val);
         }
-        if (!(o instanceof TransportContext)) {
-            return false;
+    }
+
+    default TransportContext add(Object key, Supplier func) {
+        if (key == null) {
+            throw new NullPointerException();
         }
 
-        TransportContext that = (TransportContext) o;
-
-        if (certificateCN != null ? !certificateCN.equals(that.certificateCN) : that.certificateCN != null) {
-            return false;
-        }
-        if (!Arrays.equals(preSharedKeyId, that.preSharedKeyId)) {
-            return false;
-        }
-        if (trafficClass != null ? !trafficClass.equals(that.trafficClass) : that.trafficClass != null) {
-            return false;
-        }
-        //if (!Arrays.equals(deviceCert, that.deviceCert)) {
-        if (deviceCert != null ? !deviceCert.equals(that.deviceCert) : that.deviceCert != null) {
-            return false;
-        }
-
-        return true;
+        return k -> {
+            if (key.equals(k)) {
+                return func.get();
+            } else {
+                return this.get(k);
+            }
+        };
     }
 
-    @Override
-    public int hashCode() {
-        int result = trafficClass != null ? trafficClass.hashCode() : 0;
-        result = 31 * result + (certificateCN != null ? certificateCN.hashCode() : 0);
-        result = 31 * result + (preSharedKeyId != null ? Arrays.hashCode(preSharedKeyId) : 0);
-        result = 31 * result + (deviceCert != null ? deviceCert.hashCode() : 0);
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "TransportContext [trafficClass=" + trafficClass + ", certificateCN=" + certificateCN +
-                ", preSharedKeyId=" + Arrays.toString(preSharedKeyId) + ", msisdn=" + msisdn +
-                ", deviceCert=" + deviceCert + "]";
+    default <T> T getAndCast(Object key, Class<T> clazz) {
+        Object val = get(key);
+        if (val != null && clazz.isInstance(val)) {
+            return ((T) val);
+        } else {
+            return null;
+        }
     }
 
 }

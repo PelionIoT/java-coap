@@ -101,12 +101,11 @@ public class CoapServerTransportContextTest {
 
     }
 
-    private static class TextTransportContext extends TransportContext {
+    private static class TextTransportContext implements TransportContext {
 
         private final String text;
 
         public TextTransportContext(String text) {
-            super(null, null, null, null, null);
             this.text = text;
         }
 
@@ -135,6 +134,11 @@ public class CoapServerTransportContextTest {
         @Override
         public int hashCode() {
             return text.hashCode();
+        }
+
+        @Override
+        public Object get(Object key) {
+            return null;
         }
     }
 
