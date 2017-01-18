@@ -3,6 +3,7 @@
  */
 package org.mbed.coap.transport;
 
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 /**
@@ -16,10 +17,10 @@ public class TransportContext {
     private final String certificateCN;
     private final byte[] preSharedKeyId;
     private final String msisdn;
-    private final byte[] deviceCert;
+    private final X509Certificate deviceCert;
     public final static TransportContext NULL = new TransportContext(null, null, null, null, null);
 
-    public TransportContext(Integer trafficClass, String certificateCN, byte[] preSharedKeyId, String msisdn, byte[] deviceCert) {
+    public TransportContext(Integer trafficClass, String certificateCN, byte[] preSharedKeyId, String msisdn, X509Certificate deviceCert) {
         this.trafficClass = trafficClass;
         this.certificateCN = certificateCN;
         this.preSharedKeyId = preSharedKeyId;
@@ -31,7 +32,7 @@ public class TransportContext {
         return certificateCN;
     }
 
-    public byte[] getDeviceCert() {
+    public X509Certificate getDeviceCert() {
         return deviceCert;
     }
 
@@ -83,7 +84,8 @@ public class TransportContext {
         if (trafficClass != null ? !trafficClass.equals(that.trafficClass) : that.trafficClass != null) {
             return false;
         }
-        if (!Arrays.equals(deviceCert, that.deviceCert)) {
+        //if (!Arrays.equals(deviceCert, that.deviceCert)) {
+        if (deviceCert != null ? !deviceCert.equals(that.deviceCert) : that.deviceCert != null) {
             return false;
         }
 
@@ -95,13 +97,15 @@ public class TransportContext {
         int result = trafficClass != null ? trafficClass.hashCode() : 0;
         result = 31 * result + (certificateCN != null ? certificateCN.hashCode() : 0);
         result = 31 * result + (preSharedKeyId != null ? Arrays.hashCode(preSharedKeyId) : 0);
-        result = 31 * result + (deviceCert != null ? Arrays.hashCode(deviceCert) : 0);
+        result = 31 * result + (deviceCert != null ? deviceCert.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "TransportContext [trafficClass=" + trafficClass + ", certificateCN=" + certificateCN + ", preSharedKeyId=" + Arrays.toString(preSharedKeyId) + ", msisdn=" + msisdn + ", deviceCert=" + Arrays.toString(deviceCert) + "]";
+        return "TransportContext [trafficClass=" + trafficClass + ", certificateCN=" + certificateCN +
+                ", preSharedKeyId=" + Arrays.toString(preSharedKeyId) + ", msisdn=" + msisdn +
+                ", deviceCert=" + deviceCert + "]";
     }
 
 }
