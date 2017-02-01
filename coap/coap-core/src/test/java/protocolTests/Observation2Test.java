@@ -1,14 +1,17 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
+import static org.junit.Assert.*;
 import static org.mbed.coap.server.CoapServerObserve.*;
 import static org.mockito.Mockito.*;
-import static org.testng.Assert.*;
 import static protocolTests.ObservationWithBlockTest.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import java.net.InetSocketAddress;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.client.ObservationListener;
@@ -16,9 +19,6 @@ import org.mbed.coap.packet.Code;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.MessageIdSupplierImpl;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import protocolTests.utils.CurrentThreadExecutor;
 import protocolTests.utils.TransportConnectorMock;
 
@@ -33,7 +33,7 @@ public class Observation2Test {
     private CoapClient client;
     private ObservationListener observationListener;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
@@ -53,7 +53,7 @@ public class Observation2Test {
         reset(observationListener);
     }
 
-    @AfterMethod
+    @After
     public void tearDown() throws Exception {
         client.close();
     }

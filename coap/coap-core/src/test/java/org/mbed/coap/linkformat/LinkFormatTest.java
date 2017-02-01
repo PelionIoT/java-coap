@@ -1,14 +1,14 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.linkformat;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Random;
+import org.junit.Test;
 import org.mbed.coap.packet.DataConvertingUtility;
-import org.testng.annotations.Test;
 
 /**
  * @author szymon
@@ -176,7 +176,7 @@ public class LinkFormatTest {
         assertNull(LinkFormatBuilder.parse("</dd>").getRelations());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testFailureLinkRelations() {
         LinkFormat lf = new LinkFormat("/test");
         lf.setRelations("fdsfs", "rel1 rel2");
@@ -235,22 +235,22 @@ public class LinkFormatTest {
         assertNull(LinkFormatBuilder.parse("</dd>").getHRefLang());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testFailHReflang1() {
         new LinkFormat("/test").setHRefLang(" LANG-PL");
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testFailHReflang2() {
         new LinkFormat("/test").setHRefLang("LANG-PL" + (char) 128);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testFailHReflang3() {
         new LinkFormat("/test").setHRefLang("LAN,G;P\\L");
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailHReflang4() throws ParseException {
         LinkFormatBuilder.parse("</test>;hreflang=LANGP L");
     }
@@ -358,52 +358,52 @@ public class LinkFormatTest {
         assertEquals(4, links.size());
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailParse1() throws ParseException {
         LinkFormatBuilder.parse("</test>;rt=DUpa");
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailParse2() throws ParseException {
         LinkFormatBuilder.parse("</test>;hreflang=\"LAng-PL\"");
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailParse3() throws ParseException {
         LinkFormatBuilder.parse("</test>;sz=\"seven\"");
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailParse4() throws ParseException {
         LinkFormatBuilder.parse("</test>;title");
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailParse4_1() throws ParseException {
         LinkFormatBuilder.parse("</test>;rt");
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailParse5_missing_uri() throws ParseException {
         LinkFormatBuilder.parse("/fds>;title=\"tytul\"");
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailParse6() throws ParseException {
         LinkFormatBuilder.parse("/fds>;title=\"tytul\"fds");
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailParse7() throws ParseException {
         LinkFormatBuilder.parse("</fds>;title=\"tytul\"dfdss\"");
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailParse8() throws ParseException {
         LinkFormatBuilder.parse("</fds>;obs=\"true\"");
     }
 
-    @Test(expectedExceptions = ParseException.class)
+    @Test(expected = ParseException.class)
     public void testFailParse9() throws ParseException {
         LinkFormatBuilder.parse("</fds>;=\"true\"");
     }
@@ -435,7 +435,7 @@ public class LinkFormatTest {
 
             try {
                 LinkFormatBuilder.parse(fuzzyLf);
-                assertFalse(false, "exception ParseException is expected");
+                //fail("exception ParseException is expected");
             } catch (ParseException ex) {
                 //only ParseException is expected
             }

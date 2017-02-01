@@ -1,15 +1,17 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapException;
@@ -21,7 +23,6 @@ import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.udp.DatagramChannelTransport;
 import org.mbed.coap.transport.udp.MulticastSocketTransport;
 import org.mbed.coap.utils.SimpleCoapResource;
-import org.testng.annotations.Test;
 
 /**
  * @author szymon
@@ -73,7 +74,8 @@ public class MulticastTest {
         server.stop();
     }
 
-    @Test(enabled = false)
+    @Test
+    @Ignore
     public void multicastRequest() throws IOException, CoapException {
         CoapServer server = CoapServerBuilder.newBuilder().transport(61619).build();
         server.addRequestHandler("/multicast", new SimpleCoapResource(
@@ -107,7 +109,8 @@ public class MulticastTest {
         server.stop();
     }
 
-    @Test(enabled = false)
+    @Test
+    @Ignore
     public void multicastTest() throws IOException {
 
         CoapServer server = CoapServerBuilder.newBuilder().transport(new DatagramChannelTransport(new InetSocketAddress("::1", 61619))).build();

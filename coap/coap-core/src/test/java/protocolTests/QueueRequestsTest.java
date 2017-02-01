@@ -1,15 +1,18 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.*;
-import static org.testng.Assert.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.packet.BlockSize;
@@ -23,9 +26,6 @@ import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportReceiver;
 import org.mockito.ArgumentCaptor;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import protocolTests.utils.CurrentThreadExecutor;
 
 /**
@@ -39,7 +39,7 @@ public class QueueRequestsTest {
     private TransportReceiver transportReceiver;
     private CoapServer coapServer;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
         transport = mock(TransportConnector.class);
 
@@ -56,7 +56,7 @@ public class QueueRequestsTest {
         transportReceiver = transRec.getValue();
     }
 
-    @AfterMethod
+    @After
     public void tearDown() throws Exception {
         client.close();
     }
@@ -167,7 +167,7 @@ public class QueueRequestsTest {
         assertEquals("dupa2", futResp2.get().getPayloadString());
     }
 
-    @Test(timeOut = 10000)
+    @Test(timeout = 10000)
     public void shouldQueueBlockTransferEvenQueueIsFull() throws Exception {
         coapServer.setEndpointQueueMaximumSize(2);
         ((CoapServerObserve) coapServer).setBlockCoapTransactionPriority(CoapTransaction.Priority.HIGH);

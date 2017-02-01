@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.utils;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 /**
  * @author szymon
@@ -18,7 +18,7 @@ public class IpPortAddressTest {
     public void test() throws UnknownHostException {
         IpPortAddress addr = new IpPortAddress(new InetSocketAddress("127.0.0.1", 5683));
 
-        assertEquals(addr.getIp(), new byte[]{127, 0, 0, 1});
+        assertArrayEquals(addr.getIp(), new byte[]{127, 0, 0, 1});
         assertEquals(addr.getPort(), 5683);
         assertEquals(addr, new IpPortAddress(new byte[]{127, 0, 0, 1}, 5683));
         assertEquals(addr.hashCode(), new IpPortAddress(new byte[]{127, 0, 0, 1}, 5683).hashCode());
@@ -34,13 +34,13 @@ public class IpPortAddressTest {
     }
 
     @SuppressWarnings("unused")
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void wrongIp() {
         new IpPortAddress(new byte[8], 65);
     }
 
     @SuppressWarnings("unused")
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void wrongPort() {
         new IpPortAddress(new byte[4], 545456);
     }

@@ -3,19 +3,19 @@
  */
 package org.mbed.coap.transport.udp;
 
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.*;
-import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.transport.TransportReceiver;
-import org.testng.annotations.Test;
 
 /**
  * @author szymon

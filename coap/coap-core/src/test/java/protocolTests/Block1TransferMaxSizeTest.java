@@ -1,12 +1,15 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
@@ -20,9 +23,7 @@ import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.utils.CoapResource;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+
 
 /**
  * Created by olesmi01 on 19.4.2016.
@@ -42,7 +43,7 @@ public class Block1TransferMaxSizeTest {
     private CoapServer server = null;
     private CoapClient client = null;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws IOException {
 
         server = CoapServerBuilder.newBuilder()
@@ -66,7 +67,7 @@ public class Block1TransferMaxSizeTest {
                 .build();
     }
 
-    @AfterMethod
+    @After
     public void tearDown() {
         client.close();
         server.stop();

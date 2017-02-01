@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.utils;
 
-import static org.testng.Assert.*;
-import org.testng.annotations.Test;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  * @author szymon
@@ -22,7 +22,7 @@ public class HexArrayTest {
 
     @Test
     public void fromHex() throws Exception {
-        assertEquals(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, HexArray.fromHex("0102030405060708090a0b0c"));
+        assertArrayEquals(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, HexArray.fromHex("0102030405060708090a0b0c"));
     }
 
 }

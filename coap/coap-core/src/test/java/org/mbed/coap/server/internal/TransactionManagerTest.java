@@ -1,13 +1,15 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import static org.testng.Assert.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import java.net.InetSocketAddress;
 import java.util.Optional;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.exception.TooManyRequestsForEndpointException;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
@@ -15,8 +17,6 @@ import org.mbed.coap.server.CoapServerObserve;
 import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.transport.TransportContext;
 import org.mbed.coap.utils.Callback;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 /**
  * Created by szymon.
@@ -26,7 +26,7 @@ public class TransactionManagerTest {
     private static final InetSocketAddress REMOTE_ADR2 = InMemoryTransport.createAddress(5685);
     private TransactionManager transMgr;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
         transMgr = new TransactionManager();
     }
@@ -223,7 +223,7 @@ public class TransactionManagerTest {
         assertEquals(transMgr.getNumberOfTransactions(), 0);
     }
 
-    @Test(expectedExceptions = TooManyRequestsForEndpointException.class)
+    @Test(expected = TooManyRequestsForEndpointException.class)
     public void test_endpointQueueOverflow() throws Exception {
         transMgr.setMaximumEndpointQueueSize(2);
 
@@ -242,12 +242,12 @@ public class TransactionManagerTest {
         transMgr.addTransactionAndGetReadyToSend(ep2Trans3);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void test_tooSmallQueueValue() {
         transMgr.setMaximumEndpointQueueSize(0);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void test_tooBigQueueValue() {
         transMgr.setMaximumEndpointQueueSize(65537);
     }
