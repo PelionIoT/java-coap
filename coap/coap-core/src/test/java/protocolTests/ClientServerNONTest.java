@@ -1,12 +1,15 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Random;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
@@ -24,9 +27,6 @@ import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 /**
  * @author szymon
@@ -36,7 +36,7 @@ public class ClientServerNONTest {
     private CoapServer server = null;
     private InetSocketAddress serverAddr = null;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws IOException {
         DelayedTransactionId dti1 = new DelayedTransactionId(new byte[]{13, 14}, new InetSocketAddress(5683));
         DelayedTransactionId dti2 = new DelayedTransactionId(new byte[]{13, 14}, new InetSocketAddress(5683));
@@ -55,7 +55,7 @@ public class ClientServerNONTest {
         serverAddr = InMemoryTransport.createAddress(server.getLocalSocketAddress().getPort());
     }
 
-    @AfterMethod
+    @After
     public void tearDown() {
         server.stop();
     }

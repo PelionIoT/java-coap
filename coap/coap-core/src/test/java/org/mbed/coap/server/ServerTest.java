@@ -1,9 +1,9 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.CoapConstants;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
@@ -31,9 +34,6 @@ import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.SimpleCoapResource;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 /**
  * @author szymon
@@ -43,7 +43,7 @@ public class ServerTest {
     CoapServer server = null;
     private int SERVER_PORT;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws IOException {
         server = CoapServerBuilder.newBuilder().executor(Executors.newCachedThreadPool()).build();
         server.addRequestHandler("/test/1", new SimpleCoapResource("Dziala", "simple"));
@@ -55,7 +55,7 @@ public class ServerTest {
 
     }
 
-    @AfterMethod
+    @After
     public void tearDown() {
         server.stop();
     }

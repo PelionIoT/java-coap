@@ -1,14 +1,14 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport.udp;
 
+import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.eq;
-import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.DatagramSocket;
@@ -16,6 +16,8 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.MessageType;
@@ -27,14 +29,15 @@ import org.mbed.coap.transport.TransportReceiver;
 import org.mbed.coap.utils.FutureCallbackAdapter;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
-import org.testng.annotations.Test;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * @author szymon
  */
+
+@RunWith(value = PowerMockRunner.class)
 @PrepareForTest({DatagramChannel.class, DatagramChannelTransport.class, DatagramSocket.class})
-public class DatagramChannelTransportTest extends PowerMockTestCase {
+public class DatagramChannelTransportTest {
 
     @Test
     public void initTest() throws IOException {
@@ -69,7 +72,7 @@ public class DatagramChannelTransportTest extends PowerMockTestCase {
         verify(transportReceiver2).onReceive(isA(InetSocketAddress.class), aryEq("data2".getBytes()), eq(TransportContext.NULL));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void initWithIllegalState() throws Exception {
         new DatagramChannelTransport(new InetSocketAddress("localhost", 0), false, true);
 
@@ -86,7 +89,7 @@ public class DatagramChannelTransportTest extends PowerMockTestCase {
         verify(ch).close();
     }
 
-    @Test(expectedExceptions = ClosedChannelException.class)
+    @Test(expected = ClosedChannelException.class)
     public void initFailedTest() throws IOException {
         DatagramChannel ch = PowerMockito.mock(DatagramChannel.class);
         when(ch.configureBlocking(anyBoolean())).thenThrow(new ClosedChannelException());
@@ -95,7 +98,7 @@ public class DatagramChannelTransportTest extends PowerMockTestCase {
         srv.start();
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void initBindFailedTest() throws IOException {
         DatagramChannel ch = PowerMockito.mock(DatagramChannel.class);
         DatagramSocket datSocket = PowerMockito.mock(DatagramSocket.class);

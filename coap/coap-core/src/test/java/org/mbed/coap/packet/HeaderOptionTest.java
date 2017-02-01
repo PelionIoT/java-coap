@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.packet;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import org.junit.Test;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.CoapMessageFormatException;
 import org.mbed.coap.utils.HexArray;
-import org.testng.annotations.Test;
 
 /**
  * @author szymon
@@ -36,7 +36,7 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
 
         byte[] expected = new byte[]{(byte) 0xD8, 0x16, '/', 't', 'e', 's', 't', 'u', 'r', 'i'};
-        assertEquals(expected, baos.toByteArray());
+        assertArrayEquals(expected, baos.toByteArray());
         BasicHeaderOptions hdr2 = new BasicHeaderOptions();
         hdr2.deserialize(new ByteArrayInputStream(expected));
         assertEquals(hdr.getProxyUri(), hdr2.getProxyUri());
@@ -49,7 +49,7 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
 
         expected = new byte[]{(byte) 0xE4, 0x00, 0x1F, 't', 'e', 's', 't'};
-        assertEquals(expected, baos.toByteArray());
+        assertArrayEquals(expected, baos.toByteArray());
     }
 
     @Test
@@ -319,7 +319,7 @@ public class HeaderOptionTest {
         assertTrue(hdr3.equals(hdr4));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testIllegalLocationPath() {
         BasicHeaderOptions hdr = new BasicHeaderOptions();
         hdr.setLocationPath(".");
@@ -350,11 +350,11 @@ public class HeaderOptionTest {
         assertEquals(2, DataConvertingUtility.convertVariableUInt(257).length);
         assertEquals(2, DataConvertingUtility.convertVariableUInt(65535).length);
         assertEquals(3, DataConvertingUtility.convertVariableUInt(65536).length);
-        assertEquals(new byte[]{(byte) 0xFF}, DataConvertingUtility.convertVariableUInt(255));
-        assertEquals(new byte[]{0x01, 0x00}, DataConvertingUtility.convertVariableUInt(256));
+        assertArrayEquals(new byte[]{(byte) 0xFF}, DataConvertingUtility.convertVariableUInt(255));
+        assertArrayEquals(new byte[]{0x01, 0x00}, DataConvertingUtility.convertVariableUInt(256));
     }
 
-    @Test(expectedExceptions = CoapMessageFormatException.class)
+    @Test(expected = CoapMessageFormatException.class)
     public void malformedHeaderWithIllegalDelta() throws IOException, CoapMessageFormatException {
         BasicHeaderOptions hdr = new BasicHeaderOptions();
         hdr.deserialize(new ByteArrayInputStream(new byte[]{(byte) 0xF3}));

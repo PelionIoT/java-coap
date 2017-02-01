@@ -1,13 +1,16 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.observe;
 
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
-import static org.testng.Assert.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.client.ObservationListener;
@@ -18,9 +21,6 @@ import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.InMemoryTransport;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import protocolTests.ObservationTest;
 
 /**
@@ -32,7 +32,7 @@ public class SimpleObservableResourceTest {
     private CoapServer server;
     private CoapClient client;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws IOException {
         server = CoapServerBuilder.newBuilder().transport(new InMemoryTransport(5683))
                 .timeout(new SingleTimeout(500)).build();
@@ -47,7 +47,7 @@ public class SimpleObservableResourceTest {
                 .timeout(1000).build();
     }
 
-    @AfterMethod
+    @After
     public void tearDown() {
         server.stop();
     }
@@ -124,7 +124,7 @@ public class SimpleObservableResourceTest {
         verify(delivListener, never()).onNoObservers();
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void setBodyWithNull() throws CoapException {
         obsResource.setBody("", null);
     }

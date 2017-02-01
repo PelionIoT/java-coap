@@ -1,15 +1,18 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapCodeException;
@@ -19,10 +22,6 @@ import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.InMemoryTransport;
 import org.mbed.coap.utils.CoapResource;
 import org.slf4j.LoggerFactory;
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 /**
  * @author szymon
@@ -31,7 +30,7 @@ public class CoapServerExecutorTest {
 
     CoapServer srv;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws IOException {
         ThreadPoolExecutor es = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(2));
 
@@ -42,7 +41,7 @@ public class CoapServerExecutorTest {
 
     final Object monitor = new Object();
 
-    @AfterMethod
+    @After
     public void tearDown() {
         srv.stop();
     }
@@ -67,7 +66,7 @@ public class CoapServerExecutorTest {
             Arrays.stream(cl).forEach(CompletableFuture::join);
             fail("Expected CoapTimeoutException");
         } catch (Exception ex) {
-            Assert.assertEquals(ex.getCause().getClass(), CoapTimeoutException.class);
+            assertEquals(ex.getCause().getClass(), CoapTimeoutException.class);
         }
     }
 
