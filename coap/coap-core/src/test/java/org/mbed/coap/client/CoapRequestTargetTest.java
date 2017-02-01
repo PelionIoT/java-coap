@@ -1,16 +1,16 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import static org.testng.Assert.*;
 import java.net.InetSocketAddress;
+import org.junit.Test;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.packet.Method;
-import org.testng.annotations.Test;
 
 /**
  * @author szymon

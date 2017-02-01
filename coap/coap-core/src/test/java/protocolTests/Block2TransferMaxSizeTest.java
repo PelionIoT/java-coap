@@ -1,13 +1,16 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package protocolTests;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.client.CoapClient;
 import org.mbed.coap.client.CoapClientBuilder;
 import org.mbed.coap.exception.CoapBlockException;
@@ -18,9 +21,6 @@ import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerObserve;
 import org.mbed.coap.server.MessageIdSupplierImpl;
 import org.mbed.coap.transmission.SingleTimeout;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import protocolTests.utils.CurrentThreadExecutor;
 import protocolTests.utils.TransportConnectorMock;
 
@@ -35,7 +35,7 @@ public class Block2TransferMaxSizeTest {
     private CoapClient client;
     private CoapServer coapServer;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
@@ -50,7 +50,7 @@ public class Block2TransferMaxSizeTest {
         client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);
     }
 
-    @AfterMethod
+    @After
     public void tearDown() throws Exception {
         client.close();
         System.out.println("tearDown -----------");

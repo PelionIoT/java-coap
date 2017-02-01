@@ -1,15 +1,15 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import static org.testng.Assert.*;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.junit.Test;
 import org.mbed.coap.packet.CoapPacket;
-import org.testng.annotations.Test;
 
 /**
  * @author user
@@ -33,8 +33,8 @@ public class DuplicationDetectorTest {
             Thread.sleep(timeout + cleanupInterval + 10);
             CoapPacket secondIsDuplicated = detector.isMessageRepeated(packet);
 
-            assertNull(firstIsDuplicated, "insertion to empty duplicate check list fails");
-            assertNull(secondIsDuplicated, "second insertion after timeout with same id fails");
+            assertNull("insertion to empty duplicate check list fails", firstIsDuplicated);
+            assertNull("second insertion after timeout with same id fails", secondIsDuplicated);
         } finally {
             detector.stop();
         }
@@ -57,8 +57,8 @@ public class DuplicationDetectorTest {
             Thread.sleep(cleanupInterval + 1);
             CoapPacket secondIsDuplicated = instance.isMessageRepeated(packet);
 
-            assertNull(firstIsDuplicated, "insertion to empty duplicate check list fails");
-            assertNotNull(secondIsDuplicated, "second insertion within timeout with same id succeeds");
+            assertNull("insertion to empty duplicate check list fails", firstIsDuplicated);
+            assertNotNull("second insertion within timeout with same id succeeds", secondIsDuplicated);
         } finally {
             instance.stop();
         }

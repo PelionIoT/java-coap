@@ -1,16 +1,16 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
+import static org.junit.Assert.*;
 import static org.mbed.coap.server.internal.TransactionManagerTest.*;
-import static org.testng.Assert.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Test;
 import org.mbed.coap.server.internal.CoapTransaction.Priority;
 import org.mbed.coap.transport.InMemoryTransport;
-import org.testng.annotations.Test;
 
 /**
  * Created by szymon

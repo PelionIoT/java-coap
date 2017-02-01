@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.utils;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 /**
  * @author szymon
@@ -51,7 +51,7 @@ public class FutureCallbackAdapterTest {
         }
     }
 
-    @Test(expectedExceptions = java.util.concurrent.TimeoutException.class)
+    @Test(expected = java.util.concurrent.TimeoutException.class)
     public void timeoutTest() throws Exception {
 
         FutureCallbackAdapter<String> f = new FutureCallbackAdapter<>();

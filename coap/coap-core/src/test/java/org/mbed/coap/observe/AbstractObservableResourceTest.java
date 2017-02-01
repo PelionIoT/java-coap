@@ -1,14 +1,14 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.observe;
 
 import static org.mockito.Mockito.*;
 import java.net.InetSocketAddress;
+import org.junit.Before;
+import org.junit.Test;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.transport.InMemoryTransport;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 /**
  * Created by szymon.
@@ -19,7 +19,7 @@ public class AbstractObservableResourceTest {
     private NotificationDeliveryListener listener;
     private static final InetSocketAddress ADDRESS = InMemoryTransport.createAddress(5683);
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
         mockServer = mock(CoapServer.class);
         listener = mock(NotificationDeliveryListener.class);

@@ -1,12 +1,12 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.utils;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.*;
 import java.io.EOFException;
 import java.io.IOException;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 /**
  * @author szymon
@@ -23,7 +23,7 @@ public class ByteArrayBackedStreamTest {
         stream.write(new byte[]{3, 4});
         stream.write(new byte[]{0, 0, 5, 6, 0}, 2, 2);
         assertEquals(6, stream.size());
-        assertEquals(new byte[]{1, 2, 3, 4, 5, 6}, stream.toByteArray());
+        assertArrayEquals(new byte[]{1, 2, 3, 4, 5, 6}, stream.toByteArray());
     }
 
     @Test
@@ -36,7 +36,7 @@ public class ByteArrayBackedStreamTest {
         assertEquals(2, stream.read());
         byte[] temp = new byte[7];
         stream.read(temp);
-        assertEquals(new byte[]{3, 4, 5, 6, 7, 8, 9}, temp);
+        assertArrayEquals(new byte[]{3, 4, 5, 6, 7, 8, 9}, temp);
         assertEquals(1, stream.available());
         assertEquals(10, stream.read());
         assertEquals(0, stream.available());
@@ -44,7 +44,7 @@ public class ByteArrayBackedStreamTest {
         assertEquals(0, stream.read(new byte[0]));
     }
 
-    @Test(expectedExceptions = EOFException.class)
+    @Test(expected = EOFException.class)
     public void input_fail() throws Exception {
         @SuppressWarnings("resource")
         ByteArrayBackedInputStream stream = new ByteArrayBackedInputStream(new byte[]{1});
@@ -54,7 +54,7 @@ public class ByteArrayBackedStreamTest {
         stream.read();
     }
 
-    @Test(expectedExceptions = EOFException.class)
+    @Test(expected = EOFException.class)
     public void input_fail2() throws Exception {
         @SuppressWarnings("resource")
         ByteArrayBackedInputStream stream = new ByteArrayBackedInputStream(new byte[]{1});
@@ -63,7 +63,7 @@ public class ByteArrayBackedStreamTest {
         stream.read(temp);
     }
 
-    @Test(expectedExceptions = EOFException.class)
+    @Test(expected = EOFException.class)
     public void input_fail3() throws Exception {
         @SuppressWarnings("resource")
         ByteArrayBackedInputStream stream = new ByteArrayBackedInputStream(new byte[]{1, 2, 3, 4});

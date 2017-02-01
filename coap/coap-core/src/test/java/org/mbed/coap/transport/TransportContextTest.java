@@ -3,8 +3,8 @@
  */
 package org.mbed.coap.transport;
 
-import static org.testng.Assert.*;
-import org.testng.annotations.Test;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  * @author szymon
