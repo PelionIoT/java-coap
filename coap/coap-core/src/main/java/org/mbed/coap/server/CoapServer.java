@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -518,7 +518,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         } else if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("CoAP sent [" + coapPacket.toString(false) + "]");
         } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("CoAP sent [" + coapPacket.toString(false, false, false, true) + "]");
+            LOGGER.info("[" + coapPacket.getRemoteAddress() + "] CoAP sent [" + coapPacket.toString(false, false, false, true) + "]");
         }
     }
 
@@ -545,7 +545,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         } else if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("[" + packet.getRemoteAddress() + "] CoAP received [" + packet.toString(false) + "]");
         } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("CoAP received [" + packet.toString(false, false, false, true) + "]");
+            LOGGER.info("[" + packet.getRemoteAddress() + "] CoAP received [" + packet.toString(false, false, false, true) + "]");
         }
 
         if (packet.getMethod() != null) {
