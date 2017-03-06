@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
+ */
 package org.mbed.coap.transport.udp;
 
 import java.lang.reflect.Field;

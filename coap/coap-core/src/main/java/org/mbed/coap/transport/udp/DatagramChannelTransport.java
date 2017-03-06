@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport.udp;
 
@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import org.mbed.coap.transport.AbstractTransportConnector;
 import org.mbed.coap.transport.TransportContext;
@@ -36,15 +37,15 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
     }
 
     public DatagramChannelTransport(int localPort) {
-        super(localPort);
+        super(localPort, Runnable::run);
     }
 
-    public DatagramChannelTransport(InetSocketAddress bindingSocket) {
-        super(bindingSocket);
+    public DatagramChannelTransport(InetSocketAddress bindingSocket, Executor receivedMessageWorker) {
+        super(bindingSocket, receivedMessageWorker);
     }
 
-    public DatagramChannelTransport(InetSocketAddress bindingSocket, boolean useBlockingMode) {
-        this(bindingSocket, useBlockingMode, true);
+    public DatagramChannelTransport(InetSocketAddress bindingSocket, boolean useBlockingMode, Executor receivedMessageWorker) {
+        this(bindingSocket, useBlockingMode, true, receivedMessageWorker);
     }
 
     /**
@@ -54,8 +55,8 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
      * @param useBlockingMode if true then uses blocking mode
      * @param initThreadReader if true then initialize internal thread that reads incoming packets
      */
-    public DatagramChannelTransport(InetSocketAddress bindingSocket, boolean useBlockingMode, boolean initThreadReader) {
-        super(bindingSocket, initThreadReader);
+    public DatagramChannelTransport(InetSocketAddress bindingSocket, boolean useBlockingMode, boolean initThreadReader, Executor receivedMessageWorker) {
+        super(bindingSocket, initThreadReader, receivedMessageWorker);
         this.channelConfigureBlocking = useBlockingMode;
         if (!useBlockingMode && initThreadReader) {
             throw new IllegalStateException("Using internal thread reader without blocking mode would be highly CPU consuming.");
@@ -142,7 +143,7 @@ public class DatagramChannelTransport extends AbstractTransportConnector {
             if (channel != null) {
                 InetSocketAddress sourceAddress = (InetSocketAddress) channel.get().receive(buffer);
                 if (sourceAddress != null) {
-                    transReceiver.onReceive(sourceAddress, createCopyOfPacketData(buffer, buffer.position()), TransportContext.NULL);
+                    transportReceived(sourceAddress, createCopyOfPacketData(buffer, buffer.position()), TransportContext.NULL);
                     return true;
                 } else {
                     return false;

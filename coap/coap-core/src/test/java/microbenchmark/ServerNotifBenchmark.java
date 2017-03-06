@@ -48,9 +48,9 @@ public class ServerNotifBenchmark {
         buffer = ByteBuffer.wrap(reqData);
         buffer.position(coapReq.toByteArray().length);
 
-        trans = new ServerBenchmarkBase.FloodTransportStub(MAX);
         executor = Executors.newScheduledThreadPool(1);
-        server = CoapServerBuilder.newBuilder().transport(trans).executor(executor).duplicateMsgCacheSize(10000).build();
+        trans = new ServerBenchmarkBase.FloodTransportStub(MAX, executor);
+        server = CoapServerBuilder.newBuilder().transport(trans).duplicateMsgCacheSize(10000).build();
         server.start();
         server.setObservationHandler(new ObservationHandlerNull());
         System.out.println("MSG SIZE: " + reqData.length);

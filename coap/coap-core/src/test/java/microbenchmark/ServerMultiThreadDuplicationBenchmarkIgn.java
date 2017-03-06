@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package microbenchmark;
 
@@ -12,6 +12,6 @@ public class ServerMultiThreadDuplicationBenchmarkIgn extends ServerBenchmarkBas
 
     public ServerMultiThreadDuplicationBenchmarkIgn() {
         executor = Executors.newFixedThreadPool(8);
-        trans = new FloodTransportStub(MAX, 1); //with duplication
+        trans = new FloodTransportStub(MAX, 1, executor); //with duplication
     }
 }

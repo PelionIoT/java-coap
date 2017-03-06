@@ -21,7 +21,6 @@ import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerObserve;
 import org.mbed.coap.server.MessageIdSupplierImpl;
 import org.mbed.coap.transmission.SingleTimeout;
-import protocolTests.utils.CurrentThreadExecutor;
 import protocolTests.utils.TransportConnectorMock;
 
 /**
@@ -37,7 +36,6 @@ public class BlockTest {
         transport = new TransportConnectorMock();
 
         CoapServer coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
-                .executor(new CurrentThreadExecutor())
                 .observerIdGenerator(new CoapServerObserve.SimpleObservationIDGenerator(0))
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();

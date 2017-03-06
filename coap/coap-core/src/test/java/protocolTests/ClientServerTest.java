@@ -45,7 +45,7 @@ public class ClientServerTest {
 
     @Before
     public void setUp() throws IOException {
-        server = CoapServer.builder().build();
+        server = CoapServer.builder().transport(0).build();
         server.addRequestHandler("/test/1", new SimpleCoapResource("Dziala"));
         server.addRequestHandler("/resource*", new SimpleCoapResource("Prefix dziala"));
         server.addRequestHandler("/", new SimpleCoapResource("Shortest path"));
@@ -61,7 +61,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequest() throws Exception {
-        CoapServer cnn = CoapServer.builder().build();
+        CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
@@ -77,7 +77,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequestWithCustomHeader() throws Exception {
-        CoapServer cnn = CoapServer.builder().build();
+        CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
@@ -95,7 +95,7 @@ public class ClientServerTest {
     @Test
     public void simpleRequestWithCriticalCustomHeader() throws Exception {
         server.useCriticalOptionTest(true);
-        CoapServer cnn = CoapServer.builder().build();
+        CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
@@ -113,7 +113,7 @@ public class ClientServerTest {
     @Test
     public void simpleRequestWithCriticalCustomHeader2() throws Exception {
         server.useCriticalOptionTest(false);
-        CoapServer cnn = CoapServer.builder().build();
+        CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
@@ -130,7 +130,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequestToShortestPath() throws Exception {
-        CoapServer cnn = CoapServer.builder().build();
+        CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
@@ -235,7 +235,7 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequest4() throws Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(0).build();
         cnn.start();
 
         CoapClient client = CoapClientBuilder.clientFor(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT), cnn);
@@ -245,7 +245,7 @@ public class ClientServerTest {
 
     @Test
     public void reusePortSocketImpl() throws IOException, CoapException {
-        TransportConnector udpConnector = new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES); //new UDPMulticastConnector(61601, UDPMulticastConnector.MCAST_LINKLOCAL_ALLNODES);
+        MulticastSocketTransport udpConnector = new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run); //new UDPMulticastConnector(61601, UDPMulticastConnector.MCAST_LINKLOCAL_ALLNODES);
         CoapServer srv = CoapServer.builder().transport(udpConnector).build();
         srv.addRequestHandler("/test", new SimpleCoapResource("TTEESSTT"));
         srv.start();
@@ -256,7 +256,7 @@ public class ClientServerTest {
 
         srv.stop();
 
-        TransportConnector udpConnector2 = new MulticastSocketTransport(new InetSocketAddress(port), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES);
+        MulticastSocketTransport udpConnector2 = new MulticastSocketTransport(new InetSocketAddress(port), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run);
         CoapServer srv2 = CoapServerBuilder.newBuilder().transport(udpConnector2).build();
         srv2.addRequestHandler("/test", new SimpleCoapResource("TTEESSTT2"));
         srv2.start();
@@ -292,13 +292,13 @@ public class ClientServerTest {
 
     @Test(expected = java.lang.IllegalStateException.class)
     public void stopNonRunningServer() {
-        CoapServer srv = CoapServerBuilder.newBuilder().build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(0).build();
         srv.stop();
     }
 
     @Test(expected = java.lang.IllegalStateException.class)
     public void startRunningServer() throws IOException {
-        CoapServer srv = CoapServerBuilder.newBuilder().build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(0).build();
         srv.start();
         srv.start();
     }

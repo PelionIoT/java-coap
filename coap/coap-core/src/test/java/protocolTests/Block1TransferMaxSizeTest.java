@@ -49,6 +49,7 @@ public class Block1TransferMaxSizeTest {
         server = CoapServerBuilder.newBuilder()
                 .maxIncomingBlockTransferSize(MAX_DATA)
                 .blockSize(BlockSize.S_16)
+                .transport(0)
                 .build();
 
         changeableResource = new ChangeableResource();
