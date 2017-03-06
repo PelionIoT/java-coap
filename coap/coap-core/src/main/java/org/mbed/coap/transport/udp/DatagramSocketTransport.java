@@ -8,8 +8,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.ByteBuffer;
-import org.mbed.coap.transport.AbstractTransportConnector;
+import java.util.concurrent.Executor;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.transport.CoapReceiver;
+import org.mbed.coap.transport.CoapTransport;
 import org.mbed.coap.transport.TransportContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,27 +22,27 @@ import org.slf4j.LoggerFactory;
  *
  * @author szymon
  */
-public class DatagramSocketTransport extends AbstractTransportConnector {
+public class DatagramSocketTransport implements CoapTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatagramSocketTransport.class.getName());
+    private final InetSocketAddress bindSocket;
+    private final Executor receivedMessageWorker;
     private DatagramSocket socket;
     private int socketBufferSize = -1;
     protected boolean reuseAddress;
+    private Thread readerThread;
 
-    public DatagramSocketTransport(InetSocketAddress bindSocket, boolean initReaderThread, String readerThreadName) {
-        super(bindSocket, initReaderThread, readerThreadName);
+    public DatagramSocketTransport(InetSocketAddress bindSocket, Executor receivedMessageWorker) {
+        this.bindSocket = bindSocket;
+        this.receivedMessageWorker = receivedMessageWorker;
     }
 
-    public DatagramSocketTransport(InetSocketAddress bindSocket, boolean initReaderThread) {
-        super(bindSocket, initReaderThread);
-    }
-
-    public DatagramSocketTransport(InetSocketAddress bindSocket) {
-        super(bindSocket);
+    public DatagramSocketTransport(int localPort, Executor receivedMessageWorker) {
+        this(new InetSocketAddress(localPort), receivedMessageWorker);
     }
 
     public DatagramSocketTransport(int localPort) {
-        super(localPort);
+        this(localPort, Runnable::run);
     }
 
     public void setSocketBufferSize(int socketBufferSize) {
@@ -57,7 +60,7 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
     }
 
     @Override
-    protected void initialize() throws IOException {
+    public void start(CoapReceiver coapReceiver) throws IOException {
         socket = createSocket();
         if (socketBufferSize > 0) {
             socket.setReceiveBufferSize(socketBufferSize);
@@ -68,45 +71,61 @@ public class DatagramSocketTransport extends AbstractTransportConnector {
         if (socketBufferSize > 0 && LOGGER.isDebugEnabled()) {
             LOGGER.debug("DatagramSocket [receiveBuffer: " + socket.getReceiveBufferSize() + ", sendBuffer: " + socket.getSendBufferSize() + "]");
         }
+
+        readerThread = new Thread(() -> readingLoop(coapReceiver), "multicast-reader");
+        readerThread.start();
+    }
+
+    private void readingLoop(CoapReceiver coapReceiver) {
+        byte[] readBuffer = new byte[2048];
+
+        try {
+            while (true) {
+                DatagramPacket datagramPacket = new DatagramPacket(readBuffer, readBuffer.length);
+                socket.receive(datagramPacket);
+
+                final InetSocketAddress remoteAddress = (InetSocketAddress) datagramPacket.getSocketAddress();
+                final byte[] datagramData = new byte[datagramPacket.getLength()];
+                System.arraycopy(readBuffer, 0, datagramData, 0, datagramPacket.getLength());
+
+                receivedMessageWorker.execute(() -> {
+                    try {
+                        final CoapPacket coapPacket = CoapPacket.read(remoteAddress, datagramData, datagramData.length);
+                        coapReceiver.handle(coapPacket, TransportContext.NULL);
+                    } catch (CoapException e) {
+                        LOGGER.warn(e.getMessage());
+                    }
+                });
+            }
+        } catch (IOException ex) {
+            if (!ex.getMessage().startsWith("Socket closed")) {
+                LOGGER.warn(ex.getMessage(), ex);
+            }
+        }
     }
 
     protected DatagramSocket createSocket() throws SocketException {
-        return new QoSDatagramSocket(getBindSocket());
+        return new QoSDatagramSocket(bindSocket);
     }
 
     @Override
     public void stop() {
-        super.stop();
-        socket.close();
-    }
-
-    @Override
-    public boolean performReceive() {
-        ByteBuffer buffer = getBuffer();
-        DatagramPacket datagramPacket = new DatagramPacket(buffer.array(), buffer.limit());
-        try {
-            socket.receive(datagramPacket);
-
-            byte[] packetData = createCopyOfPacketData(buffer, datagramPacket.getLength());
-
-            transReceiver.onReceive((InetSocketAddress) datagramPacket.getSocketAddress(), packetData, TransportContext.NULL);
-            return true;
-        } catch (IOException ex) {
-            if (!isRunning() && "socket closed".equalsIgnoreCase(ex.getMessage())) {
-                LOGGER.debug("DatagramSocket was closed.");
-            } else {
-                LOGGER.error(ex.getMessage(), ex);
-            }
+        if (socket != null) {
+            readerThread.interrupt();
+            socket.close();
         }
-        return false;
     }
 
     @Override
-    public void send(byte[] data, int len, InetSocketAddress destinationAddress, TransportContext transContext) throws IOException {
+    public void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext transContext) throws CoapException, IOException {
         if (socket == null) {
             throw new IllegalStateException();
         }
-        DatagramPacket datagramPacket = new DatagramPacket(data, len, destinationAddress);
+        byte[] data = coapPacket.toByteArray();
+
+        DatagramPacket datagramPacket = new DatagramPacket(data, data.length, adr);
+        socket.send(datagramPacket);
+
         if (transContext != null) {
             Integer tc = TrafficClassTransportContext.readFrom(transContext);
             if (tc != null && tc > 0) {

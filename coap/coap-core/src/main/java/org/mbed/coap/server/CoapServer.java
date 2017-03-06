@@ -14,8 +14,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -42,9 +40,8 @@ import org.mbed.coap.server.internal.TransactionManager;
 import org.mbed.coap.server.internal.UriMatcher;
 import org.mbed.coap.transmission.CoapTimeout;
 import org.mbed.coap.transmission.TransmissionTimeout;
-import org.mbed.coap.transport.TransportConnector;
+import org.mbed.coap.transport.CoapTransport;
 import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.utils.ByteArrayBackedOutputStream;
 import org.mbed.coap.utils.Callback;
 import org.mbed.coap.utils.CoapResource;
 import org.mbed.coap.utils.FutureCallbackAdapter;
@@ -66,7 +63,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     private boolean isRunning;
     private final Map<UriMatcher, CoapHandler> handlers = new HashMap<>();
     private ScheduledExecutorService scheduledExecutor;
-    private TransportConnector transport;
+    private CoapTransport coapTransporter;
     private BlockSize blockOptionSize; //null: no blocking
     private boolean isSelfCreatedExecutor;
     protected TransactionManager transMgr = new TransactionManager();
@@ -89,23 +86,13 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     }
 
     protected final void init(final int duplicationListSize) {
-        if (transport == null) {
+        if (coapTransporter == null) {
             throw new NullPointerException();
         }
 
-        if (executor == null) {
-            this.executor = Executors.newCachedThreadPool();
-            isSelfCreatedExecutor = true;
-        } else {
-            isSelfCreatedExecutor = false;
-        }
-
         if (scheduledExecutor == null) {
-            if (executor instanceof ScheduledExecutorService) {
-                scheduledExecutor = (ScheduledExecutorService) executor;
-            } else {
-                scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-            }
+            scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+            isSelfCreatedExecutor = true;
         }
 
         if (idContext == null) {
@@ -129,11 +116,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
 
     public void setDefaultCoapTransactionPriority(CoapTransaction.Priority defaultPriority) {
         this.defaultPriority = defaultPriority;
-    }
-
-    void setExecutor(Executor executor) {
-        assertNotRunning();
-        this.executor = executor;
     }
 
     protected void setMidSupplier(MessageIdSupplier idContext) {
@@ -172,7 +154,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      */
     public synchronized CoapServer start() throws IOException, IllegalStateException {
         assertNotRunning();
-        transport.start(this);
+        coapTransporter.start(this);
         if (duplicationDetector != null) {
             duplicationDetector.start();
         }
@@ -216,12 +198,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
 
         LOGGER.trace("Stopping CoAP server..");
         stopTransactionTimeoutWorker();
-        transport.stop();
+        coapTransporter.stop();
 
-        if (executor instanceof ExecutorService && isSelfCreatedExecutor) {
-            ExecutorService srv = (ExecutorService) executor;
-            srv.shutdown();
-        }
+
         if (isSelfCreatedExecutor) {
             scheduledExecutor.shutdown();
         }
@@ -256,10 +235,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             throw new NullPointerException();
         }
         this.errorCallback = errorCallback;
-    }
-
-    TransportConnector getTransport() {
-        return transport;
     }
 
     @Deprecated
@@ -348,7 +323,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @return socket address
      */
     public InetSocketAddress getLocalSocketAddress() {
-        return transport.getLocalSocketAddress();
+        return coapTransporter.getLocalSocketAddress();
     }
 
     private UriMatcher findKey(CoapHandler requestHandler) {
@@ -504,15 +479,13 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     }
 
     @Override
-    protected final void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
-        ByteArrayBackedOutputStream stream = new ByteArrayBackedOutputStream(coapPacket.getPayload() != null ? coapPacket.getPayload().length + 8 : 16);
-        coapPacket.writeTo(stream);
-
+    protected void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("CoapServer.send(): MID:" + coapPacket.getMessageId() + "/" + adr);
         }
 
-        transport.send(stream.getByteArray(), stream.size(), adr, tranContext);
+        coapTransporter.sendPacket(coapPacket, adr, tranContext);
+
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("CoAP sent [" + coapPacket.toString(true) + "]");
         } else if (LOGGER.isDebugEnabled()) {
@@ -535,7 +508,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * Handles incoming messages
      */
     @Override
-    protected void handle(CoapPacket packet, TransportContext transportContext) {
+    public void handle(CoapPacket packet, TransportContext transportContext) {
         if (handlePing(packet)) {
             return;
         }
@@ -570,7 +543,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * Handles parsing errors on incoming messages.
      */
     @Override
-    protected void handleException(byte[] packet, CoapException exception, TransportContext transportContext) {
+    public void handleException(byte[] packet, CoapException exception, TransportContext transportContext) {
         errorCallback.parserError(packet, exception);
     }
 
@@ -869,9 +842,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         coapHandler.handle(exchange);
     }
 
-    protected void setTransportConnector(TransportConnector transportConnector) {
-        assertNotRunning();
-        this.transport = transportConnector;
+    protected void setCoapTransporter(CoapTransport coapTransporter) {
+        this.coapTransporter = coapTransporter;
     }
 
     private void resendTimeouts() {

@@ -45,7 +45,7 @@ public class ServerTest {
 
     @Before
     public void setUp() throws IOException {
-        server = CoapServerBuilder.newBuilder().executor(Executors.newCachedThreadPool()).build();
+        server = CoapServerBuilder.newBuilder().transport(0, Executors.newCachedThreadPool()).build();
         server.addRequestHandler("/test/1", new SimpleCoapResource("Dziala", "simple"));
         server.addRequestHandler("/test2", new TestResource());
         server.addRequestHandler(CoapConstants.WELL_KNOWN_CORE, server.getResourceLinkResource());
@@ -85,7 +85,7 @@ public class ServerTest {
 
     @Test
     public void requestWithAccept() throws UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(0).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(new InetSocketAddress("127.0.0.1", SERVER_PORT));
@@ -102,7 +102,7 @@ public class ServerTest {
 
     @Test
     public void requestWithAccept2() throws UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(0).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(new InetSocketAddress("127.0.0.1", SERVER_PORT));

@@ -1,11 +1,12 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.concurrent.Executor;
 import org.mbed.coap.exception.ReceiveException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,7 @@ public abstract class AbstractTransportConnector implements TransportConnector {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTransportConnector.class);
     private InetSocketAddress bindSocket;
-    protected TransportReceiver transReceiver;
+    private TransportReceiver transReceiver;
     protected boolean isRunning;
     protected int bufferSize = DEFAULT_BUFFER_SIZE;
     private static final int DEFAULT_BUFFER_SIZE = 1500;
@@ -25,23 +26,25 @@ public abstract class AbstractTransportConnector implements TransportConnector {
     private Thread readerThread;
     private final boolean initReaderThread;
     private final String readerThreadName;
+    private final Executor receivedMessageWorker;
 
-    public AbstractTransportConnector(InetSocketAddress bindSocket, boolean initReaderThread, String readerThreadName) {
+    public AbstractTransportConnector(InetSocketAddress bindSocket, boolean initReaderThread, String readerThreadName, Executor receivedMessageWorker) {
         this.bindSocket = bindSocket;
         this.initReaderThread = initReaderThread;
         this.readerThreadName = readerThreadName;
+        this.receivedMessageWorker = receivedMessageWorker;
     }
 
-    public AbstractTransportConnector(InetSocketAddress bindSocket, boolean initReaderThread) {
-        this(bindSocket, initReaderThread, "transport-receiver");
+    public AbstractTransportConnector(InetSocketAddress bindSocket, boolean initReaderThread, Executor receivedMessageWorker) {
+        this(bindSocket, initReaderThread, "transport-receiver", receivedMessageWorker);
     }
 
-    public AbstractTransportConnector(InetSocketAddress bindSocket) {
-        this(bindSocket, true);
+    public AbstractTransportConnector(InetSocketAddress bindSocket, Executor receivedMessageWorker) {
+        this(bindSocket, true, receivedMessageWorker);
     }
 
-    public AbstractTransportConnector(int port) {
-        this(new InetSocketAddress(port));
+    public AbstractTransportConnector(int port, Executor receivedMessageWorker) {
+        this(new InetSocketAddress(port), receivedMessageWorker);
     }
 
     public void setBufferSize(int bufferSize) {
@@ -119,6 +122,22 @@ public abstract class AbstractTransportConnector implements TransportConnector {
 
     protected final boolean isRunning() {
         return isRunning;
+    }
+
+    protected void transportReceived(InetSocketAddress sourceAddress, byte[] data, TransportContext transportContext) {
+        receivedMessageWorker.execute(new Runnable() {
+            @Override
+            public void run() {
+                transReceiver.onReceive(sourceAddress, data, transportContext);
+            }
+
+            @Override
+            @SuppressWarnings("PMD.OverrideBothEqualsAndHashcode")
+            public int hashCode() {
+                //this is needed so that hashed executor can handle messages from same IP in same order
+                return sourceAddress.hashCode();
+            }
+        });
     }
 
 }

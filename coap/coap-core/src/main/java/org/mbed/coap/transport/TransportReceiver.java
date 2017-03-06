@@ -1,10 +1,18 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.exception.ReceiveException;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.server.CoapServer;
+import org.mbed.coap.utils.ByteArrayBackedOutputStream;
+import org.mbed.coap.utils.HexArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Transport receiver interface.
@@ -31,4 +39,59 @@ public interface TransportReceiver {
      */
     void onConnectionClosed(InetSocketAddress remoteAddress);
 
+
+    class CoapTransportFromTransportConnector implements TransportReceiver, CoapTransport {
+        private static final Logger LOGGER = LoggerFactory.getLogger(CoapTransportFromTransportConnector.class);
+
+        private final TransportConnector transport;
+        private final CoapServer coapServer;
+
+        public CoapTransportFromTransportConnector(CoapServer server, TransportConnector transport) {
+            this.transport = transport;
+            this.coapServer = server;
+        }
+
+        @Override
+        public void start(CoapReceiver server) throws IOException {
+            transport.start(this);
+        }
+
+        @Override
+        public void stop() {
+            transport.stop();
+        }
+
+
+        @Override
+        public void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+            ByteArrayBackedOutputStream stream = new ByteArrayBackedOutputStream(coapPacket.getPayload() != null ? coapPacket.getPayload().length + 8 : 16);
+            coapPacket.writeTo(stream);
+            transport.send(stream.getByteArray(), stream.size(), adr, tranContext);
+        }
+
+        @Override
+        public void onReceive(InetSocketAddress address, byte[] data, TransportContext transportContext) {
+            try {
+                CoapPacket coapPkt = CoapPacket.read(data, data.length, address);
+                coapServer.handle(coapPkt, transportContext);
+            } catch (CoapException ex) {
+                LOGGER.warn("Malformed coap message source: " + address + ", size:" + data.length);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Malformed coap message payload: " + HexArray.toHex(data));
+                }
+                coapServer.handleException(data, ex, transportContext);
+            }
+
+        }
+
+        @Override
+        public void onConnectionClosed(InetSocketAddress remoteAddress) {
+            LOGGER.debug("Connection with " + remoteAddress + " was closed");
+        }
+
+        @Override
+        public InetSocketAddress getLocalSocketAddress() {
+            return transport.getLocalSocketAddress();
+        }
+    }
 }

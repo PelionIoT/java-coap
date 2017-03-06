@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.client;
 
@@ -12,6 +12,7 @@ import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transmission.TransmissionTimeout;
+import org.mbed.coap.transport.CoapTransport;
 import org.mbed.coap.transport.TransportConnector;
 
 /**
@@ -87,6 +88,14 @@ public final class CoapClientBuilder {
     }
 
     public CoapClientBuilder transport(TransportConnector trans) {
+        if (coapServer != null) {
+            throw new IllegalStateException("Transport already initialized");
+        }
+        coapServer = CoapServerBuilder.newBuilder().transport(trans).build();
+        return this;
+    }
+
+    public CoapClientBuilder transport(CoapTransport trans) {
         if (coapServer != null) {
             throw new IllegalStateException("Transport already initialized");
         }

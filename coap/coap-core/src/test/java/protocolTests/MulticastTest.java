@@ -33,7 +33,7 @@ public class MulticastTest {
     //    @Ignore
     public void multicastConnection() throws IOException, CoapException {
         CoapServer server = CoapServerBuilder.newBuilder()
-                .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES)).build();
+                .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run)).build();
         server.addRequestHandler("/multicast", new SimpleCoapResource(
                 "multicast"));
         // server.setMulticastGroup(InetAddress.getByName("FF02::1"));
@@ -44,7 +44,7 @@ public class MulticastTest {
         //                MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, port);
 
         CoapServer cnnServer = CoapServerBuilder.newBuilder()
-                .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES))
+                .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run))
                 .timeout(new SingleTimeout(1000000)).build();
         cnnServer.start();
 
@@ -86,12 +86,9 @@ public class MulticastTest {
         coap.setMethod(Method.GET);
         coap.headers().setUriPath("/multicast");
 
-        // fe80:0:0:0:f0f1:7af6:3111:b7a6
-        // InetSocketAddress addr = new InetSocketAddress("FF02::1", 61619);
-        InetSocketAddress addr = new InetSocketAddress(
-                "fe80:0:0:0:f0f1:7af6:3111:b7a6", 61619);
-        DatagramPacket reqDatagram = new DatagramPacket(coap.toByteArray(),
-                coap.toByteArray().length, addr);
+        InetSocketAddress addr = new InetSocketAddress("FF02::1", 61619);
+        //InetSocketAddress addr = new InetSocketAddress("fe80:0:0:0:f0f1:7af6:3111:b7a6", 61619);
+        DatagramPacket reqDatagram = new DatagramPacket(coap.toByteArray(), coap.toByteArray().length, addr);
 
         DatagramSocket soc = null;
         DatagramPacket respDatagram;
@@ -113,7 +110,7 @@ public class MulticastTest {
     @Ignore
     public void multicastTest() throws IOException {
 
-        CoapServer server = CoapServerBuilder.newBuilder().transport(new DatagramChannelTransport(new InetSocketAddress("::1", 61619))).build();
+        CoapServer server = CoapServerBuilder.newBuilder().transport(new DatagramChannelTransport(new InetSocketAddress("::1", 61619), Runnable::run)).build();
         server.start();
 
         DatagramSocket soc = null;

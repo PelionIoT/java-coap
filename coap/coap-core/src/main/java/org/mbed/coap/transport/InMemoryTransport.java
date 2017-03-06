@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport;
 
@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.mbed.coap.utils.IpPortAddress;
@@ -50,12 +51,16 @@ public class InMemoryTransport extends AbstractTransportConnector {
         this(createAddress(port));
     }
 
+    public InMemoryTransport(int port, Executor executor) {
+        super(createAddress(port), executor);
+    }
+
     public InMemoryTransport() {
         this(BINDING_MANAGER.createRandomPortAddress());
     }
 
     private InMemoryTransport(InetSocketAddress bindSocket) {
-        super(bindSocket);
+        super(bindSocket, Runnable::run);
     }
 
     @Override
@@ -79,7 +84,7 @@ public class InMemoryTransport extends AbstractTransportConnector {
         try {
             DatagramMessage msg = queue.poll(1, TimeUnit.SECONDS);
             if (msg != null) {
-                transReceiver.onReceive(msg.source.toInetSocketAddress(), msg.packetData, getTransportContext());
+                transportReceived(msg.source.toInetSocketAddress(), msg.packetData, getTransportContext());
                 return true;
             }
         } catch (InterruptedException ex) {

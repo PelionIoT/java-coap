@@ -19,7 +19,6 @@ import org.mbed.coap.packet.Code;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.CoapServerBuilder;
 import org.mbed.coap.server.MessageIdSupplierImpl;
-import protocolTests.utils.CurrentThreadExecutor;
 import protocolTests.utils.TransportConnectorMock;
 
 /**
@@ -38,7 +37,6 @@ public class Observation2Test {
         transport = new TransportConnectorMock();
 
         CoapServer coapServer = CoapServerBuilder.newBuilder().transport(transport).midSupplier(new MessageIdSupplierImpl(0))
-                .executor(new CurrentThreadExecutor())
                 .observerIdGenerator(new SimpleObservationIDGenerator(0)).build();
         coapServer.start();
 

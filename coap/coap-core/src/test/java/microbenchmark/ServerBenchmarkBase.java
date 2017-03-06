@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
@@ -52,7 +53,7 @@ public abstract class ServerBenchmarkBase {
         buffer = ByteBuffer.wrap(reqData);
         buffer.position(coapReq.toByteArray().length);
 
-        server = CoapServerBuilder.newBuilder().transport(trans).executor(executor).duplicateMsgCacheSize(10000).build();
+        server = CoapServerBuilder.newBuilder().transport(trans).duplicateMsgCacheSize(10000).build();
         server.addRequestHandler("/path1/sub2/sub3", new SimpleCoapResource("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"));
         server.start();
         System.out.println("MSG SIZE: " + reqData.length);
@@ -86,20 +87,22 @@ public abstract class ServerBenchmarkBase {
     static class FloodTransportStub implements TransportConnector {
 
         private TransportReceiver udpReceiver;
+        private final Executor executor;
 
         private final InetSocketAddress[] addrArr;
         final CountDownLatch LATCH;
 
-        public FloodTransportStub(int max) {
-            this(max, (int) Math.ceil(max / (double) 0xFFFF)); //no message duplication guaranted
+        public FloodTransportStub(int max, ExecutorService executor) {
+            this(max, (int) Math.ceil(max / (double) 0xFFFF), executor); //no message duplication guaranted
         }
 
-        public FloodTransportStub(int max, int maxAddr) {
+        public FloodTransportStub(int max, int maxAddr, ExecutorService executor) {
             this.LATCH = new CountDownLatch(max);
             addrArr = new InetSocketAddress[maxAddr];
             for (int i = 0; i < maxAddr; i++) {
                 addrArr[i] = new InetSocketAddress("localhost", 5684 + i);
             }
+            this.executor = executor;
         }
 
         @Override
@@ -126,7 +129,10 @@ public abstract class ServerBenchmarkBase {
 
         public boolean receive(ByteBuffer data) {
             byte[] packetData = AbstractTransportConnector.createCopyOfPacketData(data, data.position());
-            udpReceiver.onReceive(addrArr[addIndex++ % addrArr.length], packetData, null);
+            InetSocketAddress adr = addrArr[addIndex++ % addrArr.length];
+
+            executor.execute(() -> udpReceiver.onReceive(adr, packetData, null));
+
             return addIndex % addrArr.length == 0;
         }
     }
