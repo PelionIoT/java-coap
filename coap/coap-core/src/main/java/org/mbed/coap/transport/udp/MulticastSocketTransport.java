@@ -1,17 +1,20 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.transport.udp;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
-import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import org.mbed.coap.transport.AbstractTransportConnector;
+import java.util.concurrent.Executor;
+import org.mbed.coap.exception.CoapException;
+import org.mbed.coap.packet.CoapPacket;
+import org.mbed.coap.transport.CoapReceiver;
+import org.mbed.coap.transport.CoapTransport;
 import org.mbed.coap.transport.TransportContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,65 +22,74 @@ import org.slf4j.LoggerFactory;
 /**
  * @author szymon
  */
-public final class MulticastSocketTransport extends AbstractTransportConnector {
+public final class MulticastSocketTransport implements CoapTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MulticastSocketTransport.class.getName());
+    private final InetSocketAddress bindSocket;
+    private final Executor receivedMessageWorker;
     private MulticastSocket mcastSocket;
     private final InetAddress mcastGroup;
+    private Thread readerThread;
+
     public final static String MCAST_LINKLOCAL_ALLNODES = "FF02::1";    //NOPMD
     public final static String MCAST_NODELOCAL_ALLNODES = "FF01::1";    //NOPMD
 
-    public MulticastSocketTransport(InetSocketAddress bindSocket, String multicastGroup) throws UnknownHostException {
-        super(bindSocket);
-        mcastGroup = InetAddress.getByName(multicastGroup);
-    }
-
-    public MulticastSocketTransport(int port, String multicastGroup) throws UnknownHostException {
-        super(port);
+    public MulticastSocketTransport(InetSocketAddress bindSocket, String multicastGroup, Executor receivedMessageWorker) throws UnknownHostException {
+        this.bindSocket = bindSocket;
+        this.receivedMessageWorker = receivedMessageWorker;
         mcastGroup = InetAddress.getByName(multicastGroup);
     }
 
     @Override
     public void stop() {
-        super.stop();
         mcastSocket.close();
+        readerThread.interrupt();
     }
 
     @Override
-    protected void initialize() throws IOException {
-        mcastSocket = new MulticastSocket(getBindSocket());
+    public void start(CoapReceiver coapReceiver) throws IOException {
+        mcastSocket = new MulticastSocket(bindSocket);
         mcastSocket.joinGroup(mcastGroup);
         LOGGER.debug("CoAP server binds on multicast " + mcastSocket.getLocalSocketAddress());
+
+        readerThread = new Thread(() -> readingLoop(coapReceiver), "multicast-reader");
+        readerThread.start();
     }
 
-    @Override
-    public boolean performReceive() {
-        try {
-            ByteBuffer buffer = getBuffer();
-            DatagramPacket datagramPacket = new DatagramPacket(buffer.array(), buffer.limit());
-            mcastSocket.receive(datagramPacket);
-            InetSocketAddress adr = (InetSocketAddress) datagramPacket.getSocketAddress();
-            if (LOGGER.isDebugEnabled() && adr.getAddress().isMulticastAddress()) {
-                LOGGER.debug("Received multicast message from: " + datagramPacket.getSocketAddress());
-            }
-            byte[] packetData = createCopyOfPacketData(buffer, datagramPacket.getLength());
+    private void readingLoop(CoapReceiver coapReceiver) {
+        byte[] readBuffer = new byte[2048];
 
-            transReceiver.onReceive(adr, packetData, TransportContext.NULL);
-            return true;
-        } catch (SocketException ex) {
-            if (isRunning()) {
-                LOGGER.warn(ex.getMessage(), ex);
+        try {
+            while (true) {
+                DatagramPacket datagramPacket = new DatagramPacket(readBuffer, readBuffer.length);
+                mcastSocket.receive(datagramPacket);
+                InetSocketAddress adr = (InetSocketAddress) datagramPacket.getSocketAddress();
+                if (LOGGER.isDebugEnabled() && adr.getAddress().isMulticastAddress()) {
+                    LOGGER.debug("Received multicast message from: " + datagramPacket.getSocketAddress());
+                }
+
+                try {
+                    final CoapPacket coapPacket = CoapPacket.read(adr, datagramPacket.getData(), datagramPacket.getLength());
+                    receivedMessageWorker.execute(() -> coapReceiver.handle(coapPacket, TransportContext.NULL));
+                } catch (CoapException e) {
+                    LOGGER.warn(e.getMessage());
+                }
             }
         } catch (IOException ex) {
-
-            LOGGER.warn(ex.getMessage(), ex);
+            if (!ex.getMessage().startsWith("Socket closed")) {
+                LOGGER.warn(ex.getMessage(), ex);
+            }
         }
-        return false;
     }
 
     @Override
-    public void send(byte[] data, int len, InetSocketAddress adr, TransportContext transContext) throws IOException {
-        DatagramPacket datagramPacket = new DatagramPacket(data, len, adr);
+    public void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        coapPacket.writeTo(baos);
+        byte[] data = baos.toByteArray();
+        baos.close();
+
+        DatagramPacket datagramPacket = new DatagramPacket(data, data.length, adr);
         mcastSocket.send(datagramPacket);
     }
 

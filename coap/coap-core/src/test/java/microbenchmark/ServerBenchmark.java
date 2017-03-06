@@ -7,6 +7,7 @@ import static org.mbed.coap.transport.AbstractTransportConnector.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
@@ -49,7 +50,7 @@ public class ServerBenchmark {
         buffer.position(coapReq.toByteArray().length);
 
         trans = new SynchTransportStub();
-        server = CoapServerBuilder.newBuilder().transport(trans).executor(Executors.newScheduledThreadPool(1)).build();
+        server = CoapServerBuilder.newBuilder().transport(trans).build();
         server.addRequestHandler("/path1/sub2/sub3", new SimpleCoapResource("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"));
         server.start();
         System.out.println("MSG SIZE: " + reqData.length);
@@ -77,6 +78,7 @@ public class ServerBenchmark {
     private static class SynchTransportStub implements TransportConnector {
 
         private TransportReceiver udpReceiver;
+        private Executor executor = Executors.newSingleThreadExecutor();
         private final InetSocketAddress addr = new InetSocketAddress("localhost", 5683);
         private boolean sendCalled = false;
 
@@ -102,7 +104,8 @@ public class ServerBenchmark {
         }
 
         public synchronized void receive(ByteBuffer data) throws InterruptedException {
-            udpReceiver.onReceive(addr, createCopyOfPacketData(data, data.position()), null);
+            byte[] data1 = createCopyOfPacketData(data, data.position());
+            executor.execute(() -> udpReceiver.onReceive(addr, data1, null));
             while (!sendCalled) {
                 this.wait();
             }

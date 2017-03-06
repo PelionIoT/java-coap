@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server;
 
@@ -9,7 +9,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.mbed.coap.packet.BlockSize;
 import org.mbed.coap.server.internal.CoapTransaction;
 import org.mbed.coap.transmission.TransmissionTimeout;
+import org.mbed.coap.transport.CoapTransport;
 import org.mbed.coap.transport.TransportConnector;
+import org.mbed.coap.transport.TransportReceiver;
 import org.mbed.coap.transport.udp.DatagramChannelTransport;
 
 /**
@@ -19,6 +21,7 @@ public class CoapServerBuilder {
 
     private final CoapServerObserve server;
     private int duplicationMaxSize = 10000;
+    private CoapTransport coapTransport;
 
     CoapServerBuilder() {
         server = new CoapServerObserve();
@@ -28,18 +31,23 @@ public class CoapServerBuilder {
         return new CoapServerBuilder();
     }
 
-    public CoapServerBuilder transport(TransportConnector transportConnector) {
-        server.setTransportConnector(transportConnector);
+    public CoapServerBuilder transport(TransportConnector transport) {
+        this.coapTransport = new TransportReceiver.CoapTransportFromTransportConnector(server, transport);
         return this;
     }
 
     public CoapServerBuilder transport(int port) {
-        server.setTransportConnector(new DatagramChannelTransport(new InetSocketAddress(port)));
+        this.coapTransport = new TransportReceiver.CoapTransportFromTransportConnector(server, new DatagramChannelTransport(new InetSocketAddress(port), Runnable::run));
         return this;
     }
 
-    public CoapServerBuilder executor(Executor executor) {
-        server.setExecutor(executor);
+    public CoapServerBuilder transport(int port, Executor receivedMessageWorker) {
+        this.coapTransport = new TransportReceiver.CoapTransportFromTransportConnector(server, new DatagramChannelTransport(new InetSocketAddress(port), receivedMessageWorker));
+        return this;
+    }
+
+    public CoapServerBuilder transport(CoapTransport coapTransport) {
+        this.coapTransport = coapTransport;
         return this;
     }
 
@@ -108,9 +116,11 @@ public class CoapServerBuilder {
     }
 
     public CoapServer build() {
-        if (server.getTransport() == null) {
-            server.setTransportConnector(DatagramChannelTransport.ofRandomPort());
+        if (coapTransport == null) {
+            throw new IllegalArgumentException("Transport is missing");
         }
+
+        server.setCoapTransporter(coapTransport);
         server.init(duplicationMaxSize);
         return server;
     }
@@ -119,4 +129,5 @@ public class CoapServerBuilder {
         server.setObservationIDGenerator(observationIDGenerator);
         return this;
     }
+
 }

@@ -42,7 +42,7 @@ public class TimeoutTest {
     @Test
     @Ignore
     public void timeoutTestIgn() throws Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616).executor(Executors.newCachedThreadPool()).build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616, Executors.newCachedThreadPool()).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), 60666));
@@ -63,8 +63,7 @@ public class TimeoutTest {
 
     @Test
     public void timeoutTest() throws Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create())
-                .executor(Executors.newCachedThreadPool()).timeout(new SingleTimeout(100)).build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create()).timeout(new SingleTimeout(100)).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(InMemoryTransport.createAddress(0));

@@ -26,7 +26,6 @@ import org.mbed.coap.transmission.SingleTimeout;
 import org.mbed.coap.transport.TransportConnector;
 import org.mbed.coap.transport.TransportReceiver;
 import org.mockito.ArgumentCaptor;
-import protocolTests.utils.CurrentThreadExecutor;
 
 /**
  * Created by szymon
@@ -44,7 +43,6 @@ public class QueueRequestsTest {
         transport = mock(TransportConnector.class);
 
         coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
-                .executor(new CurrentThreadExecutor())
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();
 

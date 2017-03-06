@@ -18,7 +18,6 @@ import org.mbed.coap.packet.Code;
 import org.mbed.coap.server.CoapServer;
 import org.mbed.coap.server.MessageIdSupplierImpl;
 import org.mbed.coap.transmission.SingleTimeout;
-import protocolTests.utils.CurrentThreadExecutor;
 import protocolTests.utils.TransportConnectorMock;
 
 /**
@@ -34,7 +33,6 @@ public class SeparateResponseTest {
         transport = new TransportConnectorMock();
 
         CoapServer coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
-                .executor(new CurrentThreadExecutor())
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();
 

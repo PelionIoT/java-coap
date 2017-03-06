@@ -1,0 +1,41 @@
+@startuml
+title: Message handling model
+
+box "OS"
+    entity Socket as sock
+end box
+participant DatagramSocketTransport as udp <<(C,#ADD1B2)>>
+participant Executor as exec <<(I,#ADD1B2)>>
+participant CoapServer as server <<(C,#ADD1B2)>>
+participant CoapResource as CoapResource <<(C,#ADD1B2)>>
+
+
+loop
+udp -> sock+ #LightGreen: socket.receive
+--> sock: Datagram
+udp <-- sock-
+udp -> exec: execute
+end
+
+group Executor's thread
+exec -> udp++ #LightBlue: run
+    udp -> udp: CoapPacket.read
+    note left: parse to CoapPacket
+
+    udp -> server++: handle(coapPacket)
+        server -> server: handleRequest
+        server -> server: findHandler
+        server -> CoapResource++: handle
+        CoapResource -> CoapResource: post()
+        CoapResource -> server--: exchange.sendResponse
+    server -> udp--: sendPacket
+
+    udp -> udp: coapPacket.writeTo
+    note left: serialize CoapPacket
+    udp -> sock: socket.send
+
+exec <-- udp--
+end
+
+
+@enduml

@@ -1,13 +1,10 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package org.mbed.coap.server.internal;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 import org.mbed.coap.exception.CoapException;
 import org.mbed.coap.packet.CoapPacket;
 import org.mbed.coap.packet.Code;
@@ -15,21 +12,20 @@ import org.mbed.coap.packet.MessageType;
 import org.mbed.coap.server.CoapErrorCallback;
 import org.mbed.coap.server.CoapExchange;
 import org.mbed.coap.transmission.TransmissionTimeout;
+import org.mbed.coap.transport.CoapReceiver;
 import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
-public abstract class CoapServerAbstract implements TransportReceiver {
+public abstract class CoapServerAbstract implements CoapReceiver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerAbstract.class.getName());
     private static final long DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
     protected long delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
     protected TransmissionTimeout transmissionTimeout;
-    protected Executor executor;
     protected CoapErrorCallback errorCallback;
 
     long getDelayedTransactionTimeout() {
@@ -38,24 +34,6 @@ public abstract class CoapServerAbstract implements TransportReceiver {
 
     TransmissionTimeout getTransmissionTimeout() {
         return transmissionTimeout;
-    }
-
-    @Override
-    public void onReceive(InetSocketAddress adr, byte[] data, TransportContext transportContext) {
-        try {
-            executor.execute(new MessageHandlerTask(data, adr, transportContext, this));
-        } catch (RejectedExecutionException ex) {
-            LOGGER.warn("Executor queue is full, message from " + adr + " is rejected");
-            if (LOGGER.isTraceEnabled() && executor instanceof ThreadPoolExecutor) {
-                LOGGER.trace("Executor Queue remaining capacity " + ((ThreadPoolExecutor) executor).getQueue().remainingCapacity()
-                        + " out of " + ((ThreadPoolExecutor) executor).getQueue().size());
-            }
-        }
-    }
-
-    @Override
-    public void onConnectionClosed(InetSocketAddress remoteAddress) {
-        LOGGER.debug("Connection with " + remoteAddress + " was closed");
     }
 
     /**
@@ -75,8 +53,6 @@ public abstract class CoapServerAbstract implements TransportReceiver {
     }
 
     protected abstract void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException;
-
-    protected abstract void handle(CoapPacket packet, TransportContext transportContext);
 
     protected abstract void handleException(byte[] packet, CoapException exception, TransportContext transportContext);
 

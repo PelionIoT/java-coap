@@ -51,8 +51,8 @@ public class DatagramChannelTransportTest {
 
     @Test
     public void dataExchangeTest() throws Exception {
-        DatagramChannelTransport transport1 = new DatagramChannelTransport(new InetSocketAddress("localhost", 0), true, false);
-        DatagramChannelTransport transport2 = new DatagramChannelTransport(new InetSocketAddress("localhost", 0), true, false);
+        DatagramChannelTransport transport1 = new DatagramChannelTransport(new InetSocketAddress("localhost", 0), true, false, Runnable::run);
+        DatagramChannelTransport transport2 = new DatagramChannelTransport(new InetSocketAddress("localhost", 0), true, false, Runnable::run);
 
         TransportReceiver transportReceiver1 = mock(TransportReceiver.class);
         TransportReceiver transportReceiver2 = mock(TransportReceiver.class);
@@ -74,7 +74,7 @@ public class DatagramChannelTransportTest {
 
     @Test(expected = IllegalStateException.class)
     public void initWithIllegalState() throws Exception {
-        new DatagramChannelTransport(new InetSocketAddress("localhost", 0), false, true);
+        new DatagramChannelTransport(new InetSocketAddress("localhost", 0), false, true, Runnable::run);
 
     }
 
@@ -170,13 +170,13 @@ public class DatagramChannelTransportTest {
         private boolean skipInit = false;
 
         public DatagramConnectorChannelMock(DatagramChannel createChannel, InetSocketAddress bindingSocket) {
-            super(bindingSocket);
+            super(bindingSocket, Runnable::run);
             this.createChannel = createChannel;
             setReuseAddress(false);
         }
 
         public DatagramConnectorChannelMock(DatagramChannel createChannel, InetSocketAddress bindingSocket, boolean skipInit) {
-            super(bindingSocket);
+            super(bindingSocket, Runnable::run);
             this.createChannel = createChannel;
             this.skipInit = skipInit;
         }
