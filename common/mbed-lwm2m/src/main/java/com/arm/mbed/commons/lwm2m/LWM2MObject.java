@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package com.arm.mbed.commons.lwm2m;
 
@@ -41,7 +41,7 @@ public class LWM2MObject {
         return instances;
     }
 
-    public LWM2MObjectInstance getInstance(LWM2MID instanceId) {
+    public LWM2MObjectInstance getInstanceFor(LWM2MID instanceId) {
         for (LWM2MObjectInstance instance: instances) {
             if (instance.getId().equals(instanceId) ) {
                 return instance;

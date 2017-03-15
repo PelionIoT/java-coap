@@ -1,15 +1,10 @@
-/**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 
 package com.arm.mbed.commons.lwm2m;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import com.arm.mbed.commons.lwm2m.LWM2MID;
-import com.arm.mbed.commons.lwm2m.LWM2MObject;
-import com.arm.mbed.commons.lwm2m.LWM2MObjectInstance;
-import com.arm.mbed.commons.lwm2m.LWM2MResource;
+import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,9 +32,9 @@ public class LWM2MObjectTest {
 
         System.out.println(object.toString());
         assertEquals(2, object.getInstances().size());
-        assertEquals(LWM2MID.$1, object.getInstance(LWM2MID.$1).getId() );
-        assertEquals(LWM2MID.$2, object.getInstance(LWM2MID.$2).getId() );
-        assertNull(object.getInstance(LWM2MID.$0));
+        assertEquals(LWM2MID.$1, object.getInstanceFor(LWM2MID.$1).getId());
+        assertEquals(LWM2MID.$2, object.getInstanceFor(LWM2MID.$2).getId());
+        assertNull(object.getInstanceFor(LWM2MID.$0));
     }
 
     @Test
@@ -50,8 +45,8 @@ public class LWM2MObjectTest {
 
         assertEquals(0, object.getId().intValue() );
         assertEquals(2, object.getInstances().size());
-        assertEquals(LWM2MID.$1, object.getInstance(LWM2MID.$1).getId() );
-        assertEquals(LWM2MID.$2, object.getInstance(LWM2MID.$2).getId() );
+        assertEquals(LWM2MID.$1, object.getInstanceFor(LWM2MID.$1).getId());
+        assertEquals(LWM2MID.$2, object.getInstanceFor(LWM2MID.$2).getId());
     }
 
     @Test
@@ -62,8 +57,8 @@ public class LWM2MObjectTest {
 
         assertEquals(0, object.getId().intValue() );
         assertEquals(2, object.getInstances().size());
-        assertEquals(LWM2MID.$1, object.getInstance(LWM2MID.$1).getId() );
-        assertEquals(LWM2MID.$2, object.getInstance(LWM2MID.$2).getId() );
+        assertEquals(LWM2MID.$1, object.getInstanceFor(LWM2MID.$1).getId());
+        assertEquals(LWM2MID.$2, object.getInstanceFor(LWM2MID.$2).getId());
     }
 
 }
