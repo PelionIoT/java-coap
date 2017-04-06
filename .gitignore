@@ -1,0 +1,12 @@
+.classpath
+.project
+.settings
+classes/
+target/
+nbactions.xml
+nb-configuration.xml
+*.iml
+.idea/
+!.idea/codeStyleSettings.xml
+!.idea/copyright
+.DS_Store
