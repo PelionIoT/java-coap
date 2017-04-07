@@ -1,11 +1,22 @@
 /**
- * Copyright (C) 2011-2014 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.mbed.lwm2m.json;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import com.arm.mbed.commons.string.Utf8Bytes;
 import com.mbed.lwm2m.LWM2MResource;
 import com.mbed.lwm2m.LWM2MResourceType;
 import java.io.InputStream;
@@ -38,7 +49,7 @@ public class JsonDeserializerTest {
 
         assertThat(resources, hasSize(13));
         assertThat(resources.get(0).getType(), equalTo(LWM2MResourceType.STRING));
-        assertArrayEquals(Utf8Bytes.of("Open Mobile Alliance"), resources.get(0).getValue());
+        assertArrayEquals("Open Mobile Alliance".getBytes(), resources.get(0).getValue());
         assertThat(resources.get(3).getType(), equalTo(LWM2MResourceType.STRING));
         assertThat(resources.get(4).getNestedInstances().get(0).getType(), equalTo(LWM2MResourceType.INTEGER));
     }
