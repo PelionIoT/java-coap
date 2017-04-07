@@ -41,7 +41,12 @@ Development
 
 ### Build
 
-mvn clean install 
+    mvn clean install 
+
+### Update license header
+
+    mvn com.mycila:license-maven-plugin:format
+
 
 Contribution
 ------------
