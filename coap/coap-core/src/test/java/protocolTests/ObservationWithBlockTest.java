@@ -68,7 +68,7 @@ public class ObservationWithBlockTest {
                 .then(newCoapPacket(2).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("e perse").build());
 
         //send observation with block
-        transport.receive(newCoapPacket(101).ack(Code.C205_CONTENT).obs(1).token(1).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(101).ack(Code.C205_CONTENT).obs(1).token(1).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build());
 
         verify(observationListener).onObservation(hasPayload("perse perse perse perse"));
     }
@@ -82,7 +82,7 @@ public class ObservationWithBlockTest {
                 .then(newCoapPacket(3).ack(Code.C205_CONTENT).block2Res(2, BlockSize.S_16, false).payload("e perse").build());
 
         //send observation with block
-        transport.receive(newCoapPacket(101).ack(Code.C205_CONTENT).obs(1).token(1).payload("------ 16 ------").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(101).ack(Code.C205_CONTENT).obs(1).token(1).payload("------ 16 ------").block2Res(0, BlockSize.S_16, true).build());
 
         verify(observationListener).onObservation(hasPayload("------ 16 ------ ----- 16 ------e perse"));
     }
@@ -90,7 +90,7 @@ public class ObservationWithBlockTest {
     @Test
     public void blockObservation_singleBlock() throws Exception {
         //send observation with single last block
-        transport.receive(newCoapPacket(101).ack(Code.C205_CONTENT).obs(1).token(1).payload("perse perse").block2Res(0, BlockSize.S_16, false).build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(101).ack(Code.C205_CONTENT).obs(1).token(1).payload("perse perse").block2Res(0, BlockSize.S_16, false).build());
 
         verify(observationListener).onObservation(hasPayload("perse perse"));
     }
@@ -102,7 +102,7 @@ public class ObservationWithBlockTest {
         transport.when(newCoapPacket(3).get().uriPath("/path1").block2Res(1, BlockSize.S_16, false).build())
                 .then(newCoapPacket(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build());
 
-        transport.receive(newCoapPacket(10).ack(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(10).ack(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build());
 
         verify(observationListener, never()).onObservation(any(CoapPacket.class));
         verify(observationListener, never()).onTermination(any(CoapPacket.class));
@@ -119,7 +119,7 @@ public class ObservationWithBlockTest {
         transport.when(newCoapPacket(maxDuplicates).get().uriPath("/path1").block2Res(1, BlockSize.S_16, false).build())
                 .then(newCoapPacket(maxDuplicates).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build());
 
-        transport.receive(newCoapPacket(10).ack(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(10).ack(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build());
 
         verify(observationListener, never()).onObservation(any(CoapPacket.class));
         verify(observationListener, never()).onTermination(any(CoapPacket.class));
@@ -144,7 +144,7 @@ public class ObservationWithBlockTest {
         }
         expectedPayload.append(makeBlock(maxBlocks + 1, maxBlocks, false, "|last_block"));
 
-        transport.receive(newCoapPacket(10).ack(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("|block_0000_____").build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(10).ack(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("|block_0000_____").build());
         // if default executor is used (asynchronous) - uncomment this line
         //        Thread.sleep(10000);
         verify(observationListener).onObservation(hasPayload(expectedPayload.toString()));
@@ -156,7 +156,7 @@ public class ObservationWithBlockTest {
                 .then(newCoapPacket(2).ack(Code.C205_CONTENT).etag(12).block2Res(1, BlockSize.S_16, false).payload("e perse").build());
 
         //send observation with block
-        transport.receive(newCoapPacket(3).ack(Code.C205_CONTENT).obs(1).token(1).etag(12).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).obs(1).token(1).etag(12).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build());
 
         verify(observationListener).onObservation(hasPayload("perse perse perse perse"));
     }
@@ -167,7 +167,7 @@ public class ObservationWithBlockTest {
                 .then(newCoapPacket(2).ack(Code.C205_CONTENT).etag(13).block2Res(1, BlockSize.S_16, false).payload("dupa dupa").build());
 
         //send observation with block
-        transport.receive(newCoapPacket(3).ack(Code.C205_CONTENT).obs(1).token(1).etag(12).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).obs(1).token(1).etag(12).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build());
 
         verify(observationListener, never()).onObservation(any(CoapPacket.class));
         verify(observationListener, never()).onTermination(any(CoapPacket.class));
@@ -179,7 +179,7 @@ public class ObservationWithBlockTest {
                 .then(newCoapPacket(2).ack(Code.C400_BAD_REQUEST).build());
 
         //send observation with block
-        transport.receive(newCoapPacket(3).ack(Code.C205_CONTENT).obs(1).token(1).etag(12).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).obs(1).token(1).etag(12).payload("perse perse pers").block2Res(0, BlockSize.S_16, true).build());
 
         verify(observationListener, never()).onObservation(any(CoapPacket.class));
         verify(observationListener, never()).onTermination(any(CoapPacket.class));
@@ -188,15 +188,15 @@ public class ObservationWithBlockTest {
     @Test
     public void blockObservation_wrongPayloadSize_firstBlock() throws Exception {
         //send observation with too short block
-        transport.receive(newCoapPacket(3).ack(Code.C205_CONTENT)
-                .obs(1).token(1).payload("------ 15 ----x").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT)
+                .obs(1).token(1).payload("------ 15 ----x").block2Res(0, BlockSize.S_16, true).build());
 
         verify(observationListener, never()).onObservation(any(CoapPacket.class));
 
         //send observation with too long block
         reset(observationListener);
-        transport.receive(newCoapPacket(4).ack(Code.C205_CONTENT)
-                .obs(1).token(1).payload("------ 17 ------e").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(4).ack(Code.C205_CONTENT)
+                .obs(1).token(1).payload("------ 17 ------e").block2Res(0, BlockSize.S_16, true).build());
 
         verify(observationListener, never()).onObservation(any(CoapPacket.class));
     }
@@ -207,8 +207,8 @@ public class ObservationWithBlockTest {
                 .then(newCoapPacket(2).ack(Code.C205_CONTENT).contFormat(MediaTypes.CT_TEXT_PLAIN).block2Res(1, BlockSize.S_16, true).payload("------ 15 ----x").build());
 
         //send observation with block
-        transport.receive(newCoapPacket(3).ack(Code.C205_CONTENT).contFormat(MediaTypes.CT_TEXT_PLAIN)
-                .obs(1).token(1).payload("------ 16 ------").block2Res(0, BlockSize.S_16, true).build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).contFormat(MediaTypes.CT_TEXT_PLAIN)
+                .obs(1).token(1).payload("------ 16 ------").block2Res(0, BlockSize.S_16, true).build());
 
         verify(observationListener, never()).onObservation(any(CoapPacket.class));
     }

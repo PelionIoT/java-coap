@@ -5,7 +5,7 @@ package com.mbed.coap.observe;
 
 import static org.mockito.Mockito.*;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.transport.InMemoryTransport;
+import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.net.InetSocketAddress;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,7 +17,7 @@ public class AbstractObservableResourceTest {
 
     private CoapServer mockServer;
     private NotificationDeliveryListener listener;
-    private static final InetSocketAddress ADDRESS = InMemoryTransport.createAddress(5683);
+    private static final InetSocketAddress ADDRESS = InMemoryCoapTransport.createAddress(5683);
 
     @Before
     public void setUp() throws Exception {

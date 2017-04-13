@@ -109,6 +109,8 @@ public class DatagramSocketTransport implements CoapTransport {
             if (!ex.getMessage().startsWith("Socket closed")) {
                 LOGGER.warn(ex.getMessage(), ex);
             }
+        } catch (Exception ex) {
+            LOGGER.warn(ex.getMessage());
         }
     }
 

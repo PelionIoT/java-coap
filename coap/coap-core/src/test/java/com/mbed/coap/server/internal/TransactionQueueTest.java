@@ -7,7 +7,7 @@ import static com.mbed.coap.server.internal.TransactionManagerTest.*;
 import static org.junit.Assert.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.server.internal.CoapTransaction.Priority;
-import com.mbed.coap.transport.InMemoryTransport;
+import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
@@ -16,7 +16,7 @@ import org.junit.Test;
  * Created by szymon
  */
 public class TransactionQueueTest {
-    private static final InetSocketAddress REMOTE_ADR = InMemoryTransport.createAddress(5683);
+    private static final InetSocketAddress REMOTE_ADR = InMemoryCoapTransport.createAddress(5683);
 
     @Test
     public void shouldAdd_defaultPriority() throws Exception {

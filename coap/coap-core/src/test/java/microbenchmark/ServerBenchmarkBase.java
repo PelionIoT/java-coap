@@ -9,10 +9,9 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.transport.AbstractTransportConnector;
-import com.mbed.coap.transport.TransportConnector;
+import com.mbed.coap.transport.CoapReceiver;
+import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.transport.TransportReceiver;
 import com.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -84,9 +83,9 @@ public abstract class ServerBenchmarkBase {
         endTime = System.currentTimeMillis();
     }
 
-    static class FloodTransportStub implements TransportConnector {
+    static class FloodTransportStub implements CoapTransport {
 
-        private TransportReceiver udpReceiver;
+        private CoapReceiver udpReceiver;
         private final Executor executor;
 
         private final InetSocketAddress[] addrArr;
@@ -106,8 +105,8 @@ public abstract class ServerBenchmarkBase {
         }
 
         @Override
-        public void start(TransportReceiver udpReceiver) throws IOException {
-            this.udpReceiver = udpReceiver;
+        public void start(CoapReceiver coapReceiver) throws IOException {
+            this.udpReceiver = coapReceiver;
         }
 
         @Override
@@ -116,7 +115,7 @@ public abstract class ServerBenchmarkBase {
         }
 
         @Override
-        public void send(byte[] data, int len, InetSocketAddress destinationAddress, TransportContext transContext) throws IOException {
+        public void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
             LATCH.countDown();
         }
 
@@ -128,10 +127,17 @@ public abstract class ServerBenchmarkBase {
         private int addIndex = 0;
 
         public boolean receive(ByteBuffer data) {
-            byte[] packetData = AbstractTransportConnector.createCopyOfPacketData(data, data.position());
+            byte[] packetData = new byte[data.position()];
+            System.arraycopy(data.array(), 0, packetData, 0, packetData.length);
             InetSocketAddress adr = addrArr[addIndex++ % addrArr.length];
 
-            executor.execute(() -> udpReceiver.onReceive(adr, packetData, null));
+            executor.execute(() -> {
+                try {
+                    udpReceiver.handle(CoapPacket.read(adr, packetData), TransportContext.NULL);
+                } catch (CoapException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
             return addIndex % addrArr.length == 0;
         }

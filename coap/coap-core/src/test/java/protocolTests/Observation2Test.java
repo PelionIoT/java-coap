@@ -59,10 +59,10 @@ public class Observation2Test {
     @Test
     public void shouldReceiveEmptyAckAfterObservation() throws Exception {
         //send observation
-        transport.receive(newCoapPacket(3).con(Code.C205_CONTENT).obs(1).token(1).payload("perse perse").build(), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(SERVER_ADDRESS).mid(3).con(Code.C205_CONTENT).obs(1).token(1).payload("perse perse").build());
 
         //important, no token included in response
-        assertEquals(transport.getLastOutgoingMessage(), newCoapPacket(3).ack(null).build());
+        assertEquals(transport.getLastOutgoingMessage(), newCoapPacket(SERVER_ADDRESS).mid(3).ack(null).build());
         verify(observationListener).onObservation(hasPayload("perse perse"));
     }
 }
