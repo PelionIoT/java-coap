@@ -15,7 +15,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transmission.SingleTimeout;
-import com.mbed.coap.transport.InMemoryTransport;
+import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.junit.After;
@@ -34,7 +34,7 @@ public class SimpleObservableResourceTest {
 
     @Before
     public void setUp() throws IOException {
-        server = CoapServerBuilder.newBuilder().transport(new InMemoryTransport(5683))
+        server = CoapServerBuilder.newBuilder().transport(new InMemoryCoapTransport(5683))
                 .timeout(new SingleTimeout(500)).build();
 
         obsResource = new SimpleObservableResource("", server);
@@ -42,8 +42,8 @@ public class SimpleObservableResourceTest {
         server.addRequestHandler("/obs", obsResource);
         server.start();
 
-        client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(5683))
-                .transport(new InMemoryTransport())
+        client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683))
+                .transport(new InMemoryCoapTransport())
                 .timeout(1000).build();
     }
 

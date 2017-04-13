@@ -7,9 +7,7 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.TransportConnector;
-import com.mbed.coap.transport.TransportReceiver;
-import com.mbed.coap.transport.udp.DatagramChannelTransport;
+import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,18 +29,13 @@ public class CoapServerBuilder {
         return new CoapServerBuilder();
     }
 
-    public CoapServerBuilder transport(TransportConnector transport) {
-        this.coapTransport = new TransportReceiver.CoapTransportFromTransportConnector(server, transport);
-        return this;
-    }
-
     public CoapServerBuilder transport(int port) {
-        this.coapTransport = new TransportReceiver.CoapTransportFromTransportConnector(server, new DatagramChannelTransport(new InetSocketAddress(port), Runnable::run));
+        this.coapTransport = new DatagramSocketTransport(new InetSocketAddress(port), Runnable::run);
         return this;
     }
 
     public CoapServerBuilder transport(int port, Executor receivedMessageWorker) {
-        this.coapTransport = new TransportReceiver.CoapTransportFromTransportConnector(server, new DatagramChannelTransport(new InetSocketAddress(port), receivedMessageWorker));
+        this.coapTransport = new DatagramSocketTransport(new InetSocketAddress(port), receivedMessageWorker);
         return this;
     }
 

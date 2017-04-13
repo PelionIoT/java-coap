@@ -10,7 +10,7 @@ import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServerObserve;
-import com.mbed.coap.transport.InMemoryTransport;
+import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import java.net.InetSocketAddress;
@@ -22,8 +22,8 @@ import org.junit.Test;
  * Created by szymon.
  */
 public class TransactionManagerTest {
-    private static final InetSocketAddress REMOTE_ADR = InMemoryTransport.createAddress(5683);
-    private static final InetSocketAddress REMOTE_ADR2 = InMemoryTransport.createAddress(5685);
+    private static final InetSocketAddress REMOTE_ADR = InMemoryCoapTransport.createAddress(5683);
+    private static final InetSocketAddress REMOTE_ADR2 = InMemoryCoapTransport.createAddress(5685);
     private TransactionManager transMgr;
 
     @Before
@@ -58,7 +58,7 @@ public class TransactionManagerTest {
         assertNoMatch(newCoapPacket(REMOTE_ADR).mid(12).con(Code.C205_CONTENT).token(12).build());
 
         //wrong address
-        assertNoMatch(newCoapPacket(InMemoryTransport.createAddress(61616)).mid(12).con(Code.C205_CONTENT).token(123).build());
+        assertNoMatch(newCoapPacket(InMemoryCoapTransport.createAddress(61616)).mid(12).con(Code.C205_CONTENT).token(123).build());
 
         //another request
         assertNoMatch(newCoapPacket(REMOTE_ADR).mid(12).con().get().token(123).build());

@@ -5,7 +5,6 @@ package protocolTests;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.client.CoapClient;
@@ -18,8 +17,8 @@ import com.mbed.coap.server.CoapServerObserve;
 import com.mbed.coap.server.MessageIdSupplierImpl;
 import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.transmission.SingleTimeout;
-import com.mbed.coap.transport.TransportConnector;
-import com.mbed.coap.transport.TransportReceiver;
+import com.mbed.coap.transport.CoapReceiver;
+import com.mbed.coap.transport.CoapTransport;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import org.junit.After;
@@ -33,14 +32,14 @@ import org.mockito.ArgumentCaptor;
 public class QueueRequestsTest {
 
     private static final InetSocketAddress SERVER_ADDRESS = new InetSocketAddress("127.0.0.1", 5683);
-    private TransportConnector transport;
+    private CoapTransport transport;
     private CoapClient client;
-    private TransportReceiver transportReceiver;
+    private CoapReceiver transportReceiver;
     private CoapServer coapServer;
 
     @Before
     public void setUp() throws Exception {
-        transport = mock(TransportConnector.class);
+        transport = mock(CoapTransport.class);
 
         coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
                 .timeout(new SingleTimeout(500)).build();
@@ -49,7 +48,7 @@ public class QueueRequestsTest {
         client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);
 
         //capture transport receiver
-        ArgumentCaptor<TransportReceiver> transRec = ArgumentCaptor.forClass(TransportReceiver.class);
+        ArgumentCaptor<CoapReceiver> transRec = ArgumentCaptor.forClass(CoapReceiver.class);
         verify(transport).start(transRec.capture());
         transportReceiver = transRec.getValue();
     }
@@ -64,10 +63,10 @@ public class QueueRequestsTest {
         //request
         CompletableFuture<CoapPacket> futResp = client.resource("/path1").get();
 
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
 
         //send response
-        transportReceiver.onReceive(SERVER_ADDRESS, newCoapPacket(1).ack(Code.C205_CONTENT).payload("dupa").build().toByteArray(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).payload("dupa").build(), null);
 
         assertEquals("dupa", futResp.get().getPayloadString());
     }
@@ -79,17 +78,17 @@ public class QueueRequestsTest {
         CompletableFuture<CoapPacket> futResp2 = client.resource("/path2").get();
 
         //only one request should be send
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
 
         //send response
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, newCoapPacket(1).ack(Code.C205_CONTENT).payload("dupa1").build().toByteArray(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).payload("dupa1").build(), null);
 
         //second request should be send
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
 
         //send response
-        transportReceiver.onReceive(SERVER_ADDRESS, newCoapPacket(2).ack(Code.C205_CONTENT).payload("dupa2").build().toByteArray(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
 
         assertEquals("dupa1", futResp1.get().getPayloadString());
@@ -101,29 +100,29 @@ public class QueueRequestsTest {
     // block messages transaction priority: CoapTransaction.Priority.HIGH
     @Test
     public void shouldSendRequestsToADevice_isASequence_2_requests_with_block() throws Exception {
-        CoapPacket blockResp1 = newCoapPacket(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
-        CoapPacket blockResp2 = newCoapPacket(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
+        CoapPacket blockResp1 = newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
+        CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
 
         //requests
         CompletableFuture<CoapPacket> futResp1 = client.resource("/path1").get(); // makes req with msgId #1 and sends it
         CompletableFuture<CoapPacket> futResp2 = client.resource("/path2").get(); // makes req with msgId #2 and queues it
 
         //#1 message - block1
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, blockResp1.toByteArray(), null); // fetches and removes transaction #1, makes block#2 req with msgId #3 and sends it (#2 still in the queue)
+        transportReceiver.handle(blockResp1, null); // fetches and removes transaction #1, makes block#2 req with msgId #3 and sends it (#2 still in the queue)
 
         //#2 message - block2
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, blockResp2.toByteArray(), null); // fetches and removes transaction #3, sends queued transaction #2
+        transportReceiver.handle(blockResp2, null); // fetches and removes transaction #3, sends queued transaction #2
 
         assertEquals("123456789012345|dupa", futResp1.get().getPayloadString());
 
         //#2 message - request2
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, newCoapPacket(2).ack(Code.C205_CONTENT).payload("dupa2").build().toByteArray(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
         //verify responses
         assertEquals("dupa2", futResp2.get().getPayloadString());
@@ -137,27 +136,27 @@ public class QueueRequestsTest {
     public void shouldSendRequestsToADevice_isASequence_2_requests_with_block_inserting_message_in_block() throws Exception {
         ((CoapServerObserve) coapServer).setBlockCoapTransactionPriority(CoapTransaction.Priority.NORMAL);
 
-        CoapPacket blockResp1 = newCoapPacket(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
-        CoapPacket blockResp2 = newCoapPacket(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
+        CoapPacket blockResp1 = newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
+        CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
 
         //requests
         CompletableFuture<CoapPacket> futResp1 = client.resource("/block").get();
         CompletableFuture<CoapPacket> futResp2 = client.resource("/path2").get();
 
         //#1 message - block1
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, blockResp1.toByteArray(), null);
+        transportReceiver.handle(blockResp1, null);
 
         //#2 message - request2
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, newCoapPacket(2).ack(Code.C205_CONTENT).payload("dupa2").build().toByteArray(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
         //#2 message - block2
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, blockResp2.toByteArray(), null);
+        transportReceiver.handle(blockResp2, null);
 
 
         //verify responses
@@ -170,8 +169,8 @@ public class QueueRequestsTest {
         coapServer.setEndpointQueueMaximumSize(2);
         ((CoapServerObserve) coapServer).setBlockCoapTransactionPriority(CoapTransaction.Priority.HIGH);
 
-        CoapPacket blockResp1 = newCoapPacket(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
-        CoapPacket blockResp2 = newCoapPacket(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
+        CoapPacket blockResp1 = newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
+        CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
 
         //requests
         CompletableFuture<CoapPacket> futResp1 = client.resource("/block").get(); // adds first request
@@ -179,20 +178,20 @@ public class QueueRequestsTest {
 
         //#1 message - block1 - causes adding to queue extra message from block transfer for a short time (until initial
         // transaction is removed
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, blockResp1.toByteArray(), null);
+        transportReceiver.handle(blockResp1, null);
 
         //#1 message - block2
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, blockResp2.toByteArray(), null);
+        transportReceiver.handle(blockResp2, null);
 
 
         //#2 message - request2
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, newCoapPacket(2).ack(Code.C205_CONTENT).payload("dupa2").build().toByteArray(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
 
         //verify responses
@@ -207,27 +206,27 @@ public class QueueRequestsTest {
         CompletableFuture<CoapPacket> futResp2 = client.resource("/path2").get();
 
         //only one request should be send
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
 
         //send response for queued inactive transaction
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, newCoapPacket(2).ack(Code.C205_CONTENT).payload("dupa2").build().toByteArray(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
-        verify(transport, never()).send(any(), anyInt(), any(), any());
+        verify(transport, never()).sendPacket(any(), any(), any());
         assertFalse(futResp1.isDone());
         assertFalse(futResp2.isDone());
 
         //send response for first transaction
-        transportReceiver.onReceive(SERVER_ADDRESS, newCoapPacket(1).ack(Code.C205_CONTENT).payload("dupa1").build().toByteArray(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).payload("dupa1").build(), null);
         //second request should be send
-        verify(transport).send(any(), anyInt(), any(), any());
+        verify(transport).sendPacket(any(), any(), any());
 
         assertTrue(futResp1.isDone());
         assertFalse(futResp2.isDone());
 
         //send response for queued inactive transaction
         reset(transport);
-        transportReceiver.onReceive(SERVER_ADDRESS, newCoapPacket(2).ack(Code.C205_CONTENT).payload("dupa3").build().toByteArray(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa3").build(), null);
 
         assertTrue(futResp1.isDone());
         assertEquals("dupa1", futResp1.get().getPayloadString());

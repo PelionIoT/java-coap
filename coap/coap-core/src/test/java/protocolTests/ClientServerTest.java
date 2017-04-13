@@ -16,10 +16,8 @@ import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.SingleTimeout;
-import com.mbed.coap.transport.InMemoryTransport;
-import com.mbed.coap.transport.TransportConnector;
+import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.transport.TransportReceiver;
 import com.mbed.coap.transport.udp.MulticastSocketTransport;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
@@ -30,6 +28,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.junit.After;
 import org.junit.Before;
@@ -204,24 +204,24 @@ public class ClientServerTest {
 
     @Test
     public void requestWithPacketLost() throws CoapException, IOException {
-        CoapServer serverNode = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(5683)).build();
+        CoapServer serverNode = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683)).build();
         final SimpleCoapResource res = new SimpleCoapResource("Not dropped");
         serverNode.addRequestHandler("/dropping", res);
         serverNode.start();
 
-        try (CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(5683))
-                .transport(new DroppingPacketsTransportWrapper(InMemoryTransport.create(), (byte) 0) {
+        try (CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683))
+                .transport(new DroppingPacketsTransportWrapper(0, (byte) 0) {
                     private boolean hasDropped = false;
 
                     @Override
-                    public void send(byte[] data, int len, InetSocketAddress destinationAddress, TransportContext transContext) throws IOException {
+                    public void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
                         //will drop only first packet
                         if (!hasDropped) {
                             hasDropped = true;
                             res.setResourceBody("dropped");
                             System.out.println("dropped");
                         } else {
-                            super.send(data, len, destinationAddress, transContext);
+                            super.sendPacket(coapPacket, adr, tranContext);
                         }
                     }
 
@@ -268,11 +268,11 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequest5() throws IOException, CoapException {
-        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(61601)).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(61601)).build();
         srv.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
         srv.start();
 
-        try (CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(61601)).transport(InMemoryTransport.create(0)).build()) {
+        try (CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(61601)).transport(InMemoryCoapTransport.create(0)).build()) {
             assertEquals("23 C", cnn.resource("/temp").sync().get().getPayloadString());
         }
         srv.stop();
@@ -280,11 +280,11 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequestWithUnknownCriticalOptionHeader() throws IOException, CoapException {
-        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(61601)).build();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(61601)).build();
         srv.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
         srv.start();
 
-        try (CoapClient client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(61601)).transport(new InMemoryTransport()).build()) {
+        try (CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(61601)).transport(new InMemoryCoapTransport()).build()) {
             assertEquals(Code.C402_BAD_OPTION, client.resource("/temp").header(123, "dupa".getBytes()).sync().get().getCode());
         }
         srv.stop();
@@ -305,26 +305,24 @@ public class ClientServerTest {
 
     @Test
     public void testRequestWithPacketDelay() throws Exception {
-        CoapServer serverNode = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create(5683)).build();
+        CoapServer serverNode = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683)).build();
         serverNode.addRequestHandler("/test/1", new SimpleCoapResource("Dziala"));
         serverNode.start();
 
+        ExecutorService executorService = Executors.newCachedThreadPool();
         CoapServer cnn = CoapServerBuilder.newBuilder()
-                .transport(new DroppingPacketsTransportWrapper(InMemoryTransport.create(), (byte) 0) {
-                    @Override
-                    public void onReceive(InetSocketAddress adr, byte[] packetData, TransportContext transportContext) {
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException();
-                        }
-                        super.onReceive(adr, packetData, transportContext);
+                .transport(new InMemoryCoapTransport(0, command -> executorService.execute(() -> {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException();
                     }
-                })
-                .build();
+                    command.run();
+                }))).build();
+
         cnn.start();
 
-        CoapPacket request = new CoapPacket(InMemoryTransport.createAddress(5683));
+        CoapPacket request = new CoapPacket(InMemoryCoapTransport.createAddress(5683));
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
@@ -338,13 +336,13 @@ public class ClientServerTest {
     @Test(expected = com.mbed.coap.exception.CoapTimeoutException.class)
     public void testRequestWithPacketDropping() throws IOException, CoapException {
         CoapServer srv = CoapServerBuilder.newBuilder()
-                .transport(new DroppingPacketsTransportWrapper(InMemoryTransport.create(CoapConstants.DEFAULT_PORT), (byte) 100))
+                .transport(new DroppingPacketsTransportWrapper(CoapConstants.DEFAULT_PORT, (byte) 100))
                 .build();
         srv.addRequestHandler("/test", new SimpleCoapResource("TEST"));
         srv.start();
 
-        CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(CoapConstants.DEFAULT_PORT))
-                .transport(InMemoryTransport.create()).timeout(new SingleTimeout(100)).build();
+        CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(CoapConstants.DEFAULT_PORT))
+                .transport(InMemoryCoapTransport.create()).timeout(new SingleTimeout(100)).build();
 
         assertNotNull(cnn.resource("/test").sync().get());
     }
@@ -364,9 +362,7 @@ public class ClientServerTest {
         server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null), new FutureCallbackAdapter<CoapPacket>());
     }
 
-    private static class DroppingPacketsTransportWrapper implements TransportConnector, TransportReceiver {
-        private final TransportConnector wrappedTransport;
-        private TransportReceiver wrappedTransReceiver;
+    private static class DroppingPacketsTransportWrapper extends InMemoryCoapTransport {
         private final byte probability; //0-100
         private final Random r = new Random();
 
@@ -374,45 +370,20 @@ public class ClientServerTest {
             return probability > 0 && r.nextInt(100) < probability;
         }
 
-        private DroppingPacketsTransportWrapper(TransportConnector wrappedTransport, byte probability) {
-            this.wrappedTransport = wrappedTransport;
+        private DroppingPacketsTransportWrapper(int port, int probability) {
+            super(port);
             if (probability < 0 || probability > 100) {
                 throw new IllegalArgumentException("Value must be in range 0-100");
             }
-            this.probability = probability;
+            this.probability = ((byte) probability);
         }
 
-        @Override
-        public void start(TransportReceiver transReceiver) throws IOException {
-            wrappedTransReceiver = transReceiver;
-            wrappedTransport.start(this);
-        }
 
         @Override
-        public void stop() {
-            wrappedTransport.stop();
-        }
-
-        @Override
-        public void send(byte[] data, int len, InetSocketAddress destinationAddress, TransportContext transContext) throws IOException {
-            wrappedTransport.send(data, len, destinationAddress, transContext);
-        }
-
-        @Override
-        public InetSocketAddress getLocalSocketAddress() {
-            return wrappedTransport.getLocalSocketAddress();
-        }
-
-        @Override
-        public void onReceive(InetSocketAddress adr, byte[] packetData, TransportContext transportContext) {
+        public void receive(InMemoryCoapTransport.DatagramMessage msg) {
             if (!drop()) {
-                wrappedTransReceiver.onReceive(adr, packetData, transportContext);
+                super.receive(msg);
             }
-        }
-
-        @Override
-        public void onConnectionClosed(InetSocketAddress remoteAddress) {
-            //ignore
         }
     }
 

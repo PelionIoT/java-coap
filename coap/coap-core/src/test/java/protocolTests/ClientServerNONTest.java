@@ -18,7 +18,7 @@ import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.internal.DelayedTransactionId;
 import com.mbed.coap.transmission.SingleTimeout;
-import com.mbed.coap.transport.InMemoryTransport;
+import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
@@ -45,14 +45,14 @@ public class ClientServerNONTest {
         assertEquals(dti1.hashCode(), dti2.hashCode());
         assertEquals(dti1, dti2);
 
-        server = CoapServer.builder().transport(InMemoryTransport.create())
+        server = CoapServer.builder().transport(InMemoryCoapTransport.create())
                 .timeout(new SingleTimeout(1000))
                 .build();
         server.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
 
         server.addRequestHandler("/seperate", new CoapResourceSeparateRespImpl("test-content"));
         server.start();
-        serverAddr = InMemoryTransport.createAddress(server.getLocalSocketAddress().getPort());
+        serverAddr = InMemoryCoapTransport.createAddress(server.getLocalSocketAddress().getPort());
     }
 
     @After
@@ -62,7 +62,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testLateResponse() throws IOException, CoapException, InterruptedException {
-        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
+        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryCoapTransport.create()).build();
 
         Thread.sleep(10);
         assertEquals("test-content", client.resource("/seperate").token(nextToken()).sync().get().getPayloadString());
@@ -72,7 +72,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testNonRequest() throws IOException, CoapException {
-        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
+        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryCoapTransport.create()).build();
 
         assertEquals("test-content", client.resource("/seperate").token(nextToken()).non().sync().get().getPayloadString());
 
@@ -81,7 +81,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testNonRequestWithoutToken() throws IOException, CoapException, InterruptedException {
-        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
+        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryCoapTransport.create()).build();
 
         assertEquals("test-content", client.resource("/seperate").non().sync().get().getPayloadString());
         Thread.sleep(40);
@@ -91,7 +91,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testNonRequestWithTimeout() throws IOException, CoapException {
-        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryTransport.create())
+        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryCoapTransport.create())
                 .delayedTransTimeout(100).build();
 
         try {
@@ -105,7 +105,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testUnexpectedConRequest() throws Exception {
-        CoapServer client = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create()).timeout(new SingleTimeout(100)).build();
+        CoapServer client = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create()).timeout(new SingleTimeout(100)).build();
         client.start();
         CoapPacket request = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, serverAddr);
         request.setToken(nextToken());
@@ -117,7 +117,7 @@ public class ClientServerNONTest {
 
     @Test
     public void testUnexpectedNonRequest() throws Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create()).delayedTimeout(100).build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create()).delayedTimeout(100).build();
         cnn.start();
         CoapPacket request = new CoapPacket(Code.C205_CONTENT, MessageType.NonConfirmable, serverAddr);
         request.setToken(nextToken());
@@ -129,7 +129,7 @@ public class ClientServerNONTest {
 
     @Test
     public void shouldReceveNonResponse_withDifferenMID() throws Exception {
-        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryTransport.create()).build();
+        CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryCoapTransport.create()).build();
 
         //------ success
         CoapPacket resp1 = client.resource("/seperate").token(nextToken()).non().sync().get();
@@ -152,7 +152,7 @@ public class ClientServerNONTest {
 
     @Test
     public void shouldReceveResetResponse_withDifferenMID() throws Exception {
-        CoapServer client = CoapServerBuilder.newBuilder().transport(InMemoryTransport.create()).build().start();
+        CoapServer client = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create()).build().start();
 
         CoapPacket badReq = new CoapPacket(Code.C404_NOT_FOUND, MessageType.NonConfirmable, serverAddr);
         badReq.setToken("1".getBytes());
