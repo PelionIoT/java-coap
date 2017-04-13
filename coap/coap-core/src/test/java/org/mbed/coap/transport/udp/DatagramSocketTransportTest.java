@@ -73,7 +73,7 @@ public class DatagramSocketTransportTest {
 
     @Test
     public void initializeWithParameters() throws Exception {
-        DatagramSocketTransport trans = new DatagramSocketTransport(new InetSocketAddress(0), Runnable::run);
+        DatagramSocketTransport trans = new DatagramSocketTransport(new InetSocketAddress(0), Runnable::run, false);
         trans.setReuseAddress(false);
         trans.setSocketBufferSize(12345);
         trans.start(mock(CoapReceiver.class));
