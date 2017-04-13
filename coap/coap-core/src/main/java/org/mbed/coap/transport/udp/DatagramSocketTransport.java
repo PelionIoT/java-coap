@@ -31,10 +31,16 @@ public class DatagramSocketTransport implements CoapTransport {
     private int socketBufferSize = -1;
     protected boolean reuseAddress;
     private Thread readerThread;
+    private final boolean initReaderThread;
 
-    public DatagramSocketTransport(InetSocketAddress bindSocket, Executor receivedMessageWorker) {
+    protected DatagramSocketTransport(InetSocketAddress bindSocket, Executor receivedMessageWorker, boolean initReaderThread) {
         this.bindSocket = bindSocket;
         this.receivedMessageWorker = receivedMessageWorker;
+        this.initReaderThread = initReaderThread;
+    }
+
+    public DatagramSocketTransport(InetSocketAddress bindSocket, Executor receivedMessageWorker) {
+        this(bindSocket, receivedMessageWorker, true);
     }
 
     public DatagramSocketTransport(int localPort, Executor receivedMessageWorker) {
@@ -73,7 +79,9 @@ public class DatagramSocketTransport implements CoapTransport {
         }
 
         readerThread = new Thread(() -> readingLoop(coapReceiver), "multicast-reader");
-        readerThread.start();
+        if (initReaderThread) {
+            readerThread.start();
+        }
     }
 
     private void readingLoop(CoapReceiver coapReceiver) {
@@ -124,7 +132,6 @@ public class DatagramSocketTransport implements CoapTransport {
         byte[] data = coapPacket.toByteArray();
 
         DatagramPacket datagramPacket = new DatagramPacket(data, data.length, adr);
-        socket.send(datagramPacket);
 
         if (transContext != null) {
             Integer tc = TrafficClassTransportContext.readFrom(transContext);
