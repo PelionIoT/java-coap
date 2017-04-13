@@ -17,20 +17,14 @@ import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.transmission.SingleTimeout;
-import com.mbed.coap.transport.InMemoryTransport;
 import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -172,48 +166,6 @@ public class ServerTest {
         assertNotNull(msg.getPayloadString());
         LinkFormat[] links = LinkFormatBuilder.parseList(msg.getPayloadString());
         assertEquals(1, links.length);
-    }
-
-    @Test
-    public void errorCallback() throws Exception {
-        final CountDownLatch latch = new CountDownLatch(1);
-        server.setErrorCallback(new CoapErrorCallback() {
-            @Override
-            public void parserError(byte[] packet, CoapException exception) {
-                latch.countDown();
-            }
-
-            @Override
-            public void duplicated(CoapPacket request) {
-            }
-        });
-
-        DatagramSocket client = new DatagramSocket();
-        byte[] content = "kacsa".getBytes();
-        DatagramPacket packet = new DatagramPacket(content, content.length, InetAddress.getLocalHost(), SERVER_PORT);
-        client.send(packet);
-        client.close();
-
-        assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
-    }
-
-    @Test
-    public void bufferSizeTest() throws IOException, CoapException {
-        int messageSize = 2000;
-        //UDPConnectorChannel udpConnector1 = new UDPConnectorChannel(new InetSocketAddress(0));
-        InMemoryTransport udpConnector1 = new InMemoryTransport(61616);
-        udpConnector1.setBufferSize(messageSize + 100);
-        TestResource testResource = new TestResource();
-
-        CoapServer srv1 = CoapServerBuilder.newBuilder().transport(udpConnector1).build();
-        srv1.addRequestHandler("/test", testResource);
-        srv1.start();
-
-        CoapClient client = CoapClientBuilder.newBuilder(InMemoryTransport.createAddress(61616)).transport(InMemoryTransport.create()).build();
-
-        client.resource("/test").payload(new byte[messageSize]).sync().put();
-        assertEquals(messageSize, testResource.payload.length());
-        srv1.stop();
     }
 
     @Test

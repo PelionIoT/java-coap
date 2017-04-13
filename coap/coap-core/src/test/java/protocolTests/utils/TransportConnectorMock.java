@@ -5,9 +5,9 @@ package protocolTests.utils;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.transport.TransportConnector;
+import com.mbed.coap.transport.CoapReceiver;
+import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.transport.TransportReceiver;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedHashMap;
@@ -17,14 +17,14 @@ import java.util.Optional;
 /**
  * Created by szymon
  */
-public class TransportConnectorMock implements TransportConnector {
+public class TransportConnectorMock implements CoapTransport {
 
-    private TransportReceiver transReceiver;
+    private CoapReceiver transReceiver;
     private final Map<CoapPacket, CoapPacket[]> conversationMap = new LinkedHashMap<>(); //order is important
     private CoapPacket lastOutgoingMessage = null;
 
     @Override
-    public void start(TransportReceiver transReceiver) throws IOException {
+    public void start(CoapReceiver transReceiver) throws IOException {
         this.transReceiver = transReceiver;
     }
 
@@ -34,26 +34,26 @@ public class TransportConnectorMock implements TransportConnector {
     }
 
     @Override
-    public void send(final byte[] data, final int len, final InetSocketAddress destinationAddress, TransportContext transContext) throws IOException {
-        try {
-            CoapPacket request = CoapPacket.read(data, len, null);
-            CoapPacket[] resp = findResponse(request);
-            if (resp != null) {
-                for (CoapPacket r : resp) {
-                    if (r != null) {
-                        receive(r, destinationAddress);
-                    }
+    public void sendPacket(CoapPacket request, InetSocketAddress destinationAddress, TransportContext tranContext) throws CoapException, IOException {
+        CoapPacket[] resp = findResponse(request);
+        if (resp != null) {
+            for (CoapPacket r : resp) {
+                if (r != null) {
+                    receive(r, destinationAddress);
                 }
             }
-            lastOutgoingMessage = request;
-        } catch (CoapException e) {
-            e.printStackTrace();
         }
+        lastOutgoingMessage = request;
+    }
+
+    public void receive(CoapPacket coapPacket) {
+        transReceiver.handle(coapPacket, TransportContext.NULL);
     }
 
     public void receive(CoapPacket coapPacket, InetSocketAddress sourceAddress) {
         try {
-            transReceiver.onReceive(sourceAddress, coapPacket.toByteArray(), null);
+            coapPacket = CoapPacket.read(sourceAddress, coapPacket.toByteArray());
+            transReceiver.handle(coapPacket, TransportContext.NULL);
         } catch (CoapException e) {
             e.printStackTrace();
         }
@@ -65,6 +65,14 @@ public class TransportConnectorMock implements TransportConnector {
     }
 
     private CoapPacket[] findResponse(CoapPacket coapPacket) {
+        //remove address
+        try {
+            byte[] bytes = coapPacket.toByteArray();
+            coapPacket = CoapPacket.read(bytes, bytes.length, null);
+        } catch (CoapException e) {
+            throw new RuntimeException(e);
+        }
+
         Optional<CoapPacket> first = conversationMap.keySet().stream().findFirst();
         if (!first.isPresent() || !first.get().equals(coapPacket)) {
             return null;

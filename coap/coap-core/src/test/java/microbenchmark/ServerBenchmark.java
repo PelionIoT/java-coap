@@ -3,22 +3,19 @@
  */
 package microbenchmark;
 
-import static com.mbed.coap.transport.AbstractTransportConnector.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.transport.TransportConnector;
+import com.mbed.coap.transport.CoapReceiver;
+import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.transport.TransportReceiver;
 import com.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.junit.After;
@@ -75,16 +72,15 @@ public class ServerBenchmark {
         endTime = System.currentTimeMillis();
     }
 
-    private static class SynchTransportStub implements TransportConnector {
+    private static class SynchTransportStub implements CoapTransport {
 
-        private TransportReceiver udpReceiver;
-        private Executor executor = Executors.newSingleThreadExecutor();
+        private CoapReceiver udpReceiver;
         private final InetSocketAddress addr = new InetSocketAddress("localhost", 5683);
         private boolean sendCalled = false;
 
         @Override
-        public void start(TransportReceiver udpReceiver) throws IOException {
-            this.udpReceiver = udpReceiver;
+        public void start(CoapReceiver coapReceiver) throws IOException {
+            this.udpReceiver = coapReceiver;
         }
 
         @Override
@@ -93,7 +89,7 @@ public class ServerBenchmark {
         }
 
         @Override
-        public synchronized void send(byte[] data, int len, InetSocketAddress destinationAddress, TransportContext transContext) throws IOException {
+        public synchronized void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
             sendCalled = true;
             this.notifyAll();
         }
@@ -104,8 +100,11 @@ public class ServerBenchmark {
         }
 
         public synchronized void receive(ByteBuffer data) throws InterruptedException {
-            byte[] data1 = createCopyOfPacketData(data, data.position());
-            executor.execute(() -> udpReceiver.onReceive(addr, data1, null));
+            try {
+                udpReceiver.handle(CoapPacket.read(addr, data.array(), data.position()), TransportContext.NULL);
+            } catch (CoapException e) {
+                throw new RuntimeException(e);
+            }
             while (!sendCalled) {
                 this.wait();
             }

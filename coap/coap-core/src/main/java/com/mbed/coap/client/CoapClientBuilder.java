@@ -9,7 +9,6 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.TransportConnector;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -84,14 +83,6 @@ public final class CoapClientBuilder {
         } catch (UnknownHostException ex) {
             throw new RuntimeException(ex);
         }
-        return this;
-    }
-
-    public CoapClientBuilder transport(TransportConnector trans) {
-        if (coapServer != null) {
-            throw new IllegalStateException("Transport already initialized");
-        }
-        coapServer = CoapServerBuilder.newBuilder().transport(trans).build();
         return this;
     }
 

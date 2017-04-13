@@ -12,7 +12,7 @@ import com.mbed.coap.packet.Method;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transmission.SingleTimeout;
-import com.mbed.coap.transport.udp.DatagramChannelTransport;
+import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import com.mbed.coap.transport.udp.MulticastSocketTransport;
 import com.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
@@ -110,7 +110,7 @@ public class MulticastTest {
     @Ignore
     public void multicastTest() throws IOException {
 
-        CoapServer server = CoapServerBuilder.newBuilder().transport(new DatagramChannelTransport(new InetSocketAddress("::1", 61619), Runnable::run)).build();
+        CoapServer server = CoapServerBuilder.newBuilder().transport(new DatagramSocketTransport(new InetSocketAddress("::1", 61619), Runnable::run)).build();
         server.start();
 
         DatagramSocket soc = null;

@@ -105,8 +105,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         if (duplicationListSize > 0) {
             duplicationDetector = new DuplicationDetector(TimeUnit.MILLISECONDS, DEFAULT_DUPLICATION_TIMEOUT, duplicationListSize, scheduledExecutor);
         }
-        if (errorCallback == null) {
-            errorCallback = CoapErrorCallback.NULL;
+        if (duplicatedCoapMessageCallback == null) {
+            duplicatedCoapMessageCallback = DuplicatedCoapMessageCallback.NULL;
         }
     }
 
@@ -230,11 +230,11 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         this.delayedTransactionTimeout = delayedTransactionTimeout;
     }
 
-    public void setErrorCallback(CoapErrorCallback errorCallback) {
+    void setDuplicatedCoapMessageCallback(DuplicatedCoapMessageCallback errorCallback) {
         if (errorCallback == null) {
             throw new NullPointerException();
         }
-        this.errorCallback = errorCallback;
+        this.duplicatedCoapMessageCallback = errorCallback;
     }
 
     @Deprecated
@@ -539,14 +539,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         handleNotProcessedMessage(packet);
     }
 
-    /**
-     * Handles parsing errors on incoming messages.
-     */
-    @Override
-    public void handleException(byte[] packet, CoapException exception, TransportContext transportContext) {
-        errorCallback.parserError(packet, exception);
-    }
-
     private boolean handlePing(CoapPacket packet) {
         if (packet.getCode() == null && packet.getMethod() == null && packet.getMessageType() == MessageType.Confirmable) {
             LOGGER.debug("CoAP ping received.");
@@ -829,7 +821,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
                     }
                 }
 
-                errorCallback.duplicated(request);
+                duplicatedCoapMessageCallback.duplicated(request);
 
                 return true;
             }
