@@ -29,6 +29,10 @@ public class CoapServerBuilder {
         return new CoapServerBuilder();
     }
 
+    public static CoapServer newCoapServer(CoapTransport transport) {
+        return new CoapServerBuilder().transport(transport).build();
+    }
+
     public CoapServerBuilder transport(int port) {
         this.coapTransport = new DatagramSocketTransport(new InetSocketAddress(port), Runnable::run);
         return this;
