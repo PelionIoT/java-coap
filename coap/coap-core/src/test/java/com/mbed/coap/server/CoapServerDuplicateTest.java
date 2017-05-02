@@ -40,16 +40,7 @@ public class CoapServerDuplicateTest {
         serverTransport = new MockCoapTransport();
 
         server = CoapServerBuilder.newCoapServer(serverTransport);
-        server.setErrorCallback(new CoapErrorCallback() {
-            @Override
-            public void parserError(byte[] packet, CoapException exception) {
-            }
-
-            @Override
-            public void duplicated(CoapPacket request) {
-                duplicated.incrementAndGet();
-            }
-        });
+        server.setDuplicatedCoapMessageCallback(request -> duplicated.incrementAndGet());
 
 
         server.addRequestHandler("/test", new CoapResource() {

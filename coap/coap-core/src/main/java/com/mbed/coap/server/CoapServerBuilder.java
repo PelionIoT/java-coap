@@ -78,8 +78,8 @@ public class CoapServerBuilder {
         return this;
     }
 
-    public CoapServerBuilder errorCallback(CoapErrorCallback errorCallback) {
-        server.setErrorCallback(errorCallback);
+    public CoapServerBuilder duplicatedCoapMessageCallback(DuplicatedCoapMessageCallback errorCallback) {
+        server.setDuplicatedCoapMessageCallback(errorCallback);
         return this;
     }
 
