@@ -3,6 +3,14 @@
  */
 package microbenchmark;
 
+import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.ObservationHandler;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
@@ -12,14 +20,6 @@ import org.apache.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.server.CoapExchange;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.CoapServerBuilder;
-import org.mbed.coap.server.ObservationHandler;
 
 /**
  * @author szymon

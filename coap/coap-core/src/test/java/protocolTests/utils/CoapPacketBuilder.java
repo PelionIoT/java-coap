@@ -1,16 +1,16 @@
 /*
- * Copyright (C) 2011-2016 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package protocolTests.utils;
 
+import com.mbed.coap.packet.BlockOption;
+import com.mbed.coap.packet.BlockSize;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.DataConvertingUtility;
+import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.Method;
 import java.net.InetSocketAddress;
-import org.mbed.coap.packet.BlockOption;
-import org.mbed.coap.packet.BlockSize;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.DataConvertingUtility;
-import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.packet.Method;
 
 /**
  * Created by szymon

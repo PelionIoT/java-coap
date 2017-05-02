@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
  */
 package protocolTests.utils;
 
+import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.transport.TransportConnector;
+import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.transport.TransportReceiver;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.transport.TransportConnector;
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
 
 /**
  * Created by szymon

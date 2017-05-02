@@ -3,6 +3,13 @@
  */
 package microbenchmark;
 
+import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.packet.BlockOption;
+import com.mbed.coap.packet.BlockSize;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.MediaTypes;
+import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.Method;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import org.apache.log4j.Level;
@@ -10,13 +17,6 @@ import org.apache.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.packet.BlockOption;
-import org.mbed.coap.packet.BlockSize;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.MediaTypes;
-import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.packet.Method;
 
 /**
  * @author szymon

@@ -5,19 +5,19 @@ package protocolTests;
 
 import static org.junit.Assert.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
+import com.mbed.coap.client.CoapClient;
+import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.packet.BlockSize;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Code;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.MessageIdSupplierImpl;
+import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.client.CoapClientBuilder;
-import org.mbed.coap.packet.BlockSize;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.MessageIdSupplierImpl;
-import org.mbed.coap.transmission.SingleTimeout;
 import protocolTests.utils.TransportConnectorMock;
 
 /**
