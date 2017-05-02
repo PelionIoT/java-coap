@@ -7,8 +7,8 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
-import com.mbed.coap.server.CoapErrorCallback;
 import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.TransportContext;
@@ -26,7 +26,7 @@ public abstract class CoapServerAbstract implements CoapReceiver {
     private static final long DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
     protected long delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
     protected TransmissionTimeout transmissionTimeout;
-    protected CoapErrorCallback errorCallback;
+    protected DuplicatedCoapMessageCallback duplicatedCoapMessageCallback;
 
     long getDelayedTransactionTimeout() {
         return delayedTransactionTimeout;
@@ -53,8 +53,6 @@ public abstract class CoapServerAbstract implements CoapReceiver {
     }
 
     protected abstract void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException;
-
-    protected abstract void handleException(byte[] packet, CoapException exception, TransportContext transportContext);
 
     protected abstract int getNextMID();
 

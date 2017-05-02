@@ -31,16 +31,9 @@ public class CoapServerDuplicateErrorsTest {
     public void setUp() throws IOException {
         serverTransport = new MockCoapTransport();
         server = CoapServerBuilder.newCoapServer(serverTransport);
-        server.setErrorCallback(new CoapErrorCallback() {
-            @Override
-            public void parserError(byte[] packet, CoapException exception) {
-            }
-
-            @Override
-            public void duplicated(CoapPacket request) {
-                if (latch != null) {
-                    latch.countDown();
-                }
+        server.setDuplicatedCoapMessageCallback(request -> {
+            if (latch != null) {
+                latch.countDown();
             }
         });
         server.start();
