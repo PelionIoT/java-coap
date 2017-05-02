@@ -4,29 +4,29 @@
 package protocolTests;
 
 import static org.junit.Assert.*;
+import com.mbed.coap.client.CoapClient;
+import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.exception.CoapCodeException;
+import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.exception.CoapTimeoutException;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.DataConvertingUtility;
+import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.internal.DelayedTransactionId;
+import com.mbed.coap.transmission.SingleTimeout;
+import com.mbed.coap.transport.InMemoryTransport;
+import com.mbed.coap.utils.CoapResource;
+import com.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Random;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.client.CoapClientBuilder;
-import org.mbed.coap.exception.CoapCodeException;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.exception.CoapTimeoutException;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.DataConvertingUtility;
-import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.server.CoapExchange;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.CoapServerBuilder;
-import org.mbed.coap.server.internal.DelayedTransactionId;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.transport.InMemoryTransport;
-import org.mbed.coap.utils.CoapResource;
-import org.mbed.coap.utils.SimpleCoapResource;
 
 /**
  * @author szymon

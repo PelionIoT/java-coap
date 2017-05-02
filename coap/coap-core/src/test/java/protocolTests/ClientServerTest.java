@@ -4,6 +4,26 @@
 package protocolTests;
 
 import static org.junit.Assert.*;
+import com.mbed.coap.CoapConstants;
+import com.mbed.coap.client.CoapClient;
+import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.Method;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.transmission.CoapTimeout;
+import com.mbed.coap.transmission.SingleTimeout;
+import com.mbed.coap.transport.InMemoryTransport;
+import com.mbed.coap.transport.TransportConnector;
+import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.transport.TransportReceiver;
+import com.mbed.coap.transport.udp.MulticastSocketTransport;
+import com.mbed.coap.utils.Callback;
+import com.mbed.coap.utils.FutureCallbackAdapter;
+import com.mbed.coap.utils.SimpleCoapResource;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -14,26 +34,6 @@ import java.util.concurrent.Future;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.CoapConstants;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.client.CoapClientBuilder;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.packet.MessageType;
-import org.mbed.coap.packet.Method;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.CoapServerBuilder;
-import org.mbed.coap.transmission.CoapTimeout;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.transport.InMemoryTransport;
-import org.mbed.coap.transport.TransportConnector;
-import org.mbed.coap.transport.TransportContext;
-import org.mbed.coap.transport.TransportReceiver;
-import org.mbed.coap.transport.udp.MulticastSocketTransport;
-import org.mbed.coap.utils.Callback;
-import org.mbed.coap.utils.FutureCallbackAdapter;
-import org.mbed.coap.utils.SimpleCoapResource;
 
 /**
  * @author szymon
@@ -335,7 +335,7 @@ public class ClientServerTest {
         cnn.stop();
     }
 
-    @Test(expected = org.mbed.coap.exception.CoapTimeoutException.class)
+    @Test(expected = com.mbed.coap.exception.CoapTimeoutException.class)
     public void testRequestWithPacketDropping() throws IOException, CoapException {
         CoapServer srv = CoapServerBuilder.newBuilder()
                 .transport(new DroppingPacketsTransportWrapper(InMemoryTransport.create(CoapConstants.DEFAULT_PORT), (byte) 100))
