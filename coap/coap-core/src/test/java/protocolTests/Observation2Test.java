@@ -3,22 +3,22 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.server.CoapServerObserve.*;
 import static org.junit.Assert.*;
-import static org.mbed.coap.server.CoapServerObserve.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.ObservationWithBlockTest.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
+import com.mbed.coap.client.CoapClient;
+import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.client.ObservationListener;
+import com.mbed.coap.packet.Code;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.MessageIdSupplierImpl;
 import java.net.InetSocketAddress;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.client.CoapClientBuilder;
-import org.mbed.coap.client.ObservationListener;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.CoapServerBuilder;
-import org.mbed.coap.server.MessageIdSupplierImpl;
 import protocolTests.utils.TransportConnectorMock;
 
 /**

@@ -4,6 +4,17 @@
 package protocolTests;
 
 import static org.junit.Assert.*;
+import com.mbed.coap.client.CoapClient;
+import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.exception.CoapTimeoutException;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Method;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.transmission.SingleTimeout;
+import com.mbed.coap.transport.InMemoryTransport;
+import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -12,17 +23,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.client.CoapClientBuilder;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.exception.CoapTimeoutException;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Method;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.CoapServerBuilder;
-import org.mbed.coap.transmission.SingleTimeout;
-import org.mbed.coap.transport.InMemoryTransport;
-import org.mbed.coap.utils.FutureCallbackAdapter;
 
 /**
  * @author szymon

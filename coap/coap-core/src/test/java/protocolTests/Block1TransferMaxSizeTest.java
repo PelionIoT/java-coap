@@ -4,25 +4,25 @@
 package protocolTests;
 
 import static org.junit.Assert.*;
+import com.mbed.coap.client.CoapClient;
+import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.exception.CoapCodeException;
+import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.observe.SimpleObservableResource;
+import com.mbed.coap.packet.BlockOption;
+import com.mbed.coap.packet.BlockSize;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Code;
+import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.utils.CoapResource;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mbed.coap.client.CoapClient;
-import org.mbed.coap.client.CoapClientBuilder;
-import org.mbed.coap.exception.CoapCodeException;
-import org.mbed.coap.exception.CoapException;
-import org.mbed.coap.observe.SimpleObservableResource;
-import org.mbed.coap.packet.BlockOption;
-import org.mbed.coap.packet.BlockSize;
-import org.mbed.coap.packet.CoapPacket;
-import org.mbed.coap.packet.Code;
-import org.mbed.coap.server.CoapExchange;
-import org.mbed.coap.server.CoapServer;
-import org.mbed.coap.server.CoapServerBuilder;
-import org.mbed.coap.utils.CoapResource;
 
 
 /**
