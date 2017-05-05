@@ -17,12 +17,12 @@ package com.mbed.lwm2m.tlv;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import com.google.common.io.BaseEncoding;
 import com.mbed.lwm2m.LWM2MID;
 import com.mbed.lwm2m.LWM2MObjectInstance;
 import com.mbed.lwm2m.LWM2MResource;
 import com.mbed.lwm2m.LWM2MResourceInstance;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import org.junit.Test;
 
@@ -176,8 +176,8 @@ public class TLVSerializerTest {
     @Test
     public void serializeCertificates() throws Exception {
         LWM2MResource secMode = new LWM2MResource(LWM2MID.from(2), 2);
-        LWM2MResource cert = new LWM2MResource(LWM2MID.from(4), BaseEncoding.base64().decode("MIIBKjCB0aADAgECAgEBMAoGCCqGSM49BAMCMC4xETAPBgNVBAMMCEFSTS1URVNUMQwwCgYDVQQKDANBUk0xCzAJBgNVBAYTAkZJMB4XDTE0MDQwMzA4MTgxOFoXDTE2MDQwMjA4MTgxOFowEDEOMAwGA1UEAwwFTlNQLTEwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASzoo3RqwjZEWJdqeQO8MTtGYlG/jZrxodAe4FC6Yu+32ahNakfJDMSEnLAQrRvndT8FGDL6eapppR1nUrR0LgTMAoGCCqGSM49BAMCA0gAMEUCIQCthoYZgRd4YiT5VzahEd7yIFhD25DODjOlI4En6YYHogIgC5vqLucdr6A0HGZlr38VddGw5Vg2ntD8dvbEyXBIrlg="));
-        LWM2MResource priv = new LWM2MResource(LWM2MID.from(5), BaseEncoding.base64().decode("MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgeDict5S0Dz1OCthRTPIxWdidQGezkscQluPiKt7zD/uhRANCAASzoo3RqwjZEWJdqeQO8MTtGYlG/jZrxodAe4FC6Yu+32ahNakfJDMSEnLAQrRvndT8FGDL6eapppR1nUrR0LgT"));
+        LWM2MResource cert = new LWM2MResource(LWM2MID.from(4), Base64.getDecoder().decode("MIIBKjCB0aADAgECAgEBMAoGCCqGSM49BAMCMC4xETAPBgNVBAMMCEFSTS1URVNUMQwwCgYDVQQKDANBUk0xCzAJBgNVBAYTAkZJMB4XDTE0MDQwMzA4MTgxOFoXDTE2MDQwMjA4MTgxOFowEDEOMAwGA1UEAwwFTlNQLTEwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASzoo3RqwjZEWJdqeQO8MTtGYlG/jZrxodAe4FC6Yu+32ahNakfJDMSEnLAQrRvndT8FGDL6eapppR1nUrR0LgTMAoGCCqGSM49BAMCA0gAMEUCIQCthoYZgRd4YiT5VzahEd7yIFhD25DODjOlI4En6YYHogIgC5vqLucdr6A0HGZlr38VddGw5Vg2ntD8dvbEyXBIrlg="));
+        LWM2MResource priv = new LWM2MResource(LWM2MID.from(5), Base64.getDecoder().decode("MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgeDict5S0Dz1OCthRTPIxWdidQGezkscQluPiKt7zD/uhRANCAASzoo3RqwjZEWJdqeQO8MTtGYlG/jZrxodAe4FC6Yu+32ahNakfJDMSEnLAQrRvndT8FGDL6eapppR1nUrR0LgT"));
         LWM2MResource url = new LWM2MResource(LWM2MID.from(0), "coaps://localhost:64464");
         LWM2MObjectInstance security = new LWM2MObjectInstance(LWM2MID.from(0), secMode, cert, priv, url);
 

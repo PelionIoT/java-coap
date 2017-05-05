@@ -17,12 +17,12 @@ package com.mbed.lwm2m.json;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import com.google.common.io.BaseEncoding;
 import com.mbed.lwm2m.LWM2MID;
 import com.mbed.lwm2m.LWM2MResource;
 import com.mbed.lwm2m.LWM2MResourceInstance;
 import com.mbed.lwm2m.LWM2MResourceType;
 import java.util.Arrays;
+import java.util.Base64;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -115,7 +115,7 @@ public class JsonSerializerTest {
         byte[] opaque = new byte[]{1,2,3,4};
         LWM2MResource resource = new LWM2MResource(LWM2MID.$0, opaque);
         String json = serializer.serialize(resource);
-        System.out.println(BaseEncoding.base64().encode(opaque) );
+        System.out.println(Base64.getEncoder().encodeToString(opaque));
         System.out.println(json);
         assertThat (json, equalTo("{\"e\":[{\"n\":\"0\",\"sv\":\"AQIDBA==\"}]}"));
     }

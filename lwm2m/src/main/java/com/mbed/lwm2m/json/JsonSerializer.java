@@ -15,7 +15,6 @@
  */
 package com.mbed.lwm2m.json;
 
-import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mbed.lwm2m.LWM2MObjectInstance;
@@ -23,6 +22,7 @@ import com.mbed.lwm2m.LWM2MResource;
 import com.mbed.lwm2m.LWM2MResourceInstance;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 /**
@@ -145,7 +145,7 @@ public class JsonSerializer {
                     break;
 
                 case OPAQUE:
-                    json = new JsonResource(name, BaseEncoding.base64().encode(resource.getValue()));
+                    json = new JsonResource(name, Base64.getEncoder().encodeToString(resource.getValue()));
                     break;
 
                 case STRING:
