@@ -1,8 +1,22 @@
+/**
+ * Copyright (C) 2011-2017 ARM Limited. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.mbed.lwm2m.tlv;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import com.arm.mbed.commons.string.Utf8Bytes;
 import com.google.common.io.BaseEncoding;
 import com.mbed.lwm2m.LWM2MID;
 import com.mbed.lwm2m.LWM2MObjectInstance;
@@ -42,7 +56,7 @@ public class TLVDeserializerTest {
         List<LWM2MResource> resources = TLVDeserializer.deserializeResources(tlv);
         assertThat(resources, hasSize(1));
         assertThat(resources.get(0).getId().intValue(), equalTo(0));
-        assertArrayEquals(Utf8Bytes.of("ARM"), resources.get(0).getValue());
+        assertArrayEquals("ARM".getBytes(), resources.get(0).getValue());
         assertFalse(resources.get(0).hasNestedInstances());
     }
 
@@ -90,7 +104,7 @@ public class TLVDeserializerTest {
         List<LWM2MResource> resources = TLVDeserializer.deserializeResources(tlv);
         assertThat(resources, hasSize(1));
         assertThat(resources.get(0).getId().intValue(), equalTo(0));
-        assertArrayEquals(Utf8Bytes.of("AR\0"), resources.get(0).getValue());
+        assertArrayEquals("AR\0".getBytes(), resources.get(0).getValue());
         assertFalse(resources.get(0).hasNestedInstances());
     }
 
@@ -136,7 +150,7 @@ public class TLVDeserializerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void deserializeRandomObjectInstance() throws Exception {
-        TLVDeserializer.deserialiseObjectInstances(Utf8Bytes.of("342fd78b"));
+        TLVDeserializer.deserialiseObjectInstances("342fd78b".getBytes());
     }
 
     @Test
