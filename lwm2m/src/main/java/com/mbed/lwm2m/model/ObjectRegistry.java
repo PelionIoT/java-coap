@@ -15,12 +15,12 @@
  */
 package com.mbed.lwm2m.model;
 
-import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,7 +68,7 @@ public class ObjectRegistry {
     }
 
     public List<ObjectModel> getObjectModels() {
-        return ImmutableList.copyOf(objects);
+        return Collections.unmodifiableList(objects);
     }
 
     /**

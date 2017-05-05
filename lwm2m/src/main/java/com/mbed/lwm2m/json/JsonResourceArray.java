@@ -15,9 +15,9 @@
  */
 package com.mbed.lwm2m.json;
 
-import com.google.common.collect.ImmutableList;
 import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -42,7 +42,7 @@ public class JsonResourceArray {
     }
 
     public List<JsonResource> getResources() {
-        return ImmutableList.copyOf(resources);
+        return Collections.unmodifiableList(resources);
     }
 
     public void addResources (List<JsonResource> resources) {
