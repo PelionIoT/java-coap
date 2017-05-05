@@ -17,13 +17,13 @@ package com.mbed.lwm2m.tlv;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import com.google.common.io.BaseEncoding;
 import com.mbed.lwm2m.LWM2MID;
 import com.mbed.lwm2m.LWM2MObjectInstance;
 import com.mbed.lwm2m.LWM2MResource;
 import com.mbed.lwm2m.LWM2MResourceInstance;
 import com.mbed.lwm2m.utils.HexArray;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import org.junit.Test;
 
@@ -156,7 +156,7 @@ public class TLVDeserializerTest {
     @Test
     public void deserializeCertificates() throws Exception {
         String tlvString = "EAACycECAtADATQwggEwMIHVoAMCAQICAQEwDAYIKoZIzj0EAwIFADAQMQ4wDAYDVQQDDAVOU1AtMTAeFw0xNDA1MTMwNzQ2NDdaFw0xNDA1MjYwNzQ2NDdaMDAxDTALBgNVBAcTBE91bHUxETAPBgNVBAMTCG5vZGUtMDAxMQwwCgYDVQQKEwNBUk0wWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAT+MqviUOwxcdmY1EEjtJ6abf4Q1zSrp8vlYgAJD2j6a+ksLie/GHyon/8403pXaor+IfLRU0KuLb20+47CyoFLMAwGCCqGSM49BAMCBQADSAAwRQIgCHCKSRjEhChhCvO4njwanjpZh7qBlGAVwjRvE+m8SRACIQDvEvlUVSGNnHRvw6PTi+tae6HXX40L9HZEUJ4reBHuNdAEAS4wggEqMIHRoAMCAQICAQEwCgYIKoZIzj0EAwIwLjERMA8GA1UEAwwIQVJNLVRFU1QxDDAKBgNVBAoMA0FSTTELMAkGA1UEBhMCRkkwHhcNMTQwNDAzMDgxODE4WhcNMTYwNDAyMDgxODE4WjAQMQ4wDAYDVQQDDAVOU1AtMTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABLOijdGrCNkRYl2p5A7wxO0ZiUb+NmvGh0B7gULpi77fZqE1qR8kMxIScsBCtG+d1PwUYMvp5qmmlHWdStHQuBMwCgYIKoZIzj0EAwIDSAAwRQIhAK2GhhmBF3hiJPlXNqER3vIgWEPbkM4OM6UjgSfphgeiAiALm+ou5x2voDQcZmWvfxV10bDlWDae0Px29sTJcEiuWMgFQzBBAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBCcwJQIBAQQg6Pu7QIblW3dF+C995TkThuTr0FA/MetQmqxZRVRCP3TIABNjb2FwczovL1s6OjFdOjYxNjE2";
-        byte[] tlv = BaseEncoding.base64().decode(tlvString);
+        byte[] tlv = Base64.getDecoder().decode(tlvString);
         List<LWM2MObjectInstance> decoded = TLVDeserializer.deserialiseObjectInstances(tlv);
         assertThat(decoded, hasSize(1));
         List<LWM2MResource> resources = decoded.get(0).getResources();

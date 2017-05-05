@@ -15,8 +15,8 @@
  */
 package com.mbed.lwm2m.model;
 
-import com.google.common.collect.ImmutableList;
 import com.google.gson.annotations.SerializedName;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,7 +69,7 @@ public class ObjectModel {
     }
 
     public List<ResourceModel> getResources() {
-        return ImmutableList.copyOf(resources);
+        return Collections.unmodifiableList(resources);
     }
     
     public ResourceModel getResourceModel (String id) throws NotFoundException {
