@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.mbed.java-coap</groupId>
         <version>5.1.0-SNAPSHOT</version>
-        <artifactId>coap-parent</artifactId>
+        <artifactId>coap-java7-parent</artifactId>
     </parent>
     <artifactId>example-client</artifactId>
     <packaging>jar</packaging>
@@ -35,12 +35,12 @@
         </dependency>
         <dependency>
             <groupId>com.mbed.java-coap</groupId>
-            <artifactId>coap-core</artifactId>
+            <artifactId>coap-core-java7</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.mbed.java-coap</groupId>
-            <artifactId>lwm2m</artifactId>
+            <artifactId>lwm2m-java7</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

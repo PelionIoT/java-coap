@@ -26,7 +26,7 @@ import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.MessageIdSupplierImpl;
 import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
-import java.util.concurrent.CompletableFuture;
+import java8.util.concurrent.CompletableFuture;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -25,7 +25,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.Objects;
+import java8.util.Objects;
 
 /**
  * This class encode and decode CoAP messages based on RFC 7252 document

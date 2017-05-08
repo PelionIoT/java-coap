@@ -23,14 +23,14 @@ import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.utils.Callback;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import java8.util.Optional;
+import java8.util.function.Supplier;
+import java8.util.stream.RefStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.threeten.bp.Duration;
 
 public class RegistrationManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(RegistrationManager.class);
@@ -101,7 +101,7 @@ public class RegistrationManager {
     }
 
     private String epNameFrom(URI registrationUri) {
-        return Stream.of(registrationUri.getQuery().split("&"))
+        return RefStreams.of(registrationUri.getQuery().split("&"))
                 .filter(s -> s.startsWith("ep="))
                 .map(s -> s.substring(3))
                 .findFirst()

@@ -121,7 +121,7 @@ public final class DataConvertingUtility {
             if (p.length != 2) {
                 throw new ParseException("", 0);
             }
-            List<String> values = result.getOrDefault(p[0], new ArrayList<>(1));
+            List<String> values = (result.containsKey(p[0])) ? result.get(p[0]) : new ArrayList<>(1);
             values.add(p[1]);
             result.put(p[0], values);
         }

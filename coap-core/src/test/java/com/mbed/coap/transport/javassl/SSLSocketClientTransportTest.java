@@ -22,7 +22,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.CoapServer;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
-import java.util.concurrent.CompletableFuture;
+import java8.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLContext;
 import org.junit.Test;
 

@@ -1,10 +1,21 @@
 mbed CoAP
 =========
 
-![CircleCI](https://img.shields.io/circleci/project/github/ARMmbed/java-coap/master.svg)
+![CircleCI](https://img.shields.io/circleci/project/github/ARMmbed/java-coap/java7-backport.svg)
 [![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)](LICENSE)
 [![codecov](https://codecov.io/gh/ARMmbed/java-coap/branch/master/graph/badge.svg)](https://codecov.io/gh/ARMmbed/java-coap)
 [![Known Vulnerabilities](https://snyk.io/test/github/armmbed/java-coap/badge.svg)](https://snyk.io/test/github/armmbed/java-coap)
+
+---
+
+:exclamation: **NOTE:** 
+This is a Java 7 backport branch for [coap-core](coap-core). Generated artifacts are compatible with JRE 7. 
+To minimize code difference with master, backporting is done with [retrolambda](https://github.com/orfjackal/retrolambda), [streamsupport](https://github.com/streamsupport/streamsupport) 
+and [threetenbp](https://github.com/ThreeTen/threetenbp).
+
+It will be updated with master branch by rebasing (`git rebase master`). 
+
+----
 
 Introduction
 ------------

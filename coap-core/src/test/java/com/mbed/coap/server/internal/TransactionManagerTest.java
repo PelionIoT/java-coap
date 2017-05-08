@@ -26,8 +26,8 @@ import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Optional;
-import java.util.function.Consumer;
+import java8.util.Optional;
+import java8.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 

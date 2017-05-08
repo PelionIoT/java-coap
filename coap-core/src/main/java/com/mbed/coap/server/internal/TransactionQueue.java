@@ -21,10 +21,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
+import java8.util.Optional;
+import java8.util.function.Predicate;
+import java8.util.stream.Stream;
+import java8.util.stream.StreamSupport;
 
 /**
  * Immutable object that holds transaction queue.
@@ -186,7 +187,7 @@ public class TransactionQueue {
     }
 
     public Stream<CoapTransaction> stream() {
-        return transactions.stream();
+        return StreamSupport.stream(transactions);
     }
 
     public boolean notLocked() {

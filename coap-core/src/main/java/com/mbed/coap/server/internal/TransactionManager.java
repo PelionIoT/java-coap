@@ -23,11 +23,13 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Enumeration;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
+import java8.util.Optional;
+import java8.util.function.BiFunction;
+import java8.util.stream.Collectors;
+import java8.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +58,7 @@ public class TransactionManager {
     public boolean addTransactionAndGetReadyToSend(CoapTransaction transaction, boolean forceAdd) throws TooManyRequestsForEndpointException {
         AtomicBoolean queueOverflow = new AtomicBoolean(false);
 
-        TransactionQueue inserted = transactionQueues.compute(transaction.getTransactionId().getAddress(), (address, coapTransactions) -> {
+        TransactionQueue inserted = compute(transaction.getTransactionId().getAddress(), (address, coapTransactions) -> {
             if (coapTransactions == null) {
                 return TransactionQueue.of(transaction);
             } else {
@@ -74,7 +76,7 @@ public class TransactionManager {
     public Optional<CoapTransaction> removeAndLock(CoapTransactionId transId) {
         AtomicReference<Optional<CoapTransaction>> transactionFound = new AtomicReference<>(Optional.empty());
 
-        transactionQueues.computeIfPresent(transId.getAddress(), (address, coapTransactions) -> {
+        computeIfPresent(transId.getAddress(), (address, coapTransactions) -> {
             QueueUpdateResult result = coapTransactions.removeAndLock(transId);
 
             transactionFound.set(result.coapTransaction);
@@ -87,14 +89,19 @@ public class TransactionManager {
     public Optional<CoapTransaction> unlockOrRemoveAndGetNext(CoapTransactionId transId) {
 
         return Optional.ofNullable(
-                transactionQueues.computeIfPresent(transId.getAddress(),
+                computeIfPresent(transId.getAddress(),
                         (address, coapTransactions) -> coapTransactions.unlockOrRemove(transId).orElse(null)
                 )
         ).flatMap(TransactionQueue::head);
     }
 
     public int getNumberOfTransactions() {
-        return transactionQueues.values().stream().mapToInt(TransactionQueue::size).sum();
+        int sum = 0;
+        for (TransactionQueue transactionQueue : transactionQueues.values()) {
+            int size = transactionQueue.size();
+            sum += size;
+        }
+        return sum;
     }
 
 
@@ -104,7 +111,7 @@ public class TransactionManager {
 
             AtomicReference<Optional<CoapTransaction>> transactionFound = new AtomicReference<>(Optional.empty());
 
-            transactionQueues.computeIfPresent(req.getRemoteAddress(), (address, coapTransactions) -> {
+            computeIfPresent(req.getRemoteAddress(), (address, coapTransactions) -> {
                 QueueUpdateResult result = coapTransactions.findAndRemoveSeparateResponse(req);
 
                 transactionFound.set(result.coapTransaction);
@@ -121,7 +128,7 @@ public class TransactionManager {
     }
 
     public Collection<CoapTransaction> findTimeoutTransactions(final long currentTime) {
-        Collection<CoapTransaction> ret = transactionQueues.values().stream()
+        Collection<CoapTransaction> ret = StreamSupport.stream(transactionQueues.values())
                 .flatMap(TransactionQueue::stream)
                 .filter(trans -> trans.isTimedOut(currentTime))
                 .collect(Collectors.toList());
@@ -138,6 +145,47 @@ public class TransactionManager {
                 transQueue.stream().forEach(t -> t.getCallback().callException(new IOException("Server stopped")));
             }
         }
+    }
 
+    //---- java7 backport -----
+    private TransactionQueue compute(InetSocketAddress key, BiFunction<InetSocketAddress, TransactionQueue, TransactionQueue> remapping) {
+
+        TransactionQueue oldVal = transactionQueues.get(key);
+        TransactionQueue newVal = remapping.apply(key, oldVal);
+        while (!replaceOrRemove(key, oldVal, newVal)) {
+            //retry if concurrent modification appears
+            oldVal = transactionQueues.get(key);
+            newVal = remapping.apply(key, oldVal);
+        }
+
+        return newVal;
+    }
+
+    private TransactionQueue computeIfPresent(InetSocketAddress key, BiFunction<InetSocketAddress, TransactionQueue, TransactionQueue> remapping) {
+
+        TransactionQueue oldVal = transactionQueues.get(key);
+        TransactionQueue newVal = oldVal != null ? remapping.apply(key, oldVal) : null;
+        while (oldVal != null && !replaceOrRemove(key, oldVal, newVal)) {
+            //retry if concurrent modification appears
+            oldVal = transactionQueues.get(key);
+            newVal = remapping.apply(key, oldVal);
+        }
+
+        return newVal;
+    }
+
+    private boolean replaceOrRemove(InetSocketAddress key, TransactionQueue oldVal, TransactionQueue newVal) {
+        if (oldVal == null) {
+            if (newVal != null) {
+                return transactionQueues.putIfAbsent(key, newVal) == null;
+            } else {
+                return !transactionQueues.containsKey(key);
+            }
+        }
+        if (newVal != null) {
+            return transactionQueues.replace(key, oldVal, newVal);
+        } else {
+            return transactionQueues.remove(key, oldVal);
+        }
     }
 }

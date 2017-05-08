@@ -17,7 +17,7 @@ package com.mbed.coap.utils;
 
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapExchange;
-import java.util.function.Supplier;
+import java8.util.function.Supplier;
 
 /**
  * @author szymon

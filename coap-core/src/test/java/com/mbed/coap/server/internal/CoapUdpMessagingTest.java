@@ -42,8 +42,8 @@ import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
 import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
+import java8.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import protocolTests.utils.CoapPacketBuilder;
@@ -369,7 +369,7 @@ public class CoapUdpMessagingTest {
         initServer();
         mid = 1000;
 
-        udpMessaging.makeRequest(newCoapPacket(LOCAL_5683).mid(0).get().uriPath("/test").build(), Callback.ignore(), TransportContext.NULL);
+        udpMessaging.makeRequest(newCoapPacket(LOCAL_5683).mid(0).get().uriPath("/test").build(), Callback.IGNORE, TransportContext.NULL);
 
         assertSent(newCoapPacket(LOCAL_5683).mid(1000).get().uriPath("/test"));
     }

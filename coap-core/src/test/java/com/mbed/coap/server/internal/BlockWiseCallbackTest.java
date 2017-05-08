@@ -26,7 +26,7 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
-import java.util.function.Consumer;
+import java8.util.function.Consumer;
 import org.junit.Test;
 import protocolTests.utils.CoapPacketBuilder;
 
