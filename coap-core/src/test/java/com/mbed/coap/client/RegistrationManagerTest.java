@@ -16,9 +16,9 @@
 package com.mbed.coap.client;
 
 import static com.mbed.coap.packet.MediaTypes.*;
-import static java.time.Duration.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+import static org.threeten.bp.Duration.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;

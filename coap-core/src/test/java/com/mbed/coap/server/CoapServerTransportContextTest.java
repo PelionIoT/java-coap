@@ -112,7 +112,7 @@ public class CoapServerTransportContextTest {
 
     }
 
-    private static class TextTransportContext implements TransportContext {
+    private static class TextTransportContext extends TransportContext {
 
         private final String text;
 

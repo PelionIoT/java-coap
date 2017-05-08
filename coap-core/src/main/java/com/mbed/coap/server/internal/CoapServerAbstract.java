@@ -23,7 +23,7 @@ import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.TransportContext;
 import java.net.InetSocketAddress;
-import java.util.concurrent.CompletableFuture;
+import java8.util.concurrent.CompletableFuture;
 
 /**
  * @author szymon

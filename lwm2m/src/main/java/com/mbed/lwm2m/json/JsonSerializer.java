@@ -22,7 +22,6 @@ import com.mbed.lwm2m.LWM2MResource;
 import com.mbed.lwm2m.LWM2MResourceInstance;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -145,7 +144,7 @@ public class JsonSerializer {
                     break;
 
                 case OPAQUE:
-                    json = new JsonResource(name, Base64.getEncoder().encodeToString(resource.getValue()));
+                    json = new JsonResource(name, org.apache.commons.codec.binary.Base64.encodeBase64String(resource.getValue()));
                     break;
 
                 case STRING:

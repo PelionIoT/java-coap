@@ -19,7 +19,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.RequestCallback;
-import java.util.function.Consumer;
+import java8.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
