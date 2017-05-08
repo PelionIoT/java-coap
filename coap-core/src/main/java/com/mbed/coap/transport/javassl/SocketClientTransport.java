@@ -21,6 +21,7 @@ import com.mbed.coap.packet.CoapTcpPacketSerializer;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapReceiverForTcp;
+import com.mbed.coap.transport.CoapReceiverForTcpUtil;
 import com.mbed.coap.transport.TransportContext;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -62,7 +63,7 @@ public class SocketClientTransport extends BlockingCoapTransport {
         }
         inputStream = new BufferedInputStream(socket.getInputStream(), 1024);
 
-        readerThread = new Thread(() -> loopReading(CoapReceiverForTcp.from(coapReceiver)), "tls-client-read");
+        readerThread = new Thread(() -> loopReading(CoapReceiverForTcpUtil.from(coapReceiver)), "tls-client-read");
         readerThread.start();
     }
 

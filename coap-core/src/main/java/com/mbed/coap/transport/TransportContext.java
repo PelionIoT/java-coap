@@ -15,7 +15,7 @@
  */
 package com.mbed.coap.transport;
 
-import java.util.function.Supplier;
+import java8.util.function.Supplier;
 
 /**
  * This class provides transport context information.
@@ -52,7 +52,7 @@ public abstract class TransportContext {
                 if (key.equals(k)) {
                     return func.get();
                 } else {
-                    return this.get(k);
+                    return TransportContext.this.get(k);
                 }
             }
         };

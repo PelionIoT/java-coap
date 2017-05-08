@@ -15,7 +15,6 @@
  */
 package com.mbed.coap.transport;
 
-import com.mbed.coap.packet.CoapPacket;
 import java.net.InetSocketAddress;
 
 /**
@@ -24,29 +23,7 @@ import java.net.InetSocketAddress;
 public interface CoapReceiverForTcp extends CoapReceiver {
 
     void onConnected(InetSocketAddress remoteAddress);
+
     void onDisconnected(InetSocketAddress remoteAddress);
 
-    static CoapReceiverForTcp from(CoapReceiver coapReceiver) {
-        if (coapReceiver instanceof CoapReceiverForTcp) {
-            return ((CoapReceiverForTcp) coapReceiver);
-        } else {
-            return new CoapReceiverForTcp() {
-
-                @Override
-                public void handle(CoapPacket packet, TransportContext transportContext) {
-                    coapReceiver.handle(packet, transportContext);
-                }
-
-                @Override
-                public void onConnected(InetSocketAddress remoteAddress) {
-                    //ignore
-                }
-
-                @Override
-                public void onDisconnected(InetSocketAddress remoteAddress) {
-                    //ignore
-                }
-            };
-        }
-    }
 }

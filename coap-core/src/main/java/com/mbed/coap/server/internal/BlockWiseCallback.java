@@ -26,7 +26,7 @@ import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.utils.RequestCallback;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
-import java.util.function.Consumer;
+import java8.util.function.Consumer;
 
 class BlockWiseCallback implements RequestCallback {
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;

@@ -47,7 +47,11 @@ public class CoapTcpCSMStorageImpl implements CoapTcpCSMStorage {
 
     @Override
     public CoapTcpCSM getOrDefault(InetSocketAddress address) {
-        return capabilitiesMap.getOrDefault(address, defaultCapability);
+        CoapTcpCSM csm = capabilitiesMap.get(address);
+        if (csm == null) {
+            return defaultCapability;
+        }
+        return csm;
     }
 
     @Override

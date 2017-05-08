@@ -15,7 +15,7 @@
  */
 package com.mbed.coap.utils;
 
-import java.util.concurrent.CompletableFuture;
+import java8.util.concurrent.CompletableFuture;
 
 /**
  * @author szymon

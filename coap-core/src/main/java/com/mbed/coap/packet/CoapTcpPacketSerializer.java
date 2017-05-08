@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.util.Optional;
+import java8.util.Optional;
 
 /**
  * This class implements serialization on de-serialization for CoAP over TCP packet.
