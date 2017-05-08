@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -40,18 +39,16 @@ public class SSLSocketClientTransport implements CoapTransport {
     private OutputStream outputStream;
     private InputStream inputStream;
     private SSLSocket sslSocket;
-    private final SSLContext sslContext;
     private Thread readerThread;
+    private SSLSocketFactory socketFactory;
 
-    public SSLSocketClientTransport(InetSocketAddress destination, SSLContext sslContext) {
+    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory) {
         this.destination = destination;
-        this.sslContext = sslContext;
+        this.socketFactory = socketFactory;
     }
 
     @Override
     public void start(CoapReceiver coapReceiver) throws IOException {
-        SSLSocketFactory socketFactory = sslContext.getSocketFactory();
-
         sslSocket = (SSLSocket) socketFactory.createSocket(destination.getAddress(), destination.getPort());
 
         sslSocket.addHandshakeCompletedListener(handshakeCompletedEvent -> {

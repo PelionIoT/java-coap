@@ -43,7 +43,7 @@ public class SSLSocketClientTransportTest {
 
         InetSocketAddress serverAdr = new InetSocketAddress("localhost", srv.getLocalSocketAddress().getPort());
         CoapClient client = CoapClientBuilder.clientFor(serverAdr,
-                CoapServer.builder().transport(new SSLSocketClientTransport(serverAdr, clientSslContext)).build().start()
+                CoapServer.builder().transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory())).build().start()
         );
 
         assertNotNull(client.ping().get());
