@@ -28,18 +28,18 @@ import java.net.InetSocketAddress;
 /**
  * @author szymon
  */
-public interface CoapExchange {
+public abstract class CoapExchange {
 
-    CoapPacket getRequest();
+    public abstract CoapPacket getRequest();
 
-    CoapPacket getResponse();
+    public abstract CoapPacket getResponse();
 
     /**
      * Returns request method (GET, PUT, POST, DELETE)
      *
      * @return method
      */
-    default Method getRequestMethod() {
+    public Method getRequestMethod() {
         return getRequest().getMethod();
     }
 
@@ -48,7 +48,7 @@ public interface CoapExchange {
      *
      * @return uri path
      */
-    default String getRequestUri() {
+    public String getRequestUri() {
         return getRequest().headers().getUriPath();
     }
 
@@ -57,11 +57,11 @@ public interface CoapExchange {
      *
      * @return request headers
      */
-    default HeaderOptions getRequestHeaders() {
+    public HeaderOptions getRequestHeaders() {
         return getRequest().headers();
     }
 
-    default byte[] getRequestBody() {
+    public byte[] getRequestBody() {
         return getRequest().getPayload();
     }
 
@@ -70,7 +70,7 @@ public interface CoapExchange {
      *
      * @return payload body as string
      */
-    default String getRequestBodyString() {
+    public String getRequestBodyString() {
         return getRequest().getPayloadString();
     }
 
@@ -79,7 +79,7 @@ public interface CoapExchange {
      *
      * @return remote address
      */
-    default InetSocketAddress getRemoteAddress() {
+    public InetSocketAddress getRemoteAddress() {
         return getRequest().getRemoteAddress();
     }
 
@@ -88,11 +88,11 @@ public interface CoapExchange {
      *
      * @return response headers
      */
-    default HeaderOptions getResponseHeaders() {
+    public HeaderOptions getResponseHeaders() {
         return getResponse().headers();
     }
 
-    default void setResponseBody(byte[] payload) {
+    public void setResponseBody(byte[] payload) {
         getResponse().setPayload(payload);
     }
 
@@ -101,11 +101,11 @@ public interface CoapExchange {
      *
      * @param contentType response content type
      */
-    default void setResponseContentType(short contentType) {
+    public void setResponseContentType(short contentType) {
         getResponse().headers().setContentFormat(contentType);
     }
 
-    default void setResponseToken(byte[] token) {
+    public void setResponseToken(byte[] token) {
         getResponse().setToken(token);
     }
 
@@ -114,7 +114,7 @@ public interface CoapExchange {
      *
      * @param body response body
      */
-    default void setResponseBody(String body) {
+    public void setResponseBody(String body) {
         setResponseBody(DataConvertingUtility.encodeString(body));
     }
 
@@ -123,41 +123,41 @@ public interface CoapExchange {
      *
      * @param code CoAP code
      */
-    default void setResponseCode(Code code) {
+    public void setResponseCode(Code code) {
         getResponse().setCode(code);
     }
 
-    void setResponse(CoapPacket message);
+    public abstract void setResponse(CoapPacket message);
 
     /**
      * Sends CoAP reset response
      */
-    void sendResetResponse();
+    public abstract void sendResetResponse();
 
     /**
      * Sends response, this method must be called only once at the end of
      * request handling. No operations are allowed on this object after.
      */
-    void sendResponse();
+    public abstract void sendResponse();
 
-    CoapServer getCoapServer();
+    public abstract CoapServer getCoapServer();
 
     /**
      * Sends empty ACK to server telling that response will come later on. If
      * request wan NON, then will not send anything
      */
-    void sendDelayedAck();
+    public abstract void sendDelayedAck();
 
     /**
      * Returns request transport context.
      *
      * @return transport context or null if does not exist.
      */
-    TransportContext getRequestTransportContext();
+    public abstract TransportContext getRequestTransportContext();
 
-    TransportContext getResponseTransportContext();
+    public abstract TransportContext getResponseTransportContext();
 
-    void setResponseTransportContext(TransportContext responseTransportContext);
+    public abstract void setResponseTransportContext(TransportContext responseTransportContext);
 
     /**
      * Retrieves full notification payload. Applies only when handling notification with block2.
@@ -166,6 +166,6 @@ public interface CoapExchange {
      * @param callback callback
      * @throws CoapException coap exception
      */
-    void retrieveNotificationBlocks(final String uriPath, final Callback<CoapPacket> callback) throws CoapException;
+    public abstract void retrieveNotificationBlocks(final String uriPath, final Callback<CoapPacket> callback) throws CoapException;
 
 }
