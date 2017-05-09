@@ -163,7 +163,7 @@ public abstract class AbstractObservableResource extends CoapResource {
                     coapNotif.setToken(sub.getToken());
                     coapNotif.setMessageType(sub.getIsConfirmable() ? MessageType.Confirmable : MessageType.NonConfirmable);
 
-                    this.coapServer.makeRequest(coapNotif, Callback.ignore());
+                    this.coapServer.makeRequest(coapNotif, Callback.IGNORE);
 
                     //remove subscriber
                     iter.remove();
@@ -228,7 +228,7 @@ public abstract class AbstractObservableResource extends CoapResource {
             this.coapServer.sendNotification(coapNotif, new NotificationAckCallback(sub, deliveryListener, this), TransportContext.NULL);
         } else {
             coapNotif.setMessageType(MessageType.NonConfirmable);
-            this.coapServer.sendNotification(coapNotif, Callback.ignore(), TransportContext.NULL);
+            this.coapServer.sendNotification(coapNotif, Callback.IGNORE, TransportContext.NULL);
         }
 
         if (LOGGER.isTraceEnabled()) {
