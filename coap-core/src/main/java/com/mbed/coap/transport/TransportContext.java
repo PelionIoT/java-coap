@@ -22,14 +22,18 @@ import java.util.function.Supplier;
  *
  * Created by szymon
  */
-@FunctionalInterface
-public interface TransportContext {
+public abstract class TransportContext {
 
-    TransportContext NULL = key -> null;
+    public static final TransportContext NULL = new TransportContext() {
+        @Override
+        public Object get(Object key) {
+            return null;
+        }
+    };
 
-    Object get(Object key);
+    public abstract Object get(Object key);
 
-    default TransportContext add(Object key, Object val) {
+    public TransportContext add(Object key, Object val) {
         if (val == null) {
             return this;
         } else {
@@ -37,21 +41,24 @@ public interface TransportContext {
         }
     }
 
-    default TransportContext add(Object key, Supplier func) {
+    public TransportContext add(Object key, Supplier func) {
         if (key == null) {
             throw new NullPointerException();
         }
 
-        return k -> {
-            if (key.equals(k)) {
-                return func.get();
-            } else {
-                return this.get(k);
+        return new TransportContext() {
+            @Override
+            public Object get(Object k) {
+                if (key.equals(k)) {
+                    return func.get();
+                } else {
+                    return this.get(k);
+                }
             }
         };
     }
 
-    default <T> T getAndCast(Object key, Class<T> clazz) {
+    public <T> T getAndCast(Object key, Class<T> clazz) {
         Object val = get(key);
         if (val != null && clazz.isInstance(val)) {
             return ((T) val);

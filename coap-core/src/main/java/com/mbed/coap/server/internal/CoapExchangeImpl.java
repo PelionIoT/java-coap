@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author szymon
  */
-public class CoapExchangeImpl implements CoapExchange {
+public class CoapExchangeImpl extends CoapExchange {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapExchangeImpl.class.getName());
     private CoapServer coapServer;
@@ -110,7 +110,7 @@ public class CoapExchangeImpl implements CoapExchange {
             }
             response = null;
         } else {
-            this.getCoapServer().makeRequest(response, Callback.ignore());
+            this.getCoapServer().makeRequest(response, Callback.IGNORE);
         }
     }
 

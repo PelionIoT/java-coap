@@ -18,8 +18,11 @@ package com.mbed.coap.server;
 import com.mbed.coap.packet.CoapPacket;
 
 public interface DuplicatedCoapMessageCallback {
-    DuplicatedCoapMessageCallback NULL = request -> {
-        //ignore
+    DuplicatedCoapMessageCallback NULL = new DuplicatedCoapMessageCallback() {
+        @Override
+        public void duplicated(CoapPacket request) {
+            //ignore
+        }
     };
 
     void duplicated(CoapPacket request);
