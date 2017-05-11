@@ -1,6 +1,7 @@
 mbed CoAP
 =========
 
+[![](https://jitpack.io/v/com.mbed/java-coap.svg)](https://jitpack.io/#com.mbed/java-coap)
 ![CircleCI](https://img.shields.io/circleci/project/github/ARMmbed/java-coap.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg)](LICENSE)
 
@@ -41,13 +42,22 @@ Requirements
 Using the Library
 -----------------
 
+Add repository to build file:
+
+    <repositories>
+		<repository>
+		    <id>jitpack.io</id>
+		    <url>https://jitpack.io</url>
+		</repository>
+	</repositories>
+
 Add dependency into your `pom.xml`:
 
-        <dependency>
-            <groupId>com.mbed.java-coap</groupId>
-            <artifactId>coap-core</artifactId>
-            <version>{VERSION}</version>
-        </dependency>
+    <dependency>
+        <groupId>com.mbed.java-coap</groupId>
+        <artifactId>coap-core</artifactId>
+        <version>{VERSION}</version>
+    </dependency>
 
 
 ### Creating a Server
