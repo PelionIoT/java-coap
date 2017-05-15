@@ -28,6 +28,7 @@ import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.CoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,7 +45,6 @@ public class CoapServerDuplicateTest {
     CoapServer server;
     final AtomicInteger duplicated = new AtomicInteger(0);
     MockCoapTransport serverTransport;
-    final Object delayResourceMonitor = new Object();
 
     @Before
     public void setUp() throws IOException {
@@ -75,23 +75,6 @@ public class CoapServerDuplicateTest {
                 exchange.setResponseBody("dupa2");
                 exchange.getResponse().setMessageType(MessageType.NonConfirmable);
                 exchange.sendResponse();
-            }
-        });
-
-        server.addRequestHandler("/test-delay", new CoapResource() {
-            @Override
-            public void get(CoapExchange exchange) throws CoapCodeException {
-                new Thread(() -> {
-                    try {
-                        synchronized (delayResourceMonitor) {
-                            delayResourceMonitor.wait(10000);
-                        }
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    exchange.setResponseBody("dupa3");
-                    exchange.sendResponse();
-                }).start();
             }
         });
 
@@ -168,6 +151,23 @@ public class CoapServerDuplicateTest {
 
     @Test
     public void testDuplicateRequestNotProcessed() throws IOException, CoapException, InterruptedException {
+        final CountDownLatch delayResourceLatch = new CountDownLatch(1);
+        server.addRequestHandler("/test-delay", new CoapResource() {
+            @Override
+            public void get(CoapExchange exchange) throws CoapCodeException {
+                new Thread(() -> {
+                    try {
+                        delayResourceLatch.await();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    exchange.setResponseBody("dupa3");
+                    exchange.sendResponse();
+                }).start();
+            }
+        });
+
+
         CoapPacket req = new CoapPacket(Method.GET, MessageType.Confirmable, "/test-delay", REMOTE_ADDRESS);
 
         serverTransport.receive(req);
@@ -183,11 +183,9 @@ public class CoapServerDuplicateTest {
 
         //let response be send
         System.out.println("let response be send");
-        synchronized (delayResourceMonitor) {
-            delayResourceMonitor.notify();
-        }
+        delayResourceLatch.countDown();
 
-        resp = serverTransport.sentPackets.poll(1000, TimeUnit.MILLISECONDS);
+        resp = serverTransport.sentPackets.poll(10, TimeUnit.SECONDS);
         assertEquals("dupa3", resp.getPayloadString());
         //assertNull(coapServer.verifyPUT("/test"));
         assertTrue("unexpected messages", serverTransport.sentPackets.isEmpty());
