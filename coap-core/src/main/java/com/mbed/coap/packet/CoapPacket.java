@@ -530,10 +530,8 @@ public class CoapPacket implements Serializable {
         return headers().getContentFormat() == MediaTypes.CT_TEXT_PLAIN
                 || headers().getContentFormat() == MediaTypes.CT_APPLICATION_JSON
                 || headers().getContentFormat() == MediaTypes.CT_APPLICATION_LINK__FORMAT
-                || headers().getContentFormat() == MediaTypes.CT_APPLICATION_SENML__JSON
                 || headers().getContentFormat() == MediaTypes.CT_APPLICATION_XML
-                || headers().getContentFormat() == MediaTypes.CT_APPLICATION_LWM2M_JSON
-                || headers().getContentFormat() == MediaTypes.CT_APPLICATION_LWM2M_TEXT;
+                || headers().getContentFormat() == MediaTypes.CT_APPLICATION_LWM2M_JSON;
     }
 
     @Override

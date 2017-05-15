@@ -36,9 +36,6 @@ public class CoapPacketToStringTest {
         cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_JSON);
         assertEquals("CON GET MID:0 URI:/test ContTp:50 pl:'short'", cp.toString());
 
-        cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_NANOSERVICE_TLV);
-        assertEquals("CON GET MID:0 URI:/test ContTp:200 pl(5):0x73686f7274", cp.toString());
-
         cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_OCTET__STREAM);
         assertEquals("CON GET MID:0 URI:/test ContTp:42 pl(5):0x73686f7274", cp.toString());
 
@@ -57,12 +54,6 @@ public class CoapPacketToStringTest {
         cp.headers().setContentFormat(MediaTypes.CT_TEXT_PLAIN);
         assertEquals("CON GET MID:0 URI:/test ContTp:0 pl(51):'long payload long payload long payload long ..'", cp.toString());
 
-        cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_SENML__JSON);
-        assertEquals("CON GET MID:0 URI:/test ContTp:64 pl(51):'long payload long payload long payload long ..'", cp.toString());
-
-        cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_NANOSERVICE_TLV);
-        assertEquals("CON GET MID:0 URI:/test ContTp:200 pl(51):0x6c6f6e67207061796c6f6164206c6f6e67207061796c..", cp.toString());
-
         cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_EXI);
         assertEquals("CON GET MID:0 URI:/test ContTp:47 pl(51):0x6c6f6e67207061796c6f6164206c6f6e67207061796c..", cp.toString());
 
@@ -80,12 +71,6 @@ public class CoapPacketToStringTest {
 
         cp.headers().setContentFormat(MediaTypes.CT_TEXT_PLAIN);
         assertEquals("CON GET MID:0 URI:/test ContTp:0 pl:'long payload long payload long payload long payload'", cp.toString(true));
-
-        cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_SENML__JSON);
-        assertEquals("CON GET MID:0 URI:/test ContTp:64 pl:'long payload long payload long payload long payload'", cp.toString(true));
-
-        cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_NANOSERVICE_TLV);
-        assertEquals("CON GET MID:0 URI:/test ContTp:200 pl(51):0x6c6f6e67207061796c6f6164206c6f6e67207061796c6f6164206c6f6e67207061796c6f6164206c6f6e67207061796c6f6164", cp.toString(true));
 
         cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_EXI);
         assertEquals("CON GET MID:0 URI:/test ContTp:47 pl(51):0x6c6f6e67207061796c6f6164206c6f6e67207061796c6f6164206c6f6e67207061796c6f6164206c6f6e67207061796c6f6164", cp.toString(true));

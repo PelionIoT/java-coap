@@ -31,7 +31,6 @@ public class MediaTypesTest {
         assertEquals("application/exi", MediaTypes.contentFormatToString((short) 47));
         assertEquals("application/json", MediaTypes.contentFormatToString((short) 50));
         assertEquals("application/link-format", MediaTypes.contentFormatToString((short) 40));
-        assertEquals("application/senml+json", MediaTypes.contentFormatToString((short) 64));
 
         assertNull(MediaTypes.contentFormatToString(null));
         assertNull(MediaTypes.contentFormatToString((short) -2));
@@ -45,7 +44,6 @@ public class MediaTypesTest {
         assertEquals((Short) MediaTypes.CT_APPLICATION_LINK__FORMAT, MediaTypes.parseContentFormat("application/link-format"));
         assertEquals((Short) MediaTypes.CT_APPLICATION_OCTET__STREAM, MediaTypes.parseContentFormat("application/octet-stream"));
         assertEquals((Short) MediaTypes.CT_APPLICATION_XML, MediaTypes.parseContentFormat("application/xml"));
-        assertEquals((Short) MediaTypes.CT_APPLICATION_SENML__JSON, MediaTypes.parseContentFormat("application/senml+json"));
 
         assertNull(MediaTypes.parseContentFormat(null));
         assertNull(MediaTypes.parseContentFormat("non/existing"));
