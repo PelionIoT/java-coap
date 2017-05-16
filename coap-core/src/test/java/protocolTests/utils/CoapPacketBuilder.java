@@ -63,6 +63,16 @@ public class CoapPacketBuilder {
         return this;
     }
 
+    public CoapPacketBuilder post() {
+        coapPacket.setMethod(Method.POST);
+        return this;
+    }
+
+    public CoapPacketBuilder delete() {
+        coapPacket.setMethod(Method.DELETE);
+        return this;
+    }
+
     public CoapPacketBuilder ack(Code code) {
         coapPacket.setMessageType(MessageType.Acknowledgement);
         coapPacket.setCode(code);
@@ -72,6 +82,21 @@ public class CoapPacketBuilder {
 
     public CoapPacketBuilder uriPath(String uriPath) {
         coapPacket.headers().setUriPath(uriPath);
+        return this;
+    }
+
+    public CoapPacketBuilder uriQuery(String uriQuery) {
+        coapPacket.headers().setUriQuery(uriQuery);
+        return this;
+    }
+
+    public CoapPacketBuilder locPath(String locPath) {
+        coapPacket.headers().setLocationPath(locPath);
+        return this;
+    }
+
+    public CoapPacketBuilder maxAge(long maxAge) {
+        coapPacket.headers().setMaxAge(maxAge);
         return this;
     }
 

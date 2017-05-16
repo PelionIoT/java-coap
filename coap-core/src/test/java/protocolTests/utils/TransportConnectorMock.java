@@ -33,6 +33,7 @@ public class TransportConnectorMock implements CoapTransport {
 
     private CoapReceiver transReceiver;
     private final Map<CoapPacket, CoapPacket[]> conversationMap = new LinkedHashMap<>(); //order is important
+    private final Map<CoapPacket, IOException> conversationMapToException = new LinkedHashMap<>(); //order is important
     private CoapPacket lastOutgoingMessage = null;
 
     @Override
@@ -76,7 +77,7 @@ public class TransportConnectorMock implements CoapTransport {
         return lastOutgoingMessage;
     }
 
-    private CoapPacket[] findResponse(CoapPacket coapPacket) {
+    private CoapPacket[] findResponse(CoapPacket coapPacket) throws IOException {
         //remove address
         try {
             byte[] bytes = coapPacket.toByteArray();
@@ -87,7 +88,12 @@ public class TransportConnectorMock implements CoapTransport {
 
         Optional<CoapPacket> first = conversationMap.keySet().stream().findFirst();
         if (!first.isPresent() || !first.get().equals(coapPacket)) {
-            return null;
+
+            Optional<CoapPacket> firstException = conversationMapToException.keySet().stream().findFirst();
+            if (!firstException.isPresent() || !firstException.get().equals(coapPacket)) {
+                return null;
+            }
+            throw conversationMapToException.remove(firstException.get());
         }
         return conversationMap.remove(first.get());
     }
@@ -101,6 +107,10 @@ public class TransportConnectorMock implements CoapTransport {
         return new TransportConnectorMockTeacher(incomingPacket);
     }
 
+    public TransportConnectorMockTeacher when(CoapPacketBuilder incomingPacket) {
+        return when(incomingPacket.build());
+    }
+
     public class TransportConnectorMockTeacher {
         private final CoapPacket incomingPacket;
 
@@ -112,8 +122,16 @@ public class TransportConnectorMock implements CoapTransport {
             conversationMap.put(incomingPacket, null);
         }
 
+        public void thenThrow(IOException exception) {
+            conversationMapToException.put(incomingPacket, exception);
+        }
+
         public void then(CoapPacket responsePacket) {
             conversationMap.put(incomingPacket, new CoapPacket[]{responsePacket});
+        }
+
+        public void then(CoapPacketBuilder responsePacket) {
+            then(responsePacket.build());
         }
 
         public void then(CoapPacket responsePacket1, CoapPacket responsePacket2) {
