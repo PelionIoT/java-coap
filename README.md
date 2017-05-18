@@ -144,13 +144,10 @@ Development
     mvn com.mycila:license-maven-plugin:format
 
 
-Contribution
-------------
+Contributions
+-------------
 
-Please read this instructions before making any pull request: 
-https://docs.mbed.com/docs/getting-started-mbed-os/en/latest/Full_Guide/contributing/#contributing-to-the-mbed-os-code-base
-
-**Note**: If you publish a feature or a solution to a problem before signing the CLA, then find out that you are not able or allowed to sign the CLA, we will not be able to use your solution anymore. That may prevent us from solving the problem for you.
+All contributions are Apache 2.0. Only submit contributions where you have authored all of the code. If you do this on work time make sure your employer is OK with this.
 
 License
 -------
