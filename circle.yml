@@ -2,6 +2,10 @@ machine:
   java:
     version: oraclejdk8
 
+dependencies:
+  override:
+    - mvn dependency:go-offline install -DskipTests
+
 test:
   override:
     - mvn install -P ci-build

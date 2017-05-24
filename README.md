@@ -126,6 +126,11 @@ To make a CoAP request, use the class `CoapClient`. It uses fluent API. The foll
     client.closeConnection();
     
 
+Example client
+--------------
+
+This [example client](example-client) demonstrates how to build coap client and use it 
+with [connector.mbed.com](http://connector.mbed.com) or other LwM2M server.
 
 
 Development
