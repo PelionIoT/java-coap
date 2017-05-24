@@ -93,7 +93,7 @@ public class SSLSocketClientTransport implements CoapTransport {
 
     @Override
     public synchronized void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
-        if (adr != this.destination) {
+        if (!adr.equals(this.destination)) {
             throw new IllegalStateException("No connection with: " + adr);
         }
         coapPacket.writeTo(outputStream);
