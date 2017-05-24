@@ -24,7 +24,7 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.SimpleCoapResource;
+import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -65,7 +65,7 @@ public abstract class ServerBenchmarkBase {
         buffer.position(coapReq.toByteArray().length);
 
         server = CoapServerBuilder.newBuilder().transport(trans).duplicateMsgCacheSize(10000).build();
-        server.addRequestHandler("/path1/sub2/sub3", new SimpleCoapResource("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"));
+        server.addRequestHandler("/path1/sub2/sub3", new ReadOnlyCoapResource("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"));
         server.start();
         System.out.println("MSG SIZE: " + reqData.length);
         Thread.currentThread().setPriority(Thread.MIN_PRIORITY);

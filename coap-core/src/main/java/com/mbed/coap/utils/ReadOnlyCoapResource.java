@@ -18,39 +18,43 @@ package com.mbed.coap.utils;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapExchange;
+import java.util.function.Supplier;
 
 /**
  * @author szymon
  */
-public class SimpleCoapResource extends CoapResource {
+public class ReadOnlyCoapResource extends CoapResource {
 
-    private String resourceBody;
-    private Integer maxAgeSeconds;
-    private Short contentType = 0;
+    private Supplier<String> payloadSupplier;
+    private final Integer maxAgeSeconds;
+    private final Short contentType;
 
     public void setResourceBody(String resourceBody) {
-        this.resourceBody = resourceBody;
+        this.payloadSupplier = () -> resourceBody;
     }
 
-    public SimpleCoapResource(String body) {
+    public ReadOnlyCoapResource(String body) {
+        this(() -> body);
+    }
+
+    public ReadOnlyCoapResource(Supplier<String> body) {
         this(body, null, null, -1);
     }
 
-    public SimpleCoapResource(String body, String resourceType, int maxAgeSeconds) {
+    public ReadOnlyCoapResource(String body, String resourceType, int maxAgeSeconds) {
         this(body, resourceType, null, maxAgeSeconds);
     }
 
-    public SimpleCoapResource(String body, String resourceType) {
-        this(body, resourceType, null, -1);
+    public ReadOnlyCoapResource(String body, String resourceType, Short contentType, int maxAgeSeconds) {
+        this(() -> body, resourceType, contentType, maxAgeSeconds);
     }
 
-    //    public SimpleCoapResource(String body, String resourceType, Short contentType) {
-    //        this(body, resourceType, contentType, -1);
-    //    }
-    public SimpleCoapResource(String body, String resourceType, Short contentType, int maxAgeSeconds) {
-        this.resourceBody = body;
+    public ReadOnlyCoapResource(Supplier<String> body, String resourceType, Short contentType, int maxAgeSeconds) {
+        this.payloadSupplier = body;
         if (maxAgeSeconds >= 0) {
             this.maxAgeSeconds = maxAgeSeconds;
+        } else {
+            this.maxAgeSeconds = null;
         }
         this.getLink().setContentType(contentType);
         if (resourceType != null) {
@@ -61,7 +65,7 @@ public class SimpleCoapResource extends CoapResource {
 
     @Override
     public void get(CoapExchange ex) throws CoapCodeException {
-        ex.setResponseBody(resourceBody);
+        ex.setResponseBody(payloadSupplier.get());
         ex.setResponseCode(Code.C205_CONTENT);
         if (contentType != null) {
             ex.setResponseContentType(contentType);

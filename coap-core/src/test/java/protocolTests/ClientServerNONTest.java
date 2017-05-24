@@ -32,7 +32,7 @@ import com.mbed.coap.server.internal.DelayedTransactionId;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.utils.CoapResource;
-import com.mbed.coap.utils.SimpleCoapResource;
+import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Random;
@@ -60,7 +60,7 @@ public class ClientServerNONTest {
         server = CoapServer.builder().transport(InMemoryCoapTransport.create())
                 .timeout(new SingleTimeout(1000))
                 .build();
-        server.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
+        server.addRequestHandler("/temp", new ReadOnlyCoapResource("23 C"));
 
         server.addRequestHandler("/seperate", new CoapResourceSeparateRespImpl("test-content"));
         server.start();

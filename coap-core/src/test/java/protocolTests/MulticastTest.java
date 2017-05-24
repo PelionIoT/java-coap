@@ -26,7 +26,7 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import com.mbed.coap.transport.udp.MulticastSocketTransport;
-import com.mbed.coap.utils.SimpleCoapResource;
+import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -46,7 +46,7 @@ public class MulticastTest {
     public void multicastConnection() throws IOException, CoapException {
         CoapServer server = CoapServerBuilder.newBuilder()
                 .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run)).build();
-        server.addRequestHandler("/multicast", new SimpleCoapResource(
+        server.addRequestHandler("/multicast", new ReadOnlyCoapResource(
                 "multicast"));
         // server.setMulticastGroup(InetAddress.getByName("FF02::1"));
         server.start();
@@ -90,7 +90,7 @@ public class MulticastTest {
     @Ignore
     public void multicastRequest() throws IOException, CoapException {
         CoapServer server = CoapServerBuilder.newBuilder().transport(61619).build();
-        server.addRequestHandler("/multicast", new SimpleCoapResource(
+        server.addRequestHandler("/multicast", new ReadOnlyCoapResource(
                 "multicast"));
         server.start();
 

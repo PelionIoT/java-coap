@@ -32,7 +32,7 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transmission.SingleTimeout;
-import com.mbed.coap.utils.SimpleCoapResource;
+import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -60,7 +60,7 @@ public class ObservationTest {
 
         OBS_RESOURCE_1 = new SimpleObservableResource("", server);
 
-        server.addRequestHandler("/path1", new SimpleCoapResource("content1"));
+        server.addRequestHandler("/path1", new ReadOnlyCoapResource("content1"));
         server.addRequestHandler(RES_OBS_PATH1, OBS_RESOURCE_1);
         server.start();
         SERVER_ADDRESS = new InetSocketAddress("127.0.0.1", server.getLocalSocketAddress().getPort());

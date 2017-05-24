@@ -32,7 +32,7 @@ import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.utils.CoapResource;
-import com.mbed.coap.utils.SimpleCoapResource;
+import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -69,7 +69,7 @@ public class ClientServerWithBlocksTest {
         server.start();
         SERVER_PORT = server.getLocalSocketAddress().getPort();
         //        server = new CoapServerOLD();
-        //        server.addHandler("/test/1", new SimpleCoapResource("Dziala"));
+        //        server.addHandler("/test/1", new ReadOnlyCoapResource("Dziala"));
         //        server.addHandler("/test2", new TestResource());
         //        server.addHandler("/bigResource", new BigResource() );
         //        server.start();
@@ -191,7 +191,7 @@ public class ClientServerWithBlocksTest {
     @Test
     public void sizeTest() throws Exception {
         final String BODY = "The use of web services on the Internet has become ubiquitous.";
-        server.addRequestHandler("/small", new SimpleCoapResource(BODY));
+        server.addRequestHandler("/small", new ReadOnlyCoapResource(BODY));
 
         CoapServer cnn = CoapServerBuilder.newBuilder().blockSize(BlockSize.S_256).transport(0).build().start();
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, "/small", new InetSocketAddress("localhost", SERVER_PORT));
@@ -293,7 +293,7 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void blockRequestWithEmptyUrlHeader() throws IOException, CoapException {
-        server.addRequestHandler("/", new SimpleCoapResource(BIG_RESOURCE));
+        server.addRequestHandler("/", new ReadOnlyCoapResource(BIG_RESOURCE));
 
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
 

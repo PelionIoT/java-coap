@@ -33,7 +33,7 @@ import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.udp.MulticastSocketTransport;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
-import com.mbed.coap.utils.SimpleCoapResource;
+import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -58,9 +58,9 @@ public class ClientServerTest {
     @Before
     public void setUp() throws IOException {
         server = CoapServer.builder().transport(0).build();
-        server.addRequestHandler("/test/1", new SimpleCoapResource("Dziala"));
-        server.addRequestHandler("/resource*", new SimpleCoapResource("Prefix dziala"));
-        server.addRequestHandler("/", new SimpleCoapResource("Shortest path"));
+        server.addRequestHandler("/test/1", new ReadOnlyCoapResource("Dziala"));
+        server.addRequestHandler("/resource*", new ReadOnlyCoapResource("Prefix dziala"));
+        server.addRequestHandler("/", new ReadOnlyCoapResource("Shortest path"));
         server.useCriticalOptionTest(false);
         server.start();
         SERVER_PORT = server.getLocalSocketAddress().getPort();
@@ -180,7 +180,7 @@ public class ClientServerTest {
         InetAddress adr = InetAddress.getByName("::1");
 
         CoapServer ipv6Server = CoapServerBuilder.newBuilder().transport(0).build();
-        ipv6Server.addRequestHandler("/resource", new SimpleCoapResource("1234qwerty"));
+        ipv6Server.addRequestHandler("/resource", new ReadOnlyCoapResource("1234qwerty"));
         ipv6Server.start();
 
         try (CoapClient client = CoapClientBuilder.newBuilder(new InetSocketAddress(adr, ipv6Server.getLocalSocketAddress().getPort())).build()) {
@@ -217,7 +217,7 @@ public class ClientServerTest {
     @Test
     public void requestWithPacketLost() throws CoapException, IOException {
         CoapServer serverNode = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683)).build();
-        final SimpleCoapResource res = new SimpleCoapResource("Not dropped");
+        final ReadOnlyCoapResource res = new ReadOnlyCoapResource("Not dropped");
         serverNode.addRequestHandler("/dropping", res);
         serverNode.start();
 
@@ -259,7 +259,7 @@ public class ClientServerTest {
     public void reusePortSocketImpl() throws IOException, CoapException {
         MulticastSocketTransport udpConnector = new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run); //new UDPMulticastConnector(61601, UDPMulticastConnector.MCAST_LINKLOCAL_ALLNODES);
         CoapServer srv = CoapServer.builder().transport(udpConnector).build();
-        srv.addRequestHandler("/test", new SimpleCoapResource("TTEESSTT"));
+        srv.addRequestHandler("/test", new ReadOnlyCoapResource("TTEESSTT"));
         srv.start();
         final int port = srv.getLocalSocketAddress().getPort();
 
@@ -270,7 +270,7 @@ public class ClientServerTest {
 
         MulticastSocketTransport udpConnector2 = new MulticastSocketTransport(new InetSocketAddress(port), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run);
         CoapServer srv2 = CoapServerBuilder.newBuilder().transport(udpConnector2).build();
-        srv2.addRequestHandler("/test", new SimpleCoapResource("TTEESSTT2"));
+        srv2.addRequestHandler("/test", new ReadOnlyCoapResource("TTEESSTT2"));
         srv2.start();
 
         assertEquals("TTEESSTT2", cnn.resource("/test").sync().get().getPayloadString());
@@ -281,7 +281,7 @@ public class ClientServerTest {
     @Test
     public void simpleRequest5() throws IOException, CoapException {
         CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(61601)).build();
-        srv.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
+        srv.addRequestHandler("/temp", new ReadOnlyCoapResource("23 C"));
         srv.start();
 
         try (CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(61601)).transport(InMemoryCoapTransport.create(0)).build()) {
@@ -293,7 +293,7 @@ public class ClientServerTest {
     @Test
     public void simpleRequestWithUnknownCriticalOptionHeader() throws IOException, CoapException {
         CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(61601)).build();
-        srv.addRequestHandler("/temp", new SimpleCoapResource("23 C"));
+        srv.addRequestHandler("/temp", new ReadOnlyCoapResource("23 C"));
         srv.start();
 
         try (CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(61601)).transport(new InMemoryCoapTransport()).build()) {
@@ -318,7 +318,7 @@ public class ClientServerTest {
     @Test
     public void testRequestWithPacketDelay() throws Exception {
         CoapServer serverNode = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683)).build();
-        serverNode.addRequestHandler("/test/1", new SimpleCoapResource("Dziala"));
+        serverNode.addRequestHandler("/test/1", new ReadOnlyCoapResource("Dziala"));
         serverNode.start();
 
         ExecutorService executorService = Executors.newCachedThreadPool();
@@ -350,7 +350,7 @@ public class ClientServerTest {
         CoapServer srv = CoapServerBuilder.newBuilder()
                 .transport(new DroppingPacketsTransportWrapper(CoapConstants.DEFAULT_PORT, (byte) 100))
                 .build();
-        srv.addRequestHandler("/test", new SimpleCoapResource("TEST"));
+        srv.addRequestHandler("/test", new ReadOnlyCoapResource("TEST"));
         srv.start();
 
         CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(CoapConstants.DEFAULT_PORT))

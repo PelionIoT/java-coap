@@ -30,7 +30,7 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.utils.CoapResource;
-import com.mbed.coap.utils.SimpleCoapResource;
+import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -52,7 +52,7 @@ public class ServerTest {
     @Before
     public void setUp() throws IOException {
         server = CoapServerBuilder.newBuilder().transport(0, Executors.newCachedThreadPool()).build();
-        server.addRequestHandler("/test/1", new SimpleCoapResource("Dziala", "simple"));
+        server.addRequestHandler("/test/1", new ReadOnlyCoapResource("Dziala", "simple", -1));
         server.addRequestHandler("/test2", new TestResource());
         server.addRequestHandler(CoapConstants.WELL_KNOWN_CORE, server.getResourceLinkResource());
         //server.addRequestHandler("/bigResource", new BigResource() );
@@ -127,7 +127,7 @@ public class ServerTest {
     public void removeRequestHandlerTest() throws IOException, CoapException {
         CoapServer srv = CoapServerBuilder.newBuilder().transport(0).build();
         srv.start();
-        CoapHandler hdlr = new SimpleCoapResource("TEST");
+        CoapHandler hdlr = new ReadOnlyCoapResource("TEST");
         srv.addRequestHandler("/test", hdlr);
 
         CoapClient client = CoapClientBuilder.newBuilder(srv.getLocalSocketAddress().getPort()).build();
@@ -142,7 +142,7 @@ public class ServerTest {
     @Test
     public void resourceListTest() throws IOException {
         CoapServer srv = CoapServerBuilder.newBuilder().transport(0).build();
-        srv.addRequestHandler("/test/1", new SimpleCoapResource("TEST"));
+        srv.addRequestHandler("/test/1", new ReadOnlyCoapResource("TEST"));
         srv.start();
 
         List<LinkFormat> links = srv.getResourceLinks();
@@ -151,8 +151,8 @@ public class ServerTest {
         assertEquals("/test/1", links.get(0).getUri());
 
         //add handler
-        srv.addRequestHandler("/test/2", new SimpleCoapResource("TEST2"));
-        srv.addRequestHandler("/test/3", new SimpleCoapResource("TEST3"));
+        srv.addRequestHandler("/test/2", new ReadOnlyCoapResource("TEST2"));
+        srv.addRequestHandler("/test/3", new ReadOnlyCoapResource("TEST3"));
 
         links = srv.getResourceLinks();
         assertNotNull(links);
