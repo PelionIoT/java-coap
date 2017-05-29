@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +40,44 @@ public class RegistrationManager {
     private final CoapClient client;
     private final ScheduledExecutorService scheduledExecutor;
     private final Supplier<String> registrationLinks;
+    private final String epName;
     private volatile Optional<String> registrationLocation = Optional.empty();
     private volatile Duration lastRetryDelay = Duration.ZERO;
 
+    private final Callback<CoapPacket> registrationCallback = new Callback<CoapPacket>() {
+        @Override
+        public void call(CoapPacket resp) {
+            if (resp.getCode().equals(Code.C201_CREATED)) {
+                registrationSuccess(resp.headers().getLocationPath(), resp.headers().getMaxAgeValue());
+            } else {
+                registrationFailed(String.format("%s '%s'", resp.getCode().codeToString(), resp.getPayloadString() != null ? resp.getPayloadString() : ""));
+            }
+        }
+
+        @Override
+        public void callException(Exception ex) {
+            LOGGER.error(ex.getMessage(), ex);
+            registrationFailed(ex.getMessage());
+        }
+    };
+
+    private final Callback<CoapPacket> updateCallback = new Callback<CoapPacket>() {
+        @Override
+        public void call(CoapPacket resp) {
+            if (resp.getCode().equals(Code.C201_CREATED) || resp.getCode().equals(Code.C204_CHANGED)) {
+                LOGGER.info("[EP:{}] Updated, lifetime: {}s", epName, resp.headers().getMaxAgeValue());
+                scheduleUpdate(resp.headers().getMaxAgeValue());
+            } else {
+                updateFailed(resp.getCode().codeToString() + " " + (resp.getPayloadString() != null ? resp.getPayloadString() : ""));
+            }
+        }
+
+        @Override
+        public void callException(Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            updateFailed(e.getMessage());
+        }
+    };
 
     public RegistrationManager(CoapServer server, URI registrationUri, ScheduledExecutorService scheduledExecutor,
             Duration minRetryDelay, Duration maxRetryDelay) {
@@ -50,12 +86,21 @@ public class RegistrationManager {
             throw new IllegalArgumentException();
         }
 
+        this.epName = epNameFrom(registrationUri);
         this.client = new CoapClient(new InetSocketAddress(registrationUri.getHost(), registrationUri.getPort()), server);
         this.scheduledExecutor = scheduledExecutor;
         this.registrationUri = registrationUri;
         this.registrationLinks = () -> LinkFormatBuilder.toString(server.getResourceLinks());
         this.minRetryDelay = minRetryDelay;
         this.maxRetryDelay = maxRetryDelay;
+    }
+
+    private String epNameFrom(URI registrationUri) {
+        return Stream.of(registrationUri.getQuery().split("&"))
+                .filter(s -> s.startsWith("ep="))
+                .map(s -> s.substring(3))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Missing 'ep' parameter"));
     }
 
     public RegistrationManager(CoapServer server, URI registrationUri, ScheduledExecutorService scheduledExecutor) {
@@ -67,29 +112,18 @@ public class RegistrationManager {
             client.resource(registrationUri.getPath())
                     .query(registrationUri.getQuery())
                     .payload(registrationLinks.get(), MediaTypes.CT_APPLICATION_LINK__FORMAT)
-                    .post(new Callback<CoapPacket>() {
-                        @Override
-                        public void call(CoapPacket resp) {
-                            if (resp.getCode().equals(Code.C201_CREATED)) {
-                                registrationLocation = Optional.of(resp.headers().getLocationPath());
-                                lastRetryDelay = Duration.ZERO;
-                                scheduleUpdate(resp.headers().getMaxAgeValue());
-                            } else {
-                                registrationFailed();
-                            }
-                        }
-
-                        @Override
-                        public void callException(Exception ex) {
-                            LOGGER.error(ex.getMessage(), ex);
-                            registrationFailed();
-                        }
-                    });
+                    .post(registrationCallback);
 
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
-            registrationFailed();
+            registrationCallback.callException(e);
         }
+    }
+
+    private void registrationSuccess(String locationPath, long maxAge) {
+        registrationLocation = Optional.of(locationPath);
+        lastRetryDelay = Duration.ZERO;
+        scheduleUpdate(maxAge);
+        LOGGER.info("[EP:{}] Registered, lifetime: {}s", epName, maxAge);
     }
 
     private void scheduleUpdate(long lifetime) {
@@ -98,41 +132,23 @@ public class RegistrationManager {
 
     private void updateRegistration() {
         try {
-            client.resource(registrationLocation.get()).post(new Callback<CoapPacket>() {
-                @Override
-                public void call(CoapPacket resp) {
-                    if (resp.getCode().equals(Code.C201_CREATED) || resp.getCode().equals(Code.C204_CHANGED)) {
-                        scheduleUpdate(resp.headers().getMaxAgeValue());
-                    } else {
-                        updateFailed();
-                    }
-                }
-
-                @Override
-                public void callException(Exception e) {
-                    LOGGER.error(e.getMessage(), e);
-                    updateFailed();
-                }
-            });
-
-
+            client.resource(registrationLocation.get()).post(updateCallback);
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
-            updateFailed();
+            updateCallback.callException(e);
         }
-
     }
 
-    private void updateFailed() {
+    private void updateFailed(String errMessage) {
+        LOGGER.warn("[EP:{}] Update failed. {}", epName, errMessage);
         registrationLocation = Optional.empty();
         register();
     }
 
-    private void registrationFailed() {
-        registrationLocation = Optional.empty();
+    private void registrationFailed(String errMessage) {
         lastRetryDelay = nextDelay(lastRetryDelay);
+        registrationLocation = Optional.empty();
         scheduledExecutor.schedule(this::register, lastRetryDelay.getSeconds(), TimeUnit.SECONDS);
-        LOGGER.debug("Registration failed. Scheduled re-try in " + lastRetryDelay + "s");
+        LOGGER.warn("[EP:{}] Registration failed, re-try in {}s. ({})", epName, lastRetryDelay.getSeconds(), errMessage);
     }
 
 
