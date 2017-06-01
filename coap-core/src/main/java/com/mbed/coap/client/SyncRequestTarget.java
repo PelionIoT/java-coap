@@ -92,8 +92,6 @@ public class SyncRequestTarget {
         }
         if (ex instanceof CoapException) {
             return (CoapException) ex;
-        } else if (ex.getCause() instanceof CoapException) {
-            return (CoapException) ex.getCause();
         } else {
             return new CoapException(ex);
         }

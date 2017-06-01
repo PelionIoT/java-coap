@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.server;
 
+import static com.mbed.coap.server.CoapServerBuilder.*;
 import static org.junit.Assert.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
@@ -51,8 +52,11 @@ public class CoapServerDuplicateTest {
         duplicated.set(0);
         serverTransport = new MockCoapTransport();
 
-        server = CoapServerBuilder.newCoapServer(serverTransport);
-        server.setDuplicatedCoapMessageCallback(request -> duplicated.incrementAndGet());
+        server = newBuilder()
+                .transport(serverTransport)
+                .duplicateMsgCacheSize(100)
+                .duplicatedCoapMessageCallback(request -> duplicated.incrementAndGet())
+                .build();
 
 
         server.addRequestHandler("/test", new CoapResource() {
@@ -139,7 +143,7 @@ public class CoapServerDuplicateTest {
 
     @Test
     public void duplicateRequestWithoutErrorCallbackHandler() throws Exception {
-        CoapServer server = CoapServerBuilder.newBuilder().transport(new InMemoryCoapTransport(0)).build();
+        CoapServer server = newBuilder().transport(new InMemoryCoapTransport(0)).build();
         server.start();
 
         CoapPacket req = new CoapPacket(Method.PUT, MessageType.Confirmable, "/test", REMOTE_ADDRESS);
@@ -216,7 +220,7 @@ public class CoapServerDuplicateTest {
         CoapPacket notif = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, REMOTE_ADDRESS);
         notif.setMessageId(12);
         notif.setToken(DataConvertingUtility.convertVariableUInt(1234));
-        notif.headers().setObserve(1);
+        notif.headers().setObserve(2);
         notif.setPayload("dupa2");
 
         serverTransport.receive(notif);

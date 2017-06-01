@@ -20,7 +20,7 @@ package com.mbed.coap.server.internal;
  */
 public final class UriMatcher {
     private String uri = "";
-    private final boolean isPrefix;
+    private final transient boolean isPrefix;
 
     public UriMatcher(String uri) {
         if (uri.endsWith("*")) {

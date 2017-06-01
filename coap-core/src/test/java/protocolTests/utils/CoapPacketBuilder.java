@@ -28,6 +28,8 @@ import java.net.InetSocketAddress;
  * Created by szymon
  */
 public class CoapPacketBuilder {
+    public static final InetSocketAddress LOCAL_5683 = new InetSocketAddress("localhost", 5683);
+    public static final InetSocketAddress LOCAL_1_5683 = new InetSocketAddress("localhost", 1_5683);
     private final CoapPacket coapPacket;
 
     private CoapPacketBuilder(InetSocketAddress address) {
@@ -45,12 +47,18 @@ public class CoapPacketBuilder {
     }
 
     public static CoapPacketBuilder newCoapPacket(InetSocketAddress address) {
-        CoapPacketBuilder coapPacketBuilder = new CoapPacketBuilder(address);
-        return coapPacketBuilder;
+        return new CoapPacketBuilder(address);
     }
 
     public CoapPacket build() {
         return coapPacket;
+    }
+
+    public CoapPacket emptyAck(int mid) {
+        coapPacket.setMessageId(mid);
+        coapPacket.setMessageType(MessageType.Acknowledgement);
+        coapPacket.setCode(null);
+        return build();
     }
 
     public CoapPacketBuilder get() {
@@ -162,9 +170,24 @@ public class CoapPacketBuilder {
         return this;
     }
 
+    public CoapPacketBuilder non() {
+        coapPacket.setMessageType(MessageType.NonConfirmable);
+        return this;
+    }
+
     public CoapPacketBuilder non(Code code) {
         coapPacket.setMessageType(MessageType.NonConfirmable);
         coapPacket.setCode(code);
         return this;
+    }
+
+    public CoapPacketBuilder reset() {
+        coapPacket.setMessageType(MessageType.Reset);
+        return this;
+    }
+
+    public CoapPacket reset(int messageId) {
+        coapPacket.setToken(null);
+        return mid(messageId).reset().build();
     }
 }

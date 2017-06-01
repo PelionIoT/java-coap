@@ -19,7 +19,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 /**
- * This class implements draft-ietf-core-block-14
+ * This class implements RFC7959 (Block-Wise Transfers in the Constrained Application Protocol)
  *
  * @author szymon
  */
@@ -27,7 +27,7 @@ public final class BlockOption implements Serializable {
 
     private final int blockNr;
     private final byte szx;
-    private boolean more;
+    private final boolean more;
 
     public BlockOption(int blockNr, BlockSize blockSize, boolean more) {
         this.blockNr = blockNr;
@@ -73,10 +73,6 @@ public final class BlockOption implements Serializable {
      */
     public int getSize() {
         return 1 << (szx + 4);
-    }
-
-    public void setMore(boolean more) {
-        this.more = more;
     }
 
     public boolean hasMore() {

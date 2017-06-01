@@ -16,6 +16,8 @@
 package com.mbed.lwm2m.transport;
 
 import static org.junit.Assert.*;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 
 public class TransportBindingTest {
@@ -26,6 +28,12 @@ public class TransportBindingTest {
         assertEquals(new TransportBinding(false, true, false), TransportBinding.parse("S"));
         assertEquals(new TransportBinding(true, false, true), TransportBinding.parse("UQ"));
         assertEquals(new TransportBinding(true, true, true), TransportBinding.parse("UQS"));
+        assertEquals(new TransportBinding(false, true, true), TransportBinding.parse("SQ"));
+        assertEquals(new TransportBinding(true, true, false), TransportBinding.parse("US"));
+
+        assertTrue(TransportBinding.parse("SQ").isQueueMode());
+        assertTrue(TransportBinding.parse("SQ").isSMS());
+        assertFalse(TransportBinding.parse("SQ").isUDP());
     }
 
     @Test
@@ -38,6 +46,20 @@ public class TransportBindingTest {
         assertParseFails("");
         assertParseFails("UqS");
     }
+
+    @Test
+    public void toStringTest() throws Exception {
+        assertEquals(new TransportBinding(true, false, false).toString(), "U");
+        assertEquals(new TransportBinding(true, true, true).toString(), "UQS");
+        assertEquals(new TransportBinding(false, true, true).toString(), "SQ");
+        assertEquals(new TransportBinding(true, true, false).toString(), "US");
+    }
+
+    @Test
+    public void equalsAndHashTest() throws Exception {
+        EqualsVerifier.forClass(TransportBinding.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+    }
+
 
     private static void assertParseFails(String transBinding) {
         try {

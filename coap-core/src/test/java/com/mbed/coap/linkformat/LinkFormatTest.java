@@ -20,6 +20,8 @@ import com.mbed.coap.packet.DataConvertingUtility;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Random;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 
 /**
@@ -97,6 +99,7 @@ public class LinkFormatTest {
         lf.setType("example type");
         lf.setAnchor("/test/anch");
         lf.setContentType((short) 12);
+        lf.setOAutobservable(true);
 
         LinkFormat lf2 = LinkFormatBuilder.parse(lf.toString());
 
@@ -113,6 +116,7 @@ public class LinkFormatTest {
         assertEquals(lf.getTitle(), lf2.getTitle());
         assertEquals(lf.getType(), lf2.getType());
         assertEquals(lf.getAnchor(), lf2.getAnchor());
+        assertEquals(lf.getParam("href"), lf.getUri());
     }
 
     @Test
@@ -134,8 +138,10 @@ public class LinkFormatTest {
         assertEquals(lf, lf2);
         assertEquals(lf.getUri(), lf2.getUri());
         assertEquals(lf.getContentType(), lf2.getContentType());
-        assertEquals(lf.getResourceTypeArray(), lf2.getResourceTypeArray());
-        assertEquals(lf.getInterfaceDescriptionArray(), lf2.getInterfaceDescriptionArray());
+        assertArrayEquals(lf.getResourceTypeArray(), lf2.getResourceTypeArray());
+        assertEquals(lf.getResourceType(), lf2.getResourceType());
+        assertArrayEquals(lf.getInterfaceDescriptionArray(), lf2.getInterfaceDescriptionArray());
+        assertEquals(lf.getInterfaceDescription(), lf2.getInterfaceDescription());
         assertEquals(lf.isObservable(), lf2.isObservable());
         assertEquals(lf.getMaxSize(), lf2.getMaxSize());
         assertEquals(lf.getResourceInstance(), lf2.getResourceInstance());
@@ -162,8 +168,8 @@ public class LinkFormatTest {
         assertEquals(lf.getParam("atr3"), lf2.getParam("atr3"));
         assertEquals(lf.getUri(), lf2.getUri());
         assertEquals(lf.getContentType(), lf2.getContentType());
-        assertEquals(lf.getResourceTypeArray(), lf2.getResourceTypeArray());
-        assertEquals(lf.getInterfaceDescriptionArray(), lf2.getInterfaceDescriptionArray());
+        assertArrayEquals(lf.getResourceTypeArray(), lf2.getResourceTypeArray());
+        assertArrayEquals(lf.getInterfaceDescriptionArray(), lf2.getInterfaceDescriptionArray());
         assertEquals(lf.isObservable(), lf2.isObservable());
     }
 
@@ -425,6 +431,11 @@ public class LinkFormatTest {
         LinkFormatBuilder.parse(">aa<");
     }
 
+    @Test(expected = ParseException.class)
+    public void testFailParse11_ecp() throws ParseException {
+        LinkFormatBuilder.parse("</t>;exp=123");
+    }
+
     @Test
     public void testSuccessSpecialCases() throws ParseException {
         assertEquals("ti=le@sns", LinkFormatBuilder.parse("</fds>;title=\"ti=le@sns\"").getTitle());
@@ -488,6 +499,8 @@ public class LinkFormatTest {
         lf.setType(null);
         lf.setAnchor(null);
         lf.setContentType(null);
+        lf.set("aaa", ((Integer) null));
+        lf.set("bbb", ((Boolean) null));
         lf.setRelations(new String[]{null});
 
         assertEquals(Boolean.FALSE, lf.getObservable());
@@ -527,4 +540,45 @@ public class LinkFormatTest {
         assertEquals("param-value", lf.getParam("unknown"));
         assertEquals(lf2, lf);
     }
+
+    @Test
+    public void setNullParameter() throws ParseException {
+
+        LinkFormat lf = new LinkFormat("/1");
+        lf.set(null, "param-value");
+        lf.set(null, "val1", "val2");
+        lf.set(null, new PToken("TEST-TOKEN"));
+        lf.set(null, Boolean.TRUE);
+        lf.set(null, 1234);
+
+        assertEquals("</1>", lf.toString());
+    }
+
+
+    @Test
+    public void failWithNumberParam() throws Exception {
+        LinkFormat lf = new LinkFormat("/1");
+        lf.set("ct", "abc");
+        assertNull(lf.getContentType());
+
+        lf.set("ct", "12");
+        assertEquals(12, lf.getContentType().shortValue());
+    }
+
+    @Test
+    public void ptokenTest() throws Exception {
+        PToken pToken = new PToken("abcde");
+
+        assertEquals('b', pToken.charAt(1));
+        assertEquals(5, pToken.length());
+        assertEquals("cd", pToken.subSequence(2, 4));
+    }
+
+    @Test
+    public void equalsAndHashTest() throws Exception {
+        EqualsVerifier.forClass(LinkFormat.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+
+        EqualsVerifier.forClass(PToken.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+    }
+
 }

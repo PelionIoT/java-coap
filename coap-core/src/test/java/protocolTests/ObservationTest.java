@@ -102,7 +102,7 @@ public class ObservationTest {
 
         CoapPacket packet = obsListener.take();
         assertEquals("duupa", packet.getPayloadString());
-        assertEquals(Integer.valueOf(1), packet.headers().getObserve());
+        assertEquals(Integer.valueOf(2), packet.headers().getObserve());
 
         //notify 2
         Thread.sleep(100);
@@ -110,7 +110,7 @@ public class ObservationTest {
 
         packet = obsListener.take();
         assertEquals("duupa2", packet.getPayloadString());
-        assertEquals(Integer.valueOf(2), packet.headers().getObserve());
+        assertEquals(Integer.valueOf(3), packet.headers().getObserve());
 
         //notify 3 with NON-CONF
         Thread.sleep(100);
@@ -120,7 +120,7 @@ public class ObservationTest {
 
         packet = obsListener.take();
         assertEquals("duupa3", packet.getPayloadString());
-        assertEquals(Integer.valueOf(3), packet.headers().getObserve());
+        assertEquals(Integer.valueOf(4), packet.headers().getObserve());
         OBS_RESOURCE_1.setConfirmNotification(true);
 
         //refresh observation

@@ -39,11 +39,6 @@ public class CoapCodeException extends CoapException {
         this.code = code;
     }
 
-    public CoapCodeException(Code code, String message, Throwable throwable) {
-        super(code.toString().substring(1).replace("_", " ") + " " + message, throwable);
-        this.code = code;
-    }
-
     /**
      * @return the code
      */

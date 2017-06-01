@@ -45,6 +45,9 @@ public class CoapTransaction {
     }
 
     public CoapTransaction(Callback<CoapPacket> callback, CoapPacket coapRequest, final CoapServerAbstract coapServer, TransportContext transContext, Priority transactionPriority) {
+        if (callback == null) {
+            throw new NullPointerException();
+        }
         this.coapServer = coapServer;
         this.callback = callback;
         this.coapRequest = coapRequest;
@@ -124,6 +127,14 @@ public class CoapTransaction {
 
     public Callback<CoapPacket> getCallback() {
         return callback;
+    }
+
+    public void invokeCallback(CoapPacket packet) {
+        try {
+            callback.call(packet);
+        } catch (Exception ex) {
+            LOGGER.error("Error while handling callback: " + ex.getMessage(), ex);
+        }
     }
 
     public CoapPacket getCoapRequest() {

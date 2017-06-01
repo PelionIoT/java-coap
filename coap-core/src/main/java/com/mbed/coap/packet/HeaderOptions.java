@@ -18,7 +18,7 @@ package com.mbed.coap.packet;
 import java.util.List;
 
 /**
- * Implements CoAP additional header options from draft-ietf-core-block-12 and
+ * Implements CoAP additional header options from RFC 7959 (Block-Wise Transfers) and
  * draft-ietf-core-observe-09.
  *
  * @author szymon

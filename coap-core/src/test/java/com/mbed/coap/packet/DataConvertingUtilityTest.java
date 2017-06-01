@@ -66,7 +66,7 @@ public class DataConvertingUtilityTest {
         assertNull(parseUriQuery(null));
         assertNull(parseUriQuery(""));
 
-        assertThatThrownBy(() -> parseUriQueryMult("p=aa&par133")).isExactlyInstanceOf(ParseException.class);
+        assertThatThrownBy(() -> parseUriQuery("p=aa&par133")).isExactlyInstanceOf(ParseException.class);
     }
 
 
@@ -105,6 +105,8 @@ public class DataConvertingUtilityTest {
         assertArrayEquals(fromHex("0203"), convertVariableUInt(new Long(0x0203)));
         assertArrayEquals(fromHex("020304"), convertVariableUInt(0x020304));
         assertArrayEquals(fromHex("02030405"), convertVariableUInt(0x02030405));
+
+        assertNull(convertVariableUInt(null));
 
     }
 

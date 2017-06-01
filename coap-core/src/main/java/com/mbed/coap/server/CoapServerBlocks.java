@@ -171,10 +171,6 @@ abstract class CoapServerBlocks extends CoapServer {
         blockReqMap.remove(blockRequestId);
     }
 
-    protected boolean isBlockReqMapEmpty() {
-        return blockReqMap.isEmpty();
-    }
-
     @Override
     protected void callRequestHandler(CoapPacket request, CoapHandler coapHandler, TransportContext incomingTransContext) throws CoapException {
         if (request.headers().getBlock1Req() != null) {
@@ -273,17 +269,13 @@ abstract class CoapServerBlocks extends CoapServer {
         private CoapPacket response;
         private final CoapPacket request;
         private final byte[] requestPayload;
-        private final String requestUri;
         private int resourceChanged;
-        private final InetSocketAddress destination;
         private final TransportContext outgoingTransContext;
 
         public BlockCallback(CoapPacket request, Callback<CoapPacket> reqCallback, TransportContext outgoingTransContext) {
             this.reqCallback = reqCallback;
             this.request = request;
             this.requestPayload = request.getPayload();
-            this.requestUri = request.headers().getUriPath();
-            this.destination = request.getRemoteAddress();
             this.outgoingTransContext = outgoingTransContext;
         }
 
@@ -476,9 +468,6 @@ abstract class CoapServerBlocks extends CoapServer {
             return true;
         }
 
-        public InetSocketAddress getSourceAddress() {
-            return sourceAddress;
-        }
     }
 
     protected static class BlockRequest {
@@ -509,9 +498,6 @@ abstract class CoapServerBlocks extends CoapServer {
             this.payload = reqBlock.appendPayload(payload, reqPayload);
         }
 
-        public InetSocketAddress getSourceAddress() {
-            return sourceAddress;
-        }
     }
 
     private static class CoapExchangeImplBlock extends CoapExchangeImpl {

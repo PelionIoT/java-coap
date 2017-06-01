@@ -53,7 +53,7 @@ public class CoapServerObserve extends CoapServerBlocks {
         if (request.headers().getObserve() == null) {
             request.headers().setObserve(0);
         }
-        if (request.getToken() == null || request.getToken() == CoapPacket.DEFAULT_TOKEN) {
+        if (request.getToken() == CoapPacket.DEFAULT_TOKEN) {
             request.setToken(observationIDGenerator.nextObservationID(request.headers().getUriPath()));
         }
         makeRequest(request, new Callback<CoapPacket>() {

@@ -417,6 +417,11 @@ public class TransactionManagerTest {
         assertEmpty(transMgr.unlockOrRemoveAndGetNext(trans1.getTransactionId()));
     }
 
+    @Test(expected = NullPointerException.class)
+    public void failWhenCallbackIsNull() throws Exception {
+        new CoapTransaction(null, mock(CoapPacket.class), mock(CoapServerObserve.class), TransportContext.NULL);
+    }
+
     private CoapTransaction createTransaction(InetSocketAddress remote, int mid, CoapTransaction.Priority priority) {
         CoapPacket packet = newCoapPacket(remote).mid(mid).con().get().uriPath("/").build();
         return new CoapTransaction(mock(Callback.class), packet, mock(CoapServerObserve.class), TransportContext.NULL, priority);

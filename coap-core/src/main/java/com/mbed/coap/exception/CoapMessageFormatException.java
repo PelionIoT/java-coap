@@ -20,16 +20,8 @@ package com.mbed.coap.exception;
  */
 public class CoapMessageFormatException extends CoapException {
 
-    public CoapMessageFormatException() {
-        super("Malformed CoAP message");
-    }
-
     public CoapMessageFormatException(String message) {
         super(message);
-    }
-
-    public CoapMessageFormatException(Throwable cause) {
-        super(cause);
     }
 
 }

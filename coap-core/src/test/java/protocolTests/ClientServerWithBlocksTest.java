@@ -57,7 +57,7 @@ public class ClientServerWithBlocksTest {
     @Before
     public void setUp() throws UnknownHostException, IOException {
 
-        server = CoapServerBuilder.newBuilder().transport(0).build();
+        server = CoapServerBuilder.newBuilder().transport(0).blockSize(BlockSize.S_128).build();
         server.addRequestHandler("/bigResource", new StaticBigResource());
         server.addRequestHandler("/dynamic", new DynamicBigResource());
         server.addRequestHandler("/ultra-dynamic", new UltraDynamicBigResource());
@@ -65,14 +65,8 @@ public class ClientServerWithBlocksTest {
         changeableBigResource = new ChangeableBigResource();
         server.addRequestHandler("/chang-res", changeableBigResource);
 
-        server.setBlockSize(BlockSize.S_128);
         server.start();
         SERVER_PORT = server.getLocalSocketAddress().getPort();
-        //        server = new CoapServerOLD();
-        //        server.addHandler("/test/1", new ReadOnlyCoapResource("Dziala"));
-        //        server.addHandler("/test2", new TestResource());
-        //        server.addHandler("/bigResource", new BigResource() );
-        //        server.start();
     }
 
     @After
@@ -111,7 +105,6 @@ public class ClientServerWithBlocksTest {
     @Test
     public void testBlock2Res_2() throws IOException, CoapException {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
-        server.setBlockSize(BlockSize.S_128);
 
         CoapPacket msg = client.resource("/bigResource").sync().get();
         assertEquals(BIG_RESOURCE.length(), msg.getPayloadString().length());

@@ -21,7 +21,7 @@ import java.util.Arrays;
 /**
  * @author szymon
  */
-class RawOption implements Comparable<RawOption>, Serializable {
+final class RawOption implements Comparable<RawOption>, Serializable {
 
     int optNumber;
     byte[][] optValues;
@@ -55,14 +55,6 @@ class RawOption implements Comparable<RawOption>, Serializable {
         this.optNumber = optNumber;
         this.optValues = new byte[1][];
         this.optValues[0] = singleOptValue;
-    }
-
-    int getNumber() {
-        return optNumber;
-    }
-
-    byte[][] getValues() {
-        return optValues;
     }
 
     byte[] getFirstValue() {

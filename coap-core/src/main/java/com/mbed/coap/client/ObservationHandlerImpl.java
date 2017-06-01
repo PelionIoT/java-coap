@@ -121,7 +121,7 @@ class ObservationHandlerImpl implements ObservationHandler {
         return observationMap.containsKey(new Token(token));
     }
 
-    private static class Token {
+    static class Token {
 
         private final byte[] tokenVal;
 

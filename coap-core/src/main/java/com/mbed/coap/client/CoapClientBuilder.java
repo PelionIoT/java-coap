@@ -18,6 +18,7 @@ package com.mbed.coap.client;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * @author szymon
@@ -32,7 +34,8 @@ import java.net.UnknownHostException;
 public final class CoapClientBuilder {
 
     private InetSocketAddress destination;
-    private CoapServer coapServer;
+    private final CoapServerBuilder coapServerBuilder = CoapServerBuilder.newBuilder();
+    private boolean isTransportDefined;
 
     CoapClientBuilder() {
         // nothing to initialize
@@ -80,8 +83,10 @@ public final class CoapClientBuilder {
     }
 
     public CoapClient build() throws IOException {
-        getOrCreateServer().start();
-        return new CoapClient(destination, coapServer);
+        if (!isTransportDefined) {
+            coapServerBuilder.transport(0);
+        }
+        return new CoapClient(destination, coapServerBuilder.build().start());
     }
 
     public CoapClientBuilder target(InetSocketAddress destination) {
@@ -99,50 +104,50 @@ public final class CoapClientBuilder {
     }
 
     public CoapClientBuilder transport(CoapTransport trans) {
-        if (coapServer != null) {
-            throw new IllegalStateException("Transport already initialized");
-        }
-        coapServer = CoapServerBuilder.newBuilder().transport(trans).build();
+        coapServerBuilder.transport(trans);
+        isTransportDefined = true;
         return this;
     }
 
     public CoapClientBuilder transport(int bindingPort) {
-        if (coapServer != null) {
-            throw new IllegalStateException("Transport already initialized");
-        }
-        coapServer = CoapServerBuilder.newBuilder().transport(bindingPort).build();
+        coapServerBuilder.transport(bindingPort);
+        isTransportDefined = true;
         return this;
     }
 
     public CoapClientBuilder timeout(long singleTimeoutMili) {
-        getOrCreateServer().setTransmissionTimeout(new SingleTimeout(singleTimeoutMili));
+        coapServerBuilder.timeout(new SingleTimeout(singleTimeoutMili));
         return this;
     }
 
     public CoapClientBuilder timeout(TransmissionTimeout responseTimeout) {
-        getOrCreateServer().setTransmissionTimeout(responseTimeout);
+        coapServerBuilder.timeout(responseTimeout);
         return this;
     }
 
     public CoapClientBuilder blockSize(BlockSize blockSize) {
-        getOrCreateServer().setBlockSize(blockSize);
+        coapServerBuilder.blockSize(blockSize);
         return this;
     }
 
     public CoapClientBuilder delayedTransTimeout(int delayedTransactionTimeout) {
-        getOrCreateServer().setDelayedTransactionTimeout(delayedTransactionTimeout);
+        coapServerBuilder.delayedTimeout(delayedTransactionTimeout);
         return this;
     }
 
     public CoapClientBuilder maxIncomingBlockTransferSize(int maxSize) {
-        getOrCreateServer().setMaxIncomingBlockTransferSize(maxSize);
+        coapServerBuilder.maxIncomingBlockTransferSize(maxSize);
         return this;
     }
 
-    private CoapServer getOrCreateServer() {
-        if (coapServer == null) {
-            coapServer = CoapServerBuilder.newBuilder().transport(0).build();
-        }
-        return coapServer;
+    public CoapClientBuilder scheduledExec(ScheduledExecutorService scheduledExecutorService) {
+        coapServerBuilder.scheduledExecutor(scheduledExecutorService);
+        return this;
     }
+
+    public CoapClientBuilder midSupplier(MessageIdSupplier midSupplier) {
+        coapServerBuilder.midSupplier(midSupplier);
+        return this;
+    }
+
 }

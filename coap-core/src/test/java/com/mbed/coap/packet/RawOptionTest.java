@@ -13,12 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.exception;
+package com.mbed.coap.packet;
 
-public class ReceiveException extends RuntimeException {
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
+import org.junit.Test;
 
-    public ReceiveException(Throwable cause) {
-        super(cause);
+/**
+ * Created by szymon
+ */
+public class RawOptionTest {
+
+    @Test
+    public void equalsAndHashTest() throws Exception {
+        EqualsVerifier.forClass(RawOption.class).suppress(Warning.NONFINAL_FIELDS).verify();
     }
 
 }

@@ -53,7 +53,11 @@ public class QueueRequestsTest {
     public void setUp() throws Exception {
         transport = mock(CoapTransport.class);
 
-        coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
+        coapServer = CoapServer.builder().transport(transport)
+                .midSupplier(new MessageIdSupplierImpl(0))
+                .blockSize(BlockSize.S_32)
+                .disableDuplicateCheck()
+                .defaultQueuePriority(CoapTransaction.Priority.NORMAL)
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();
 
@@ -178,8 +182,14 @@ public class QueueRequestsTest {
 
     @Test(timeout = 10000)
     public void shouldQueueBlockTransferEvenQueueIsFull() throws Exception {
-        coapServer.setEndpointQueueMaximumSize(2);
-        ((CoapServerObserve) coapServer).setBlockCoapTransactionPriority(CoapTransaction.Priority.HIGH);
+        coapServer = CoapServer.builder().transport(transport)
+                .midSupplier(new MessageIdSupplierImpl(0))
+                .blockSize(BlockSize.S_32)
+                .disableDuplicateCheck()
+                .queueMaxSize(2)
+                .blockMessageTransactionQueuePriority(CoapTransaction.Priority.HIGH)
+                .timeout(new SingleTimeout(500)).build();
+
 
         CoapPacket blockResp1 = newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
         CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();

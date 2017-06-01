@@ -33,11 +33,22 @@ public class CoapPacketToStringTest {
         cp.headers().setContentFormat(MediaTypes.CT_TEXT_PLAIN);
         assertEquals("CON GET MID:0 URI:/test ContTp:0 pl:'short'", cp.toString());
 
+        cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_XML);
+        assertEquals("CON GET MID:0 URI:/test ContTp:41 pl:'short'", cp.toString());
+
+        cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_LWM2M_JSON);
+        assertEquals("CON GET MID:0 URI:/test ContTp:11543 pl:'short'", cp.toString());
+
         cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_JSON);
         assertEquals("CON GET MID:0 URI:/test ContTp:50 pl:'short'", cp.toString());
 
+        cp.headers().setContentFormat(MediaTypes.CT_TEXT_PLAIN);
+        assertEquals("CON GET MID:0 URI:/test ContTp:0 pl(5):0x73686f7274", cp.toString(false, true, false));
+
         cp.headers().setContentFormat(MediaTypes.CT_APPLICATION_OCTET__STREAM);
         assertEquals("CON GET MID:0 URI:/test ContTp:42 pl(5):0x73686f7274", cp.toString());
+
+        assertEquals("CON GET MID:0 URI:/test ContTp:42 pl(5)", cp.toString(false, false, false, true));
 
         //unknown
         cp.headers().setContentFormat((short) 4321);

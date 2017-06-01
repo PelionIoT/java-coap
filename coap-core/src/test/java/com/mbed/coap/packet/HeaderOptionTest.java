@@ -15,15 +15,22 @@
  */
 package com.mbed.coap.packet;
 
+import static com.mbed.coap.packet.BasicHeaderOptions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapMessageFormatException;
+import com.mbed.coap.exception.CoapUnknownOptionException;
 import com.mbed.coap.utils.HexArray;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Arrays;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * @author szymon
@@ -52,6 +59,7 @@ public class HeaderOptionTest {
         BasicHeaderOptions hdr2 = new BasicHeaderOptions();
         hdr2.deserialize(new ByteArrayInputStream(expected));
         assertEquals(hdr.getProxyUri(), hdr2.getProxyUri());
+        assertEquals(hdr.getProxyScheme(), hdr2.getProxyScheme());
 
         //larger delta
         hdr = new BasicHeaderOptions();
@@ -221,7 +229,9 @@ public class HeaderOptionTest {
         assertEquals(OPT_VAL2, new String(hdr2.getCustomOption(102)));
         assertEquals(OPT_VAL3, new String(hdr2.getCustomOption(103)));
         assertEquals(OPT_VAL4, new String(hdr2.getCustomOption(104)));
+        assertNull(hdr2.getCustomOption(999));
     }
+
 
     @Test
     public void specialHeaderValueSizes() throws IOException, CoapException {
@@ -388,6 +398,97 @@ public class HeaderOptionTest {
         HeaderOptions hdr2 = deserialize(serialize(hdr), (byte) 0);
         assertEquals(hdr, hdr2);
         assertEquals("/3//", hdr2.getUriPath());
+    }
+
+    @Test
+    public void criticalOptTest() throws Exception {
+        BasicHeaderOptions h = new BasicHeaderOptions();
+        h.criticalOptTest();
+
+        h.put(1000, "foo".getBytes());
+        h.criticalOptTest();
+
+        h.put(1001, "foo".getBytes());
+        assertThatThrownBy(h::criticalOptTest).isExactlyInstanceOf(CoapUnknownOptionException.class);
+    }
+
+    @Test
+    public void optionCharacteristics() throws Exception {
+        assertTrue(isCritical(HeaderOptions.IF_MATCH));
+        assertFalse(isUnsave(HeaderOptions.IF_MATCH));
+        assertFalse(hasNoCacheKey(HeaderOptions.IF_MATCH));
+
+        assertFalse(isCritical(HeaderOptions.ETAG));
+        assertFalse(isUnsave(HeaderOptions.ETAG));
+        assertFalse(hasNoCacheKey(HeaderOptions.ETAG));
+
+        assertTrue(isCritical(HeaderOptions.URI_PORT));
+        assertTrue(isUnsave(HeaderOptions.URI_PORT));
+        assertFalse(hasNoCacheKey(HeaderOptions.URI_PORT));
+
+        assertFalse(isCritical(HeaderOptions.SIZE1));
+        assertFalse(isUnsave(HeaderOptions.SIZE1));
+        assertTrue(hasNoCacheKey(HeaderOptions.SIZE1));
+    }
+
+    @Test
+    public void settingValuesOverRange() throws Exception {
+        HeaderOptions h = new HeaderOptions();
+
+        h.setMaxAge(null);
+        assertNull(h.getMaxAge());
+
+        h.setMaxAge(0x1FFFFFFFFL);
+        assertEquals(0xFFFFFFFFL, h.getMaxAgeValue());
+
+        assertThatThrownBy(() -> h.setEtag("123456789".getBytes())).isExactlyInstanceOf(IllegalArgumentException.class);
+
+        assertThatThrownBy(() -> h.setEtag(new byte[][]{"123456789".getBytes()})).isExactlyInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> h.setEtag(new byte[][]{"".getBytes()})).isExactlyInstanceOf(IllegalArgumentException.class);
+
+        assertThatThrownBy(() -> h.setLocationPath(".")).isExactlyInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> h.setLocationPath("..")).isExactlyInstanceOf(IllegalArgumentException.class);
+
+        h.setLocationPath("");
+        assertNull(h.getLocationPath());
+
+        assertThatThrownBy(() -> h.setUriPath("no-leading-slash")).isExactlyInstanceOf(IllegalArgumentException.class);
+
+        h.setUriQuery("");
+        assertNull(h.getUriQuery());
+    }
+
+    @Test(expected = CoapMessageFormatException.class)
+    public void failWhenTooLargeToSerialize() throws Exception {
+        HeaderOptions h = new HeaderOptions();
+        h.put(100, new byte[65805]);
+        h.serialize(Mockito.mock(OutputStream.class));
+    }
+
+    @Test(expected = CoapMessageFormatException.class)
+    public void failWhenTooLargeDeltaToSerialize() throws Exception {
+        HeaderOptions h = new HeaderOptions();
+        h.setIfNonMatch(false);
+        h.put(65805, new byte[1]);
+        h.serialize(Mockito.mock(OutputStream.class));
+    }
+
+    @Test
+    public void failToDeserializeWithMalformedData() throws Exception {
+
+        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(HexArray.fromHex("F2"))))
+                .isExactlyInstanceOf(CoapMessageFormatException.class);
+
+        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(HexArray.fromHex("3F"))))
+                .isExactlyInstanceOf(CoapMessageFormatException.class);
+
+    }
+
+    @Test
+    public void equalsAndHashTest() throws Exception {
+        EqualsVerifier.forClass(HeaderOptions.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+
+        assertFalse(new BasicHeaderOptions().equals(null));
     }
 
     private static byte[] serialize(BasicHeaderOptions hdr) throws IOException, CoapException {

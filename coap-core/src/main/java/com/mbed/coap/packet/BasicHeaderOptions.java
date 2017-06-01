@@ -52,7 +52,7 @@ public class BasicHeaderOptions implements Serializable {
     public static final byte LOCATION_QUERY = 20; //multiple
     public static final byte PROXY_URI = 35; //not repeatable
     public static final byte PROXY_SCHEME = 39; //not repeatable
-    private static final byte SIZE1 = 60;
+    public static final byte SIZE1 = 60;
     //
     public static final short DEFAULT_MAX_AGE = 60;
     public static final String DEFAULT_URI_HOST = "";
@@ -377,21 +377,14 @@ public class BasicHeaderOptions implements Serializable {
      * @param maxAge max-age to set in seconds
      */
     public final void setMaxAge(Long maxAge) {
-        if (maxAge != null && maxAge > 0xFFFFFFFFL) {
-            this.maxAge = maxAge | 0xFFFFFFFFL;
-        } else {
-            this.maxAge = maxAge;
-        }
+        this.maxAge = maxAge == null ? null : maxAge & 0xFFFFFFFFL;
     }
 
     /**
      * @return first etag from array or null of array is empty
      */
     public final byte[] getEtag() {
-        if (etag == null || etag.length == 0) {
-            return null;
-        }
-        return etag[0];
+        return etag == null ? null : etag[0];
     }
 
     /**
@@ -748,6 +741,9 @@ public class BasicHeaderOptions implements Serializable {
             return false;
         }
         if ((this.size1 == null) ? (other.size1 != null) : !this.size1.equals(other.size1)) {
+            return false;
+        }
+        if ((this.proxyScheme == null) ? (other.proxyScheme != null) : !this.proxyScheme.equals(other.proxyScheme)) {
             return false;
         }
         if (this.unrecognizedOptions != other.unrecognizedOptions && (this.unrecognizedOptions == null || !this.unrecognizedOptions.equals(other.unrecognizedOptions))) {

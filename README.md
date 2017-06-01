@@ -2,8 +2,9 @@ mbed CoAP
 =========
 
 [![](https://jitpack.io/v/com.mbed/java-coap.svg)](https://jitpack.io/#com.mbed/java-coap)
-![CircleCI](https://img.shields.io/circleci/project/github/ARMmbed/java-coap.svg)
-[![License](https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg)](LICENSE)
+![CircleCI](https://img.shields.io/circleci/project/github/ARMmbed/java-coap/master.svg)
+[![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)](LICENSE)
+[![codecov](https://codecov.io/gh/ARMmbed/java-coap/branch/master/graph/badge.svg)](https://codecov.io/gh/ARMmbed/java-coap)
 
 Introduction
 ------------
@@ -142,7 +143,7 @@ Development
      
 ### Build with all checks enabled
      
-    mvn clean install -P ci-build
+    mvn clean install -P ci
 
 ### Update license header
 

@@ -19,6 +19,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import java.net.InetSocketAddress;
@@ -28,13 +29,12 @@ import org.junit.Test;
  * @author szymon
  */
 public class CoapRequestTargetTest {
+    private InetSocketAddress destination = new InetSocketAddress("localhost", 5683);
+    private CoapClient mockClient = when(mock(CoapClient.class).getDestination()).thenReturn(destination).getMock();
 
     @Test
     public void test() {
-        InetSocketAddress destination = new InetSocketAddress("localhost", 5683);
-        CoapClient c = when(mock(CoapClient.class).getDestination()).thenReturn(destination).getMock();
-
-        CoapRequestTarget req = new CoapRequestTarget("/0/1/2", c);
+        CoapRequestTarget req = new CoapRequestTarget("/0/1/2", mockClient);
 
         req.accept((short) 1);
         req.blockSize(BlockSize.S_16);
@@ -44,7 +44,7 @@ public class CoapRequestTargetTest {
         req.ifNotMatch(false);
         req.maxAge(789456L);
         req.non();
-        req.payload("perse");
+        req.payload("perse".getBytes(), MediaTypes.CT_TEXT_PLAIN);
         req.query("p=1");
         req.query("b", "2");
         req.token(45463L);
@@ -57,6 +57,7 @@ public class CoapRequestTargetTest {
         packet.headers().setIfNonMatch(Boolean.FALSE);
         packet.headers().setMaxAge(789456L);
         packet.headers().setUriQuery("p=1&b=2");
+        packet.headers().setContentFormat(MediaTypes.CT_TEXT_PLAIN);
         packet.setToken(new byte[]{(byte) 0xB1, (byte) 0x97});
         packet.setPayload("perse");
 
@@ -67,6 +68,20 @@ public class CoapRequestTargetTest {
 
         packet.setMessageType(MessageType.Confirmable);
         packet.headers().setIfNonMatch(Boolean.TRUE);
+
+        assertEquals(packet, req.getRequestPacket());
+    }
+
+    @Test
+    public void test2() throws Exception {
+        CoapRequestTarget req = new CoapRequestTarget("/0/1/2", mockClient);
+
+        req.payload("abc".getBytes());
+        req.contentFormat(MediaTypes.CT_APPLICATION_XML);
+
+        CoapPacket packet = new CoapPacket(Method.GET, MessageType.Confirmable, "/0/1/2", destination);
+        packet.headers().setContentFormat(MediaTypes.CT_APPLICATION_XML);
+        packet.setPayload("abc");
 
         assertEquals(packet, req.getRequestPacket());
     }

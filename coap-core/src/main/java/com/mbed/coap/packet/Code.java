@@ -43,7 +43,7 @@ public enum Code {
     C504_GATEWAY_TIMEOUT(5, 04, 504),
     C505_PROXYING_NOT_SUPPORTED(5, 05, 502),
     //
-    //draft-ietf-core-block-14
+    //RFC 7959 (Block-Wise Transfers)
     C231_CONTINUE(2, 31, 500),
     C408_REQUEST_ENTITY_INCOMPLETE(4, 8, 500),
     C413_REQUEST_ENTITY_TOO_LARGE(4, 13, 413);
@@ -60,11 +60,7 @@ public enum Code {
     }
 
     public String codeToString() {
-        try {
-            return name().substring(1, 4);
-        } catch (NumberFormatException numberFormatException) {
-            return "0";
-        }
+        return name().substring(1, 4);
     }
 
     public int getCoapCode() {

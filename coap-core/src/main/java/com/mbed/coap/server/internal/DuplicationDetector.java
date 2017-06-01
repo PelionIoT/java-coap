@@ -122,11 +122,11 @@ public class DuplicationDetector implements Runnable {
         }
     }
 
-    private static class CoapRequestId {
+    static class CoapRequestId {
 
         private final int mid;
         private final InetSocketAddress sourceAddress;
-        private final long validTimeout;
+        private final transient long validTimeout;
 
         public CoapRequestId(int mid, InetSocketAddress sourceAddress, long requestIdTimeout) {
             this.mid = mid;
@@ -136,12 +136,19 @@ public class DuplicationDetector implements Runnable {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof CoapRequestId)) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
                 return false;
             }
 
             CoapRequestId objRequestId = (CoapRequestId) obj;
-            return (mid == objRequestId.mid && sourceAddress.equals(objRequestId.sourceAddress));
+
+            if (mid != objRequestId.mid) {
+                return false;
+            }
+            return sourceAddress != null ? sourceAddress.equals(objRequestId.sourceAddress) : objRequestId.sourceAddress == null;
         }
 
         public boolean isValid(final long timestamp) {
@@ -150,10 +157,9 @@ public class DuplicationDetector implements Runnable {
 
         @Override
         public int hashCode() {
-            int hash = 7;
-            hash = 73 * hash + this.mid;
-            hash = 73 * hash + (this.sourceAddress != null ? this.sourceAddress.hashCode() : 0);
-            return hash;
+            int result = mid;
+            result = 31 * result + (sourceAddress != null ? sourceAddress.hashCode() : 0);
+            return result;
         }
     }
 }

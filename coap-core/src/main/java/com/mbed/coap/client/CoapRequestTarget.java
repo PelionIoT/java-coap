@@ -242,7 +242,7 @@ public class CoapRequestTarget {
 
             return callback;
         } else {
-            throw new ObservationNotEstablishedException();
+            throw new ObservationNotEstablishedException("");
         }
     }
 

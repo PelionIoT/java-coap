@@ -22,11 +22,11 @@ import com.mbed.coap.server.internal.CoapTransaction;
  */
 public class CoapTimeoutException extends CoapException {
 
-    public CoapTimeoutException() {
-        super("Timeout");
+    public CoapTimeoutException(String message) {
+        super(message);
     }
 
     public CoapTimeoutException(CoapTransaction transaction) {
-        super("Timeout " + transaction.toString());
+        this("Timeout " + transaction.toString());
     }
 }

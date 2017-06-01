@@ -28,17 +28,13 @@ class MulticastTransactionId extends CoapTransactionId {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        if (!(obj instanceof CoapTransactionId)) {
-            return false;
-        }
-        final CoapTransactionId other = (CoapTransactionId) obj;
-        if (this.messageId != other.messageId) {
-            return false;
-        }
-        return true;
+        return super.equals(obj);
     }
 
     @Override

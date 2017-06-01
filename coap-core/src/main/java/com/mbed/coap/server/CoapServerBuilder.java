@@ -20,8 +20,10 @@ import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -29,10 +31,19 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public class CoapServerBuilder {
     private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
+    private static final long DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
 
     private final CoapServerObserve server;
     private int duplicationMaxSize = DEFAULT_MAX_DUPLICATION_LIST_SIZE;
     private CoapTransport coapTransport;
+    private ScheduledExecutorService scheduledExecutorService;
+    private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
+    private int maxIncomingBlockTransferSize;
+    private CoapTransaction.Priority priority = CoapTransaction.Priority.NORMAL;
+    private int maxQueueSize = 100;
+    private BlockSize blockSize;
+    private long delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
+    private DuplicatedCoapMessageCallback duplicatedCoapMessageCallback = DuplicatedCoapMessageCallback.NULL;
 
     CoapServerBuilder() {
         server = new CoapServerObserve();
@@ -62,12 +73,12 @@ public class CoapServerBuilder {
     }
 
     public CoapServerBuilder scheduledExecutor(ScheduledExecutorService scheduledExecutorService) {
-        server.setScheduledExecutor(scheduledExecutorService);
+        this.scheduledExecutorService = scheduledExecutorService;
         return this;
     }
 
-    public CoapServerBuilder midSupplier(MessageIdSupplier context) {
-        server.setMidSupplier(context);
+    public CoapServerBuilder midSupplier(MessageIdSupplier midSupplier) {
+        this.midSupplier = midSupplier;
         return this;
     }
 
@@ -76,28 +87,39 @@ public class CoapServerBuilder {
         return this;
     }
 
-    public CoapServerBuilder delayedTimeout(int delayedTransactionTimeout) {
-        server.setDelayedTransactionTimeout(delayedTransactionTimeout);
+    public CoapServerBuilder delayedTimeout(long delayedTransactionTimeout) {
+        if (delayedTransactionTimeout <= 0) {
+            throw new IllegalArgumentException();
+        }
+        this.delayedTransactionTimeout = delayedTransactionTimeout;
         return this;
     }
 
     public CoapServerBuilder blockSize(BlockSize blockSize) {
-        server.setBlockSize(blockSize);
+        this.blockSize = blockSize;
         return this;
     }
 
     public CoapServerBuilder maxIncomingBlockTransferSize(int size) {
-        server.setMaxIncomingBlockTransferSize(size);
+        this.maxIncomingBlockTransferSize = size;
         return this;
     }
 
-    public CoapServerBuilder duplicatedCoapMessageCallback(DuplicatedCoapMessageCallback errorCallback) {
-        server.setDuplicatedCoapMessageCallback(errorCallback);
+    public CoapServerBuilder duplicatedCoapMessageCallback(DuplicatedCoapMessageCallback duplicatedCallback) {
+        if (duplicatedCallback == null) {
+            throw new NullPointerException();
+        }
+        this.duplicatedCoapMessageCallback = duplicatedCallback;
         return this;
     }
 
-    public CoapServerBuilder defaultTransactionQueuePriority(CoapTransaction.Priority priority) {
-        server.setDefaultCoapTransactionPriority(priority);
+    public CoapServerBuilder defaultQueuePriority(CoapTransaction.Priority priority) {
+        this.priority = priority;
+        return this;
+    }
+
+    public CoapServerBuilder queueMaxSize(int maxQueueSize) {
+        this.maxQueueSize = maxQueueSize;
         return this;
     }
 
@@ -125,13 +147,25 @@ public class CoapServerBuilder {
         return this;
     }
 
+    public CoapServer start() throws IOException {
+        return build().start();
+    }
+
     public CoapServer build() {
         if (coapTransport == null) {
             throw new IllegalArgumentException("Transport is missing");
         }
 
-        server.setCoapTransporter(coapTransport);
-        server.init(duplicationMaxSize);
+        boolean isSelfCreatedExecutor = false;
+        if (scheduledExecutorService == null) {
+            scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+            isSelfCreatedExecutor = true;
+        }
+
+        server.init(duplicationMaxSize, coapTransport, scheduledExecutorService, isSelfCreatedExecutor,
+                midSupplier, maxQueueSize, priority, maxIncomingBlockTransferSize,
+                blockSize, delayedTransactionTimeout, duplicatedCoapMessageCallback);
+
         return server;
     }
 

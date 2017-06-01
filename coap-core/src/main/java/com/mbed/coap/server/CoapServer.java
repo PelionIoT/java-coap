@@ -53,7 +53,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -77,7 +76,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     private CoapTransport coapTransporter;
     private BlockSize blockOptionSize; //null: no blocking
     private boolean isSelfCreatedExecutor;
-    protected TransactionManager transMgr = new TransactionManager();
+    private final TransactionManager transMgr = new TransactionManager();
     private final DelayedTransactionManager delayedTransMagr = new DelayedTransactionManager();
     private ObservationHandler observationHandler;
     private DuplicationDetector duplicationDetector;
@@ -85,26 +84,36 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     private boolean enabledCriticalOptTest = true;
     private ScheduledFuture<?> transactionTimeoutWorkerFut;
     private int maxIncomingBlockTransferSize;
-    private CoapTransaction.Priority defaultPriority = CoapTransaction.Priority.NORMAL;
+    private CoapTransaction.Priority defaultPriority;
 
 
     public static CoapServerBuilder builder() {
         return new CoapServerBuilder();
     }
 
-    protected final void init(final int duplicationListSize) {
-        if (coapTransporter == null) {
+    final void init(int duplicationListSize, CoapTransport coapTransporter,
+            ScheduledExecutorService scheduledExecutor, boolean isSelfCreatedExecutor,
+            MessageIdSupplier idContext,
+            int maxQueueSize, CoapTransaction.Priority defaultPriority,
+            int maxIncomingBlockTransferSize,
+            BlockSize blockSize, long delayedTransactionTimeout, DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
+
+        if (coapTransporter == null || scheduledExecutor == null || idContext == null || defaultPriority == null || duplicatedCoapMessageCallback == null) {
             throw new NullPointerException();
         }
 
-        if (scheduledExecutor == null) {
-            scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-            isSelfCreatedExecutor = true;
-        }
+        this.coapTransporter = coapTransporter;
+        this.scheduledExecutor = scheduledExecutor;
+        this.isSelfCreatedExecutor = isSelfCreatedExecutor;
+        this.idContext = idContext;
+        this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
+        this.blockOptionSize = blockSize;
+        this.delayedTransactionTimeout = delayedTransactionTimeout;
+        this.duplicatedCoapMessageCallback = duplicatedCoapMessageCallback;
 
-        if (idContext == null) {
-            idContext = new MessageIdSupplierImpl();
-        }
+        this.defaultPriority = defaultPriority;
+        transMgr.setMaximumEndpointQueueSize(maxQueueSize);
+
         if (transmissionTimeout == null) {
             this.transmissionTimeout = new CoapTimeout();
         }
@@ -112,40 +121,11 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         if (duplicationListSize > 0) {
             duplicationDetector = new DuplicationDetector(TimeUnit.MILLISECONDS, DEFAULT_DUPLICATION_TIMEOUT, duplicationListSize, scheduledExecutor);
         }
-        if (duplicatedCoapMessageCallback == null) {
-            duplicatedCoapMessageCallback = DuplicatedCoapMessageCallback.NULL;
-        }
-    }
-
-    public void setEndpointQueueMaximumSize(int maximumEndpointQueueSize) {
-        transMgr.setMaximumEndpointQueueSize(maximumEndpointQueueSize);
-    }
-
-    public void setDefaultCoapTransactionPriority(CoapTransaction.Priority defaultPriority) {
-        this.defaultPriority = defaultPriority;
-    }
-
-    protected void setMidSupplier(MessageIdSupplier idContext) {
-        assertNotRunning();
-        this.idContext = idContext;
     }
 
     @Override
     protected DuplicationDetector getDuplicationDetector() {
         return duplicationDetector;
-    }
-
-    /**
-     * Sets scheduled executor to be used for periodically executed tasks.
-     *
-     * @param scheduledExecutor scheduled executor
-     */
-    public void setScheduledExecutor(ScheduledExecutorService scheduledExecutor) {
-        assertNotRunning();
-        if (scheduledExecutor == null) {
-            throw new NullPointerException();
-        }
-        this.scheduledExecutor = scheduledExecutor;
     }
 
     public ScheduledExecutorService getScheduledExecutor() {
@@ -170,10 +150,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         return this;
     }
 
-    protected void assertNotRunning() throws IllegalStateException {
-        if (isRunning) {
-            throw new IllegalStateException("CoapServer is running");
-        }
+    private void assertNotRunning() {
+        assume(!isRunning, "CoapServer is running");
     }
 
     private void startTransactionTimeoutWorker() {
@@ -228,21 +206,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         return isRunning;
     }
 
-    /**
-     * Sets parameter for delayed transaction timeout
-     *
-     * @param delayedTransactionTimeout timeout in milliseconds
-     */
-    public void setDelayedTransactionTimeout(long delayedTransactionTimeout) {
-        this.delayedTransactionTimeout = delayedTransactionTimeout;
-    }
-
-    void setDuplicatedCoapMessageCallback(DuplicatedCoapMessageCallback errorCallback) {
-        if (errorCallback == null) {
-            throw new NullPointerException();
-        }
-        this.duplicatedCoapMessageCallback = errorCallback;
-    }
 
     /**
      * Sets CoAP transmission timeout settings, use this to change default CoAP timeout
@@ -272,7 +235,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      */
     public void addRequestHandler(String uri, CoapHandler coapHandler) {
         handlers.put(new UriMatcher(uri), coapHandler);
-        LOGGER.debug("Handler added on " + uri);
+        LOGGER.debug("Handler added on {}", uri);
     }
 
     /**
@@ -286,15 +249,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     }
 
     /**
-     * Sets block size that will be use for received messages
-     *
-     * @param blockSize block size
-     */
-    public final void setBlockSize(BlockSize blockSize) {
-        this.blockOptionSize = blockSize;
-    }
-
-    /**
      * Returns defines block size
      *
      * @return block size
@@ -303,17 +257,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         return blockOptionSize;
     }
 
-    /**
-     * Sets maximum incoming entity size during block transfer
-     * Zero means unlimited.
-     *
-     * @param maxBlockTransferSize - max transfer size
-     */
-    public final void setMaxIncomingBlockTransferSize(int maxBlockTransferSize) {
-        this.maxIncomingBlockTransferSize = maxBlockTransferSize;
-    }
-
-    public final int getMaxIncomingBlockTransferSize() {
+    final int getMaxIncomingBlockTransferSize() {
         return this.maxIncomingBlockTransferSize;
     }
 
@@ -409,7 +353,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @param transactionPriority defines transaction priority (used by CoapServerBlocks mostyl)
      * @throws CoapException throws exception if request can not be send
      */
-    protected void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext, CoapTransaction.Priority transactionPriority) throws CoapException {
+    private void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext, CoapTransaction.Priority transactionPriority) throws CoapException {
         makeRequestInternal(packet, callback, transContext, transactionPriority, false);
     }
 
@@ -428,7 +372,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @param forceAddToQueue forces add to queue even if there is queue limit overflow (block requests)
      * @throws CoapException throws exception if request can not be send
      */
-    protected void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext, CoapTransaction.Priority transactionPriority, boolean forceAddToQueue) throws CoapException {
+    void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext, CoapTransaction.Priority transactionPriority, boolean forceAddToQueue) throws CoapException {
         if (callback == null || packet == null || packet.getRemoteAddress() == null) {
             throw new NullPointerException();
         }
@@ -440,21 +384,15 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         try {
             if (packet.getMustAcknowledge()) {
                 trans = new CoapTransaction(callback, packet, this, transContext, transactionPriority);
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("makeRequestInternal: adding transaction: " + trans.toString() + ", forceAdd=" + forceAddToQueue);
-                }
                 if (transMgr.addTransactionAndGetReadyToSend(trans, forceAddToQueue)) {
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("makeRequestInternal: sending transaction: " + trans.toString() + ", forceAdd=" + forceAddToQueue);
-                    }
                     trans.send(System.currentTimeMillis());
                 }
             } else {
                 //send NON message without waiting for piggy-backed response
                 delayedTransMagr.add(new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress()), new CoapTransaction(callback, packet, this, transContext, transactionPriority));
                 this.send(packet, packet.getRemoteAddress(), transContext);
-                if (packet.getToken() == null || packet.getToken().length == 0) {
-                    LOGGER.warn("Sent NON request without token: " + packet);
+                if (packet.getToken().length == 0) {
+                    LOGGER.warn("Sent NON request without token: {}", packet);
                 }
             }
 
@@ -475,15 +413,11 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      */
     public void setObservationHandler(ObservationHandler observationHandler) {
         this.observationHandler = observationHandler;
-        LOGGER.trace("Observation handler set (" + observationHandler + ")");
+        LOGGER.trace("Observation handler set [{}]", observationHandler);
     }
 
     @Override
     protected void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("CoapServer.send(): MID:" + coapPacket.getMessageId() + "/" + adr);
-        }
-
         coapTransporter.sendPacket(coapPacket, adr, tranContext);
 
         if (LOGGER.isTraceEnabled()) {
@@ -522,10 +456,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         }
 
         if (packet.getMethod() != null) {
-
-            if (handleRequest(packet, transportContext)) {
-                return;
-            }
+            handleRequest(packet, transportContext);
+            return;
         } else {
             if (handleResponse(packet)) {
                 return;
@@ -544,43 +476,39 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             LOGGER.debug("CoAP ping received.");
             CoapPacket resp = packet.createResponse(null);
             resp.setMessageType(MessageType.Reset);
-            if (packet.getMessageType() == MessageType.NonConfirmable) {
-                resp.setMessageId(getNextMID());
-            }
-            try {
-                send(resp, packet.getRemoteAddress(), TransportContext.NULL);
-                putToDuplicationDetector(packet, resp);
-            } catch (Exception e) {
-                LOGGER.error(e.getMessage(), e);
-            }
+            sendResponseAndUpdateDuplicateDetector(packet, resp);
             return true;
         }
         return false;
     }
 
     private boolean handleObservation(CoapPacket packet, TransportContext context) {
-        if (packet.headers().getObserve() != null || (observationHandler != null && observationHandler.hasObservation(packet.getToken()))) {
-            if (packet.getMessageType() == MessageType.Reset || packet.headers().getObserve() == null
-                    || (packet.getCode() != Code.C205_CONTENT && packet.getCode() != Code.C203_VALID)) {
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Notification termination [" + packet.toString() + "]");
+        ObservationHandler obsHdlr = this.observationHandler;
+        if (obsHdlr == null) {
+            return false;
+        }
+
+        Integer observe = packet.headers().getObserve();
+        if (observe != null || obsHdlr.hasObservation(packet.getToken())) {
+            if (observe == null || observe == 1 || (packet.getCode() != Code.C205_CONTENT && packet.getCode() != Code.C203_VALID)) {
+
+                LOGGER.trace("Notification termination [{}]", packet);
+
+                if (packet.getMustAcknowledge()) {
+                    CoapPacket response = packet.createResponse();
+                    sendResponseAndUpdateDuplicateDetector(packet, response);
                 }
-                if (observationHandler != null) {
-                    //CoapExchange exchange = new CoapExchangeImpl(packet, this);
-                    observationHandler.callException(new ObservationTerminatedException(packet, context));
-                    return true;
-                }
-            }
-            if (observationHandler != null) {
-                if (!findDuplicate(packet, "CoAP notification repeated")) {
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Notification [" + packet.getRemoteAddress() + "]");
-                    }
-                    CoapExchange exchange = new CoapExchangeImpl(packet, this, context);
-                    observationHandler.call(exchange);
-                }
+
+                obsHdlr.callException(new ObservationTerminatedException(packet, context));
                 return true;
             }
+
+            if (!findDuplicate(packet, "CoAP notification repeated")) {
+                LOGGER.trace("Notification [{}]", packet.getRemoteAddress());
+                CoapExchange exchange = new CoapExchangeImpl(packet, this, context);
+                obsHdlr.call(exchange);
+            }
+            return true;
         }
         return false;
     }
@@ -592,13 +520,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             if (packet.getMessageType() == MessageType.NonConfirmable) {
                 resp.setMessageId(getNextMID());
             }
-            try {
-                send(resp, packet.getRemoteAddress(), TransportContext.NULL);
-                putToDuplicationDetector(packet, resp);
-                LOGGER.warn("Can not process CoAP message [" + packet + "] sent RESET message");
-            } catch (Exception ex) {
-                LOGGER.error(ex.getMessage(), ex);
-            }
+            LOGGER.warn("Can not process CoAP message [{}] sent RESET message", packet);
+            sendResponseAndUpdateDuplicateDetector(packet, resp);
         } else {
             handleNotProcessedMessageWeAreNotRespondingTo(packet);
         }
@@ -606,12 +529,10 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
 
     private static void handleNotProcessedMessageWeAreNotRespondingTo(CoapPacket packet) {
         if (MessageType.Acknowledgement.equals(packet.getMessageType())) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Discarding extra ACK: " + packet);
-            }
+            LOGGER.debug("Discarding extra ACK: {}", packet);
             return;
         }
-        LOGGER.warn("Can not process CoAP message [" + packet + "]");
+        LOGGER.warn("Can not process CoAP message [{}]", packet);
     }
 
     private boolean handleDelayedResponse(CoapPacket packet) {
@@ -620,53 +541,35 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
 
         if (trans != null) {
             delayedTransMagr.remove(delayedTransactionId);
-            try {
-                if (packet.getMustAcknowledge()) {
-                    CoapPacket resp = packet.createResponse();
-                    send(resp, packet.getRemoteAddress(), TransportContext.NULL);
-                    putToDuplicationDetector(packet, resp);
-                }
-                if (trans.getCallback() != null) {
-                    trans.getCallback().call(packet);
-                }
-            } catch (Exception ex) {
-                try {
-                    LOGGER.error("Error while handling delayed response: " + ex.getMessage(), ex);
-                    CoapPacket resp = packet.createResponse(Code.C500_INTERNAL_SERVER_ERROR);
-                    send(resp, packet.getRemoteAddress(), TransportContext.NULL);
-                    putToDuplicationDetector(packet, resp);
-                } catch (CoapException | IOException ex1) {
-                    LOGGER.error(ex1.getMessage(), ex1);
-                }
+            if (packet.getMustAcknowledge()) {
+                CoapPacket resp = packet.createResponse();
+                sendResponseAndUpdateDuplicateDetector(packet, resp);
             }
 
+            trans.invokeCallback(packet);
             return true;
         }
         return false;
     }
 
-    protected void removeCoapTransId(CoapTransactionId coapTransId) {
+    private void removeCoapTransId(CoapTransactionId coapTransId) {
         boolean failed;
         do {
             failed = false;
             Optional<CoapTransaction> maybeNextTransaction = transMgr.unlockOrRemoveAndGetNext(coapTransId);
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("next transaction: " + maybeNextTransaction);
-            }
+            LOGGER.trace("next transaction: {}", maybeNextTransaction);
             if (!maybeNextTransaction.isPresent()) {
                 break;
             }
 
             CoapTransaction nextTransactionForEp = maybeNextTransaction.get();
             try {
-                if (!nextTransactionForEp.send(System.currentTimeMillis())) {
-                    throw new CoapTimeoutException(nextTransactionForEp);
-                }
+                nextTransactionForEp.send(System.currentTimeMillis());
             } catch (Exception ex) {
                 failed = true;
                 nextTransactionForEp.getCallback().callException(ex);
                 coapTransId = nextTransactionForEp.getTransactionId();
-                LOGGER.debug("Next transaction " + coapTransId + " sending on response, resulted in exception: " + ex.getMessage());
+                LOGGER.debug("Next transaction {} sending on response, resulted in exception: {}", coapTransId, ex.getMessage());
             }
         } while (failed);
     }
@@ -676,15 +579,11 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         // in other way block transfer will be interrupted by other messages in the queue
         // of TransactionManager, because removeCoapTransId() also sends next message form the queue
 
-        try {
-            transaction.getCallback().call(packet);
-        } finally {
-            removeCoapTransId(transaction.getTransactionId());
-        }
-
+        transaction.invokeCallback(packet);
+        removeCoapTransId(transaction.getTransactionId());
     }
 
-    protected boolean handleResponse(CoapPacket packet) {
+    private boolean handleResponse(CoapPacket packet) {
         //find corresponding transaction
         CoapTransactionId coapTransId = new CoapTransactionId(packet);
 
@@ -700,30 +599,25 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     }
 
     private boolean handleResponse(CoapTransaction trans, CoapPacket packet) {
-        if (packet.getCode() != null) {
-            invokeCallbackAndRemoveTransaction(trans, packet);
-            return true;
-        } else if (packet.getMessageType() == MessageType.Reset) {
-            invokeCallbackAndRemoveTransaction(trans, packet);
-            return true;
-        }
-
-        if (packet.getMessageType() == MessageType.Acknowledgement
-                && packet.getCode() == null && (trans.getCoapRequest().getMethod() == null)) {
+        MessageType messageType = packet.getMessageType();
+        if (packet.getCode() != null || messageType == MessageType.Reset) {
             invokeCallbackAndRemoveTransaction(trans, packet);
             return true;
         }
 
-        if (packet.getMessageType() == MessageType.Acknowledgement
-                && packet.getCode() == null && packet.getToken() != null) {
-            //delayed response
-            DelayedTransactionId delayedTransactionId = new DelayedTransactionId(trans.getCoapRequest().getToken(), packet.getRemoteAddress());
-            removeCoapTransId(trans.getTransactionId());
-            delayedTransMagr.add(delayedTransactionId, trans);
+        assume(messageType == MessageType.Acknowledgement, "not handled transaction");
+
+        if (trans.getCoapRequest().getMethod() == null) {
+            invokeCallbackAndRemoveTransaction(trans, packet);
             return true;
         }
-        throw new RuntimeException("not handled transaction");
-        //return false;
+
+        //delayed response
+        DelayedTransactionId delayedTransactionId = new DelayedTransactionId(trans.getCoapRequest().getToken(), packet.getRemoteAddress());
+        removeCoapTransId(trans.getTransactionId());
+        delayedTransMagr.add(delayedTransactionId, trans);
+        return true;
+
     }
 
     private CoapHandler findHandler(String uri) {
@@ -750,9 +644,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         this.enabledCriticalOptTest = enable;
     }
 
-    private boolean handleRequest(CoapPacket request, TransportContext transportContext) {
+    private void handleRequest(CoapPacket request, TransportContext transportContext) {
         if (findDuplicate(request, "CoAP request repeated")) {
-            return true;
+            return;
         }
         String uri = request.headers().getUriPath();
         if (uri == null) {
@@ -760,45 +654,27 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         }
         CoapPacket errorResponse = null;
 
-        if (uri.length() > 0) {
-            CoapHandler coapHandler = findHandler(uri);
+        CoapHandler coapHandler = findHandler(uri);
 
-            if (coapHandler != null) {
-                try {
-                    if (enabledCriticalOptTest) {
-                        request.headers().criticalOptTest();
-                    }
-                    callRequestHandler(request, coapHandler, transportContext);
-                } catch (CoapCodeException ex) {
-                    errorResponse = request.createResponse(ex.getCode());
-                    if (ex.getMessage() != null) {
-                        errorResponse.setPayload(ex.getMessage());
-                    }
-                } catch (CoapException ex) {
-                    errorResponse = request.createResponse(Code.C500_INTERNAL_SERVER_ERROR);
-                } catch (Exception ex) {
-                    LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
-                    errorResponse = request.createResponse(Code.C500_INTERNAL_SERVER_ERROR);
+        if (coapHandler != null) {
+            try {
+                if (enabledCriticalOptTest) {
+                    request.headers().criticalOptTest();
                 }
-            } else {
-                errorResponse = request.createResponse(Code.C404_NOT_FOUND);
+                callRequestHandler(request, coapHandler, transportContext);
+            } catch (CoapCodeException ex) {
+                errorResponse = request.createResponse(ex.getCode());
+                errorResponse.setPayload(ex.getMessage());
+            } catch (Exception ex) {
+                LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
+                errorResponse = request.createResponse(Code.C500_INTERNAL_SERVER_ERROR);
             }
-            if (errorResponse != null) {
-                try {
-                    send(errorResponse, request.getRemoteAddress(), TransportContext.NULL);
-                    putToDuplicationDetector(request, errorResponse);
-                } catch (CoapException ex) {
-                    //problems with parsing
-                    LOGGER.warn(ex.getMessage());
-                } catch (IOException ex) {
-                    //network problems
-                    LOGGER.error(ex.getMessage());
-                }
-            }
-            return true;
+        } else {
+            errorResponse = request.createResponse(Code.C404_NOT_FOUND);
         }
-
-        return false;
+        if (errorResponse != null) {
+            sendResponseAndUpdateDuplicateDetector(request, errorResponse);
+        }
     }
 
     private boolean findDuplicate(CoapPacket request, String message) {
@@ -812,13 +688,9 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
                     } catch (CoapException | IOException coapException) {
                         LOGGER.error(coapException.getMessage(), coapException);
                     }
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(message + ", resending response [" + request.toString() + "]");
-                    }
+                    LOGGER.debug("{}, resending response [{}]", message, request);
                 } else {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(message + ", no response available [" + request.toString() + "]");
-                    }
+                    LOGGER.debug("{}, no response available [{}]", message, request);
                 }
 
                 duplicatedCoapMessageCallback.duplicated(request);
@@ -834,11 +706,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         coapHandler.handle(exchange);
     }
 
-    protected void setCoapTransporter(CoapTransport coapTransporter) {
-        this.coapTransporter = coapTransporter;
-    }
-
-    private void resendTimeouts() {
+    void resendTimeouts() {
         try {
             //find timeouts
             final long currentTime = System.currentTimeMillis();
@@ -846,15 +714,11 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             for (CoapTransaction trans : transTimeOut) {
                 if (trans.isTimedOut(currentTime)) {
                     try {
-                        if (LOGGER.isTraceEnabled()) {
-                            LOGGER.trace("resendTimeouts: try to resend timed out transaction [" + trans.toString() + "]");  //[" + trans.coapRequest + "]");
-                        }
+                        LOGGER.trace("resendTimeouts: try to resend timed out transaction [{}]", trans);
                         if (!trans.send(currentTime)) {
                             //final timeout, cannot resend, remove transaction
                             removeCoapTransId(trans.getTransactionId());
-                            if (LOGGER.isTraceEnabled()) {
-                                LOGGER.trace("resendTimeouts: CoAP transaction final timeout [" + trans.toString() + "]");  //[" + trans.coapRequest + "]");
-                            }
+                            LOGGER.trace("resendTimeouts: CoAP transaction final timeout [{}]", trans);
                             trans.getCallback().callException(new CoapTimeoutException(trans));
 
                         } else {
@@ -864,7 +728,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
                         }
                     } catch (Exception ex) {
                         removeCoapTransId(trans.getTransactionId());
-                        LOGGER.warn("CoAP transaction [" + trans.getTransactionId() + "] retransmission caused exception: " + ex.getMessage());
+                        LOGGER.warn("CoAP transaction [{}] retransmission caused exception: {}", trans.getTransactionId(), ex.getMessage());
                         trans.getCallback().callException(ex);
                     }
                 }
@@ -875,9 +739,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
                 if (trans.isTimedOut(currentTime)) {
                     //delayed timeout, remove transaction
                     delayedTransMagr.remove(trans.getDelayedTransId());
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("CoAP delayed transaction timeout [" + trans.getDelayedTransId() + "]");
-                    }
+                    LOGGER.trace("CoAP delayed transaction timeout [{}]", trans.getDelayedTransId());
                     trans.getCallback().callException(new CoapTimeoutException(trans));
                 }
             }
@@ -949,4 +811,11 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     public abstract byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) throws CoapException;
 
     public abstract byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback, TransportContext transportContext) throws CoapException;
+
+    private static void assume(boolean assumeCondition, String errorMessage) {
+        if (!assumeCondition) {
+            throw new IllegalStateException(errorMessage);
+        }
+    }
+
 }

@@ -364,7 +364,7 @@ public class CoapPacket implements Serializable {
         if (token != null && token.length > 8) {
             throw new IllegalArgumentException("Wrong TOKEN value, size should be within range 0-8");
         }
-        if (token == null) {
+        if (token == null || token.length == 0) {
             this.token = DEFAULT_TOKEN;
         } else {
             this.token = token;
@@ -488,7 +488,7 @@ public class CoapPacket implements Serializable {
             sb.append(' ').append(code.codeToString());
         }
         sb.append(" MID:").append(this.messageId);
-        if (this.token != null && this.token.length > 0) {
+        if (this.token.length > 0) {
             sb.append(" Token:0x").append(HexArray.toHex(this.token));
         }
 
@@ -587,9 +587,4 @@ public class CoapPacket implements Serializable {
         return true;
     }
 
-    public CoapPacket clonePacket() throws CoapException {
-        byte[] bytes = this.toByteArray();
-        ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-        return deserialize(this.remoteAddress, is);
-    }
 }

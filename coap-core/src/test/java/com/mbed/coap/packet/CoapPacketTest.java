@@ -16,16 +16,22 @@
 package com.mbed.coap.packet;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.linkformat.LinkFormat;
 import com.mbed.coap.linkformat.LinkFormatBuilder;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 
 /**
@@ -315,4 +321,41 @@ public class CoapPacketTest {
             //as expected
         }
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void tokenLimit() throws Exception {
+        CoapPacket packet = new CoapPacket(null);
+        packet.setToken(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9});
+    }
+
+    @Test(expected = CoapException.class)
+    public void failWhenCodeAndMethod() throws Exception {
+        CoapPacket packet = new CoapPacket(null);
+        packet.setCode(Code.C201_CREATED);
+        packet.setMethod(Method.DELETE);
+
+        packet.toByteArray();
+    }
+
+    @Test(expected = CoapException.class)
+    public void failWhenIOExceptionWhenWriting() throws Exception {
+        OutputStream outputStream = mock(OutputStream.class);
+        doThrow(new IOException()).when(outputStream).write(any());
+
+        new CoapPacket(null).writeTo(outputStream);
+    }
+
+    @Test(expected = CoapException.class)
+    public void failWhenIOExceptionWhenReading() throws Exception {
+        InputStream inputStream = mock(InputStream.class);
+        when(inputStream.read()).thenThrow(new IOException());
+
+        new CoapPacket(null).readFrom(inputStream);
+    }
+
+    @Test
+    public void equalsAndHashTest() throws Exception {
+        EqualsVerifier.forClass(CoapPacket.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+    }
+
 }

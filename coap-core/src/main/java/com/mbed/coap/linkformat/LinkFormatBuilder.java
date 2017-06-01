@@ -78,9 +78,6 @@ public class LinkFormatBuilder {
      */
     public static LinkFormat parse(String ln) throws ParseException {
         String[] subLn = ln.split(";");
-        if (subLn.length <= 0) {
-            return null;
-        }
         if (subLn[0].indexOf('<') < 0 || subLn[0].indexOf('>') < 0) {
             throw new ParseException("Can not parse URI-Reference", 0);
         }

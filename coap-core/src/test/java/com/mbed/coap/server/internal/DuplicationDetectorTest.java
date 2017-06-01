@@ -17,15 +17,15 @@ package com.mbed.coap.server.internal;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Code;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
-/**
- * @author user
- */
 public class DuplicationDetectorTest {
 
     @Test
@@ -74,5 +74,26 @@ public class DuplicationDetectorTest {
         } finally {
             instance.stop();
         }
+    }
+
+    @Test
+    public void reduceMapWhenOverSize() throws Exception {
+        DuplicationDetector d = new DuplicationDetector(TimeUnit.SECONDS, 10, 100, mock(ScheduledExecutorService.class));
+
+        for (int i = 0; i < 110; i++) {
+            CoapPacket req = newCoapPacket(LOCAL_5683).mid(i).con().get().build();
+            assertNull(d.isMessageRepeated(req));
+            d.putResponse(req, newCoapPacket(LOCAL_5683).mid(i).ack(Code.C205_CONTENT).build());
+        }
+
+
+        int counter = 0;
+        for (int i = 0; i < 110; i++) {
+            if (d.isMessageRepeated(newCoapPacket(LOCAL_5683).mid(i).con().get().build()) != null) {
+                counter++;
+            }
+        }
+
+        assertEquals(100, counter);
     }
 }

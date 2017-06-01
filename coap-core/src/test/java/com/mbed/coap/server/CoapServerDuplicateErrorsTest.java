@@ -16,6 +16,7 @@
 package com.mbed.coap.server;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
@@ -38,17 +39,20 @@ public class CoapServerDuplicateErrorsTest {
     private CountDownLatch latch;
     CoapServer server;
     MockCoapTransport serverTransport;
+    DuplicatedCoapMessageCallback duplCallback = mock(DuplicatedCoapMessageCallback.class);
 
     @Before
     public void setUp() throws IOException {
         serverTransport = new MockCoapTransport();
-        server = CoapServerBuilder.newCoapServer(serverTransport);
-        server.setDuplicatedCoapMessageCallback(request -> {
-            if (latch != null) {
-                latch.countDown();
-            }
-        });
-        server.start();
+        server = CoapServerBuilder.newBuilder().transport(serverTransport)
+                .duplicatedCoapMessageCallback(
+                        request -> {
+                            if (latch != null) {
+                                latch.countDown();
+                            }
+                        })
+                .build()
+                .start();
     }
 
     @After

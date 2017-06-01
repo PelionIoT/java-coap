@@ -16,6 +16,7 @@
 package com.mbed.coap.server;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
@@ -125,16 +126,20 @@ public class ServerTest {
 
     @Test
     public void removeRequestHandlerTest() throws IOException, CoapException {
-        CoapServer srv = CoapServerBuilder.newBuilder().transport(0).build();
-        srv.start();
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(0).start();
+
         CoapHandler hdlr = new ReadOnlyCoapResource("TEST");
         srv.addRequestHandler("/test", hdlr);
+        CoapHandler hdlr2 = new ReadOnlyCoapResource("TEST2");
+        srv.addRequestHandler("/test2", hdlr2);
 
         CoapClient client = CoapClientBuilder.newBuilder(srv.getLocalSocketAddress().getPort()).build();
         assertEquals("TEST", client.resource("/test").sync().get().getPayloadString());
 
         srv.removeRequestHandler(hdlr);
         assertEquals(Code.C404_NOT_FOUND, client.resource("/test").sync().get().getCode());
+
+        srv.removeRequestHandler(mock(CoapHandler.class));
 
         srv.stop();
     }
@@ -152,7 +157,7 @@ public class ServerTest {
 
         //add handler
         srv.addRequestHandler("/test/2", new ReadOnlyCoapResource("TEST2"));
-        srv.addRequestHandler("/test/3", new ReadOnlyCoapResource("TEST3"));
+        srv.addRequestHandler("/test/3", CoapExchange::sendResponse);
 
         links = srv.getResourceLinks();
         assertNotNull(links);

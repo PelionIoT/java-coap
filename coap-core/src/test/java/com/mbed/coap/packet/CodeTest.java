@@ -13,22 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.exception;
+package com.mbed.coap.packet;
 
-import com.mbed.coap.packet.CoapPacket;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
- * @author szymon
+ * Created by szymon
  */
-public class ObservationNotEstablishedException extends CoapException {
+public class CodeTest {
 
-    public ObservationNotEstablishedException(String message) {
-        super(message);
+    @Test
+    public void test() throws Exception {
+        assertEquals(412, Code.C412_PRECONDITION_FAILED.getHttpCode());
+
+
+        assertEquals("504", Code.C504_GATEWAY_TIMEOUT.codeToString());
+        //run through all
+        for (Code code : Code.values()) {
+            code.codeToString();
+        }
+
+
+        assertEquals(Code.C505_PROXYING_NOT_SUPPORTED, Code.valueOf(5, 5));
+        assertEquals(null, Code.valueOf(6, 0));
     }
-
-    public ObservationNotEstablishedException(CoapPacket resp) {
-        this("Observation can not be established: " + resp.getCode());
-
-    }
-
 }
