@@ -230,21 +230,6 @@ public class CoapPacketTest {
         CoapPacket.read(null, new byte[]{(byte) 0x85});
     }
 
-    @Test
-    public void testParseUriQuery() throws ParseException {
-        Map<String, String> q = new HashMap<>();
-        q.put("par1", "12");
-
-        assertEquals(q, DataConvertingUtility.parseUriQuery("par1=12"));
-        assertEquals(q, DataConvertingUtility.parseUriQuery("?par1=12"));
-
-        q.put("par2", "14");
-        assertEquals(q, DataConvertingUtility.parseUriQuery("par1=12&par2=14"));
-        assertEquals(q, DataConvertingUtility.parseUriQuery("?par1=12&par2=14"));
-
-        q.put("d", "b");
-        assertEquals(q, DataConvertingUtility.parseUriQuery("par1=12&par2=14&d=b"));
-    }
 
     @Test
     public void unknownHeaderTest() throws CoapException {

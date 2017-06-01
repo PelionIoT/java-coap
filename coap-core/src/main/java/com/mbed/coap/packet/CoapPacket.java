@@ -16,10 +16,9 @@
 package com.mbed.coap.packet;
 
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.utils.ByteArrayBackedInputStream;
-import com.mbed.coap.utils.ByteArrayBackedOutputStream;
 import com.mbed.coap.utils.HexArray;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -94,7 +93,7 @@ public class CoapPacket implements Serializable {
      * @throws CoapException if can not parse
      */
     public static CoapPacket read(byte[] rawData, int length, InetSocketAddress remoteAddress) throws CoapException {
-        ByteArrayBackedInputStream inputStream = new ByteArrayBackedInputStream(rawData, 0, length);
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(rawData, 0, length);
         CoapPacket cp = new CoapPacket(remoteAddress);
         cp.readFrom(inputStream);
         return cp;
@@ -110,7 +109,7 @@ public class CoapPacket implements Serializable {
      * @throws CoapException if can not parse
      */
     public static CoapPacket read(InetSocketAddress remoteAddress, byte[] rawData, int length) throws CoapException {
-        ByteArrayBackedInputStream inputStream = new ByteArrayBackedInputStream(rawData, 0, length);
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(rawData, 0, length);
         CoapPacket cp = new CoapPacket(remoteAddress);
         cp.readFrom(inputStream);
         return cp;
@@ -154,7 +153,7 @@ public class CoapPacket implements Serializable {
      * @throws CoapException exception if coap packet can not be serialized
      */
     public static byte[] serialize(CoapPacket coapPacket) throws CoapException {
-        ByteArrayBackedOutputStream outputStream = new ByteArrayBackedOutputStream();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         coapPacket.writeTo(outputStream);
         return outputStream.toByteArray();
@@ -428,7 +427,7 @@ public class CoapPacket implements Serializable {
      * @throws CoapException serialization exception
      */
     public byte[] toByteArray() throws CoapException {
-        ByteArrayBackedOutputStream outputStream = new ByteArrayBackedOutputStream();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         writeTo(outputStream);
         return outputStream.toByteArray();
     }

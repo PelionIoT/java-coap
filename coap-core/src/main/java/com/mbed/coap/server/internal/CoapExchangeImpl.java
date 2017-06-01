@@ -25,8 +25,9 @@ import com.mbed.coap.packet.Method;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.ByteArrayBackedOutputStream;
 import com.mbed.coap.utils.Callback;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,10 +176,12 @@ public class CoapExchangeImpl implements CoapExchange {
             public void call(CoapPacket coapPacket) {
                 if (coapPacket.getCode() == Code.C205_CONTENT) {
 
-                    try (ByteArrayBackedOutputStream bytesOut = new ByteArrayBackedOutputStream(request.getPayload().length + coapPacket.getPayload().length)) {
+                    try (ByteArrayOutputStream bytesOut = new ByteArrayOutputStream(request.getPayload().length + coapPacket.getPayload().length)) {
                         bytesOut.write(request.getPayload(), 0, request.getPayload().length);
                         bytesOut.write(coapPacket.getPayload(), 0, coapPacket.getPayload().length);
                         coapPacket.setPayload(bytesOut.toByteArray());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
 
                     if (Arrays.equals(etag, coapPacket.headers().getEtag())) {

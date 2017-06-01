@@ -108,7 +108,7 @@ public final class HexArray implements Serializable {
             return false;
         }
         final HexArray other = (HexArray) obj;
-        if (!Arrays.equals(this.data, other.data)) {
+        if (!Arrays.equals(getData(), other.data)) {
             return false;
         }
         return true;

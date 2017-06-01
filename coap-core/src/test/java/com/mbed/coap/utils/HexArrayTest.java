@@ -33,6 +33,18 @@ public class HexArrayTest {
     }
 
     @Test
+    public void testEquals() {
+        HexArray hexArray = new HexArray(new byte[]{1, 2, 3, 4});
+
+        assertEquals(hexArray, new HexArray(new byte[]{1, 2, 3, 4}));
+        assertNotEquals(hexArray, new HexArray(new byte[]{1}));
+        assertNotEquals(hexArray, "");
+        assertNotEquals(hexArray, null);
+
+        assertEquals(hexArray.hashCode(), new HexArray(new byte[]{1, 2, 3, 4}).hashCode());
+    }
+
+    @Test
     public void fromHex() throws Exception {
         assertArrayEquals(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, HexArray.fromHex("0102030405060708090a0b0c"));
     }
