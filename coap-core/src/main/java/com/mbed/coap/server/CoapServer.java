@@ -70,7 +70,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
 
     private final static long TRANSACTION_TIMEOUT_DELAY = 1000;
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServer.class);
-    private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
     private static final int DEFAULT_DUPLICATION_TIMEOUT = 30000;
     private boolean isRunning;
     private final Map<UriMatcher, CoapHandler> handlers = new HashMap<>();
@@ -91,10 +90,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
 
     public static CoapServerBuilder builder() {
         return new CoapServerBuilder();
-    }
-
-    protected final void init() {
-        init(DEFAULT_MAX_DUPLICATION_LIST_SIZE);
     }
 
     protected final void init(final int duplicationListSize) {
@@ -249,11 +244,6 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         this.duplicatedCoapMessageCallback = errorCallback;
     }
 
-    @Deprecated
-    public void setResponseTimeout(TransmissionTimeout responseTimeout) {
-        this.transmissionTimeout = responseTimeout;
-    }
-
     /**
      * Sets CoAP transmission timeout settings, use this to change default CoAP timeout
      *
@@ -292,9 +282,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      */
     public void removeRequestHandler(CoapHandler requestHandler) {
         UriMatcher url = findKey(requestHandler);
-        if (url != null) {
-            handlers.remove(url);
-        }
+        handlers.remove(url);
     }
 
     /**

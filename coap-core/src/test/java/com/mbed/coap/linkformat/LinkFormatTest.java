@@ -420,6 +420,11 @@ public class LinkFormatTest {
         LinkFormatBuilder.parse("</fds>;=\"true\"");
     }
 
+    @Test(expected = ParseException.class)
+    public void testFailParse10() throws ParseException {
+        LinkFormatBuilder.parse(">aa<");
+    }
+
     @Test
     public void testSuccessSpecialCases() throws ParseException {
         assertEquals("ti=le@sns", LinkFormatBuilder.parse("</fds>;title=\"ti=le@sns\"").getTitle());

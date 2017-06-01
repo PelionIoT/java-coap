@@ -20,7 +20,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -120,10 +119,8 @@ public final class DataConvertingUtility {
     }
 
     public static Map<String, List<String>> parseUriQueryMult(String uriQuery) throws ParseException {
-        //TODO: parse for multiple values
         if (uriQuery == null || uriQuery.length() == 0) {
-            return new HashMap<>(); //empty map
-            //return null;
+            return null;
         }
         Map<String, List<String>> result = new HashMap<>();
         String[] params = uriQuery.substring(uriQuery.indexOf('?') + 1).split("&");
@@ -133,7 +130,7 @@ public final class DataConvertingUtility {
             if (p.length != 2) {
                 throw new ParseException("", 0);
             }
-            List<String> values = new LinkedList<>();
+            List<String> values = result.getOrDefault(p[0], new ArrayList<>(1));
             values.add(p[1]);
             result.put(p[0], values);
         }

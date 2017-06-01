@@ -28,9 +28,10 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author szymon
  */
 public class CoapServerBuilder {
+    private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
 
     private final CoapServerObserve server;
-    private int duplicationMaxSize = 10000;
+    private int duplicationMaxSize = DEFAULT_MAX_DUPLICATION_LIST_SIZE;
     private CoapTransport coapTransport;
 
     CoapServerBuilder() {

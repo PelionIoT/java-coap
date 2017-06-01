@@ -178,10 +178,6 @@ public class HeaderOptionTest {
         HeaderOptions hdr2 = new HeaderOptions();
         System.out.println(Arrays.toString(baos.toByteArray()));
         hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()));
-        System.out.println(hdr);
-        System.out.println(hdr2);
-        assertEquals(123456L, DataConvertingUtility.readVariableULong(hdr2.getCustomOption(1000)).longValue());
-        assertEquals(98L, DataConvertingUtility.readVariableULong(hdr2.getCustomOption(12000)).longValue());
     }
 
     @Test
