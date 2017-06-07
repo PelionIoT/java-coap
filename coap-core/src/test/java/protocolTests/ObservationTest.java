@@ -35,7 +35,6 @@ import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -132,30 +131,6 @@ public class ObservationTest {
         client.close();
     }
 
-    @Test //(invocationCount = 50)
-    public void terminateObservationByServer() throws Exception {
-        System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
-
-        SyncObservationListener obsListener = new SyncObservationListener();
-        client.resource(RES_OBS_PATH1).sync().observe(obsListener);
-
-        OBS_RESOURCE_1.setBody("duupabb");
-        CoapPacket packet = obsListener.take();
-        byte[] obsToken = packet.getToken();
-
-        assertEquals("duupabb", packet.getPayloadString());
-
-        OBS_RESOURCE_1.terminateObservations();
-        CoapPacket resetPacket = obsListener.take();
-        assertEquals(MessageType.Reset, resetPacket.getMessageType());
-        assertTrue(Arrays.equals(obsToken, resetPacket.getToken()));
-        assertEquals("Number of observation did not change", 0, OBS_RESOURCE_1.getObservationsAmount());
-
-        client.close();
-        System.out.println("-- END");
-    }
-
     @Test
     public void terminateObservationByServerWithErrorCode() throws Exception {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
@@ -169,7 +144,7 @@ public class ObservationTest {
 
         assertEquals("duupabb", packet.getPayloadString());
 
-        OBS_RESOURCE_1.notifyTermination(Code.C404_NOT_FOUND);
+        OBS_RESOURCE_1.terminateObservations(Code.C404_NOT_FOUND);
         CoapPacket terminObserv = obsListener.take();
         assertEquals(MessageType.Confirmable, terminObserv.getMessageType());
         assertEquals(Code.C404_NOT_FOUND, terminObserv.getCode());
@@ -177,6 +152,24 @@ public class ObservationTest {
         assertEquals("Number of observation did not change", 0, OBS_RESOURCE_1.getObservationsAmount());
 
         client.close();
+        System.out.println("-- END");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void terminateObservationByServerWithOkCode() throws Exception {
+        System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
+
+        OBS_RESOURCE_1.terminateObservations(Code.C204_CHANGED);
+
+        System.out.println("-- END");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void terminateObservationByServerWithoutErrorCode() throws Exception {
+        System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
+
+        OBS_RESOURCE_1.terminateObservations(null);
+
         System.out.println("-- END");
     }
 

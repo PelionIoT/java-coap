@@ -69,8 +69,8 @@ public class SimpleObservableResource extends AbstractObservableResource {
         this.setConNotifications(confirmNotification);
     }
 
-    public void terminateObservations() throws CoapException {
-        this.notifyTermination();
+    public void terminateObservations(Code code) throws CoapException {
+        this.notifyTermination(code);
     }
 
     public int getObservationsAmount() {
