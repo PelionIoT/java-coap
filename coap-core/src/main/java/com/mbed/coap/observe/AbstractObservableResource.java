@@ -141,15 +141,6 @@ public abstract class AbstractObservableResource extends CoapResource {
     }
 
     /**
-     * Terminates all observations sending RESET notification to all observers.
-     *
-     * @throws com.mbed.coap.exception.CoapException coap exception
-     */
-    public final void notifyTermination() throws CoapException {
-        notifyTermination(null);
-    }
-
-    /**
      * Terminates all observations sending error notification to all observers.
      *
      * @param code error code
@@ -157,30 +148,29 @@ public abstract class AbstractObservableResource extends CoapResource {
      */
     public final void notifyTermination(Code code) throws CoapException {
 
-        Iterator<Map.Entry<InetSocketAddress, ObservationRelation>> iter = obsRelations.entrySet().iterator();
+        if (code != null && code.getHttpCode() > 299) {
+            Iterator<Map.Entry<InetSocketAddress, ObservationRelation>> iter = obsRelations.entrySet().iterator();
 
-        synchronized (obsRelations) {
-            while (iter.hasNext()) {
-                Map.Entry<InetSocketAddress, ObservationRelation> entry = iter.next();
+            synchronized (obsRelations) {
+                while (iter.hasNext()) {
+                    Map.Entry<InetSocketAddress, ObservationRelation> entry = iter.next();
 
-                ObservationRelation sub = entry.getValue();
+                    ObservationRelation sub = entry.getValue();
 
-                CoapPacket coapNotif = new CoapPacket(sub.getAddress());
-                coapNotif.setCode(code);
-                coapNotif.headers().setObserve(sub.getNextObserveSeq()); //TODO: sync problem
-                coapNotif.setToken(sub.getToken());
-
-                if (code == null) {
-                    coapNotif.setMessageType(MessageType.Reset);
-                } else {
+                    CoapPacket coapNotif = new CoapPacket(sub.getAddress());
+                    coapNotif.setCode(code);
+                    coapNotif.headers().setObserve(sub.getNextObserveSeq()); //TODO: sync problem
+                    coapNotif.setToken(sub.getToken());
                     coapNotif.setMessageType(sub.getIsConfirmable() ? MessageType.Confirmable : MessageType.NonConfirmable);
+
+                    this.coapServer.makeRequest(coapNotif, Callback.ignore());
+
+                    //remove subscriber
+                    iter.remove();
                 }
-
-                this.coapServer.makeRequest(coapNotif, Callback.ignore());
-
-                //remove subscriber
-                iter.remove();
             }
+        } else {
+            throw new IllegalArgumentException("Observation termination should be notified with an error code");
         }
     }
 
