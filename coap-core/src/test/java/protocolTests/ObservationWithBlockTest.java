@@ -32,11 +32,9 @@ import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.MessageIdSupplierImpl;
 import java.net.InetSocketAddress;
-import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 import protocolTests.utils.TransportConnectorMock;
 
 /**
@@ -225,26 +223,7 @@ public class ObservationWithBlockTest {
         verify(observationListener, never()).onObservation(any(CoapPacket.class));
     }
 
-    public static class HasPayloadMatcher extends ArgumentMatcher<CoapPacket> {
-
-        private final String expectedPayload;
-
-        public HasPayloadMatcher(String expectedPayload) {
-            this.expectedPayload = expectedPayload;
-        }
-
-        @Override
-        public boolean matches(Object o) {
-            return expectedPayload.equals(((CoapPacket) o).getPayloadString());
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText(expectedPayload);
-        }
-    }
-
     public static CoapPacket hasPayload(String expectedPayload) {
-        return argThat(new HasPayloadMatcher(expectedPayload));
+        return argThat(packet -> expectedPayload.equals(packet.getPayloadString()));
     }
 }
