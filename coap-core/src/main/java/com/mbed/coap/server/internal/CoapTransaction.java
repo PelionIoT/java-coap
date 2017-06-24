@@ -15,11 +15,11 @@
  */
 package com.mbed.coap.server.internal;
 
-import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
-import java.io.IOException;
+import com.mbed.coap.utils.RequestCallback;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 public class CoapTransaction {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapTransaction.class.getName());
 
-    protected Callback<CoapPacket> callback;
+    protected RequestCallback callback;
     private long timeout = -1;
     protected byte retrAttempts;
     protected CoapPacket coapRequest;
@@ -38,30 +38,26 @@ public class CoapTransaction {
     private final CoapServerAbstract coapServer;
     private final TransportContext transContext;
     private final Priority transactionPriority;
+    private final Consumer<CoapTransactionId> sendErrConsumer;
     private boolean isActive;
 
-    public CoapTransaction(Callback<CoapPacket> callback, CoapPacket coapRequest, final CoapServerAbstract coapServer, TransportContext transContext) {
-        this(callback, coapRequest, coapServer, transContext, Priority.NORMAL);
+    public CoapTransaction(RequestCallback callback, CoapPacket coapRequest, final CoapServerAbstract coapServer, TransportContext transContext, Consumer<CoapTransactionId> sendErrConsumer) {
+        this(callback, coapRequest, coapServer, transContext, Priority.NORMAL, sendErrConsumer);
     }
 
-    public CoapTransaction(Callback<CoapPacket> callback, CoapPacket coapRequest, final CoapServerAbstract coapServer, TransportContext transContext, Priority transactionPriority) {
+    public CoapTransaction(RequestCallback callback, CoapPacket coapRequest, final CoapServerAbstract coapServer, TransportContext transContext, Priority transactionPriority, Consumer<CoapTransactionId> sendErrConsumer) {
         if (callback == null) {
             throw new NullPointerException();
         }
+        this.sendErrConsumer = sendErrConsumer;
         this.coapServer = coapServer;
         this.callback = callback;
         this.coapRequest = coapRequest;
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(".ctor #1: MID:" + coapRequest.getMessageId());
-        }
         this.transactionPriority = transactionPriority;
         if (coapRequest.getRemoteAddress().getAddress().isMulticastAddress()) {
             this.transId = new MulticastTransactionId(coapRequest);
         } else {
             this.transId = new CoapTransactionId(coapRequest);
-        }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(".ctor #1: MID:" + coapRequest.getMessageId() + ", tid=" + transId);
         }
         this.retrAttempts = 0;
         this.transContext = transContext;
@@ -89,12 +85,17 @@ public class CoapTransaction {
         return delayedTransId;
     }
 
-    public final boolean send(final long currentTime) throws CoapException, IOException {
+
+    public final boolean send() {
+        return send(System.currentTimeMillis());
+    }
+
+    public final boolean send(final long currentTime) {
         this.retrAttempts++;
         if (LOGGER.isTraceEnabled()) {
             logSend(currentTime, "begin");
         }
-        long nextTimeout = 0;
+        long nextTimeout;
         if (coapRequest.getRemoteAddress().getAddress().isMulticastAddress()) {
             nextTimeout = coapServer.getTransmissionTimeout().getMulticastTimeout(this.retrAttempts);
         } else {
@@ -113,12 +114,23 @@ public class CoapTransaction {
             logSend(currentTime, "sending");
         }
         isActive = true;
-        coapServer.send(coapRequest, coapRequest.getRemoteAddress(), transContext);
+        coapServer.send(coapRequest, coapRequest.getRemoteAddress(), transContext)
+                .whenComplete((wasSent, maybeError) -> onSend(maybeError));
+
         if (LOGGER.isTraceEnabled()) {
             logSend(currentTime, "sent");
         }
         this.timeout = currentTime + nextTimeout;
         return true;
+    }
+
+    private void onSend(Throwable maybeError) {
+        if (maybeError == null) {
+            callback.onSent();
+        } else {
+            sendErrConsumer.accept(transId);
+            callback.callException(((Exception) maybeError));
+        }
     }
 
     private void logSend(long currentTime, String distinguisher) {

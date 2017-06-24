@@ -23,7 +23,7 @@ import java.net.InetSocketAddress;
  */
 public class CoapTransactionId {
 
-    protected int messageId;
+    private final int messageId;
     protected InetSocketAddress address;
 
     public CoapTransactionId(CoapPacket packet) {

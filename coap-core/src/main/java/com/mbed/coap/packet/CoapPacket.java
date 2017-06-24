@@ -381,7 +381,7 @@ public class CoapPacket implements Serializable {
      * @param outputStream output stream
      * @throws CoapException serialization exception
      */
-    public void writeTo(OutputStream outputStream) throws CoapException {
+    public void writeTo(OutputStream outputStream) {
         try {
             int tempByte;
 
@@ -391,7 +391,7 @@ public class CoapPacket implements Serializable {
 
             outputStream.write(tempByte);
             if (code != null && method != null) {
-                throw new CoapException("Forbidden operation: 'code' and 'method' use at a same time");
+                throw new IllegalStateException("Forbidden operation: 'code' and 'method' use at a same time");
             }
             if (code != null) {
                 outputStream.write(code.getCoapCode());
@@ -416,7 +416,7 @@ public class CoapPacket implements Serializable {
                 outputStream.write(payload);
             }
         } catch (IOException iOException) {
-            throw new CoapException(iOException.getMessage(), iOException);
+            throw new IllegalStateException(iOException.getMessage(), iOException);
         }
     }
 
@@ -426,7 +426,7 @@ public class CoapPacket implements Serializable {
      * @return serialized CoAP packet
      * @throws CoapException serialization exception
      */
-    public byte[] toByteArray() throws CoapException {
+    public byte[] toByteArray() {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         writeTo(outputStream);
         return outputStream.toByteArray();

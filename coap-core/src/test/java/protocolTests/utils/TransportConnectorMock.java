@@ -17,8 +17,8 @@ package protocolTests.utils;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -29,7 +29,7 @@ import java.util.Optional;
 /**
  * Created by szymon
  */
-public class TransportConnectorMock implements CoapTransport {
+public class TransportConnectorMock extends BlockingCoapTransport {
 
     private CoapReceiver transReceiver;
     private final Map<CoapPacket, CoapPacket[]> conversationMap = new LinkedHashMap<>(); //order is important
@@ -47,7 +47,7 @@ public class TransportConnectorMock implements CoapTransport {
     }
 
     @Override
-    public void sendPacket(CoapPacket request, InetSocketAddress destinationAddress, TransportContext tranContext) throws CoapException, IOException {
+    public void sendPacket0(CoapPacket request, InetSocketAddress destinationAddress, TransportContext tranContext) throws CoapException, IOException {
         CoapPacket[] resp = findResponse(request);
         if (resp != null) {
             for (CoapPacket r : resp) {

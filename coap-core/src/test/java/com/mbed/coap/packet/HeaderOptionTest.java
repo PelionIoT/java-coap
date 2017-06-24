@@ -458,14 +458,14 @@ public class HeaderOptionTest {
         assertNull(h.getUriQuery());
     }
 
-    @Test(expected = CoapMessageFormatException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void failWhenTooLargeToSerialize() throws Exception {
         HeaderOptions h = new HeaderOptions();
         h.put(100, new byte[65805]);
         h.serialize(Mockito.mock(OutputStream.class));
     }
 
-    @Test(expected = CoapMessageFormatException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void failWhenTooLargeDeltaToSerialize() throws Exception {
         HeaderOptions h = new HeaderOptions();
         h.setIfNonMatch(false);

@@ -108,15 +108,10 @@ public class RegistrationManager {
     }
 
     public void register() {
-        try {
-            client.resource(registrationUri.getPath())
-                    .query(registrationUri.getQuery())
-                    .payload(registrationLinks.get(), MediaTypes.CT_APPLICATION_LINK__FORMAT)
-                    .post(registrationCallback);
-
-        } catch (Exception e) {
-            registrationCallback.callException(e);
-        }
+        client.resource(registrationUri.getPath())
+                .query(registrationUri.getQuery())
+                .payload(registrationLinks.get(), MediaTypes.CT_APPLICATION_LINK__FORMAT)
+                .post(registrationCallback);
     }
 
     private void registrationSuccess(String locationPath, long maxAge) {
@@ -131,11 +126,7 @@ public class RegistrationManager {
     }
 
     private void updateRegistration() {
-        try {
-            client.resource(registrationLocation.get()).post(updateCallback);
-        } catch (Exception e) {
-            updateCallback.callException(e);
-        }
+        client.resource(registrationLocation.get()).post(updateCallback);
     }
 
     private void updateFailed(String errMessage) {
@@ -154,12 +145,7 @@ public class RegistrationManager {
 
     public void removeRegistration() {
         registrationLocation.ifPresent(loc -> {
-            try {
-                client.resource(loc).delete();
-                //we can ignore result
-            } catch (Exception e) {
-                LOGGER.error(e.getMessage(), e);
-            }
+            client.resource(loc).delete();
             registrationLocation = Optional.empty();
         });
 

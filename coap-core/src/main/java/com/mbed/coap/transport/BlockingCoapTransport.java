@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.transport;
 
+import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -23,12 +24,22 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Created by szymon
  */
-public interface CoapTransport {
-    void start(CoapReceiver coapReceiver) throws IOException;
+public abstract class BlockingCoapTransport implements CoapTransport {
 
-    void stop();
+    @Override
+    public final CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
+        CompletableFuture<Boolean> objectCompletableFuture = new CompletableFuture<>();
 
-    CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext);
+        try {
+            sendPacket0(coapPacket, adr, tranContext);
+            objectCompletableFuture.complete(true);
+        } catch (Exception ex) {
+            objectCompletableFuture.completeExceptionally(ex);
+        }
 
-    InetSocketAddress getLocalSocketAddress();
+        return objectCompletableFuture;
+    }
+
+    public abstract void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException;
+
 }

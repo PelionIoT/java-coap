@@ -28,7 +28,7 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.MessageIdSupplier;
-import com.mbed.coap.transport.CoapTransport;
+import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
@@ -46,7 +46,7 @@ import protocolTests.utils.CoapPacketBuilder;
  * Created by szymon
  */
 public class CoapClientTest {
-    private final CoapTransport coapTransport = mock(CoapTransport.class);
+    private final BlockingCoapTransport coapTransport = mock(BlockingCoapTransport.class);
     private ScheduledExecutorService scheduledExecutor = mock(ScheduledExecutorService.class, Mockito.RETURNS_DEEP_STUBS);
     private int mid = 100;
     private final MessageIdSupplier midSupplier = () -> mid++;
@@ -109,7 +109,7 @@ public class CoapClientTest {
         doAnswer(m -> {
             cliReceive(newCoapPacket(LOCAL_5683).mid(100).payload("AAA").ack(Code.C205_CONTENT).build());
             return null;
-        }).when(coapTransport).sendPacket(eq(newCoapPacket(LOCAL_5683).mid(100).uriPath("/test").get().build()), any(), any());
+        }).when(coapTransport).sendPacket0(eq(newCoapPacket(LOCAL_5683).mid(100).uriPath("/test").get().build()), any(), any());
 
         assertNotNull(client.resource("/test").sync().invokeMethod(Method.GET));
 
@@ -117,7 +117,7 @@ public class CoapClientTest {
         doAnswer(m -> {
             cliReceive(newCoapPacket(LOCAL_5683).mid(101).payload("AAA").ack(Code.C205_CONTENT).build());
             return null;
-        }).when(coapTransport).sendPacket(eq(newCoapPacket(LOCAL_5683).mid(101).uriPath("/test").put().build()), any(), any());
+        }).when(coapTransport).sendPacket0(eq(newCoapPacket(LOCAL_5683).mid(101).uriPath("/test").put().build()), any(), any());
 
         assertNotNull(client.resource("/test").sync().invokeMethod(Method.PUT));
 
@@ -125,7 +125,7 @@ public class CoapClientTest {
         doAnswer(m -> {
             cliReceive(newCoapPacket(LOCAL_5683).mid(102).payload("AAA").ack(Code.C205_CONTENT).build());
             return null;
-        }).when(coapTransport).sendPacket(eq(newCoapPacket(LOCAL_5683).mid(102).uriPath("/test").post().build()), any(), any());
+        }).when(coapTransport).sendPacket0(eq(newCoapPacket(LOCAL_5683).mid(102).uriPath("/test").post().build()), any(), any());
 
         assertNotNull(client.resource("/test").sync().invokeMethod(Method.POST));
 
@@ -133,7 +133,7 @@ public class CoapClientTest {
         doAnswer(m -> {
             cliReceive(newCoapPacket(LOCAL_5683).mid(103).payload("AAA").ack(Code.C205_CONTENT).build());
             return null;
-        }).when(coapTransport).sendPacket(eq(newCoapPacket(LOCAL_5683).mid(103).uriPath("/test").delete().build()), any(), any());
+        }).when(coapTransport).sendPacket0(eq(newCoapPacket(LOCAL_5683).mid(103).uriPath("/test").delete().build()), any(), any());
 
         assertNotNull(client.resource("/test").sync().invokeMethod(Method.DELETE));
     }
@@ -253,7 +253,7 @@ public class CoapClientTest {
     }
 
     private void assertSent(CoapPacket coapPacket) throws CoapException, IOException {
-        verify(coapTransport).sendPacket(eq(coapPacket), any(), any());
+        verify(coapTransport).sendPacket0(eq(coapPacket), any(), any());
     }
 
     private void cliReceive(CoapPacketBuilder coapPacketBuilder) {

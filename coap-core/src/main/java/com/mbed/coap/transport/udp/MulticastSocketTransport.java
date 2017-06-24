@@ -17,8 +17,8 @@ package com.mbed.coap.transport.udp;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author szymon
  */
-public final class MulticastSocketTransport implements CoapTransport {
+public final class MulticastSocketTransport extends BlockingCoapTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MulticastSocketTransport.class.getName());
     private final InetSocketAddress bindSocket;
@@ -95,7 +95,7 @@ public final class MulticastSocketTransport implements CoapTransport {
     }
 
     @Override
-    public void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+    public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         coapPacket.writeTo(baos);
         byte[] data = baos.toByteArray();

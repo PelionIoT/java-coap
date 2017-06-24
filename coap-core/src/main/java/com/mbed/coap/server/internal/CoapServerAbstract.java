@@ -15,7 +15,6 @@
  */
 package com.mbed.coap.server.internal;
 
-import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapExchange;
@@ -23,17 +22,14 @@ import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.TransportContext;
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author szymon
  */
 public abstract class CoapServerAbstract implements CoapReceiver {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerAbstract.class.getName());
     protected long delayedTransactionTimeout;
     protected TransmissionTimeout transmissionTimeout;
     protected DuplicatedCoapMessageCallback duplicatedCoapMessageCallback;
@@ -51,35 +47,25 @@ public abstract class CoapServerAbstract implements CoapReceiver {
     }
 
     private void sendResponseAndUpdateDuplicateDetector(CoapPacket request, CoapPacket resp, TransportContext ctx) {
-        try {
-            putToDuplicationDetector(request, resp);
-            send(resp, request.getRemoteAddress(), ctx);
-        } catch (CoapException ex) {
-            //problems with parsing
-            LOGGER.warn(ex.getMessage());
-        } catch (IOException ex) {
-            //network problems
-            LOGGER.error(ex.getMessage());
-        }
+        putToDuplicationDetector(request, resp);
+        send(resp, request.getRemoteAddress(), ctx);
     }
 
     /**
-     * Sends CoapPacket to specified destination UDP address.
+     * Sends CoapPacket to specified destination UDP address. This call must not throw exception. Any sending failures must be returned in CompletableFuture
      *
      * @param coapPacket CoAP packet
      * @param adr destination address
      * @param tranContext transport context
-     * @throws CoapException exception from CoAP layer
-     * @throws IOException   exception from transport layer
      */
-    protected final void send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+    protected final CompletableFuture<Boolean> send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
         if (coapPacket.getMessageType() == MessageType.NonConfirmable) {
             coapPacket.setMessageId(getNextMID());
         }
-        sendPacket(coapPacket, adr, tranContext);
+        return sendPacket(coapPacket, adr, tranContext);
     }
 
-    protected abstract void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException;
+    protected abstract CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext);
 
     protected abstract int getNextMID();
 

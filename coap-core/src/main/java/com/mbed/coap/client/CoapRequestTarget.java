@@ -194,7 +194,7 @@ public class CoapRequestTarget {
         return request();
     }
 
-    public void get(Callback<CoapPacket> callback) throws CoapException {
+    public void get(Callback<CoapPacket> callback) {
         updatePacketWithBlock2();
         request(callback);
     }
@@ -205,7 +205,7 @@ public class CoapRequestTarget {
         return request();
     }
 
-    public void post(Callback<CoapPacket> callback) throws CoapException {
+    public void post(Callback<CoapPacket> callback) {
         updatePacketWithBlock1();
         requestPacket.setMethod(Method.POST);
         request(callback);
@@ -216,7 +216,7 @@ public class CoapRequestTarget {
         return request();
     }
 
-    public void delete(Callback<CoapPacket> callback) throws CoapException {
+    public void delete(Callback<CoapPacket> callback) {
         requestPacket.setMethod(Method.DELETE);
         request(callback);
     }
@@ -227,7 +227,7 @@ public class CoapRequestTarget {
         return request();
     }
 
-    public void put(Callback<CoapPacket> callback) throws CoapException {
+    public void put(Callback<CoapPacket> callback) {
         updatePacketWithBlock1();
         requestPacket.setMethod(Method.PUT);
         request(callback);
@@ -254,7 +254,7 @@ public class CoapRequestTarget {
         return coapClient.coapServer.makeRequest(requestPacket, transContext);
     }
 
-    private void request(Callback<CoapPacket> callback) throws CoapException {
+    private void request(Callback<CoapPacket> callback) {
         coapClient.coapServer.makeRequest(requestPacket, callback, transContext);
     }
 

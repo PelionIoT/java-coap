@@ -110,11 +110,7 @@ public class CoapExchangeImpl implements CoapExchange {
             }
             response = null;
         } else {
-            try {
-                this.getCoapServer().makeRequest(response, Callback.ignore());
-            } catch (CoapException ex) {
-                LOGGER.warn("Error while sending delayed response: " + ex.getMessage());
-            }
+            this.getCoapServer().makeRequest(response, Callback.ignore());
         }
     }
 

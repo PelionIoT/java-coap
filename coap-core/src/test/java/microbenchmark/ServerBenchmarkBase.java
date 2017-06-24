@@ -21,8 +21,8 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
@@ -95,7 +95,7 @@ public abstract class ServerBenchmarkBase {
         endTime = System.currentTimeMillis();
     }
 
-    static class FloodTransportStub implements CoapTransport {
+    static class FloodTransportStub extends BlockingCoapTransport {
 
         private CoapReceiver udpReceiver;
         private final Executor executor;
@@ -127,7 +127,7 @@ public abstract class ServerBenchmarkBase {
         }
 
         @Override
-        public void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+        public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
             LATCH.countDown();
         }
 

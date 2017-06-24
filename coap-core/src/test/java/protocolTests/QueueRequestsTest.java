@@ -16,8 +16,12 @@
 package protocolTests;
 
 import static org.junit.Assert.*;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
@@ -52,6 +56,7 @@ public class QueueRequestsTest {
     @Before
     public void setUp() throws Exception {
         transport = mock(CoapTransport.class);
+        resetTransport();
 
         coapServer = CoapServer.builder().transport(transport)
                 .midSupplier(new MessageIdSupplierImpl(0))
@@ -97,7 +102,7 @@ public class QueueRequestsTest {
         verify(transport).sendPacket(any(), any(), any());
 
         //send response
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).payload("dupa1").build(), null);
 
         //second request should be send
@@ -125,19 +130,19 @@ public class QueueRequestsTest {
 
         //#1 message - block1
         verify(transport).sendPacket(any(), any(), any());
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(blockResp1, null); // fetches and removes transaction #1, makes block#2 req with msgId #3 and sends it (#2 still in the queue)
 
         //#2 message - block2
         verify(transport).sendPacket(any(), any(), any());
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(blockResp2, null); // fetches and removes transaction #3, sends queued transaction #2
 
         assertEquals("123456789012345|dupa", futResp1.get().getPayloadString());
 
         //#2 message - request2
         verify(transport).sendPacket(any(), any(), any());
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
         //verify responses
@@ -161,17 +166,17 @@ public class QueueRequestsTest {
 
         //#1 message - block1
         verify(transport).sendPacket(any(), any(), any());
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(blockResp1, null);
 
         //#2 message - request2
         verify(transport).sendPacket(any(), any(), any());
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
         //#2 message - block2
         verify(transport).sendPacket(any(), any(), any());
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(blockResp2, null);
 
 
@@ -201,18 +206,18 @@ public class QueueRequestsTest {
         //#1 message - block1 - causes adding to queue extra message from block transfer for a short time (until initial
         // transaction is removed
         verify(transport).sendPacket(any(), any(), any());
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(blockResp1, null);
 
         //#1 message - block2
         verify(transport).sendPacket(any(), any(), any());
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(blockResp2, null);
 
 
         //#2 message - request2
         verify(transport).sendPacket(any(), any(), any());
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
 
@@ -231,7 +236,7 @@ public class QueueRequestsTest {
         verify(transport).sendPacket(any(), any(), any());
 
         //send response for queued inactive transaction
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
         verify(transport, never()).sendPacket(any(), any(), any());
@@ -247,7 +252,7 @@ public class QueueRequestsTest {
         assertFalse(futResp2.isDone());
 
         //send response for queued inactive transaction
-        reset(transport);
+        resetTransport();
         transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa3").build(), null);
 
         assertTrue(futResp1.isDone());
@@ -256,4 +261,10 @@ public class QueueRequestsTest {
         assertEquals("dupa3", futResp2.get().getPayloadString());
 
     }
+
+    private void resetTransport() {
+        reset(transport);
+        given(transport.sendPacket(any(), any(), any())).willReturn(CompletableFuture.completedFuture(null));
+    }
+
 }

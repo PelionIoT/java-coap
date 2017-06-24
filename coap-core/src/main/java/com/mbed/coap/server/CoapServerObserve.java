@@ -15,7 +15,6 @@
  */
 package com.mbed.coap.server;
 
-import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.ObservationNotEstablishedException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
@@ -24,6 +23,7 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
+import com.mbed.coap.utils.RequestCallback;
 import java.net.InetSocketAddress;
 import java.util.Random;
 
@@ -41,7 +41,7 @@ public class CoapServerObserve extends CoapServerBlocks {
     }
 
     @Override
-    public byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) throws CoapException {
+    public byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) {
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, uri, destination);
         request.setToken(token);
         request.headers().setObserve(0);
@@ -49,14 +49,21 @@ public class CoapServerObserve extends CoapServerBlocks {
     }
 
     @Override
-    public byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback, TransportContext transportContext) throws CoapException {
+    public byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback, TransportContext transportContext) {
         if (request.headers().getObserve() == null) {
             request.headers().setObserve(0);
         }
         if (request.getToken() == CoapPacket.DEFAULT_TOKEN) {
             request.setToken(observationIDGenerator.nextObservationID(request.headers().getUriPath()));
         }
-        makeRequest(request, new Callback<CoapPacket>() {
+        makeRequest(request, new RequestCallback() {
+
+            @Override
+            public void onSent() {
+                if (respCallback instanceof RequestCallback) {
+                    ((RequestCallback) respCallback).onSent();
+                }
+            }
 
             @Override
             public void callException(Exception ex) {

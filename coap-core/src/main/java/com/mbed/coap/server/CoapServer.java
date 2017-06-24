@@ -42,6 +42,7 @@ import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.FutureCallbackAdapter;
+import com.mbed.coap.utils.RequestCallback;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -298,11 +299,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      */
     public final CompletableFuture<CoapPacket> makeRequest(CoapPacket requestPacket, final TransportContext transContext) {
         FutureCallbackAdapter<CoapPacket> completableFuture = new FutureCallbackAdapter<>();
-        try {
-            makeRequest(requestPacket, completableFuture, transContext);
-        } catch (Exception e) {
-            completableFuture.callException(e);
-        }
+        makeRequest(requestPacket, completableFuture, transContext);
+
         return completableFuture;
     }
 
@@ -316,9 +314,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      *
      * @param packet request packet
      * @param callback handles response
-     * @throws CoapException throws exception if request can not be send
      */
-    public final void makeRequest(CoapPacket packet, Callback<CoapPacket> callback) throws CoapException {
+    public final void makeRequest(CoapPacket packet, Callback<CoapPacket> callback) {
         makeRequest(packet, callback, TransportContext.NULL);
     }
 
@@ -333,9 +330,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @param packet request packet
      * @param callback handles response
      * @param transContext transport context that will be passed to transport connector
-     * @throws CoapException throws exception if request can not be send
      */
-    public void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext) throws CoapException {
+    public void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext) {
         makeRequestInternal(packet, callback, transContext, defaultPriority);
     }
 
@@ -351,9 +347,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @param callback handles response
      * @param transContext transport context that will be passed to transport connector
      * @param transactionPriority defines transaction priority (used by CoapServerBlocks mostyl)
-     * @throws CoapException throws exception if request can not be send
      */
-    private void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext, CoapTransaction.Priority transactionPriority) throws CoapException {
+    private void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext, CoapTransaction.Priority transactionPriority) {
         makeRequestInternal(packet, callback, transContext, transactionPriority, false);
     }
 
@@ -366,44 +361,38 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * NOTE: If exception is thrown then callback will never be invoked.
      *
      * @param packet request packet
-     * @param callback handles response
+     * @param coapCallback handles response
      * @param transContext transport context that will be passed to transport connector
      * @param transactionPriority defines transaction priority (used by CoapServerBlocks mostyl)
      * @param forceAddToQueue forces add to queue even if there is queue limit overflow (block requests)
-     * @throws CoapException throws exception if request can not be send
      */
-    void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext, CoapTransaction.Priority transactionPriority, boolean forceAddToQueue) throws CoapException {
-        if (callback == null || packet == null || packet.getRemoteAddress() == null) {
+    void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> coapCallback, final TransportContext transContext, CoapTransaction.Priority transactionPriority, boolean forceAddToQueue) {
+        if (packet == null || packet.getRemoteAddress() == null) {
             throw new NullPointerException();
         }
+        RequestCallback requestCallback = wrapCallback(coapCallback);
 
         //assign new MID
         packet.setMessageId(getNextMID());
 
-        CoapTransaction trans = null;
-        try {
-            if (packet.getMustAcknowledge()) {
-                trans = new CoapTransaction(callback, packet, this, transContext, transactionPriority);
+        if (packet.getMustAcknowledge()) {
+            CoapTransaction trans = new CoapTransaction(requestCallback, packet, this, transContext, transactionPriority, this::removeCoapTransId);
+            try {
                 if (transMgr.addTransactionAndGetReadyToSend(trans, forceAddToQueue)) {
-                    trans.send(System.currentTimeMillis());
+                    trans.send();
                 }
-            } else {
-                //send NON message without waiting for piggy-backed response
-                delayedTransMagr.add(new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress()), new CoapTransaction(callback, packet, this, transContext, transactionPriority));
-                this.send(packet, packet.getRemoteAddress(), transContext);
-                if (packet.getToken().length == 0) {
-                    LOGGER.warn("Sent NON request without token: {}", packet);
-                }
+            } catch (TooManyRequestsForEndpointException e) {
+                coapCallback.callException(e);
             }
-
-        } catch (TooManyRequestsForEndpointException ex) {
-            throw ex;
-        } catch (Throwable ex) {    //NOPMD it needs to catch anything, no control on customer resource implementation
-            if (trans != null) {
-                removeCoapTransId(trans.getTransactionId());
+        } else {
+            //send NON message without waiting for piggy-backed response
+            delayedTransMagr.add(new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress()), new CoapTransaction(requestCallback, packet, this, transContext, transactionPriority, this::removeCoapTransId));
+            this.send(packet, packet.getRemoteAddress(), transContext);
+            if (packet.getToken().length == 0) {
+                LOGGER.warn("Sent NON request without token: {}", packet);
             }
-            throw new CoapException(ex);
         }
+
     }
 
     /**
@@ -417,8 +406,17 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     }
 
     @Override
-    protected void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
-        coapTransporter.sendPacket(coapPacket, adr, tranContext);
+    protected CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
+        return coapTransporter
+                .sendPacket(coapPacket, adr, tranContext)
+                .whenComplete((__, throwable) -> logCoapSent(coapPacket, throwable));
+    }
+
+    private void logCoapSent(CoapPacket coapPacket, Throwable maybeError) {
+        if (maybeError != null) {
+            LOGGER.warn("[{}] Failed to sent: {}", coapPacket.getRemoteAddress(), maybeError.toString());
+            return;
+        }
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("CoAP sent [" + coapPacket.toString(true) + "]");
@@ -553,25 +551,8 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
     }
 
     private void removeCoapTransId(CoapTransactionId coapTransId) {
-        boolean failed;
-        do {
-            failed = false;
-            Optional<CoapTransaction> maybeNextTransaction = transMgr.unlockOrRemoveAndGetNext(coapTransId);
-            LOGGER.trace("next transaction: {}", maybeNextTransaction);
-            if (!maybeNextTransaction.isPresent()) {
-                break;
-            }
-
-            CoapTransaction nextTransactionForEp = maybeNextTransaction.get();
-            try {
-                nextTransactionForEp.send(System.currentTimeMillis());
-            } catch (Exception ex) {
-                failed = true;
-                nextTransactionForEp.getCallback().callException(ex);
-                coapTransId = nextTransactionForEp.getTransactionId();
-                LOGGER.debug("Next transaction {} sending on response, resulted in exception: {}", coapTransId, ex.getMessage());
-            }
-        } while (failed);
+        transMgr.unlockOrRemoveAndGetNext(coapTransId)
+                .ifPresent(CoapTransaction::send);
     }
 
     private void invokeCallbackAndRemoveTransaction(CoapTransaction transaction, CoapPacket packet) {
@@ -683,11 +664,7 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             CoapPacket duplResp = duplicationDetector.isMessageRepeated(request);
             if (duplResp != null) {
                 if (duplResp != DuplicationDetector.EMPTY_COAP_PACKET) {
-                    try {
-                        sendPacket(duplResp, request.getRemoteAddress(), TransportContext.NULL);
-                    } catch (CoapException | IOException coapException) {
-                        LOGGER.error(coapException.getMessage(), coapException);
-                    }
+                    sendPacket(duplResp, request.getRemoteAddress(), TransportContext.NULL);
                     LOGGER.debug("{}, resending response [{}]", message, request);
                 } else {
                     LOGGER.debug("{}, no response available [{}]", message, request);
@@ -713,23 +690,17 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
             Collection<CoapTransaction> transTimeOut = transMgr.findTimeoutTransactions(currentTime);
             for (CoapTransaction trans : transTimeOut) {
                 if (trans.isTimedOut(currentTime)) {
-                    try {
-                        LOGGER.trace("resendTimeouts: try to resend timed out transaction [{}]", trans);
-                        if (!trans.send(currentTime)) {
-                            //final timeout, cannot resend, remove transaction
-                            removeCoapTransId(trans.getTransactionId());
-                            LOGGER.trace("resendTimeouts: CoAP transaction final timeout [{}]", trans);
-                            trans.getCallback().callException(new CoapTimeoutException(trans));
-
-                        } else {
-                            if (trans.getCallback() instanceof CoapTransactionCallback) {
-                                ((CoapTransactionCallback) trans.getCallback()).messageResent();
-                            }
-                        }
-                    } catch (Exception ex) {
+                    LOGGER.trace("resendTimeouts: try to resend timed out transaction [{}]", trans);
+                    if (!trans.send(currentTime)) {
+                        //final timeout, cannot resend, remove transaction
                         removeCoapTransId(trans.getTransactionId());
-                        LOGGER.warn("CoAP transaction [{}] retransmission caused exception: {}", trans.getTransactionId(), ex.getMessage());
-                        trans.getCallback().callException(ex);
+                        LOGGER.trace("resendTimeouts: CoAP transaction final timeout [{}]", trans);
+                        trans.getCallback().callException(new CoapTimeoutException(trans));
+
+                    } else {
+                        if (trans.getCallback() instanceof CoapTransactionCallback) {
+                            ((CoapTransactionCallback) trans.getCallback()).messageResent();
+                        }
                     }
                 }
             }
@@ -806,11 +777,10 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      * @param respCallback handles observation response
      * @param token observation identification (token)
      * @return observation identification
-     * @throws CoapException coap exception
      */
-    public abstract byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) throws CoapException;
+    public abstract byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext);
 
-    public abstract byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback, TransportContext transportContext) throws CoapException;
+    public abstract byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback, TransportContext transportContext);
 
     private static void assume(boolean assumeCondition, String errorMessage) {
         if (!assumeCondition) {
@@ -818,4 +788,37 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
         }
     }
 
+    static RequestCallback wrapCallback(Callback<CoapPacket> callback) {
+        if (callback == null) {
+            throw new NullPointerException();
+        }
+        if (callback instanceof RequestCallback) {
+            return ((RequestCallback) callback);
+        }
+
+        return new InternalRequestCallback(callback);
+    }
+
+    static class InternalRequestCallback implements RequestCallback {
+        private final Callback<CoapPacket> callback;
+
+        InternalRequestCallback(Callback<CoapPacket> callback) {
+            this.callback = callback;
+        }
+
+        @Override
+        public void call(CoapPacket packet) {
+            callback.call(packet);
+        }
+
+        @Override
+        public void callException(Exception ex) {
+            callback.callException(ex);
+        }
+
+        @Override
+        public void onSent() {
+            //ignore
+        }
+    }
 }

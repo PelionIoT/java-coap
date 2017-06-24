@@ -17,8 +17,8 @@ package com.mbed.coap.transport.javassl;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -32,7 +32,7 @@ import javax.net.ssl.SSLSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SingleConnectionSSLSocketServerTransport implements CoapTransport {
+public class SingleConnectionSSLSocketServerTransport extends BlockingCoapTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleConnectionSSLSocketServerTransport.class);
 
     private Thread serverThread;
@@ -95,7 +95,7 @@ public class SingleConnectionSSLSocketServerTransport implements CoapTransport {
     }
 
     @Override
-    public synchronized void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+    public synchronized void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
         coapPacket.writeTo(outputStream);
         outputStream.flush();
     }
