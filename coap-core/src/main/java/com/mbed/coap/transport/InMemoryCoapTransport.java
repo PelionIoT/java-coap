@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author szymon
  */
-public class InMemoryCoapTransport implements CoapTransport {
+public class InMemoryCoapTransport extends BlockingCoapTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryCoapTransport.class.getName());
     public final static String LOCALHOST = "localhost";
@@ -91,7 +91,7 @@ public class InMemoryCoapTransport implements CoapTransport {
     }
 
     @Override
-    public void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+    public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
         InMemoryCoapTransport transport = BINDING_MANAGER.getQueueByAddress(adr);
 
         if (transport != null) {

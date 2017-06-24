@@ -328,7 +328,7 @@ public class CoapPacketTest {
         packet.setToken(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9});
     }
 
-    @Test(expected = CoapException.class)
+    @Test(expected = IllegalStateException.class)
     public void failWhenCodeAndMethod() throws Exception {
         CoapPacket packet = new CoapPacket(null);
         packet.setCode(Code.C201_CREATED);
@@ -337,7 +337,7 @@ public class CoapPacketTest {
         packet.toByteArray();
     }
 
-    @Test(expected = CoapException.class)
+    @Test(expected = IllegalStateException.class)
     public void failWhenIOExceptionWhenWriting() throws Exception {
         OutputStream outputStream = mock(OutputStream.class);
         doThrow(new IOException()).when(outputStream).write(any());

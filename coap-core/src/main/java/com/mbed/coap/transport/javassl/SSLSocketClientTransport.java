@@ -17,8 +17,8 @@ package com.mbed.coap.transport.javassl;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -32,7 +32,7 @@ import javax.net.ssl.SSLSocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SSLSocketClientTransport implements CoapTransport {
+public class SSLSocketClientTransport extends BlockingCoapTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SSLSocketClientTransport.class);
 
     private final InetSocketAddress destination;
@@ -92,7 +92,7 @@ public class SSLSocketClientTransport implements CoapTransport {
     }
 
     @Override
-    public synchronized void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+    public synchronized void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
         if (!adr.equals(this.destination)) {
             throw new IllegalStateException("No connection with: " + adr);
         }

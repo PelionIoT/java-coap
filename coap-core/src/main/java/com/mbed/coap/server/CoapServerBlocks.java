@@ -28,6 +28,7 @@ import com.mbed.coap.server.internal.CoapExchangeImpl;
 import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
+import com.mbed.coap.utils.RequestCallback;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,7 +57,7 @@ abstract class CoapServerBlocks extends CoapServer {
     }
 
     @Override
-    public void makeRequest(CoapPacket request, Callback<CoapPacket> outerCallback, TransportContext outgoingTransContext) throws CoapException {
+    public void makeRequest(CoapPacket request, Callback<CoapPacket> outerCallback, TransportContext outgoingTransContext) {
         if (outerCallback == null) {
             throw new NullPointerException("CallBack is null");
         }
@@ -68,7 +69,7 @@ abstract class CoapServerBlocks extends CoapServer {
             super.makeRequestInternal(request, outerCallback, outgoingTransContext, blockCoapTransactionPriority, true);
             return;
         }
-        BlockCallback blockCallback = new BlockCallback(request, outerCallback, outgoingTransContext);
+        BlockCallback blockCallback = new BlockCallback(request, wrapCallback(outerCallback), outgoingTransContext);
 
         if (request.getMethod() != null && request.getPayload() != null
                 && this.getBlockSize() != null
@@ -263,16 +264,16 @@ abstract class CoapServerBlocks extends CoapServer {
         }
     }
 
-    private class BlockCallback implements Callback<CoapPacket>, CoapTransactionCallback {
+    private class BlockCallback implements RequestCallback, CoapTransactionCallback {
 
-        private final Callback<CoapPacket> reqCallback;
+        private final RequestCallback reqCallback;
         private CoapPacket response;
         private final CoapPacket request;
         private final byte[] requestPayload;
         private int resourceChanged;
         private final TransportContext outgoingTransContext;
 
-        public BlockCallback(CoapPacket request, Callback<CoapPacket> reqCallback, TransportContext outgoingTransContext) {
+        public BlockCallback(CoapPacket request, RequestCallback reqCallback, TransportContext outgoingTransContext) {
             this.reqCallback = reqCallback;
             this.request = request;
             this.requestPayload = request.getPayload();
@@ -301,17 +302,11 @@ abstract class CoapServerBlocks extends CoapServer {
                     // see https://tools.ietf.org/html/draft-ietf-core-block-18#section-4 , Implementation notes
                     request.headers().setSize1(null);
                     request.setPayload(reqBlock.createBlockPart(requestPayload));
-                    try {
-                        if (LOGGER.isTraceEnabled()) {
-                            LOGGER.trace("BlockCallback.call() next block b1: " + request.toString(false));
-                        }
-                        makeRequest(request, outgoingTransContext);
-                        return;
-                    } catch (CoapException ex) {
-                        LOGGER.error(ex.getMessage(), ex);
-                        reqCallback.callException(ex);
-                        return;
+                    if (LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("BlockCallback.call() next block b1: " + request.toString(false));
                     }
+                    makeRequest(request, outgoingTransContext);
+                    return;
                 }
             }
 
@@ -413,7 +408,7 @@ abstract class CoapServerBlocks extends CoapServer {
             reqCallback.callException(ex);
         }
 
-        private void makeRequest(CoapPacket request, TransportContext outgoingTransContext) throws CoapException {
+        private void makeRequest(CoapPacket request, TransportContext outgoingTransContext) {
             CoapServerBlocks.this.makeRequest(request, this, outgoingTransContext);
         }
 
@@ -429,6 +424,11 @@ abstract class CoapServerBlocks extends CoapServer {
             if (reqCallback instanceof CoapTransactionCallback) {
                 ((CoapTransactionCallback) reqCallback).blockReceived();
             }
+        }
+
+        @Override
+        public void onSent() {
+            reqCallback.onSent();
         }
     }
 

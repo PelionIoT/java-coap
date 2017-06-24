@@ -226,14 +226,14 @@ public class ClientServerTest {
                     private boolean hasDropped = false;
 
                     @Override
-                    public void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+                    public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
                         //will drop only first packet
                         if (!hasDropped) {
                             hasDropped = true;
                             res.setResourceBody("dropped");
                             System.out.println("dropped");
                         } else {
-                            super.sendPacket(coapPacket, adr, tranContext);
+                            super.sendPacket0(coapPacket, adr, tranContext);
                         }
                     }
 

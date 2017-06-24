@@ -570,7 +570,7 @@ public class BasicHeaderOptions implements Serializable {
         this.size1 = size;
     }
 
-    void serialize(OutputStream os) throws IOException, CoapMessageFormatException {
+    void serialize(OutputStream os) throws IOException {
         List<RawOption> list = getRawOptions();
         Collections.sort(list);
 
@@ -580,11 +580,11 @@ public class BasicHeaderOptions implements Serializable {
                 int delta = opt.optNumber - lastOptNumber;
                 lastOptNumber = opt.optNumber;
                 if (delta > 0xFFFF + 269) {
-                    throw new CoapMessageFormatException("Delta with size: " + delta + " is not supported [option number: " + opt.optNumber + "]");
+                    throw new IllegalArgumentException("Delta with size: " + delta + " is not supported [option number: " + opt.optNumber + "]");
                 }
                 int len = optValue.length;
                 if (len > 0xFFFF + 269) {
-                    throw new CoapMessageFormatException("Header size: " + len + " is not supported [option number: " + opt.optNumber + "]");
+                    throw new IllegalArgumentException("Header size: " + len + " is not supported [option number: " + opt.optNumber + "]");
                 }
                 writeOptionHeader(delta, len, os);
                 os.write(optValue);

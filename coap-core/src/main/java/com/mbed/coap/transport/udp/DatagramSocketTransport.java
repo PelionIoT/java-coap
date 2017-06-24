@@ -17,8 +17,8 @@ package com.mbed.coap.transport.udp;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author szymon
  */
-public class DatagramSocketTransport implements CoapTransport {
+public class DatagramSocketTransport extends BlockingCoapTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatagramSocketTransport.class.getName());
     private final InetSocketAddress bindSocket;
@@ -139,7 +139,7 @@ public class DatagramSocketTransport implements CoapTransport {
     }
 
     @Override
-    public void sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext transContext) throws CoapException, IOException {
+    public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext transContext) throws CoapException, IOException {
         if (socket == null) {
             throw new IllegalStateException();
         }

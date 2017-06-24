@@ -13,22 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.transport;
+package com.mbed.coap.utils;
 
 import com.mbed.coap.packet.CoapPacket;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.concurrent.CompletableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by szymon
  */
-public interface CoapTransport {
-    void start(CoapReceiver coapReceiver) throws IOException;
+public interface RequestCallback extends Callback<CoapPacket> {
+    Logger LOGGER = LoggerFactory.getLogger(RequestCallback.class);
 
-    void stop();
+    RequestCallback NULL = new RequestCallback() {
 
-    CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext);
+        @Override
+        public void onSent() {
+            //ignore
+        }
 
-    InetSocketAddress getLocalSocketAddress();
+        @Override
+        public void call(CoapPacket packet) {
+            //ignore
+        }
+
+        @Override
+        public void callException(Exception ex) {
+            LOGGER.error(ex.getMessage(), ex);
+        }
+    };
+
+    void onSent();
+
 }
