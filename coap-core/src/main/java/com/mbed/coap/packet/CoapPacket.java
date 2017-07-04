@@ -86,22 +86,6 @@ public class CoapPacket implements Serializable {
     /**
      * Reads CoAP packet from raw data.
      *
-     * @param rawData data
-     * @param length data length
-     * @param remoteAddress source address
-     * @return CoapPacket instance
-     * @throws CoapException if can not parse
-     */
-    public static CoapPacket read(byte[] rawData, int length, InetSocketAddress remoteAddress) throws CoapException {
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(rawData, 0, length);
-        CoapPacket cp = new CoapPacket(remoteAddress);
-        cp.readFrom(inputStream);
-        return cp;
-    }
-
-    /**
-     * Reads CoAP packet from raw data.
-     *
      * @param remoteAddress remote address
      * @param rawData data
      * @param length data length
@@ -189,7 +173,7 @@ public class CoapPacket implements Serializable {
 
             //read headers
             options = new HeaderOptions();
-            boolean hasPayloadMarker = options.deserialize(inputStream);
+            boolean hasPayloadMarker = options.deserialize(inputStream, code);
 
             //read payload
             if (hasPayloadMarker) {
@@ -210,6 +194,10 @@ public class CoapPacket implements Serializable {
      */
     public final HeaderOptions headers() {
         return options;
+    }
+
+    public void setHeaderOptions(HeaderOptions options) {
+        this.options = options;
     }
 
     /**
@@ -390,16 +378,7 @@ public class CoapPacket implements Serializable {
             tempByte |= token.length & 0xF;                  //Token length
 
             outputStream.write(tempByte);
-            if (code != null && method != null) {
-                throw new IllegalStateException("Forbidden operation: 'code' and 'method' use at a same time");
-            }
-            if (code != null) {
-                outputStream.write(code.getCoapCode());
-            } else if (method != null) {
-                outputStream.write(method.getCode());
-            } else { //no code or method used
-                outputStream.write(0);
-            }
+            writeCode(outputStream, this);
 
             outputStream.write(0xFF & (messageId >> 8));
             outputStream.write(0xFF & messageId);
@@ -418,6 +397,23 @@ public class CoapPacket implements Serializable {
         } catch (IOException iOException) {
             throw new IllegalStateException(iOException.getMessage(), iOException);
         }
+    }
+
+    static Code writeCode(OutputStream os, CoapPacket coapPacket) throws IOException {
+        Code code = coapPacket.getCode();
+        Method method = coapPacket.getMethod();
+
+        if (code != null && method != null) {
+            throw new IllegalStateException("Forbidden operation: 'code' and 'method' use at a same time");
+        }
+        if (code != null) {
+            os.write(code.getCoapCode());
+        } else if (method != null) {
+            os.write(method.getCode());
+        } else { //no code or method used
+            os.write(0);
+        }
+        return code;
     }
 
     /**
@@ -480,7 +476,9 @@ public class CoapPacket implements Serializable {
             sb.append(this.getRemoteAddress()).append(' ');
         }
 
-        sb.append(getMessageType().toString());
+        if (messageType != null) {
+            sb.append(getMessageType().toString());
+        }
         if (method != null) {
             sb.append(' ').append(method.toString());
         }

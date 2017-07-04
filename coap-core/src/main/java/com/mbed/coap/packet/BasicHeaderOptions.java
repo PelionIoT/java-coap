@@ -74,7 +74,7 @@ public class BasicHeaderOptions implements Serializable {
     private Integer size1;
     private Map<Integer, RawOption> unrecognizedOptions;
 
-    protected boolean parseOption(int type, byte[] data) {
+    protected boolean parseOption(int type, byte[] data, Code code) {
         switch (type) {
             case CONTENT_FORMAT:
                 setContentFormat(DataConvertingUtility.readVariableULong(data).shortValue());
@@ -176,8 +176,8 @@ public class BasicHeaderOptions implements Serializable {
      * @param data option value as byte array
      * @return true if header type is a known, false for unknown header option
      */
-    public final boolean put(int optionNumber, byte[] data) {
-        if (parseOption(optionNumber, data)) {
+    public final boolean put(int optionNumber, byte[] data, Code code) {
+        if (parseOption(optionNumber, data, code)) {
             return true;
         }
         //unrecognizeg option header
@@ -186,6 +186,10 @@ public class BasicHeaderOptions implements Serializable {
         }
         unrecognizedOptions.put(optionNumber, new RawOption(optionNumber, data));
         return true;
+    }
+
+    public final boolean put(int optionNumber, byte[] data) {
+        return put(optionNumber, data, null);
     }
 
     /**
@@ -631,7 +635,7 @@ public class BasicHeaderOptions implements Serializable {
      * De-serializes CoAP header options. Returns true if PayloadMarker was
      * found.
      */
-    boolean deserialize(InputStream is) throws IOException, CoapMessageFormatException {
+    boolean deserialize(InputStream is, Code code) throws IOException, CoapMessageFormatException {
 
         int headerOptNum = 0;
         while (is.available() > 0) {
@@ -662,7 +666,7 @@ public class BasicHeaderOptions implements Serializable {
             headerOptNum += delta;
             byte[] headerOptData = new byte[len];
             is.read(headerOptData);
-            put(headerOptNum, headerOptData);
+            put(headerOptNum, headerOptData, code);
 
         }
         //end of stream

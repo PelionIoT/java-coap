@@ -15,16 +15,21 @@
  */
 package com.mbed.coap.packet;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
- * Implements CoAP additional header options from RFC 7959 (Block-Wise Transfers) and
- * draft-ietf-core-observe-09.
+ * Implements CoAP additional header options from
+ * - RFC 7959 (Block-Wise Transfers)
+ * - draft-ietf-core-observe-09
+ * - draft-ietf-core-coap-tcp-tls-09
  *
  * @author szymon
  */
 public class HeaderOptions extends BasicHeaderOptions {
 
+    private static final byte SIGN_OPTION_2 = 2;
+    private static final byte SIGN_OPTION_4 = 4;
     private static final byte OBSERVE = 6;
     private static final byte BLOCK_1_REQ = 27;
     private static final byte BLOCK_2_RES = 23;
@@ -33,13 +38,11 @@ public class HeaderOptions extends BasicHeaderOptions {
     private BlockOption block1Req;
     private BlockOption block2Res;
     private Integer size2Res;
+    private byte[] signallingOption2;
+    private byte[] signallingOption4;
 
     @Override
-    public boolean parseOption(int type, byte[] data) {
-        if (super.parseOption(type, data)) {
-            return true;
-        }
-
+    public boolean parseOption(int type, byte[] data, Code code) {
         switch (type) {
             case OBSERVE:
                 setObserve(DataConvertingUtility.readVariableULong(data).intValue());
@@ -53,8 +56,20 @@ public class HeaderOptions extends BasicHeaderOptions {
             case SIZE_2_RES:
                 setSize2Res(DataConvertingUtility.readVariableULong(data).intValue());
                 break;
+            case SIGN_OPTION_2:
+                signallingOption2 = data;
+                break;
+            case SIGN_OPTION_4:
+                //clashing option number with etag
+                if (code != null && code.isSignaling()) {
+                    signallingOption4 = data;
+                    break;
+                } else {
+                    return super.parseOption(type, data, code);
+                }
             default:
-                return false;
+                return super.parseOption(type, data, code);
+
         }
         return true;
     }
@@ -77,6 +92,12 @@ public class HeaderOptions extends BasicHeaderOptions {
         }
         if (size2Res != null) {
             l.add(RawOption.fromUint(SIZE_2_RES, size2Res.longValue()));
+        }
+        if (signallingOption2 != null) {
+            l.add(new RawOption(SIGN_OPTION_2, signallingOption2));
+        }
+        if (signallingOption4 != null) {
+            l.add(new RawOption(SIGN_OPTION_4, signallingOption4));
         }
 
         return l;
@@ -149,6 +170,26 @@ public class HeaderOptions extends BasicHeaderOptions {
         this.size2Res = size2Res;
     }
 
+    public SignalingOptions toSignallingOptions(Code code) {
+        if (signallingOption2 == null && signallingOption4 == null) {
+            return null;
+        } else {
+            SignalingOptions signalingOptions = new SignalingOptions();
+            if (signallingOption2 != null) {
+                signalingOptions.parse(SIGN_OPTION_2, signallingOption2, code);
+            }
+            if (signallingOption4 != null) {
+                signalingOptions.parse(SIGN_OPTION_4, signallingOption4, code);
+            }
+            return signalingOptions;
+        }
+    }
+
+    public void putSignallingOptions(SignalingOptions signalingOptions) {
+        this.signallingOption2 = signalingOptions.serializeOption2();
+        this.signallingOption4 = signalingOptions.serializeOption4();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -172,8 +213,13 @@ public class HeaderOptions extends BasicHeaderOptions {
         if (block2Res != null ? !block2Res.equals(that.block2Res) : that.block2Res != null) {
             return false;
         }
-        return size2Res != null ? size2Res.equals(that.size2Res) : that.size2Res == null;
-
+        if (size2Res != null ? !size2Res.equals(that.size2Res) : that.size2Res != null) {
+            return false;
+        }
+        if (!Arrays.equals(signallingOption2, that.signallingOption2)) {
+            return false;
+        }
+        return Arrays.equals(signallingOption4, that.signallingOption4);
     }
 
     @Override
@@ -183,6 +229,8 @@ public class HeaderOptions extends BasicHeaderOptions {
         result = 31 * result + (block1Req != null ? block1Req.hashCode() : 0);
         result = 31 * result + (block2Res != null ? block2Res.hashCode() : 0);
         result = 31 * result + (size2Res != null ? size2Res.hashCode() : 0);
+        result = 31 * result + Arrays.hashCode(signallingOption2);
+        result = 31 * result + Arrays.hashCode(signallingOption4);
         return result;
     }
 }
