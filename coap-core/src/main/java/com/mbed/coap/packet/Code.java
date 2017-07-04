@@ -46,7 +46,15 @@ public enum Code {
     //RFC 7959 (Block-Wise Transfers)
     C231_CONTINUE(2, 31, 500),
     C408_REQUEST_ENTITY_INCOMPLETE(4, 8, 500),
-    C413_REQUEST_ENTITY_TOO_LARGE(4, 13, 413);
+    C413_REQUEST_ENTITY_TOO_LARGE(4, 13, 413),
+    //
+    //draft-ietf-core-coap-tcp-tls-09
+    C701_CSM(7, 01, 500),
+    C702_PING(7, 02, 500),
+    C703_PONG(7, 03, 500),
+    C704_RELEASE(7, 04, 500),
+    C705_ABORT(7, 05, 500);
+
     private final int coapCode;
     private final int httpStatus;
 
@@ -79,5 +87,9 @@ public enum Code {
     public static Code valueOf(int codeClass, int codeDetail) {
         int coapCode = (codeClass << 5) + codeDetail;
         return valueOf(coapCode);
+    }
+
+    public boolean isSignaling() {
+        return (coapCode >>> 5) == 7;
     }
 }
