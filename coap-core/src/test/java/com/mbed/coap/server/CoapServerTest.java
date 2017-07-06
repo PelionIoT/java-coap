@@ -356,7 +356,7 @@ public class CoapServerTest {
     }
 
     @Test
-    public void should_receive_callback_when_message_is_sent() throws Exception {
+    public void should_receive_onSent_callback_when_message_is_sent() throws Exception {
         initServer();
 
         RequestCallback callback = mock(RequestCallback.class);
@@ -369,6 +369,31 @@ public class CoapServerTest {
 
         fut.complete(true);
         verify(callback).onSent();
+    }
+
+    @Test
+    public void should_receive_onSent_callback_when_NON_message_is_sent() throws Exception {
+        initServer();
+
+        RequestCallback callback = mock(RequestCallback.class);
+        given(coapTransport.sendPacket(any(), any(), any())).willReturn(CompletableFuture.completedFuture(true));
+
+        server.makeRequest(newCoapPacket(LOCAL_1_5683).non().get().uriPath("/test").build(), callback);
+
+        verify(callback).onSent();
+    }
+
+    @Test
+    public void network_fail_when_sending_NON_request() throws Exception {
+        initServer();
+
+        RequestCallback callback = mock(RequestCallback.class);
+        given(coapTransport.sendPacket(any(), any(), any())).willReturn(exceptionFuture());
+
+        server.makeRequest(newCoapPacket(LOCAL_1_5683).non().token(12).get().uriPath("/test").build(), callback);
+
+        verify(callback, never()).onSent();
+        verify(callback).callException(any());
     }
 
     // --- OBSERVATIONS ---
