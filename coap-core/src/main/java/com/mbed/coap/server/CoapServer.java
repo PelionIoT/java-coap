@@ -441,16 +441,16 @@ public abstract class CoapServer extends CoapServerAbstract implements Closeable
      */
     @Override
     public void handle(CoapPacket packet, TransportContext transportContext) {
-        if (handlePing(packet)) {
-            return;
-        }
-
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("CoAP received [" + packet.toString(true) + "]");
         } else if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("[" + packet.getRemoteAddress() + "] CoAP received [" + packet.toString(false) + "]");
         } else if (LOGGER.isInfoEnabled()) {
             LOGGER.info("[" + packet.getRemoteAddress() + "] CoAP received [" + packet.toString(false, false, false, true) + "]");
+        }
+
+        if (handlePing(packet)) {
+            return;
         }
 
         if (packet.getMethod() != null) {
