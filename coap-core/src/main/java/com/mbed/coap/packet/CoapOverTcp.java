@@ -63,9 +63,16 @@ public final class CoapOverTcp {
             cp.setToken(token);
 
             //Options
-            HeaderOptions options = new HeaderOptions();
-            boolean hasPayloadMarker = options.deserialize(inputStream);
-            cp.setHeaderOptions(options);
+            boolean hasPayloadMarker;
+            if (cp.getCode() != null && cp.getCode().isSignaling()) {
+                SignalingOptions options = new SignalingOptions();
+                hasPayloadMarker = options.deserialize(inputStream, cp.getCode());
+                cp.setSignalingOptions(options);
+            } else {
+                HeaderOptions options = new HeaderOptions();
+                hasPayloadMarker = options.deserialize(inputStream);
+                cp.setHeaderOptions(options);
+            }
 
             //Payload
             if (hasPayloadMarker) {
@@ -153,7 +160,11 @@ public final class CoapOverTcp {
             os.write(coapPacket.getToken());
 
             //Options
-            coapPacket.headers().serialize(os);
+            if (code != null && code.isSignaling()) {
+                coapPacket.signalingOptions().serialize(os);
+            } else {
+                coapPacket.headers().serialize(os);
+            }
 
             //Payload
             if (coapPacket.getPayload() != null && coapPacket.getPayload().length > 0) {

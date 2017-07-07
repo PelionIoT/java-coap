@@ -128,6 +128,27 @@ public class CoapOverTcpTest extends CoapPacketTestBase {
         assertEquals("/test2", cp2.headers().getUriPath());
     }
 
+    @Test
+    public void coapOverTcpSignaling() throws CoapException {
+        CoapPacket cp = new CoapPacket(null, null, "", null);
+        cp.setCode(Code.C701_CSM);
+        cp.signalingOptions().setMaxMessageSize(7);
+        cp.signalingOptions().setBlockWiseTransfer(true);
+
+        byte[] rawCp = CoapOverTcp.serialize(cp);
+        CoapPacket cp2 = CoapOverTcp.deserialize(null, new ByteArrayInputStream(rawCp));
+
+        System.out.println(cp);
+        System.out.println(cp2);
+        assertArrayEquals(rawCp, CoapOverTcp.serialize(cp2));
+        assertEquals(Code.C701_CSM, cp2.getCode());
+        assertEquals(null, cp2.getMessageType());
+        assertEquals(7, cp2.signalingOptions().getMaxMessageSize().intValue());
+        assertTrue(cp2.signalingOptions().getBlockWiseTransfer());
+
+        assertSimilar(cp, cp2);
+    }
+
     private void assertSimplePacketSerializationAndDeserilization(byte[] token, byte[] payload) throws CoapException {
         CoapPacket cp = new CoapPacket(null, null, "", null);
         cp.setToken(token);

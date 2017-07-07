@@ -11,6 +11,13 @@ abstract class CoapPacketTestBase {
         assertEquals(cp1.getCode(), cp2.getCode());
         assertEquals(cp1.getMessageId(), cp2.getMessageId());
 
+        assertEquals(cp1.signalingOptions().getMaxMessageSize(), cp2.signalingOptions().getMaxMessageSize());
+        assertEquals(cp1.signalingOptions().getBlockWiseTransfer(), cp2.signalingOptions().getBlockWiseTransfer());
+        assertEquals(cp1.signalingOptions().getCustody(), cp2.signalingOptions().getCustody());
+        assertEquals(cp1.signalingOptions().getAlternativeAddresses(), cp2.signalingOptions().getAlternativeAddresses());
+        assertEquals(cp1.signalingOptions().getHoldOff(), cp2.signalingOptions().getHoldOff());
+        assertEquals(cp1.signalingOptions().getBadCsmOption(), cp2.signalingOptions().getBadCsmOption());
+
         assertEquals(cp1.headers().getBlock1Req(), cp2.headers().getBlock1Req());
         assertEquals(cp1.headers().getBlock2Res(), cp2.headers().getBlock2Res());
         assertEquals(cp1.headers().getUriPath(), cp2.headers().getUriPath());
