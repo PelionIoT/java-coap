@@ -95,7 +95,7 @@ public class DeviceEmulator {
 
 
         //registration
-        this.registrationManager = new RegistrationManager(emulatorServer, uri, emulatorServer.getScheduledExecutor());
+        this.registrationManager = new RegistrationManager(emulatorServer, uri, scheduledExecutor);
         registrationManager.register();
     }
 

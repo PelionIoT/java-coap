@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
 import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
@@ -24,8 +24,10 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.Method;
-import com.mbed.coap.server.internal.CoapExchangeImpl;
-import com.mbed.coap.server.internal.CoapTransaction;
+import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.CoapHandler;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapTransactionCallback;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.RequestCallback;
@@ -41,16 +43,12 @@ import org.slf4j.LoggerFactory;
  *
  * @author szymon
  */
-abstract class CoapServerBlocks extends CoapServer {
+public class CoapServerBlocks extends CoapServerForUdp {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerBlocks.class.getName());
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;
     private final Map<BlockRequestId, BlockRequest> blockReqMap = new HashMap<>();
     private CoapTransaction.Priority blockCoapTransactionPriority = CoapTransaction.Priority.HIGH;
-
-    CoapServerBlocks() {
-        super();
-    }
 
     public void setBlockCoapTransactionPriority(CoapTransaction.Priority blockCoapTransactionPriority) {
         this.blockCoapTransactionPriority = blockCoapTransactionPriority;
@@ -106,7 +104,7 @@ abstract class CoapServerBlocks extends CoapServer {
     }
 
     @Override
-    protected void sendResponse(CoapExchange exchange) {
+    public void sendResponse(CoapExchange exchange) {
         CoapPacket resp = exchange.getResponse();
         if (resp != null) {
 

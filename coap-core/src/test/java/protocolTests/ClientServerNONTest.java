@@ -124,7 +124,7 @@ public class ClientServerNONTest {
 
         assertEquals(MessageType.Reset, client.makeRequest(request).join().getMessageType());
 
-        client.close();
+        client.stop();
     }
 
     @Test
@@ -179,7 +179,7 @@ public class ClientServerNONTest {
 
         assertNotEquals(resp1.getMessageId(), resp2.getMessageId());
 
-        client.close();
+        client.stop();
     }
 
     private static class CoapResourceSeparateRespImpl extends CoapResource {
