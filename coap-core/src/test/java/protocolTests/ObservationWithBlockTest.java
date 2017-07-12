@@ -15,7 +15,6 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.server.CoapServerObserve.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.any;
@@ -31,6 +30,7 @@ import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.MessageIdSupplierImpl;
+import com.mbed.coap.server.SimpleObservationIDGenerator;
 import java.net.InetSocketAddress;
 import org.junit.After;
 import org.junit.Before;

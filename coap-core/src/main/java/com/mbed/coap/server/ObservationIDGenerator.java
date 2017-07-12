@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.transport.javassl;
+package com.mbed.coap.server;
 
-import java.io.IOException;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
+/**
+ * Interface for generating observation IDs.
+ */
+public interface ObservationIDGenerator {
 
-public class SingleConnectionSSLSocketServerTransport extends SingleConnectionSocketServerTransport {
+    /**
+     * Returns next observation id.
+     *
+     * @param uri URI path
+     * @return observation id
+     */
+    byte[] nextObservationID(String uri);
 
-    public SingleConnectionSSLSocketServerTransport(SSLContext sslContext, int port, boolean isTcpCoapPacket) throws IOException {
-        super(sslContext.getServerSocketFactory().createServerSocket(port), isTcpCoapPacket);
-        ((SSLServerSocket) serverSocket).setNeedClientAuth(true);
-    }
+
 }

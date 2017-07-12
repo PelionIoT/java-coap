@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
 import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
+import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.Method;
-import com.mbed.coap.server.internal.CoapExchangeImpl;
-import com.mbed.coap.server.internal.CoapTransaction;
+import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.CoapHandler;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapTransactionCallback;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.RequestCallback;
+import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,20 +45,11 @@ import org.slf4j.LoggerFactory;
  *
  * @author szymon
  */
-abstract class CoapServerBlocks extends CoapServer {
+public class CoapServerBlocks extends CoapServerForUdp {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerBlocks.class.getName());
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;
     private final Map<BlockRequestId, BlockRequest> blockReqMap = new HashMap<>();
-    private CoapTransaction.Priority blockCoapTransactionPriority = CoapTransaction.Priority.HIGH;
-
-    CoapServerBlocks() {
-        super();
-    }
-
-    public void setBlockCoapTransactionPriority(CoapTransaction.Priority blockCoapTransactionPriority) {
-        this.blockCoapTransactionPriority = blockCoapTransactionPriority;
-    }
 
     @Override
     public void makeRequest(CoapPacket request, Callback<CoapPacket> outerCallback, TransportContext outgoingTransContext) {
@@ -66,30 +61,20 @@ abstract class CoapServerBlocks extends CoapServer {
                 LOGGER.trace("makeRequest block: " + request.toString());
             }
             // make consequent requests with block priority and forces adding to queue even if it is full
-            super.makeRequestInternal(request, outerCallback, outgoingTransContext, blockCoapTransactionPriority, true);
+            super.makeRequestBlock(request, outerCallback, outgoingTransContext);
             return;
         }
+
         BlockCallback blockCallback = new BlockCallback(request, wrapCallback(outerCallback), outgoingTransContext);
 
-        if (request.getMethod() != null && request.getPayload() != null
-                && this.getBlockSize() != null
-                && request.getPayload().length > this.getBlockSize().getSize()) {
+        if (request.getMethod() != null && isBlockTransfer(request)) {
             //request that needs to use blocks
-            BlockOption blockOption = new BlockOption(0, this.getBlockSize(), true);
+            BlockOption blockOption = new BlockOption(0, getBlockSize(request.getRemoteAddress()), true);
             int payloadSize = request.getPayload().length;
 
-            if (request.getMethod() == Method.GET) {
-                request.headers().setBlock1Req(null);
-                request.headers().setBlock2Res(blockOption);
-                request.headers().setSize1(null);
-                request.headers().setSize2Res(payloadSize);
-            } else {
-                request.headers().setBlock1Req(blockOption);
-                request.headers().setBlock2Res(null);
-                request.headers().setSize1(payloadSize);
-                request.headers().setSize2Res(null);
-            }
-            byte[] nwPayload = blockOption.createBlockPart(request.getPayload());
+            setInitialBlockOptions(request, payloadSize, blockOption);
+
+            byte[] nwPayload = blockCallback.createFirstPayloadBlockAndUpdateBlocksCount(blockOption);
             request.setPayload(nwPayload);
 
             // make first request with default priority and no forcing addition to queue
@@ -106,26 +91,80 @@ abstract class CoapServerBlocks extends CoapServer {
     }
 
     @Override
-    protected void sendResponse(CoapExchange exchange) {
+    public void sendResponse(CoapExchange exchange) {
         CoapPacket resp = exchange.getResponse();
         if (resp != null) {
 
             //check for blocking
             BlockOption block2Res = exchange.getRequest().headers().getBlock2Res();
 
-            if (block2Res == null && this.getBlockSize() != null
-                    && resp.getPayload() != null
-                    && resp.getPayload().length > this.getBlockSize().getSize()) {
-                block2Res = new BlockOption(0, getBlockSize(), true);
+            if (block2Res == null && isBlockTransfer(resp)) {
+                block2Res = new BlockOption(0, getBlockSize(resp.getRemoteAddress()), true);
             }
 
             //if not notification with block
-            if (block2Res != null && !(exchange.getRequest().headers().getObserve() != null && exchange.getRequest().getCode() != null)) {
+            if (block2Res != null
+                    && !(exchange.getRequest().headers().getObserve() != null && exchange.getRequest().getCode() != null)) {
                 updateBlockResponse(block2Res, resp, exchange);
             }
         }
 
         super.sendResponse(exchange);
+    }
+
+    private void setInitialBlockOptions(CoapPacket request, int payloadSize, BlockOption blockOption) {
+        if (request.getMethod() == Method.GET) {
+            request.headers().setBlock1Req(null);
+            request.headers().setBlock2Res(blockOption);
+            request.headers().setSize1(null);
+            request.headers().setSize2Res(payloadSize);
+        } else {
+            request.headers().setBlock1Req(blockOption);
+            request.headers().setBlock2Res(null);
+            request.headers().setSize1(payloadSize);
+            request.headers().setSize2Res(null);
+        }
+    }
+
+    private boolean isBlockTransfer(CoapPacket requestOrResponse) {
+        BlockSize blockSize = getBlockSize(requestOrResponse.getRemoteAddress());
+
+        return blockSize != null
+                && requestOrResponse.getPayload() != null
+                && requestOrResponse.getPayload().length > getMaxOutboundPayloadSize(requestOrResponse.getRemoteAddress());
+    }
+
+    private int getMaxSinglePacketSize(InetSocketAddress address) {
+        // TODO: move to CoapServer (block) interface!!!!
+
+        //        throw new RuntimeException("Not implemented!!!");
+        return 1152;
+    }
+
+    private int getMaxOutboundPayloadSize(InetSocketAddress address) {
+        BlockSize blockSize = getBlockSize(address);
+        if (blockSize == null) {
+            // no blocking, just maximum packet size
+            // constant for UDP based (independently of address)
+            // taken from CSMStorage for CoAP/TCP (TLS) based on endpoint address
+            return getMaxSinglePacketSize(address);
+        }
+
+        if (!blockSize.isBert()) {
+            // non-BERT blocking, return just block size
+            return blockSize.getSize();
+        }
+
+        // BERT, magic starts here
+        // block size always 1k in BERT, but take it from enum
+        int maxBertBlocksCount = getMaxSinglePacketSize(address) / blockSize.getSize();
+        if (maxBertBlocksCount > 1) {
+            // leave minimum 1k room for options if maxMessageSize is in 1k blocks
+            return (maxBertBlocksCount - 1) * blockSize.getSize();
+        } else {
+            // block size is 1k, minimum BERT message size is 1152 so we have room for options
+            return blockSize.getSize();
+        }
     }
 
     private static void updateBlockResponse(final BlockOption block2Response, final CoapPacket resp, final CoapExchange exchange) {
@@ -135,9 +174,9 @@ abstract class CoapServerBlocks extends CoapServer {
 
         if (blTo + 1 >= resp.getPayload().length) {
             blTo = resp.getPayload().length;
-            block2Res = new BlockOption(block2Res.getNr(), block2Res.getSzx(), false);
+            block2Res = new BlockOption(block2Res.getNr(), block2Res.getBlockSize(), false);
         } else {
-            block2Res = new BlockOption(block2Res.getNr(), block2Res.getSzx(), true);
+            block2Res = new BlockOption(block2Res.getNr(), block2Res.getBlockSize(), true);
         }
         int newLength = blTo - blFrom;
         if (newLength < 0) {
@@ -174,94 +213,155 @@ abstract class CoapServerBlocks extends CoapServer {
 
     @Override
     protected void callRequestHandler(CoapPacket request, CoapHandler coapHandler, TransportContext incomingTransContext) throws CoapException {
-        if (request.headers().getBlock1Req() != null) {
-            //blocking request
-            BlockOption reqBlock = request.headers().getBlock1Req();
-            BlockRequestId blockRequestId = new BlockRequestId(request.headers().getUriPath(), request.getRemoteAddress());
-            BlockRequest blockRequest = blockReqMap.get(blockRequestId);
-            if (blockRequest == null) {
-                if (reqBlock.getNr() == 0) {
-                    //new blocking
-                    LOGGER.trace("callRequestHandler() new block transfer");
-                    blockRequest = new BlockRequest(request);
-                    addBlockRequest(blockRequest);
-                } else {
-                    //Could not find previous blocks
-                    CoapExchangeImpl exchange = new CoapExchangeImpl(request, this);
-                    exchange.setResponseCode(Code.C408_REQUEST_ENTITY_INCOMPLETE);
-                    exchange.getResponseHeaders().setBlock1Req(reqBlock);
-                    exchange.getResponse().setToken(request.getToken());
-                    exchange.sendResponse();
-                    return;
-                }
-            } else {
-                LOGGER.trace("callRequestHandler() block transfer continuation " + reqBlock);
-            }
 
-            //boolean isTokenMismatch = (blockRequest.token==null && request.headers().getToken()==null);
-            boolean isTokenMismatch = (blockRequest.token != null && !Arrays.equals(blockRequest.token, request.getToken()))
-                    || (blockRequest.token == null && request.getToken() != null);
+        BlockOption reqBlock = request.headers().getBlock1Req();
 
-            if (isTokenMismatch) {
-                //token mismatch, send error, stop collecting blocks
-                LOGGER.trace("callRequestHandler() block token mismatch " + reqBlock);
-                CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, incomingTransContext);
-                exchange.setResponseCode(Code.C408_REQUEST_ENTITY_INCOMPLETE);
-                exchange.getResponseHeaders().setBlock1Req(reqBlock);
-                exchange.getResponse().setToken(request.getToken());
-                exchange.setResponseBody("Token mismatch");
-                exchange.sendResponse();
-
-                //remove from map
-                removeBlockRequest(blockRequestId);
-                return;
-
-            }
-
-            blockRequest.appendBlock(request);
-
-            if (getMaxIncomingBlockTransferSize() > 0 && blockRequest.payload.length > getMaxIncomingBlockTransferSize()) {
-                CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, incomingTransContext);
-                exchange.setResponseCode(Code.C413_REQUEST_ENTITY_TOO_LARGE);
-                exchange.getResponseHeaders().setBlock1Req(reqBlock);
-                exchange.getResponseHeaders().setSize1(getMaxIncomingBlockTransferSize());
-                exchange.getResponse().setToken(request.getToken());
-                exchange.setResponseBody("Entity too large");
-                exchange.sendResponse();
-
-                removeBlockRequest(blockRequestId);
-                LOGGER.warn("Received request with too large entity: " + request.toString());
-                return;
-            }
-
-            if (!reqBlock.hasMore()) {
-                //last block received
-                request.setPayload(blockRequest.payload);
-
-                CoapExchangeImplBlock exchange = new CoapExchangeImplBlock(request, this, incomingTransContext);
-                coapHandler.handle(exchange);
-
-                //remove from map
-                removeBlockRequest(blockRequestId);
-            } else {
-                //more block available, send ACK
-                if (this.getBlockSize() != null && reqBlock.getSize() > this.getBlockSize().getSize()) {
-                    //to large block, change
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("to large block (" + reqBlock.getSize() + "), changing to " + this.getBlockSize().getSize());
-                    }
-                    reqBlock = new BlockOption(reqBlock.getNr(), this.getBlockSize(), reqBlock.hasMore());
-                }
-                CoapExchangeImpl exchange = new CoapExchangeImpl(request, this);
-                exchange.setResponseCode(Code.C231_CONTINUE);
-                exchange.getResponseHeaders().setBlock1Req(reqBlock);
-                exchange.getResponse().setToken(request.getToken());
-                exchange.sendResponse();
-            }
-
-        } else {
+        if (reqBlock == null) {
             super.callRequestHandler(request, coapHandler, incomingTransContext);
+            return;
         }
+
+        //blocking request
+        BlockRequestId blockRequestId = new BlockRequestId(request.headers().getUriPath(), request.getRemoteAddress());
+        BlockRequest blockRequest = blockReqMap.get(blockRequestId);
+
+        // BERT request, but BERT support is not enabled on our server
+        BlockSize localBlockSize = getBlockSize(request.getRemoteAddress());
+        if (reqBlock.isBert() && (localBlockSize == null || !localBlockSize.isBert())) {
+            createBlockErrorResponse(request, incomingTransContext, Code.C402_BAD_OPTION, "BERT is not supported").sendResponse();
+            if (blockRequest != null) {
+                removeBlockRequest(blockRequestId);
+            }
+            return;
+        }
+
+        if (blockRequest == null) {
+            if (reqBlock.getNr() == 0) {
+                //new blocking
+                LOGGER.trace("callRequestHandler() new block transfer");
+                blockRequest = new BlockRequest(request);
+                addBlockRequest(blockRequest);
+            } else {
+                //Could not find previous blocks
+                createBlockErrorResponse(request, incomingTransContext,
+                        Code.C408_REQUEST_ENTITY_INCOMPLETE, null)
+                        .sendResponse();
+                return;
+            }
+        } else {
+            LOGGER.trace("callRequestHandler() block transfer continuation " + reqBlock);
+        }
+
+        //boolean isTokenMismatch = (blockRequest.token==null && request.headers().getToken()==null);
+        boolean isTokenMismatch = (blockRequest.token != null && !Arrays.equals(blockRequest.token, request.getToken()))
+                || (blockRequest.token == null && request.getToken() != null);
+
+        if (isTokenMismatch) {
+            //token mismatch, send error, stop collecting blocks
+            LOGGER.trace("callRequestHandler() block token mismatch " + reqBlock);
+            createBlockErrorResponse(request, incomingTransContext,
+                    Code.C408_REQUEST_ENTITY_INCOMPLETE, "Token mismatch")
+                    .sendResponse();
+
+            //remove from map
+            removeBlockRequest(blockRequestId);
+            return;
+
+        }
+
+        if (reqBlock.hasMore()) {
+            if (!checkIntermediateBlockSize(request, reqBlock)) {
+                createBlockErrorResponse(request, incomingTransContext, Code.C400_BAD_REQUEST, "bl size mismatch")
+                        .sendResponse();
+                removeBlockRequest(blockRequestId);
+                return;
+            }
+        } else {
+            if (!checkLastBlockSize(request, reqBlock)) {
+                createBlockErrorResponse(request, incomingTransContext, Code.C400_BAD_REQUEST, "bl size mismatch")
+                        .sendResponse();
+                removeBlockRequest(blockRequestId);
+                return;
+            }
+        }
+
+
+        int appendedBlocksCount = blockRequest.appendBlock(request);
+
+        if (!reqBlock.isBert() && appendedBlocksCount > 1) {
+            createBlockErrorResponse(request, incomingTransContext,
+                    Code.C400_BAD_REQUEST,
+                    "non-BERT block, but multi-block payload")
+                    .sendResponse();
+            removeBlockRequest(blockRequestId);
+            return;
+        }
+
+        if (getMaxIncomingBlockTransferSize() > 0 && blockRequest.payload.size() > getMaxIncomingBlockTransferSize()) {
+            CoapExchangeImpl exchange = createBlockErrorResponse(request, incomingTransContext, Code.C413_REQUEST_ENTITY_TOO_LARGE, "Entity too large");
+            exchange.getResponseHeaders().setSize1(getMaxIncomingBlockTransferSize());
+            exchange.sendResponse();
+
+            removeBlockRequest(blockRequestId);
+            LOGGER.warn("Received request with too large entity: " + request.toString());
+            return;
+        }
+
+        if (!reqBlock.hasMore()) {
+            //last block received
+            request.setPayload(blockRequest.payload.toByteArray());
+
+            CoapExchangeImplBlock exchange = new CoapExchangeImplBlock(request, this, incomingTransContext);
+            coapHandler.handle(exchange);
+
+            //remove from map
+            removeBlockRequest(blockRequestId);
+        } else {
+            //more block available, send ACK
+            if (localBlockSize != null && reqBlock.getSize() > localBlockSize.getSize()) {
+                //to large block, change
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("to large block (" + reqBlock.getSize() + "), changing to " + localBlockSize.getSize());
+                }
+                reqBlock = new BlockOption(reqBlock.getNr(), localBlockSize, reqBlock.hasMore());
+            }
+            CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, incomingTransContext);
+            exchange.setResponseCode(Code.C231_CONTINUE);
+            exchange.getResponseHeaders().setBlock1Req(reqBlock);
+            exchange.getResponse().setToken(request.getToken());
+            exchange.sendResponse();
+        }
+    }
+
+    private boolean checkIntermediateBlockSize(CoapPacket packet, BlockOption blockHeader) {
+        int payloadSize = packet.getPayload().length;
+
+        int blockSize = blockHeader.getSize();
+
+        if (blockHeader.isBert()) {
+            return payloadSize % blockSize == 0;
+        } else {
+            return payloadSize == blockSize;
+        }
+    }
+
+    private boolean checkLastBlockSize(CoapPacket packet, BlockOption blockOption) {
+        int payloadSize = packet.getPayload().length;
+        if (!blockOption.isBert()) {
+            return payloadSize <= blockOption.getSize();
+        }
+        return true; // BERT last block size is always valid within max message size
+    }
+
+    private CoapExchangeImpl createBlockErrorResponse(CoapPacket request, TransportContext transContext, Code responseCode, String bodyMessage) {
+        CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, transContext);
+        exchange.setResponseCode(responseCode);
+        exchange.getResponseHeaders().setBlock1Req(request.headers().getBlock1Req());
+        exchange.getResponse().setToken(request.getToken());
+        if (bodyMessage != null) {
+            exchange.setResponseBody(bodyMessage);
+        }
+        return exchange;
     }
 
     private class BlockCallback implements RequestCallback, CoapTransactionCallback {
@@ -272,12 +372,20 @@ abstract class CoapServerBlocks extends CoapServer {
         private final byte[] requestPayload;
         private int resourceChanged;
         private final TransportContext outgoingTransContext;
+        private int lastBertBlocksCount;
 
         public BlockCallback(CoapPacket request, RequestCallback reqCallback, TransportContext outgoingTransContext) {
             this.reqCallback = reqCallback;
             this.request = request;
             this.requestPayload = request.getPayload();
             this.outgoingTransContext = outgoingTransContext;
+        }
+
+        public byte[] createFirstPayloadBlockAndUpdateBlocksCount(BlockOption reqBlock) {
+            int maxBlockPayload = getMaxOutboundPayloadSize(request.getRemoteAddress());
+            ByteArrayOutputStream blockPayload = new ByteArrayOutputStream(maxBlockPayload);
+            lastBertBlocksCount = reqBlock.createBlockPart(requestPayload, blockPayload, maxBlockPayload);
+            return blockPayload.toByteArray();
         }
 
         @Override
@@ -295,13 +403,16 @@ abstract class CoapServerBlocks extends CoapServer {
                         reqCallback.call(response);
                         return;
                     }
+                    int maxBlockPayload = getMaxOutboundPayloadSize(request.getRemoteAddress());
                     //create new request
-                    reqBlock = reqBlock.nextBlock(requestPayload);
+                    reqBlock = reqBlock.nextBertBlock(requestPayload, lastBertBlocksCount, maxBlockPayload);
                     request.headers().setBlock1Req(reqBlock);
                     // reset size headers for all blocks except first
                     // see https://tools.ietf.org/html/draft-ietf-core-block-18#section-4 , Implementation notes
                     request.headers().setSize1(null);
-                    request.setPayload(reqBlock.createBlockPart(requestPayload));
+                    ByteArrayOutputStream blockPayload = new ByteArrayOutputStream(maxBlockPayload);
+                    lastBertBlocksCount = reqBlock.createBlockPart(requestPayload, blockPayload, maxBlockPayload);
+                    request.setPayload(blockPayload.toByteArray());
                     if (LOGGER.isTraceEnabled()) {
                         LOGGER.trace("BlockCallback.call() next block b1: " + request.toString(false));
                     }
@@ -354,7 +465,7 @@ abstract class CoapServerBlocks extends CoapServer {
                 //isCompleted = false;
                 //CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, requestUri, destination);
 
-                request.headers().setBlock2Res(new BlockOption(blResponse.headers().getBlock2Res().getNr() + 1, blResponse.headers().getBlock2Res().getSzx(), false));
+                request.headers().setBlock2Res(new BlockOption(blResponse.headers().getBlock2Res().getNr() + 1, blResponse.headers().getBlock2Res().getBlockSize(), false));
                 request.headers().setBlock1Req(null);
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace("BlockCallback.call() make next b2: " + request.toString(false));
@@ -398,7 +509,7 @@ abstract class CoapServerBlocks extends CoapServer {
                 LOGGER.trace("CoAP resource representation has changed while getting blocks");
             }
             response = null;
-            request.headers().setBlock2Res(new BlockOption(0, blResponse.headers().getBlock2Res().getSzx(), false));
+            request.headers().setBlock2Res(new BlockOption(0, blResponse.headers().getBlock2Res().getBlockSize(), false));
             makeRequest(request, outgoingTransContext);
             return false;
         }
@@ -473,14 +584,21 @@ abstract class CoapServerBlocks extends CoapServer {
     protected static class BlockRequest {
 
         //private CoapPacket request;
-        private byte[] payload;
+        private final ByteArrayOutputStream payload;
         private final String uriPath;
         private final InetSocketAddress sourceAddress;
         private final byte[] token;
         private final BlockRequestId blockRequestId;
+        private int lastWrittenBlocksCount;
 
         public BlockRequest(CoapPacket request) {
-            this.payload = request.getPayload();
+            Integer expectedPayloadSize = request.headers().getSize1();
+            BlockOption blockOption = request.headers().getBlock1Req();
+
+            int allocationSize = expectedPayloadSize != null && expectedPayloadSize >= BlockSize.S_16.getSize() ?
+                    expectedPayloadSize : blockOption.getSize() * 4;
+
+            this.payload = new ByteArrayOutputStream(allocationSize);
             this.uriPath = request.headers().getUriPath();
             this.sourceAddress = request.getRemoteAddress();
             this.token = request.getToken();
@@ -492,12 +610,12 @@ abstract class CoapServerBlocks extends CoapServer {
             return blockRequestId;
         }
 
-        private void appendBlock(CoapPacket request) {
+        private int appendBlock(CoapPacket request) {
             byte[] reqPayload = request.getPayload();
             BlockOption reqBlock = request.headers().getBlock1Req();
-            this.payload = reqBlock.appendPayload(payload, reqPayload);
+            lastWrittenBlocksCount = reqBlock.appendPayload(payload, reqPayload);
+            return lastWrittenBlocksCount;
         }
-
     }
 
     private static class CoapExchangeImplBlock extends CoapExchangeImpl {

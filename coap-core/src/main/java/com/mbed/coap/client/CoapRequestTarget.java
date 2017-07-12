@@ -16,14 +16,12 @@
 package com.mbed.coap.client;
 
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.exception.ObservationNotEstablishedException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
-import com.mbed.coap.server.CoapServerObserve;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
@@ -234,16 +232,11 @@ public class CoapRequestTarget {
     }
 
     public CompletableFuture<CoapPacket> observe(ObservationListener observationListener) throws CoapException {
-        if (coapClient.coapServer instanceof CoapServerObserve) {
+        requestPacket.headers().setObserve(0);
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
+        coapClient.putObservationListener(observationListener, coapClient.coapServer.observe(requestPacket, callback, transContext), requestPacket.headers().getUriPath());
 
-            requestPacket.headers().setObserve(0);
-            FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-            coapClient.putObservationListener(observationListener, coapClient.coapServer.observe(requestPacket, callback, transContext), requestPacket.headers().getUriPath());
-
-            return callback;
-        } else {
-            throw new ObservationNotEstablishedException("");
-        }
+        return callback;
     }
 
     CoapPacket getRequestPacket() {

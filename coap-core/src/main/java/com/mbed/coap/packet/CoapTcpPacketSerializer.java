@@ -15,13 +15,15 @@
  */
 package com.mbed.coap.packet;
 
+import static com.mbed.coap.packet.PaketUtils.*;
 import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.exception.CoapMessageFormatException;
 import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 
 /**
  * This class implements serialization on de-serialization for CoAP over TCP packet.
@@ -33,52 +35,144 @@ public final class CoapTcpPacketSerializer {
      * De-serialize CoAP over TCP message from input stream.
      *
      * @param remoteAddress remote address
-     * @param is input stream
+     * @param inputStream input stream
      * @return CoapPacket instance
-     * @throws CoapException if input stream can not be de-serialized
+     * @throws IOException - in case of EOF, closed stream or other low-level errors
+     * @throws CoapException - and subclasses in case of CoAP parsing failed.
      */
-    public static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream is) throws CoapException {
-        StrictInputStream inputStream = new StrictInputStream(is);
-        CoapPacket cp = new CoapPacket(remoteAddress);
-
+    public static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream inputStream) throws IOException, CoapException {
         try {
-            // Len & TKL
-            int tempByte = inputStream.read();
-            int plLen = readPayloadLen(tempByte, is);
-            byte tokenLen = (byte) (tempByte & 0x0F);
+            return deserialize(remoteAddress, inputStream, true);
+        } catch (NotEnoughDataException e) {
+            // should never happen, we should block on IO if there is not enough data
+            throw new IOException(e);
+        }
+    }
 
-            // Code
-            tempByte = inputStream.read();
-            if (tempByte >= 1 && tempByte <= 10) {
-                //method code
-                cp.setMethod(Method.valueOf(tempByte));
-            } else {
-                cp.setCode(Code.valueOf(tempByte));
-            }
-            cp.setMessageType(null); //override default
+    /**
+     * Returns CoapPacket only if able to deserialize whole packet. Otherwise returns empty Optional.
+     * Client is responsible to restore stream position if deserialization failed.
+     *
+     * @param remoteAddress - remote addres from which packet is received
+     * @param inputStream - stream to read data
+     * @return CoapPacket wrapped to Optional if able to deserialize or empty Optional otherwise
+     * @throws IOException   - in case of EOF, closed stream or other low-level errors
+     * @throws CoapException - and subclasses in case of CoAP parsing failed.
+     */
 
-            //TKL Bytes
-            cp.setToken(inputStream.readBytes(tokenLen));
+    public static Optional<CoapPacket> deserializeIfEnoughData(InetSocketAddress remoteAddress, InputStream inputStream) throws IOException, CoapException {
+        try {
+            return Optional.of(deserialize(remoteAddress, inputStream, false));
+        } catch (NotEnoughDataException ex) {
+            return Optional.empty();
+        }
+    }
 
-            //Options
-            boolean hasPayloadMarker;
-            HeaderOptions options = new HeaderOptions();
-            hasPayloadMarker = options.deserialize(inputStream, cp.getCode());
-            cp.setHeaderOptions(options);
+    private static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream inputStream, boolean orBlock) throws NotEnoughDataException, IOException, CoapException {
+        StrictInputStream is = new StrictInputStream(inputStream);
+        CoapPacketParsingContext pktContext = deserializeHeader(remoteAddress, is, orBlock);
+        CoapPacket pkt = pktContext.getCoapPacket();
 
-            //Payload
-            if (hasPayloadMarker) {
-                cp.setPayload(inputStream.readBytes(plLen));
-            } else if (plLen > 0) {
-                throw new EOFException();
-            }
+        HeaderOptions options = new HeaderOptions();
+        int leftPayloadLen = options.deserialize(is, pkt.getCode(), orBlock, Optional.of((int) pktContext.getLength()));
+        pkt.setHeaderOptions(options);
 
-        } catch (IOException iOException) {
-            throw new CoapException(iOException);
+        if (leftPayloadLen > 0) {
+            pkt.setPayload(readN(is, leftPayloadLen, orBlock));
+        }
+        return pkt;
+    }
+
+    private static CoapPacketParsingContext deserializeHeader(InetSocketAddress remoteAddress, StrictInputStream is, boolean orBlock) throws IOException, NotEnoughDataException, CoapException {
+
+        int len1AndTKL = read8(is, orBlock);
+
+        int len1 = (len1AndTKL >> 4) & 0x0F;
+        int tokenLength = len1AndTKL & 0x0F;
+
+        long len = readPacketLen(len1, is, orBlock);
+
+        int codeOrMethod = read8(is, orBlock);
+
+        byte[] token = readToken(is, tokenLength, orBlock);
+
+        CoapPacket coapPacket = new CoapPacket(remoteAddress);
+
+        parseAndSetCodeOrMethod(coapPacket, codeOrMethod);
+        coapPacket.setMessageType(null); //override default
+        coapPacket.setToken(token);
+
+        return new CoapPacketParsingContext(coapPacket, len);
+    }
+
+    private static void parseAndSetCodeOrMethod(CoapPacket coapPacket, int codeOrMethod) throws CoapException {
+        if (codeOrMethod >= 1 && codeOrMethod <= 10) {
+            //method code
+            coapPacket.setMethod(Method.valueOf(codeOrMethod));
+        } else {
+            coapPacket.setCode(Code.valueOf(codeOrMethod));
+        }
+    }
+
+    private static long readPacketLen(int len1, StrictInputStream is, boolean orBlock) throws IOException, NotEnoughDataException {
+        switch (len1) {
+            case 15:
+                return read32(is, orBlock) + 65805;
+            case 14:
+                return read16(is, orBlock) + 269;
+            case 13:
+                return read8(is, orBlock) + 13;
+
+            default:
+                return len1;
+        }
+    }
+
+    private static byte[] readToken(StrictInputStream is, int tokenLength, boolean orBlock) throws IOException, NotEnoughDataException, CoapException {
+        if (tokenLength == 0) {
+            return null;
+        }
+        if (tokenLength < 0 || tokenLength > 8) {
+            throw new CoapMessageFormatException("Token length invalid, should be in range 0..8");
         }
 
-        return cp;
+        return readN(is, tokenLength, orBlock);
     }
+
+
+    private static class CoapPacketParsingContext {
+        private final CoapPacket coapPacket;
+        private final long packetLength;
+        private long lengthLeft;
+
+        public CoapPacketParsingContext(CoapPacket coapPacket, long packetLength) {
+            this.coapPacket = coapPacket;
+            this.packetLength = packetLength;
+            this.lengthLeft = packetLength;
+        }
+
+        public CoapPacket getCoapPacket() {
+            return coapPacket;
+        }
+
+        public long getPacketLength() {
+            return packetLength;
+        }
+
+        public long getLength() {
+            return lengthLeft;
+        }
+
+        public void decrement(int amount) {
+            lengthLeft -= amount;
+        }
+
+        public long decrementAndGet(int amount) {
+            decrement(amount);
+            return getLength();
+        }
+    }
+
 
     private static int readPayloadLen(int firstByte, InputStream inputStream) throws IOException {
         int plLen = firstByte >>> 4;
@@ -114,13 +208,49 @@ public final class CoapTcpPacketSerializer {
      * @return serialized data
      * @throws CoapException exception if coap packet can not be serialized
      */
-    public static byte[] serialize(CoapPacket coapPacket) throws CoapException {
+    public static byte[] serialize(CoapPacket coapPacket) throws CoapException, IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
         writeTo(os, coapPacket);
 
         return os.toByteArray();
     }
+
+
+    private static int packetLenCode(int packetLen) {
+        if (packetLen < 13) {
+            return packetLen;
+        } else if (packetLen < 269) {
+            return 13;
+        } else if (packetLen < 65805) {
+            return 14;
+        } else {
+            return 15;
+        }
+
+    }
+
+    private static void writeExtendedPacketLength(OutputStream os, int packetLenCode, int fullPacketLength) throws IOException {
+        if (packetLenCode < 13) {
+            return;
+        }
+
+        switch (packetLenCode) {
+            case 13:
+                write8(os, fullPacketLength - 13);
+                break;
+            case 14:
+                write16(os, fullPacketLength - 269);
+                break;
+            case 15:
+                write32(os, fullPacketLength - 65805);
+                break;
+            default:
+                // should never happen
+                throw new RuntimeException("Unexpected packet len code: " + packetLenCode);
+        }
+    }
+
 
     /**
      * Writes serialized CoAP packet to given OutputStream.
@@ -129,99 +259,53 @@ public final class CoapTcpPacketSerializer {
      * @param coapPacket CoAP packet object
      * @throws CoapException serialization exception
      */
-    public static void writeTo(OutputStream os, CoapPacket coapPacket) throws CoapException {
-        try {
-            // Len & TKL
-            int tempByte = coapPacket.getToken().length;
-            int plLen = coapPacket.getPayload().length;
+    public static void writeTo(OutputStream os, CoapPacket coapPacket) throws CoapException, IOException {
 
-            if (plLen < 13) {
-                tempByte += (plLen << 4);
-            } else if (plLen < 269) {
-                tempByte += (13 << 4);
-            } else if (plLen < 65805) {
-                tempByte += (14 << 4);
-            } else {
-                tempByte += (15 << 4);
-            }
+        // we have to serialize options to byteArray to claculate their size
+        // because options size included into packet length field together with
+        // payload marker and payload size
+        ByteArrayOutputStream headerOptionsStream = new ByteArrayOutputStream();
+        coapPacket.headers().serialize(headerOptionsStream);
 
-            os.write(tempByte);
+        int optionsLength = headerOptionsStream.size();
+        int payloadLen = coapPacket.getPayload().length;
+        int payloadMarkerLen = payloadLen > 0 ? 1 : 0;
 
-            //Extended Length
-            writeExtendedLength(os, plLen);
+        int packetLength = optionsLength + payloadMarkerLen + payloadLen;
 
-            // Code
-            CoapPacket.writeCode(os, coapPacket);
 
-            //TKL Bytes
-            os.write(coapPacket.getToken());
+        // token length
+        int tokenLen = coapPacket.getToken().length;
 
-            //Options
-            coapPacket.headers().serialize(os);
-
-            //Payload
-            if (coapPacket.getPayload() != null && coapPacket.getPayload().length > 0) {
-                os.write(CoapPacket.PAYLOAD_MARKER);
-                os.write(coapPacket.getPayload());
-            }
-
-        } catch (IOException iOException) {
-            throw new CoapException(iOException.getMessage(), iOException);
+        if (tokenLen > 8) {
+            throw new CoapException("Token length should not exceed 8 bytes");
         }
+
+        // packet length or extended length code
+        int packetLen1Code = packetLenCode(packetLength);
+
+        //first header byte
+        write8(os, (packetLen1Code << 4) | tokenLen);
+
+        //Extended Length
+        writeExtendedPacketLength(os, packetLen1Code, packetLength);
+
+        // Code
+        CoapPacket.writeCode(os, coapPacket);
+
+        //TKL Bytes
+        os.write(coapPacket.getToken());
+
+        //Options
+        os.write(headerOptionsStream.toByteArray());
+
+        //Payload
+        if (coapPacket.getPayload() != null && coapPacket.getPayload().length > 0) {
+            os.write(CoapPacket.PAYLOAD_MARKER);
+            os.write(coapPacket.getPayload());
+        }
+
     }
 
-
-    private static void writeExtendedLength(OutputStream os, int plLen) throws IOException {
-        if (plLen >= 13 && plLen < 269) {
-            os.write(plLen - 13);
-        } else if (plLen >= 269 && plLen < 65805) {
-            os.write((0xFF00 & (plLen - 269)) >> 8);
-            os.write(0x00FF & (plLen - 269));
-        } else if (plLen >= 65805) {
-            os.write((0xFF000000 & (plLen - 65805)) >> 24);
-            os.write((0x00FF0000 & (plLen - 65805)) >> 16);
-            os.write((0x0000FF00 & (plLen - 65805)) >> 8);
-            os.write(0x000000FF & (plLen - 65805));
-        }
-    }
-
-    private static class StrictInputStream extends InputStream {
-        private final InputStream inputStream;
-
-        StrictInputStream(InputStream inputStream) {
-            this.inputStream = inputStream;
-        }
-
-        private byte[] readBytes(int len) throws IOException {
-            byte[] bytes = new byte[len];
-            read(bytes);
-            return bytes;
-        }
-
-        @Override
-        public int read() throws IOException {
-            int val = inputStream.read();
-            if (val < 0) {
-                throw new EOFException();
-            }
-            return val;
-        }
-
-        @Override
-        public int read(byte[] b) throws IOException {
-            if (b.length == 0) {
-                return 0;
-            }
-            if (inputStream.read(b) != b.length) {
-                throw new EOFException();
-            }
-            return b.length;
-        }
-
-        @Override
-        public int available() throws IOException {
-            return inputStream.available();
-        }
-    }
 
 }

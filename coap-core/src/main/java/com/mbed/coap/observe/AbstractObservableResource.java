@@ -17,6 +17,7 @@ package com.mbed.coap.observe;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
+import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
@@ -25,6 +26,7 @@ import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.HexArray;
+import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
@@ -244,10 +246,18 @@ public abstract class AbstractObservableResource extends CoapResource {
         coapNotif.headers().setEtag(etag);
         coapNotif.headers().setMaxAge(maxAge);
 
-        if (this.coapServer.getBlockSize() != null && payload.length > this.coapServer.getBlockSize().getSize()) {
-            BlockOption blockOpt = new BlockOption(0, this.coapServer.getBlockSize(), true);
+        //TODO: olesmi01: should we use BERT multi-block here as first block?
+        // could cause head-of-line blocking with first long message if BERT used here
+        // currently sending just first 1k or less first block
+
+        BlockSize blockSize = this.coapServer.getBlockSize(coapNotif.getRemoteAddress());
+
+        if (blockSize != null && payload.length > blockSize.getSize()) {
+            BlockOption blockOpt = new BlockOption(0, blockSize, true);
             coapNotif.headers().setBlock2Res(blockOpt);
-            coapNotif.setPayload(blockOpt.createBlockPart(payload));
+            ByteArrayOutputStream payloadBlock = new ByteArrayOutputStream(blockOpt.getSize());
+            blockOpt.createBlockPart(payload, payloadBlock, blockSize.getSize());
+            coapNotif.setPayload(payloadBlock.toByteArray());
         } else {
             coapNotif.setPayload(payload);
         }

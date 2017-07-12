@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
@@ -37,6 +37,9 @@ import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.server.DuplicatedCoapMessageCallback;
+import com.mbed.coap.server.MessageIdSupplier;
+import com.mbed.coap.server.ObservationHandler;
 import com.mbed.coap.server.internal.CoapTransaction.Priority;
 import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
@@ -57,13 +60,13 @@ import protocolTests.utils.CoapPacketBuilder;
 /**
  * Created by szymon
  */
-public class CoapServerTest {
+public class CoapServerForUdpTest {
 
 
     private final CoapTransport coapTransport = mock(CoapTransport.class);
     private int mid = 100;
     private final MessageIdSupplier midSupplier = () -> mid++;
-    private CoapServer server;
+    private CoapServerForUdp server;
     private ScheduledExecutorService scheduledExecutor = mock(ScheduledExecutorService.class);
     private ObservationHandler observationHandler;
     private BlockSize blockSize = null;
@@ -71,7 +74,7 @@ public class CoapServerTest {
 
     @Before
     public void setUp() throws Exception {
-        server = new CoapServer() {
+        server = new CoapServerForUdp() {
             @Override
             public byte[] observe(String uri, InetSocketAddress destination, Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) {
                 return new byte[0];
@@ -446,7 +449,7 @@ public class CoapServerTest {
 
     @Test
     public void should_receive_callback_when_observation_request_is_sent() throws Exception {
-        server = new CoapServerObserve();
+        server = new CoapServerBlocks();
         initServer();
 
         RequestCallback callback = mock(RequestCallback.class);

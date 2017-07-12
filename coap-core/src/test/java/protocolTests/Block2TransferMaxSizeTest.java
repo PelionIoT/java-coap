@@ -25,8 +25,8 @@ import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerObserve;
 import com.mbed.coap.server.MessageIdSupplierImpl;
+import com.mbed.coap.server.SimpleObservationIDGenerator;
 import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
@@ -51,7 +51,7 @@ public class Block2TransferMaxSizeTest {
         transport = new TransportConnectorMock();
 
         coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
-                .observerIdGenerator(new CoapServerObserve.SimpleObservationIDGenerator(0))
+                .observerIdGenerator(new SimpleObservationIDGenerator(0))
                 .timeout(new SingleTimeout(500))
                 .maxIncomingBlockTransferSize(MAX_TRANSFER_SIZE)
                 .build();

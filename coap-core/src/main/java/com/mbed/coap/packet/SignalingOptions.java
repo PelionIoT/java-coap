@@ -28,7 +28,7 @@ public class SignalingOptions {
     private static final byte HOLD_OFF = 4;             //7.04
     private static final byte BAD_CSM_OPTION = 2;       //7.05
 
-    private Integer maxMessageSize;
+    private Long maxMessageSize; // uint32 does not fit into Integer, Integer is signed
     private Boolean blockWiseTransfer;
     private Boolean custody;
     //    private List<String> alternativeAddresses; //TODO: Better type than string?
@@ -38,7 +38,7 @@ public class SignalingOptions {
 
     public SignalingOptions parse(int type, byte[] data, Code code) {
         if (code == Code.C701_CSM && type == MAX_MESSAGE_SIZE) {
-            setMaxMessageSize(DataConvertingUtility.readVariableULong(data).intValue());
+            setMaxMessageSize(DataConvertingUtility.readVariableULong(data));
         } else if (code == Code.C701_CSM && type == BLOCK_WISE_TRANSFER) {
             setBlockWiseTransfer(true);
         } else if ((code == Code.C702_PING || code == Code.C703_PONG) && type == CUSTODY) {
@@ -112,11 +112,16 @@ public class SignalingOptions {
         return sb.toString();
     }
 
-    public Integer getMaxMessageSize() {
+    public Long getMaxMessageSize() {
         return maxMessageSize;
     }
 
-    public void setMaxMessageSize(Integer maxMessageSize) {
+    // just helper when max size < Integer.MAX_VALUE
+    public void setMaxMessageSize(int maxMessageSize) {
+        setMaxMessageSize(new Long(maxMessageSize));
+    }
+
+    public void setMaxMessageSize(Long maxMessageSize) {
         if (custody != null || alternativeAddress != null || holdOff != null || badCsmOption != null) {
             throw new IllegalStateException("Other than 7.01 specific signaling option already set");
         }

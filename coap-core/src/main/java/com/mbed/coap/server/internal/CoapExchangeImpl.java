@@ -158,7 +158,7 @@ public class CoapExchangeImpl implements CoapExchange {
         }
         //get all blocks
         CoapPacket fullNotifRequest = new CoapPacket(Method.GET, MessageType.Confirmable, uriPath, getRemoteAddress());
-        fullNotifRequest.headers().setBlock2Res(new BlockOption(1, request.headers().getBlock2Res().getSzx(), false));
+        fullNotifRequest.headers().setBlock2Res(new BlockOption(1, request.headers().getBlock2Res().getBlockSize(), false));
         final byte[] etag = request.headers().getEtag();
 
         getCoapServer().makeRequest(fullNotifRequest, new Callback<CoapPacket>() {

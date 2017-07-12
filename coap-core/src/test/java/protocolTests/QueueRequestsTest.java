@@ -29,8 +29,8 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerObserve;
 import com.mbed.coap.server.MessageIdSupplierImpl;
+import com.mbed.coap.server.internal.CoapServerBlocks;
 import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.CoapReceiver;
@@ -155,7 +155,7 @@ public class QueueRequestsTest {
     // (interleave mode)
     @Test
     public void shouldSendRequestsToADevice_isASequence_2_requests_with_block_inserting_message_in_block() throws Exception {
-        ((CoapServerObserve) coapServer).setBlockCoapTransactionPriority(CoapTransaction.Priority.NORMAL);
+        ((CoapServerBlocks) coapServer).setBlockCoapTransactionPriority(CoapTransaction.Priority.NORMAL);
 
         CoapPacket blockResp1 = newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
         CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();

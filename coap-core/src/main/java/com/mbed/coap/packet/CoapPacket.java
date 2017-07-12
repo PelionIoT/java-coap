@@ -238,6 +238,13 @@ public class CoapPacket implements Serializable {
             }
             return response;
         }
+        if (messageType == null && method != null) {
+            CoapPacket response = new CoapPacket(this.getRemoteAddress());
+            response.setMessageId(this.messageId);
+            response.setToken(getToken());
+            response.setCode(responseCode);
+            return response;
+        }
 
         return null;
     }

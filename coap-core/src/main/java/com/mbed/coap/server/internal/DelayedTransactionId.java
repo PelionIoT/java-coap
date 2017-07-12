@@ -31,6 +31,10 @@ public class DelayedTransactionId {
         this.source = source;
     }
 
+    public boolean hasRemoteAddress(InetSocketAddress adr) {
+        return source.equals(adr);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
