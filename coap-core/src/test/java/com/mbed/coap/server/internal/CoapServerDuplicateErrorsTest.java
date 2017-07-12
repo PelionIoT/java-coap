@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.utils.CoapResource;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -39,7 +41,6 @@ public class CoapServerDuplicateErrorsTest {
     private CountDownLatch latch;
     CoapServer server;
     MockCoapTransport serverTransport;
-    DuplicatedCoapMessageCallback duplCallback = mock(DuplicatedCoapMessageCallback.class);
 
     @Before
     public void setUp() throws IOException {

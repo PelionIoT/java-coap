@@ -15,16 +15,7 @@
  */
 package com.mbed.coap.transport.javassl;
 
-import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.transport.BlockingCoapTransport;
-import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportContext;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocket;
@@ -32,24 +23,16 @@ import javax.net.ssl.SSLSocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SSLSocketClientTransport extends BlockingCoapTransport {
+public class SSLSocketClientTransport extends SocketClientTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SSLSocketClientTransport.class);
 
-    private final InetSocketAddress destination;
-    private OutputStream outputStream;
-    private InputStream inputStream;
-    private SSLSocket sslSocket;
-    private Thread readerThread;
-    private final SSLSocketFactory socketFactory;
-
-    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory) {
-        this.destination = destination;
-        this.socketFactory = socketFactory;
+    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory, boolean isTcpCoapPacket) {
+        super(destination, socketFactory, isTcpCoapPacket);
     }
 
     @Override
-    public void start(CoapReceiver coapReceiver) throws IOException {
-        sslSocket = (SSLSocket) socketFactory.createSocket(destination.getAddress(), destination.getPort());
+    protected void initSocket() throws IOException {
+        SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(destination.getAddress(), destination.getPort());
 
         sslSocket.addHandshakeCompletedListener(handshakeCompletedEvent -> {
                     try {
@@ -61,62 +44,11 @@ public class SSLSocketClientTransport extends BlockingCoapTransport {
         );
         sslSocket.startHandshake();
 
-        synchronized (this) {
-            outputStream = new BufferedOutputStream(sslSocket.getOutputStream());
-        }
-        inputStream = new BufferedInputStream(sslSocket.getInputStream(), 1024);
-
-        readerThread = new Thread(() -> loopReading(coapReceiver), "tls-client-read");
-        readerThread.start();
-    }
-
-    private void loopReading(CoapReceiver coapServer) {
-        try {
-            while (!sslSocket.isClosed()) {
-                try {
-                    final CoapPacket coapPacket = CoapPacket.deserialize(((InetSocketAddress) sslSocket.getRemoteSocketAddress()), inputStream);
-                    coapServer.handle(coapPacket, TransportContext.NULL);
-                } catch (CoapException e) {
-                    if (e.getCause() != null && e.getCause() instanceof IOException) {
-                        throw ((IOException) e.getCause());
-                    }
-                    LOGGER.warn("Closing socket connection, due to parsing error: " + e.getMessage());
-                    sslSocket.close();
-                }
-            }
-        } catch (Exception ex) {
-            if (!ex.getMessage().startsWith("Socket closed")) {
-                LOGGER.error(ex.getMessage(), ex);
-            }
-        }
-    }
-
-    @Override
-    public synchronized void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
-        if (!adr.equals(this.destination)) {
-            throw new IllegalStateException("No connection with: " + adr);
-        }
-        coapPacket.writeTo(outputStream);
-        outputStream.flush();
-    }
-
-    @Override
-    public InetSocketAddress getLocalSocketAddress() {
-        return ((InetSocketAddress) sslSocket.getLocalSocketAddress());
+        this.socket = sslSocket;
     }
 
     public SSLSocket getSslSocket() {
-        return sslSocket;
+        return ((SSLSocket) socket);
     }
 
-    @Override
-    public void stop() {
-        try {
-            sslSocket.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            readerThread.interrupt();
-        }
-    }
 }

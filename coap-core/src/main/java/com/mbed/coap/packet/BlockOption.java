@@ -15,8 +15,9 @@
  */
 package com.mbed.coap.packet;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
 
 /**
  * This class implements RFC7959 (Block-Wise Transfers in the Constrained Application Protocol)
@@ -26,18 +27,12 @@ import java.util.Arrays;
 public final class BlockOption implements Serializable {
 
     private final int blockNr;
-    private final byte szx;
     private final boolean more;
+    private final BlockSize blockSize;
 
     public BlockOption(int blockNr, BlockSize blockSize, boolean more) {
         this.blockNr = blockNr;
-        this.szx = blockSize.szx;
-        this.more = more;
-    }
-
-    public BlockOption(int blockNr, byte szx, boolean more) {
-        this.blockNr = blockNr;
-        this.szx = szx;
+        this.blockSize = blockSize;
         this.more = more;
     }
 
@@ -45,7 +40,8 @@ public final class BlockOption implements Serializable {
         int bl = DataConvertingUtility.readVariableULong(raw).intValue();
         blockNr = bl >> 4;
         more = (bl & 0x8) != 0;
-        szx = (byte) (bl & 0x7);
+        byte szx = (byte) (bl & 0x07);
+        blockSize = BlockSize.fromRawSzx(szx);
     }
 
     public byte[] toBytes() {
@@ -53,7 +49,7 @@ public final class BlockOption implements Serializable {
         if (more) {
             block |= 1 << 3;
         }
-        block |= szx;
+        block |= blockSize.toRawSzx();
         return DataConvertingUtility.convertVariableUInt(block);
     }
 
@@ -64,15 +60,19 @@ public final class BlockOption implements Serializable {
         return blockNr;
     }
 
-    public byte getSzx() {
-        return szx;
+    public BlockSize getBlockSize() {
+        return blockSize;
+    }
+
+    public boolean isBert() {
+        return blockSize.bert;
     }
 
     /**
      * @return the size
      */
     public int getSize() {
-        return 1 << (szx + 4);
+        return blockSize.getSize();
     }
 
     public boolean hasMore() {
@@ -87,50 +87,75 @@ public final class BlockOption implements Serializable {
      * @return BlockOption
      */
     public BlockOption nextBlock(byte[] fullPayload) {
-        if (fullPayload.length > (blockNr + 2) * getSize()) {
-            //has more
-            return new BlockOption(blockNr + 1, szx, true);
-        } else {
-            return new BlockOption(blockNr + 1, szx, false);
-        }
-
+        return nextBertBlock(fullPayload, 1, getSize());
     }
 
-    public byte[] appendPayload(byte[] origPayload, byte[] block) {
-        int size = blockNr * getSize() + block.length;
-        byte[] retPayload;
-        if (origPayload.length < size) {
-            //retPayload = new byte[size];
-            retPayload = Arrays.copyOf(origPayload, size);
-        } else {
-            retPayload = origPayload;
-        }
-        System.arraycopy(block, 0, retPayload, blockNr * getSize(), block.length);
-        //        for (int i=0;i<block.length;i++){
-        //            retPayload[i+blockNr*getSize()] = block[i];
-        //        }
-        //LOGGER.trace("appendPayload() origPayload-len: " + origPayload.length + " block-len: " +block.length + " size: " + size +  " nr: " + blockNr );
-        return retPayload;
+    /**
+     * Creates next block option
+     *
+     * @param fullPayload - full payload to be sent through block transfer
+     * @param lastBlocksCountPerMessage - number of BERT 1k sub-blocks in last sent block
+     * @param maxPayloadSizePerBlock - max payload size per BERT block
+     * @return nex block option instance
+     */
+    public BlockOption nextBertBlock(byte[] fullPayload, int lastBlocksCountPerMessage, int maxPayloadSizePerBlock) {
+
+        int nextBlockNumber = blockNr + (isBert()
+                ? lastBlocksCountPerMessage
+                : 1);
+        int nextPayloadPos = nextBlockNumber * getSize();
+        int leftPayload = fullPayload.length - nextPayloadPos;
+
+        boolean newHasMore = isBert()
+                ? leftPayload > maxPayloadSizePerBlock
+                : leftPayload > getSize();
+
+        return new BlockOption(nextBlockNumber, blockSize, newHasMore);
     }
 
-    public byte[] createBlockPart(byte[] fullPayload) {
+    public int appendPayload(ByteArrayOutputStream origPayload, byte[] block) {
+        try {
+            origPayload.write(block);
+        } catch (IOException e) {
+            // should never happen
+            throw new RuntimeException("Can't append payload to buffer", e);
+        }
+        return block.length / getSize(); // return count of blocks added, needed for BERT
+    }
+
+    /**
+     * Creates new block, saves it into outputBlock and retuns count of block put to the payload according
+     * to maxPayloadSizePerBlock
+     *
+     * @param fullPayload - full payload from which block will be created
+     * @param outputBlock - outputStream where block will be saved
+     * @param maxPayloadSizePerBlock - maximum payload size (mostly for BERT blocks)
+     * @return
+     */
+    public int createBlockPart(byte[] fullPayload, ByteArrayOutputStream outputBlock, int maxPayloadSizePerBlock) {
         //block size 16
         //b0: 0 - 15
         //b1: 16 - 31
 
+        int blocksCount = isBert()
+                ? maxPayloadSizePerBlock / getSize()
+                : 1;
+
         int startPos = blockNr * getSize();
         if (startPos > fullPayload.length - 1) {
-            //payload to small
-            return null;
+            //payload too small
+            return 0;
         }
-        int len = getSize();
+        // maxPayloadSize is not used to round len to blockSize
+        // by default, maxPayloadSizePerBlock usually should be rounded to n*blockSize
+        int len = getSize() * blocksCount;
         if (startPos + len > fullPayload.length) {
             len = fullPayload.length - startPos;
+            assert !hasMore();
         }
-        byte[] nwPayload = new byte[len];
-        System.arraycopy(fullPayload, startPos, nwPayload, 0, len);
-        //LOGGER.trace("createBlockPart() payload-len: " + fullPayload.length + " start: " +startPos + " len: " + len);
-        return nwPayload;
+        outputBlock.write(fullPayload, startPos, len);
+
+        return blocksCount;
     }
 
     @Override
@@ -142,7 +167,7 @@ public final class BlockOption implements Serializable {
             return false;
         }
 
-        return ((BlockOption) obj).szx == this.szx
+        return ((BlockOption) obj).blockSize == this.blockSize // enum value comparison
                 && ((BlockOption) obj).blockNr == this.blockNr
                 && ((BlockOption) obj).more == this.more;
     }
@@ -151,7 +176,8 @@ public final class BlockOption implements Serializable {
     public int hashCode() {
         int hash = 3;
         hash = 67 * hash + this.blockNr;
-        hash = 67 * hash + this.szx;
+        hash = 67 * hash + this.blockSize.szx;
+        hash = 67 * hash + (this.blockSize.bert ? 1 : 0);
         hash = 67 * hash + (this.more ? 1 : 0);
         return hash;
     }
@@ -162,6 +188,9 @@ public final class BlockOption implements Serializable {
         sb.append(this.blockNr);
         sb.append('|').append(more ? "more" : "last");
         sb.append('|').append(getSize());
+        if (isBert()) {
+            sb.append('|').append("BERT");
+        }
         return sb.toString();
     }
 }
