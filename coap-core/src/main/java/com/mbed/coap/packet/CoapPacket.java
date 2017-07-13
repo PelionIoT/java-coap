@@ -501,11 +501,7 @@ public class CoapPacket implements Serializable {
             sb.append(" Token:0x").append(HexArray.toHex(this.token));
         }
 
-        if (code != null && code.isSignaling()) {
-            signalingOptions.toString(sb);
-        } else {
-            options.toString(sb);
-        }
+        appendOptions(sb);
 
         if (payload != null && payload.length > 0) {
             if (doNotPrintPayload) {
@@ -516,6 +512,14 @@ public class CoapPacket implements Serializable {
         }
 
         return sb.toString();
+    }
+
+    private void appendOptions(StringBuilder sb) {
+        if (code != null && code.isSignaling()) {
+            signalingOptions.toString(sb);
+        } else {
+            options.toString(sb);
+        }
     }
 
     private void payloadToString(boolean printFullPayload, StringBuilder sb, boolean printPayloadOnlyAsHex) {
