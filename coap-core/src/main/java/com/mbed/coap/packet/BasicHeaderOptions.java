@@ -16,16 +16,13 @@
 package com.mbed.coap.packet;
 
 import com.mbed.coap.exception.CoapMessageFormatException;
-import com.mbed.coap.exception.CoapUnknownOptionException;
 import com.mbed.coap.utils.HexArray;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +33,7 @@ import java.util.Map;
  * @author szymon
  */
 @SuppressWarnings({"PMD.NPathComplexity", "PMD.CyclomaticComplexity"})
-public class BasicHeaderOptions implements Serializable {
+public class BasicHeaderOptions extends AbstractOptions implements Serializable {
 
     public static final byte IF_MATCH = 1; //multiple
     public static final byte URI_HOST = 3;
@@ -72,7 +69,6 @@ public class BasicHeaderOptions implements Serializable {
     private String proxyScheme;
     private Integer uriPort;
     private Integer size1;
-    private Map<Integer, RawOption> unrecognizedOptions;
 
     protected boolean parseOption(int type, byte[] data) {
         switch (type) {
@@ -127,72 +123,7 @@ public class BasicHeaderOptions implements Serializable {
         return true;
     }
 
-    /**
-     * Returns value for given un-recognize option number.
-     *
-     * @param optNumber option number
-     * @return byte array value or null if does not exist
-     */
-    public byte[] getCustomOption(Integer optNumber) {
-        if (!unrecognizedOptions.containsKey(optNumber)) {
-            return null;
-        }
-        return unrecognizedOptions.get(optNumber).getFirstValue();
-    }
-
-    /**
-     * Tests for unknown critical options. If any of critical option is unknown
-     * then throws CoapUnknownOptionException
-     *
-     * @throws CoapUnknownOptionException when critical option is unknown
-     */
-    public void criticalOptTest() throws CoapUnknownOptionException {
-        if (unrecognizedOptions == null) {
-            return;
-        }
-        for (int tp : unrecognizedOptions.keySet()) {
-            if (isCritical(tp)) {
-                throw new CoapUnknownOptionException(tp);
-            }
-        }
-    }
-
-    public static boolean isCritical(int optionNumber) {
-        return (optionNumber & 1) != 0;
-    }
-
-    public static boolean isUnsave(int optionNumber) {
-        return (optionNumber & 2) != 0;
-    }
-
-    public static boolean hasNoCacheKey(int optionNumber) {
-        return (optionNumber & 0x1e) == 0x1c;
-    }
-
-    /**
-     * Adds header option
-     *
-     * @param optionNumber option number
-     * @param data option value as byte array
-     * @return true if header type is a known, false for unknown header option
-     */
-    public final boolean put(int optionNumber, byte[] data) {
-        if (parseOption(optionNumber, data)) {
-            return true;
-        }
-        //unrecognizeg option header
-        if (unrecognizedOptions == null) {
-            unrecognizedOptions = new HashMap<>();
-        }
-        unrecognizedOptions.put(optionNumber, new RawOption(optionNumber, data));
-        return true;
-    }
-
-    /**
-     * Returns list with header options.
-     *
-     * @return sorted list
-     */
+    @Override
     protected List<RawOption> getRawOptions() {
         LinkedList<RawOption> list = new LinkedList<>();
 
@@ -251,25 +182,44 @@ public class BasicHeaderOptions implements Serializable {
     }
 
     /**
-     * Returns number of header options. If greater that 14 then returns 15.
-     *
-     * @return option count
+     * De-serializes CoAP header options. Returns true if PayloadMarker was
+     * found.
      */
-    final byte getOptionCount() {
-        int optCount = 0;
-        for (RawOption rOpt : getRawOptions()) {
-            optCount += rOpt.optValues.length == 0 ? 1 : rOpt.optValues.length;
+    public boolean deserialize(InputStream is) throws IOException, CoapMessageFormatException {
+
+        int headerOptNum = 0;
+        while (is.available() > 0) {
+            OptionMeta option = getOptionMeta(is);
+            if (option == null) {
+                return true;
+            }
+            headerOptNum += option.delta;
+            byte[] headerOptData = new byte[option.length];
+            is.read(headerOptData);
+            put(headerOptNum, headerOptData);
+
         }
-        return (byte) (optCount > 14 ? 15 : optCount);
+        //end of stream
+        return false;
+
+    }
+
+    /**
+     * Adds header option
+     *
+     * @param optionNumber option number
+     * @param data option value as byte array
+     * @return true if header type is a known, false for unknown header option
+     */
+    public final boolean put(int optionNumber, byte[] data) {
+        if (parseOption(optionNumber, data)) {
+            return true;
+        }
+        return putUnrecognized(optionNumber, data);
+
     }
 
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        toString(sb);
-        return sb.toString();
-    }
-
     public void toString(StringBuilder sb) {
         if (uriPath != null) {
             sb.append(" URI:").append(uriPath);
@@ -568,106 +518,6 @@ public class BasicHeaderOptions implements Serializable {
 
     public void setSize1(Integer size) {
         this.size1 = size;
-    }
-
-    void serialize(OutputStream os) throws IOException {
-        List<RawOption> list = getRawOptions();
-        Collections.sort(list);
-
-        int lastOptNumber = 0;
-        for (RawOption opt : list) {
-            for (byte[] optValue : opt.optValues) {
-                int delta = opt.optNumber - lastOptNumber;
-                lastOptNumber = opt.optNumber;
-                if (delta > 0xFFFF + 269) {
-                    throw new IllegalArgumentException("Delta with size: " + delta + " is not supported [option number: " + opt.optNumber + "]");
-                }
-                int len = optValue.length;
-                if (len > 0xFFFF + 269) {
-                    throw new IllegalArgumentException("Header size: " + len + " is not supported [option number: " + opt.optNumber + "]");
-                }
-                writeOptionHeader(delta, len, os);
-                os.write(optValue);
-            }
-        }
-    }
-
-    static void writeOptionHeader(int delta, int len, OutputStream os) throws IOException {
-        //first byte
-        int tempByte;
-        if (delta <= 12) {
-            tempByte = delta << 4;
-        } else if (delta < 269) {
-            tempByte = 13 << 4;
-        } else {
-            tempByte = 14 << 4;
-        }
-        if (len <= 12) {
-            tempByte |= len;
-        } else if (len < 269) {
-            tempByte |= 13;
-        } else {
-            tempByte |= 14;
-        }
-        os.write(tempByte);
-
-        //extended option delta
-        if (delta > 12 && delta < 269) {
-            os.write(delta - 13);
-        } else if (delta >= 269) {
-            os.write((0xFF00 & (delta - 269)) >> 8);
-            os.write(0x00FF & (delta - 269));
-        }
-        //extended len
-        if (len > 12 && len < 269) {
-            os.write(len - 13);
-        } else if (len >= 269) {
-            os.write((0xFF00 & (len - 269)) >> 8);
-            os.write(0x00FF & (len - 269));
-        }
-    }
-
-    /**
-     * De-serializes CoAP header options. Returns true if PayloadMarker was
-     * found.
-     */
-    boolean deserialize(InputStream is) throws IOException, CoapMessageFormatException {
-
-        int headerOptNum = 0;
-        while (is.available() > 0) {
-            int hdrByte = is.read();
-            if (hdrByte == CoapPacket.PAYLOAD_MARKER) {
-                return true;
-            }
-            int delta = hdrByte >> 4;
-            int len = 0xF & hdrByte;
-
-            if (delta == 15 || len == 15) {
-                throw new CoapMessageFormatException("Unexpected delta or len value in option header");
-            }
-            if (delta == 13) {
-                delta += is.read();
-            } else if (delta == 14) {
-                delta = is.read() << 8;
-                delta += is.read();
-                delta += 269;
-            }
-            if (len == 13) {
-                len += is.read();
-            } else if (len == 14) {
-                len = is.read() << 8;
-                len += is.read();
-                len += 269;
-            }
-            headerOptNum += delta;
-            byte[] headerOptData = new byte[len];
-            is.read(headerOptData);
-            put(headerOptNum, headerOptData);
-
-        }
-        //end of stream
-        return false;
-
     }
 
     @Override

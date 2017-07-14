@@ -26,8 +26,8 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerObserve;
 import com.mbed.coap.server.MessageIdSupplierImpl;
+import com.mbed.coap.server.SimpleObservationIDGenerator;
 import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
 import org.junit.After;
@@ -48,7 +48,7 @@ public class BlockTest {
         transport = new TransportConnectorMock();
 
         CoapServer coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
-                .observerIdGenerator(new CoapServerObserve.SimpleObservationIDGenerator(0))
+                .observerIdGenerator(new SimpleObservationIDGenerator(0))
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();
 

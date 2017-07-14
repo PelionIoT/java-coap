@@ -16,6 +16,8 @@
 package com.mbed.coap.server;
 
 import com.mbed.coap.packet.BlockSize;
+import com.mbed.coap.server.internal.CoapServerBlocks;
+import com.mbed.coap.server.internal.CoapServerForUdp;
 import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
@@ -33,7 +35,7 @@ public class CoapServerBuilder {
     private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
     private static final long DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
 
-    private final CoapServerObserve server;
+    private final CoapServerBlocks server;
     private int duplicationMaxSize = DEFAULT_MAX_DUPLICATION_LIST_SIZE;
     private CoapTransport coapTransport;
     private ScheduledExecutorService scheduledExecutorService;
@@ -46,7 +48,7 @@ public class CoapServerBuilder {
     private DuplicatedCoapMessageCallback duplicatedCoapMessageCallback = DuplicatedCoapMessageCallback.NULL;
 
     CoapServerBuilder() {
-        server = new CoapServerObserve();
+        server = new CoapServerBlocks();
     }
 
     public static CoapServerBuilder newBuilder() {
@@ -151,7 +153,7 @@ public class CoapServerBuilder {
         return build().start();
     }
 
-    public CoapServer build() {
+    public CoapServerForUdp build() {
         if (coapTransport == null) {
             throw new IllegalArgumentException("Transport is missing");
         }
@@ -169,7 +171,7 @@ public class CoapServerBuilder {
         return server;
     }
 
-    public CoapServerBuilder observerIdGenerator(CoapServerObserve.ObservationIDGenerator observationIDGenerator) {
+    public CoapServerBuilder observerIdGenerator(ObservationIDGenerator observationIDGenerator) {
         server.setObservationIDGenerator(observationIDGenerator);
         return this;
     }

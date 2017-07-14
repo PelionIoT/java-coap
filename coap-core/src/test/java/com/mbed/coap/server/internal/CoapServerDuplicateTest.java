@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.CoapServerBuilder.*;
 import static org.junit.Assert.*;
@@ -24,6 +24,10 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.ObservationHandler;
+import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.CoapResource;
@@ -147,8 +151,8 @@ public class CoapServerDuplicateTest {
         server.start();
 
         CoapPacket req = new CoapPacket(Method.PUT, MessageType.Confirmable, "/test", REMOTE_ADDRESS);
-        server.handle(req, TransportContext.NULL);
-        server.handle(req, TransportContext.NULL);
+        ((CoapReceiver) server).handle(req, TransportContext.NULL);
+        ((CoapReceiver) server).handle(req, TransportContext.NULL);
 
         server.stop();
     }

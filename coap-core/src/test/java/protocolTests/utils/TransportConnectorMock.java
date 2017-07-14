@@ -81,7 +81,7 @@ public class TransportConnectorMock extends BlockingCoapTransport {
         //remove address
         try {
             byte[] bytes = coapPacket.toByteArray();
-            coapPacket = CoapPacket.read(bytes, bytes.length, null);
+            coapPacket = CoapPacket.read(null, bytes, bytes.length);
         } catch (CoapException e) {
             throw new RuntimeException(e);
         }

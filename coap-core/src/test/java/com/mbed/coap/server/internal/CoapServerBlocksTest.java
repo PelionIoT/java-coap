@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Matchers.any;
@@ -25,7 +25,9 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.server.internal.CoapTransaction;
+import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.DuplicatedCoapMessageCallback;
+import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
@@ -49,7 +51,7 @@ public class CoapServerBlocksTest {
     private final CoapTransport coapTransport = mock(CoapTransport.class);
     private int mid = 100;
     private final MessageIdSupplier midSupplier = () -> mid++;
-    private CoapServer server;
+    private CoapServerForUdp server;
     private ScheduledExecutorService scheduledExecutor = mock(ScheduledExecutorService.class);
     private BlockSize blockSize = null;
 
