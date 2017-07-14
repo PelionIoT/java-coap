@@ -1,0 +1,19 @@
+<!--
+  ~ Copyright (C) 2011-2017 ARM Limited. All rights reserved.
+  -->
+
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <withJansi>true</withJansi>
+        <encoder>
+            <!--<pattern>%d{HH:mm:ss,SSS} %-5p | %16t | %32c{1}:%4L | %m%n</pattern>-->
+            <pattern>%d{HH:mm:ss} %-5p %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+</configuration>
