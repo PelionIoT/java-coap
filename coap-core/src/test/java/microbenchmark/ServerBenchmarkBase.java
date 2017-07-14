@@ -15,6 +15,8 @@
  */
 package microbenchmark;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
@@ -31,11 +33,10 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -54,7 +55,8 @@ public abstract class ServerBenchmarkBase {
 
     @Before
     public void warmUp() throws CoapException, IOException {
-        LogManager.getRootLogger().setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)).setLevel(Level.ERROR);
+
         CoapPacket coapReq = new CoapPacket(Method.GET, MessageType.Confirmable, "/path1/sub2/sub3", null);
         coapReq.setMessageId(1234);
         coapReq.setToken(new byte[]{1, 2, 3, 4, 5});

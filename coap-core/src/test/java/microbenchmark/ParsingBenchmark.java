@@ -15,6 +15,8 @@
  */
 package microbenchmark;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
@@ -24,11 +26,10 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
@@ -41,7 +42,7 @@ public class ParsingBenchmark {
 
     @Before
     public void warmUp() throws CoapException {
-        LogManager.getRootLogger().setLevel(Level.INFO);
+        ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)).setLevel(Level.ERROR);
 
         packet = new CoapPacket(Method.GET, MessageType.Confirmable, "/path-pppppppppppppppppp1/path-dddddddddd-2/dfdshffsdkjfhsdks3/444444444444444444444444444444444444444/55555555555555555555555555555555555555555555555", null);
         packet.setMessageId(1234);
