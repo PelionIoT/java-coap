@@ -15,22 +15,22 @@
  */
 package com.mbed.coap.server;
 
+import static com.mbed.coap.server.internal.CoapServerUtils.*;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.ObservationNotEstablishedException;
 import com.mbed.coap.exception.ObservationTerminatedException;
 import com.mbed.coap.linkformat.LinkFormat;
-import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.server.internal.CoapExchangeImpl;
+import com.mbed.coap.server.internal.CoapMessaging;
+import com.mbed.coap.server.internal.CoapRequestHandler;
 import com.mbed.coap.server.internal.ResourceLinks;
 import com.mbed.coap.server.internal.UriMatcher;
-import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.CoapResource;
@@ -47,17 +47,27 @@ import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class CoapServer implements CoapReceiver {
+public class CoapServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServer.class);
     private boolean isRunning;
     private final Map<UriMatcher, CoapHandler> handlers = new HashMap<>();
     private boolean enabledCriticalOptTest = true;
     protected ObservationHandler observationHandler;
-    protected CoapTransport coapTransporter;
     private ObservationIDGenerator observationIDGenerator = new SimpleObservationIDGenerator();
+    final CoapRequestHandler coapRequestHandler = new CoapRequestHandlerImpl();
 
-    public static CoapServerBuilder builder() {
-        return new CoapServerBuilder();
+    private final CoapMessaging coapMessaging;
+
+    public CoapServer(CoapMessaging coapMessaging) {
+        this.coapMessaging = coapMessaging;
+    }
+
+    public static CoapServerBuilder.CoapServerBuilderForUdp builder() {
+        return CoapServerBuilder.newBuilder();
+    }
+
+    public static CoapServerBuilder.CoapServerBuilderForTcp builderForTcp() {
+        return CoapServerBuilder.newBuilderForTcp();
     }
 
     /**
@@ -69,7 +79,7 @@ public abstract class CoapServer implements CoapReceiver {
      */
     public synchronized CoapServer start() throws IOException, IllegalStateException {
         assertNotRunning();
-        coapTransporter.start(this);
+        coapMessaging.start(coapRequestHandler);
         isRunning = true;
         return this;
     }
@@ -90,13 +100,10 @@ public abstract class CoapServer implements CoapReceiver {
 
         isRunning = false;
         LOGGER.trace("Stopping CoAP server..");
-        stop0();
-        coapTransporter.stop();
+        coapMessaging.stop();
 
         LOGGER.debug("CoAP Server stopped");
     }
-
-    protected abstract void stop0();
 
     /**
      * Informs if server is running
@@ -107,13 +114,6 @@ public abstract class CoapServer implements CoapReceiver {
         return isRunning;
     }
 
-
-    /**
-     * Returns next CoAP message id
-     *
-     * @return message id
-     */
-    protected abstract int getNextMID();
 
     /**
      * Adds handler for incoming requests. URI context can be absolute or with postfix. Postfix can be a star sign (*)
@@ -138,19 +138,12 @@ public abstract class CoapServer implements CoapReceiver {
     }
 
     /**
-     * Returns defines block size (per endpoint if applicable)
-     *
-     * @return block size per endpoint (if applicable) or generic setting for server or null if block transfers are not supported
-     */
-    abstract public BlockSize getBlockSize(InetSocketAddress remoteAddress);
-
-    /**
      * Returns socket address that this server is binding on
      *
      * @return socket address
      */
     public InetSocketAddress getLocalSocketAddress() {
-        return coapTransporter.getLocalSocketAddress();
+        return coapMessaging.getLocalSocketAddress();
     }
 
     private UriMatcher findKey(CoapHandler requestHandler) {
@@ -213,8 +206,27 @@ public abstract class CoapServer implements CoapReceiver {
      * @param callback handles response
      * @param transContext transport context that will be passed to transport connector
      */
-    abstract public void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext);
+    public void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext) {
+        coapMessaging.makeRequest(packet, callback, transContext);
+    }
 
+    public void sendNotification(final CoapPacket notifPacket, final Callback<CoapPacket> callback, final TransportContext transContext) {
+        if (notifPacket.headers().getObserve() == null) {
+            throw new IllegalArgumentException("Notification packet should have observation header set");
+        }
+        if (notifPacket.getToken() == null || notifPacket.getToken().length == 0) {
+            throw new IllegalArgumentException("Notification packet should have non-empty token");
+        }
+        if (notifPacket.getCode() != Code.C205_CONTENT) {
+            throw new IllegalArgumentException("Notification packet should have 205_CONTENT code");
+        }
+
+        makeRequest(notifPacket, callback, transContext);
+    }
+
+    public void ping(InetSocketAddress destination, final Callback<CoapPacket> callback) {
+        coapMessaging.ping(destination, callback);
+    }
 
     /**
      * Sets handler for receiving notifications.
@@ -226,124 +238,73 @@ public abstract class CoapServer implements CoapReceiver {
         LOGGER.trace("Observation handler set [{}]", observationHandler);
     }
 
-    protected final CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
-        return coapTransporter
-                .sendPacket(coapPacket, adr, tranContext)
-                .whenComplete((__, throwable) -> logCoapSent(coapPacket, throwable));
-    }
 
-    private void logCoapSent(CoapPacket coapPacket, Throwable maybeError) {
-        if (maybeError != null) {
-            LOGGER.warn("[{}] Failed to sent: {}", coapPacket.getRemoteAddress(), maybeError.toString());
-            return;
-        }
+    private class CoapRequestHandlerImpl implements CoapRequestHandler {
 
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("CoAP sent [" + coapPacket.toString(true) + "]");
-        } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("CoAP sent [" + coapPacket.toString(false) + "]");
-        } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("[" + coapPacket.getRemoteAddress() + "] CoAP sent [" + coapPacket.toString(false, false, false, true) + "]");
-        }
-    }
-
-    @Override
-    public void handle(CoapPacket packet, TransportContext transportContext) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("CoAP received [" + packet.toString(true) + "]");
-        } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[" + packet.getRemoteAddress() + "] CoAP received [" + packet.toString(false) + "]");
-        } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("[" + packet.getRemoteAddress() + "] CoAP received [" + packet.toString(false, false, false, true) + "]");
-        }
-
-        if (handlePing(packet)) {
-            return;
-        }
-
-        if (packet.getMethod() != null) {
-            handleRequest(packet, transportContext);
-            return;
-        } else {
-            if (handleResponse(packet)) {
-                return;
-            } else if (handleDelayedResponse(packet)) {
-                return;
-            } else if (handleObservation(packet, transportContext)) {
-                return;
+        @Override
+        public boolean handleObservation(CoapPacket packet, TransportContext context) {
+            ObservationHandler obsHdlr = observationHandler;
+            if (obsHdlr == null) {
+                return false;
             }
-        }
-        //cannot process
-        handleNotProcessedMessage(packet);
-    }
 
-    protected boolean handlePing(CoapPacket packet) {
-        if (packet.getCode() == null && packet.getMethod() == null && packet.getMessageType() == MessageType.Confirmable) {
-            LOGGER.debug("CoAP ping received.");
-            CoapPacket resp = packet.createResponse(null);
-            resp.setMessageType(MessageType.Reset);
-            sendResponseAndUpdateDuplicateDetector(packet, resp);
-            return true;
-        }
-        return false;
-    }
+            Integer observe = packet.headers().getObserve();
+            if (observe == null && !obsHdlr.hasObservation(packet.getToken())) {
+                return false;
+            }
 
-    protected boolean handleObservation(CoapPacket packet, TransportContext context) {
-        ObservationHandler obsHdlr = this.observationHandler;
-        if (obsHdlr == null) {
-            return false;
-        }
-
-        Integer observe = packet.headers().getObserve();
-        if (observe != null || obsHdlr.hasObservation(packet.getToken())) {
             if (observe == null || observe == 1 || (packet.getCode() != Code.C205_CONTENT && packet.getCode() != Code.C203_VALID)) {
 
                 LOGGER.trace("Notification termination [{}]", packet);
 
                 if (packet.getMustAcknowledge()) {
                     CoapPacket response = packet.createResponse();
-                    sendResponseAndUpdateDuplicateDetector(packet, response);
+                    sendResponse(packet, response);
                 }
 
                 obsHdlr.callException(new ObservationTerminatedException(packet, context));
                 return true;
             }
 
-            if (!findDuplicate(packet, "CoAP notification repeated")) {
-                LOGGER.trace("Notification [{}]", packet.getRemoteAddress());
-                CoapExchange exchange = new CoapExchangeImpl(packet, this, context);
-                obsHdlr.call(exchange);
-            }
+            //            if (!findDuplicate(packet, "CoAP notification repeated")) {
+            LOGGER.trace("Notification [{}]", packet.getRemoteAddress());
+            CoapExchange exchange = new CoapExchangeImpl(packet, CoapServer.this, context);
+            obsHdlr.call(exchange);
+            //            }
             return true;
         }
-        return false;
-    }
 
-    private void handleNotProcessedMessage(CoapPacket packet) {
-        CoapPacket resp = packet.createResponse(null);
-        if (resp != null) {
-            resp.setMessageType(MessageType.Reset);
-            if (packet.getMessageType() == MessageType.NonConfirmable) {
-                resp.setMessageId(getNextMID());
+        @Override
+        public void handleRequest(CoapPacket request, TransportContext transportContext) {
+            String uri = request.headers().getUriPath();
+            if (uri == null) {
+                uri = "/";
             }
-            LOGGER.warn("Can not process CoAP message [{}] sent RESET message", packet);
-            sendResponseAndUpdateDuplicateDetector(packet, resp);
-        } else {
-            handleNotProcessedMessageWeAreNotRespondingTo(packet);
+            CoapPacket errorResponse = null;
+
+            CoapHandler coapHandler = findHandler(uri);
+
+            if (coapHandler != null) {
+                try {
+                    if (enabledCriticalOptTest) {
+                        request.headers().criticalOptTest();
+                    }
+                    callRequestHandler(request, coapHandler, transportContext);
+                } catch (CoapCodeException ex) {
+                    errorResponse = request.createResponse(ex.getCode());
+                    errorResponse.setPayload(ex.getMessage());
+                } catch (Exception ex) {
+                    LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
+                    errorResponse = request.createResponse(Code.C500_INTERNAL_SERVER_ERROR);
+                }
+            } else {
+                errorResponse = request.createResponse(Code.C404_NOT_FOUND);
+            }
+            if (errorResponse != null) {
+                sendResponse(request, errorResponse);
+            }
         }
     }
-
-    private static void handleNotProcessedMessageWeAreNotRespondingTo(CoapPacket packet) {
-        if (MessageType.Acknowledgement.equals(packet.getMessageType())) {
-            LOGGER.debug("Discarding extra ACK: {}", packet);
-            return;
-        }
-        LOGGER.warn("Can not process CoAP message [{}]", packet);
-    }
-
-    protected abstract boolean handleDelayedResponse(CoapPacket packet);
-
-    protected abstract boolean handleResponse(CoapPacket packet);
 
     private CoapHandler findHandler(String uri) {
 
@@ -369,55 +330,29 @@ public abstract class CoapServer implements CoapReceiver {
         this.enabledCriticalOptTest = enable;
     }
 
-    private void handleRequest(CoapPacket request, TransportContext transportContext) {
-        if (findDuplicate(request, "CoAP request repeated")) {
-            return;
-        }
-        String uri = request.headers().getUriPath();
-        if (uri == null) {
-            uri = "/";
-        }
-        CoapPacket errorResponse = null;
 
-        CoapHandler coapHandler = findHandler(uri);
-
-        if (coapHandler != null) {
-            try {
-                if (enabledCriticalOptTest) {
-                    request.headers().criticalOptTest();
-                }
-                callRequestHandler(request, coapHandler, transportContext);
-            } catch (CoapCodeException ex) {
-                errorResponse = request.createResponse(ex.getCode());
-                errorResponse.setPayload(ex.getMessage());
-            } catch (Exception ex) {
-                LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
-                errorResponse = request.createResponse(Code.C500_INTERNAL_SERVER_ERROR);
-            }
-        } else {
-            errorResponse = request.createResponse(Code.C404_NOT_FOUND);
-        }
-        if (errorResponse != null) {
-            sendResponseAndUpdateDuplicateDetector(request, errorResponse);
-        }
-    }
-
-    protected abstract boolean findDuplicate(CoapPacket request, String message);
+    //    protected abstract boolean findDuplicate(CoapPacket request, String message);
 
     protected void callRequestHandler(CoapPacket request, CoapHandler coapHandler, TransportContext transportContext) throws CoapException {
         CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, transportContext);
         coapHandler.handle(exchange);
     }
 
-
-
-    protected void sendResponseAndUpdateDuplicateDetector(CoapPacket request, CoapPacket resp) {
-        sendResponseAndUpdateDuplicateDetector(request, resp, TransportContext.NULL);
+    protected void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext) {
+        coapMessaging.sendResponse(request, response, transContext);
     }
 
-    protected void sendResponseAndUpdateDuplicateDetector(CoapPacket request, CoapPacket resp, TransportContext ctx) {
-        sendPacket(resp, request.getRemoteAddress(), ctx);
+    protected void sendResponse(CoapPacket request, CoapPacket response) {
+        sendResponse(request, response, TransportContext.NULL);
     }
+
+    //    protected void sendResponseAndUpdateDuplicateDetector(CoapPacket request, CoapPacket resp) {
+    //        sendResponseAndUpdateDuplicateDetector(request, resp, TransportContext.NULL);
+    //    }
+    //
+    //    protected void sendResponseAndUpdateDuplicateDetector(CoapPacket request, CoapPacket resp, TransportContext ctx) {
+    //        coapMessaging.sendPacket(resp, request.getRemoteAddress(), ctx);
+    //    }
 
     /**
      * Returns handler that can be used as /.well-known/core resource.
@@ -471,7 +406,7 @@ public abstract class CoapServer implements CoapReceiver {
             //nothing to send
             return;
         }
-        sendResponseAndUpdateDuplicateDetector(exchange.getRequest(), resp, exchange.getResponseTransportContext());
+        sendResponse(exchange.getRequest(), resp, exchange.getResponseTransportContext());
     }
 
 
@@ -535,46 +470,9 @@ public abstract class CoapServer implements CoapReceiver {
      */
     public void setObservationIDGenerator(ObservationIDGenerator observationIDGenerator) {
         this.observationIDGenerator = observationIDGenerator;
-
     }
 
-    protected static void assume(boolean assumeCondition, String errorMessage) {
-        if (!assumeCondition) {
-            throw new IllegalStateException(errorMessage);
-        }
-    }
-
-    protected static RequestCallback wrapCallback(Callback<CoapPacket> callback) {
-        if (callback == null) {
-            throw new NullPointerException();
-        }
-        if (callback instanceof RequestCallback) {
-            return ((RequestCallback) callback);
-        }
-
-        return new InternalRequestCallback(callback);
-    }
-
-    static class InternalRequestCallback implements RequestCallback {
-        private final Callback<CoapPacket> callback;
-
-        InternalRequestCallback(Callback<CoapPacket> callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        public void call(CoapPacket packet) {
-            callback.call(packet);
-        }
-
-        @Override
-        public void callException(Exception ex) {
-            callback.callException(ex);
-        }
-
-        @Override
-        public void onSent() {
-            //ignore
-        }
+    public CoapMessaging getCoapMessaging() {
+        return coapMessaging;
     }
 }

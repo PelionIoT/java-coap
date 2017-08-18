@@ -244,7 +244,7 @@ public class ObservationTest {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         OBS_RESOURCE_1.setBody(ClientServerWithBlocksTest.BIG_RESOURCE);
 
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).blockSize(BlockSize.S_128).build();
 
         //register observation
         SyncObservationListener obsListener = new SyncObservationListener();

@@ -62,6 +62,7 @@ public class CoapPacketTest extends CoapPacketTestBase {
     @Test
     public void deserializeAfterSerializeGivesBackACoapPacketWithSameData() throws CoapException {
         CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
+        cp.setMessageId(14);
         byte[] rawCp = CoapPacket.serialize(cp);
         CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
 
@@ -79,6 +80,7 @@ public class CoapPacketTest extends CoapPacketTestBase {
         InetSocketAddress addr = InetSocketAddress.createUnresolved("some.host", 1234);
         CoapPacket cp = new CoapPacket(Code.C205_CONTENT, MessageType.Acknowledgement, addr);
         cp.setPayload("TEST");
+        cp.setMessageId(13);
 
         byte[] rawCp = CoapPacket.serialize(cp);
         CoapPacket cp2 = CoapPacket.read(addr, rawCp);
@@ -206,6 +208,7 @@ public class CoapPacketTest extends CoapPacketTestBase {
     @Test
     public void unknownHeaderTest() throws CoapException {
         CoapPacket cp = new CoapPacket(null);
+        cp.setMessageId(0);
         byte[] hdrVal = new byte[]{1, 2, 3, 4, 5, 6, 7};
         int hdrType = 100;
         cp.headers().put(hdrType, hdrVal);
@@ -224,10 +227,12 @@ public class CoapPacketTest extends CoapPacketTestBase {
     @Test
     public void uriPathWithDoubleSlashes() throws CoapException {
         CoapPacket cp = new CoapPacket(null);
+        cp.setMessageId(2);
         cp.headers().setUriPath("/3/13/0/");
         cp.headers().setLocationPath("/2//1");
         cp.headers().setUriQuery("te=12&&ble=14");
         cp.toByteArray();
+        cp.setMessageId(17);
 
         CoapPacket cp2 = CoapPacket.read(null, cp.toByteArray());
         assertEquals(cp, cp2);

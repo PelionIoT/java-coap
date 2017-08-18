@@ -53,7 +53,7 @@ public class ObservationWithBlockTest {
         transport = new TransportConnectorMock();
 
         CoapServer coapServer = CoapServerBuilder.newBuilder().transport(transport).midSupplier(new MessageIdSupplierImpl(0))
-                .observerIdGenerator(new SimpleObservationIDGenerator(0)).build();
+                .observerIdGenerator(new SimpleObservationIDGenerator(0)).blockSize(BlockSize.S_16).build();
         coapServer.start();
 
         client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);

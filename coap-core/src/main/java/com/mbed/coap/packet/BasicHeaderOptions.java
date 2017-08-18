@@ -647,7 +647,7 @@ public class BasicHeaderOptions implements Serializable {
      * found or zero if no payload present.
      * If no payload marker found but still data present - CoapMessageException is thrown.
      */
-    int deserialize(InputStream inputStream, Code code, boolean orBlock, Optional<Integer> optionsAndPayloadLen) throws IOException, CoapMessageFormatException, PaketUtils.NotEnoughDataException {
+    int deserialize(InputStream inputStream, Code code, boolean orBlock, Optional<Integer> optionsAndPayloadLen) throws IOException, CoapMessageFormatException, NotEnoughDataException {
 
         StrictInputStream is = null;
         if (inputStream instanceof StrictInputStream) {

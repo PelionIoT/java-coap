@@ -27,6 +27,7 @@ public class CoapPacketToStringTest {
     public void testToString_withShortPayload() {
         CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
         cp.setPayload("short");
+        cp.setMessageId(0);
 
         assertEquals("CON GET MID:0 URI:/test pl(5):0x73686f7274", cp.toString());
 
@@ -59,6 +60,7 @@ public class CoapPacketToStringTest {
     public void testToString_withLongPayload() {
         CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
         cp.setPayload("long payload long payload long payload long payload");
+        cp.setMessageId(0);
 
         assertEquals("CON GET MID:0 URI:/test pl(51):0x6c6f6e67207061796c6f6164206c6f6e67207061796c..", cp.toString());
 
@@ -77,6 +79,7 @@ public class CoapPacketToStringTest {
     public void testToString_full_withLongPayload() {
         CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
         cp.setPayload("long payload long payload long payload long payload");
+        cp.setMessageId(0);
 
         assertEquals("CON GET MID:0 URI:/test pl(51):0x6c6f6e67207061796c6f6164206c6f6e67207061796c6f6164206c6f6e67207061796c6f6164206c6f6e67207061796c6f6164", cp.toString(true));
 

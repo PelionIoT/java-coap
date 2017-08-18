@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
-import com.mbed.coap.server.internal.CoapTcpCSM;
-import java.net.InetSocketAddress;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
+import org.junit.Test;
 
-/**
- * Created by olesmi01 on 26.07.2017.
- * CoAP over TCP capabilities and settings storage interface
- */
-public interface CoapTcpCSMStorage {
-    void updateCapability(InetSocketAddress address, CoapTcpCSM capabilities);
+public class CoapTcpCSMTest {
 
-    CoapTcpCSM getOrDefault(InetSocketAddress address);
+    @Test
+    public void equalsAndHashTest() {
+        EqualsVerifier.forClass(CoapTcpCSM.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+    }
 
-    void remove(InetSocketAddress address);
 }

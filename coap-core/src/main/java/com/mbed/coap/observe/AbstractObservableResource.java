@@ -16,17 +16,15 @@
 package com.mbed.coap.observe;
 
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.packet.BlockOption;
-import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.HexArray;
-import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
@@ -227,10 +225,10 @@ public abstract class AbstractObservableResource extends CoapResource {
         if (isConfirmable || (sub.getObserveSeq() % FORCE_CON_FREQ) == 0) {
             coapNotif.setMessageType(MessageType.Confirmable);
             sub.setIsDelivering(true);
-            this.coapServer.makeRequest(coapNotif, new NotificationAckCallback(sub, deliveryListener, this));
+            this.coapServer.sendNotification(coapNotif, new NotificationAckCallback(sub, deliveryListener, this), TransportContext.NULL);
         } else {
             coapNotif.setMessageType(MessageType.NonConfirmable);
-            this.coapServer.makeRequest(coapNotif, Callback.ignore());
+            this.coapServer.sendNotification(coapNotif, Callback.ignore(), TransportContext.NULL);
         }
 
         if (LOGGER.isTraceEnabled()) {
@@ -246,21 +244,9 @@ public abstract class AbstractObservableResource extends CoapResource {
         coapNotif.headers().setEtag(etag);
         coapNotif.headers().setMaxAge(maxAge);
 
-        //TODO: olesmi01: should we use BERT multi-block here as first block?
-        // could cause head-of-line blocking with first long message if BERT used here
-        // currently sending just first 1k or less first block
+        // olesmi01: block transfers handling was moved to CoapServer/CoapServerBlocks .sendNotification()
+        coapNotif.setPayload(payload);
 
-        BlockSize blockSize = this.coapServer.getBlockSize(coapNotif.getRemoteAddress());
-
-        if (blockSize != null && payload.length > blockSize.getSize()) {
-            BlockOption blockOpt = new BlockOption(0, blockSize, true);
-            coapNotif.headers().setBlock2Res(blockOpt);
-            ByteArrayOutputStream payloadBlock = new ByteArrayOutputStream(blockOpt.getSize());
-            blockOpt.createBlockPart(payload, payloadBlock, blockSize.getSize());
-            coapNotif.setPayload(payloadBlock.toByteArray());
-        } else {
-            coapNotif.setPayload(payload);
-        }
         if (contentType != null && contentType > -1) {
             coapNotif.headers().setContentFormat(contentType);
         }

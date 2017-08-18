@@ -261,6 +261,6 @@ public class CoapClientTest {
     }
 
     private void cliReceive(CoapPacket packet) {
-        client.coapServer.handle(packet, TransportContext.NULL);
+        client.coapServer.getCoapMessaging().handle(packet, TransportContext.NULL);
     }
 }

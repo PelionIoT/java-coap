@@ -45,7 +45,7 @@ import org.junit.Test;
 /**
  * @author szymon
  */
-public class ServerTest {
+public class ServerIntegrationTest {
 
     CoapServer server = null;
     private int SERVER_PORT;

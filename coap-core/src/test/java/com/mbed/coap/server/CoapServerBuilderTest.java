@@ -18,7 +18,7 @@ package com.mbed.coap.server;
 import static com.mbed.coap.server.CoapServerBuilder.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import com.mbed.coap.server.internal.CoapServerForUdp;
+import com.mbed.coap.server.internal.CoapUdpMessaging;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Test;
 
@@ -31,9 +31,9 @@ public class CoapServerBuilderTest {
     public void scheduleExecutor() throws Exception {
         ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
 
-        CoapServerForUdp server = newBuilder().transport(0).scheduledExecutor(scheduledExecutorService).build();
+        CoapServer server = newBuilder().transport(0).scheduledExecutor(scheduledExecutorService).build();
 
-        assertEquals(scheduledExecutorService, server.getScheduledExecutor());
+        assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getCoapMessaging()).getScheduledExecutor());
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -83,7 +83,7 @@ public class CoapExchangeImpl implements CoapExchange {
 
     @Override
     public void setResponse(CoapPacket message) {
-        if (this.response != null) {
+        if (this.response != null && response.getMessageId() != -1) {
             message.setMessageId(this.response.getMessageId());
         } else {
             LOGGER.debug("Coap messaging: trying to set response for request with type:" + this.getRequest().getMessageType());

@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
-import com.mbed.coap.server.internal.CoapTcpCSM;
-import java.net.InetSocketAddress;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.transport.TransportContext;
 
 /**
- * Created by olesmi01 on 26.07.2017.
- * CoAP over TCP capabilities and settings storage interface
+ * Created by olesmi01 on 15.08.2017.
+ * CoAP requests handler interface which is called by CoAP protocol servers impl (messaging layer)
  */
-public interface CoapTcpCSMStorage {
-    void updateCapability(InetSocketAddress address, CoapTcpCSM capabilities);
+public interface CoapRequestHandler {
+    void handleRequest(CoapPacket request, TransportContext transportContext);
 
-    CoapTcpCSM getOrDefault(InetSocketAddress address);
-
-    void remove(InetSocketAddress address);
+    boolean handleObservation(CoapPacket packet, TransportContext context);
 }
