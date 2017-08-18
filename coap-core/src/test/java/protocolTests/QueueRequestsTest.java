@@ -30,8 +30,8 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.MessageIdSupplierImpl;
-import com.mbed.coap.server.internal.CoapServerBlocks;
 import com.mbed.coap.server.internal.CoapTransaction;
+import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
@@ -63,6 +63,7 @@ public class QueueRequestsTest {
                 .blockSize(BlockSize.S_32)
                 .disableDuplicateCheck()
                 .defaultQueuePriority(CoapTransaction.Priority.NORMAL)
+                //                .blockMessageTransactionQueuePriority(CoapTransaction.Priority.HIGH) //default config
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();
 
@@ -117,8 +118,8 @@ public class QueueRequestsTest {
     }
 
 
-    // all messages transaction priority:   CoapTransaction.Priority.NORMAL
-    // block messages transaction priority: CoapTransaction.Priority.HIGH
+    // all messages transaction priority:   CoapTransaction.Priority.NORMAL  // default config
+    // block messages transaction priority: CoapTransaction.Priority.HIGH    // default config
     @Test
     public void shouldSendRequestsToADevice_isASequence_2_requests_with_block() throws Exception {
         CoapPacket blockResp1 = newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
@@ -131,6 +132,7 @@ public class QueueRequestsTest {
         //#1 message - block1
         verify(transport).sendPacket(any(), any(), any());
         resetTransport();
+
         transportReceiver.handle(blockResp1, null); // fetches and removes transaction #1, makes block#2 req with msgId #3 and sends it (#2 still in the queue)
 
         //#2 message - block2
@@ -155,7 +157,7 @@ public class QueueRequestsTest {
     // (interleave mode)
     @Test
     public void shouldSendRequestsToADevice_isASequence_2_requests_with_block_inserting_message_in_block() throws Exception {
-        ((CoapServerBlocks) coapServer).setBlockCoapTransactionPriority(CoapTransaction.Priority.NORMAL);
+        ((CoapUdpMessaging) coapServer.getCoapMessaging()).setSpecialCoapTransactionPriority(CoapTransaction.Priority.NORMAL);
 
         CoapPacket blockResp1 = newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
         CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();

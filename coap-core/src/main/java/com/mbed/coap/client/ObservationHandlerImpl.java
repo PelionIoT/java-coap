@@ -62,6 +62,7 @@ class ObservationHandlerImpl implements ObservationHandler {
         final ObservationListenerContainer obsListContainer = observationMap.get(new Token(t.getRequest().getToken()));
         if (obsListContainer != null) {
             try {
+                // TODO: BERT support + should be moved to CoapServerBlocks
                 BlockOption requestBlock2Res = t.getRequest().headers().getBlock2Res();
                 if (requestBlock2Res != null && requestBlock2Res.getNr() == 0 && requestBlock2Res.hasMore()) {
                     if (requestBlock2Res.hasMore() && requestBlock2Res.getSize() != t.getRequestBody().length) {

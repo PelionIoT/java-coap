@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
  */
 public interface CoapReceiverForTcp extends CoapReceiver {
 
+    void onConnected(InetSocketAddress remoteAddress);
     void onDisconnected(InetSocketAddress remoteAddress);
 
     static CoapReceiverForTcp from(CoapReceiver coapReceiver) {
@@ -34,6 +35,11 @@ public interface CoapReceiverForTcp extends CoapReceiver {
                 @Override
                 public void handle(CoapPacket packet, TransportContext transportContext) {
                     coapReceiver.handle(packet, transportContext);
+                }
+
+                @Override
+                public void onConnected(InetSocketAddress remoteAddress) {
+                    //ignore
                 }
 
                 @Override

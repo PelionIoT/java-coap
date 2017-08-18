@@ -22,8 +22,9 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.server.internal.CoapServerForUdp;
+import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.utils.FutureCallbackAdapter;
@@ -54,7 +55,7 @@ public class TimeoutTest {
     @Test
     @Ignore
     public void timeoutTestIgn() throws Exception {
-        CoapServerForUdp cnn = CoapServerBuilder.newBuilder().transport(61616, Executors.newCachedThreadPool()).build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616, Executors.newCachedThreadPool()).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), 60666));
@@ -68,14 +69,14 @@ public class TimeoutTest {
         } catch (CompletionException ex) {
             //expected
         }
-        assertEquals("Wrong number of transactions", 0, cnn.getNumberOfTransactions());
+        assertEquals("Wrong number of transactions", 0, ((CoapUdpMessaging) cnn.getCoapMessaging()).getNumberOfTransactions());
         cnn.stop();
 
     }
 
     @Test
     public void timeoutTest() throws Exception {
-        CoapServerForUdp cnn = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create()).timeout(new SingleTimeout(100)).build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create()).timeout(new SingleTimeout(100)).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(InMemoryCoapTransport.createAddress(0));
@@ -93,7 +94,7 @@ public class TimeoutTest {
         } catch (ExecutionException ex) {
             assertTrue(ex.getCause() instanceof CoapException);
         }
-        assertEquals("Wrong number of transactions", 0, cnn.getNumberOfTransactions());
+        assertEquals("Wrong number of transactions", 0, ((CoapUdpMessaging) cnn.getCoapMessaging()).getNumberOfTransactions());
         cnn.stop();
 
     }

@@ -28,9 +28,11 @@ import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.SignalingOptions;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.ReadOnlyCoapResource;
+import com.mbed.coap.utils.Callback;
+import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import org.junit.After;
@@ -42,34 +44,29 @@ import protocolTests.utils.CoapPacketBuilder;
 /*
     draft-ietf-core-coap-tcp-tls-09
  */
-/*
-    TODO:
-    - send request with blocks
-    - receive response with blocks
-    - receive request with blocks
-    - send response with blocks
-    - [do we need it] custody option https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-5.4.1
-    - [do we need it] release messages https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-5.5
- */
-public class CoapServerForTcpTest {
+public class CoapTcpMessagingTest {
 
     private final CoapTransport coapTransport = mock(CoapTransport.class);
-    CoapServerForTcp server = new CoapServerForTcp(coapTransport);
+    CoapTcpCSMStorageImpl csmStorage = new CoapTcpCSMStorageImpl();
+    CoapTcpMessaging tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage);
+    CoapRequestHandler coapRequestHandler = mock(CoapRequestHandler.class);
 
     @Before
     public void setUp() throws Exception {
-        server.start();
+        reset(coapRequestHandler);
+
+        tcpMessaging.start(coapRequestHandler);
         given(coapTransport.sendPacket(any(), any(), any())).willReturn(CompletableFuture.completedFuture(true));
     }
 
     @After
     public void tearDown() throws Exception {
-        server.stop();
+        tcpMessaging.stop();
     }
 
     @Test
     public void should_receive_response_to_request() throws Exception {
-        CompletableFuture<CoapPacket> resp = server.makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test").build());
+        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
 
         receive(newCoapPacket(LOCAL_1_5683).token(2001).ack(Code.C205_CONTENT));
         assertNotNull(resp.get());
@@ -77,42 +74,29 @@ public class CoapServerForTcpTest {
 
     @Test
     public void should_ignore_non_matching_response() throws Exception {
-        CompletableFuture<CoapPacket> resp = server.makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test").build());
+        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
 
         receive(newCoapPacket(LOCAL_1_5683).token(1002).ack(Code.C205_CONTENT));
         assertFalse(resp.isDone());
     }
 
     @Test
-    public void should_response_404_for_unknown_resource() throws Exception {
-        receive(newCoapPacket(LOCAL_1_5683).token(2002).get().uriPath("/non-existing"));
+    public void should_pass_request_to_request_handler() throws Exception {
+        CoapPacketBuilder req = newCoapPacket(LOCAL_1_5683).token(2002).get().uriPath("/some/request");
 
-        assertSent(newCoapPacket(LOCAL_1_5683).token(2002).ack(Code.C404_NOT_FOUND));
-    }
+        receive(req);
 
-    @Test
-    public void should_response_205_to_existing_resource() throws Exception {
-        server.addRequestHandler("/test", new ReadOnlyCoapResource("12345"));
-
-        receive(newCoapPacket(LOCAL_1_5683).token(2003).get().uriPath("/test"));
-
-        assertSent(newCoapPacket(LOCAL_1_5683).token(2003).ack(Code.C205_CONTENT).payload("12345"));
+        verify(coapRequestHandler).handleRequest(eq(req.build()), any());
+        assertNothingSent();
     }
 
     @Test
     public void should_fail_to_make_request_when_transport_fails() throws Exception {
         given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(new IOException()));
 
-        CompletableFuture<CoapPacket> resp = server.makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test").build());
+        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
 
         assertTrue(resp.isCompletedExceptionally());
-    }
-
-    @Test
-    public void should_override_methods_not_relevant_in_reliable_transport() throws Exception {
-        assertEquals(0, server.getNextMID());
-        assertEquals(0, server.getNextMID());
-        assertEquals(0, server.getNextMID());
     }
 
     //https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-5.4
@@ -132,10 +116,10 @@ public class CoapServerForTcpTest {
 
     @Test
     public void should_call_exception_when_disconnected() throws Exception {
-        CompletableFuture<CoapPacket> resp1 = server.makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test").build());
-        CompletableFuture<CoapPacket> resp2 = server.makeRequest(newCoapPacket(LOCAL_1_5683).token(2002).con().get().uriPath("/test2").build());
+        CompletableFuture<CoapPacket> resp1 = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
+        CompletableFuture<CoapPacket> resp2 = makeRequest(newCoapPacket(LOCAL_1_5683).token(2002).con().get().uriPath("/test2"));
 
-        server.onDisconnected(LOCAL_1_5683);
+        tcpMessaging.onDisconnected(LOCAL_1_5683);
 
         assertTrue(resp1.isCompletedExceptionally());
         assertThatThrownBy(resp1::get).hasCauseExactlyInstanceOf(IOException.class);
@@ -145,7 +129,7 @@ public class CoapServerForTcpTest {
 
     @Test
     public void should_call_exception_when_abort_signal_received() throws Exception {
-        CompletableFuture<CoapPacket> resp = server.makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test").build());
+        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
         reset(coapTransport);
 
         receive(newCoapPacket(LOCAL_1_5683).con(Code.C705_ABORT));
@@ -153,6 +137,36 @@ public class CoapServerForTcpTest {
         assertTrue(resp.isCompletedExceptionally());
         assertThatThrownBy(resp::get).hasCauseExactlyInstanceOf(IOException.class);
         assertNothingSent();
+    }
+
+    @Test
+    public void should_set_remote_capability() throws CoapException, IOException {
+        SignalingOptions signOpt = new SignalingOptions();
+        signOpt.setMaxMessageSize(211);
+        signOpt.setBlockWiseTransfer(false);
+
+        receive(newCoapPacket(LOCAL_1_5683).con(Code.C701_CSM).signalling(signOpt));
+
+        assertNothingSent();
+        assertEquals(211, csmStorage.getOrDefault(LOCAL_1_5683).getMaxMessageSize());
+        assertFalse(csmStorage.getOrDefault(LOCAL_1_5683).isBlockTransferEnabled());
+    }
+
+    @Test
+    public void should_send_ping_message() throws Exception {
+        tcpMessaging.ping(LOCAL_1_5683, mock(Callback.class));
+
+        assertSent(new CoapPacket(Code.C702_PING, null, LOCAL_1_5683));
+    }
+
+    @Test
+    public void should_handle_pong() throws Exception {
+        FutureCallbackAdapter<CoapPacket> resp = new FutureCallbackAdapter<>();
+
+        tcpMessaging.ping(LOCAL_1_5683, resp);
+        receive(newCoapPacket(LOCAL_1_5683).code(Code.C703_PONG));
+
+        assertEquals(Code.C703_PONG, resp.get().getCode());
     }
 
     //=======================================================================
@@ -164,7 +178,7 @@ public class CoapServerForTcpTest {
     }
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {
-        server.handle(coapPacketBuilder.build(), TransportContext.NULL);
+        tcpMessaging.handle(coapPacketBuilder.build(), TransportContext.NULL);
     }
 
     private void assertSent(CoapPacketBuilder coapPacketBuilder) throws CoapException, IOException {
@@ -177,6 +191,13 @@ public class CoapServerForTcpTest {
 
     private void assertNothingSent() throws CoapException, IOException {
         verify(coapTransport, never()).sendPacket(any(), any(), any());
+    }
+
+    private CompletableFuture<CoapPacket> makeRequest(CoapPacketBuilder coapPacket) {
+        FutureCallbackAdapter<CoapPacket> completableFuture = new FutureCallbackAdapter<>();
+
+        tcpMessaging.makeRequest(coapPacket.build(), completableFuture, TransportContext.NULL);
+        return completableFuture;
     }
 
 }

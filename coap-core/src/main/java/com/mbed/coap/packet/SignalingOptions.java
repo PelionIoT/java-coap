@@ -118,7 +118,7 @@ public class SignalingOptions {
 
     // just helper when max size < Integer.MAX_VALUE
     public void setMaxMessageSize(int maxMessageSize) {
-        setMaxMessageSize(new Long(maxMessageSize));
+        setMaxMessageSize(Long.valueOf(maxMessageSize));
     }
 
     public void setMaxMessageSize(Long maxMessageSize) {

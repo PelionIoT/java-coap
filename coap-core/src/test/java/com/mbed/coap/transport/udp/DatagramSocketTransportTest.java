@@ -36,7 +36,7 @@ import protocolTests.utils.CoapPacketBuilder;
  */
 public class DatagramSocketTransportTest {
 
-    public static final CoapPacket COAP_PACKET = CoapPacketBuilder.newCoapPacket().get().uriPath("/test").build();
+    public static final CoapPacket COAP_PACKET = CoapPacketBuilder.newCoapPacket().get().uriPath("/test").mid(1).build();
 
     @Test
     public void clientServerTest() throws Exception {

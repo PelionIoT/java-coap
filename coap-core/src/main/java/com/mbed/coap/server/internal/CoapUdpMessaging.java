@@ -15,13 +15,12 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.server.internal.CoapServerUtils.*;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
-import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.CoapTransactionCallback;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.server.MessageIdSupplier;
@@ -48,14 +47,15 @@ import org.slf4j.LoggerFactory;
  * @author szymon
  * @see <a href="http://www.rfc-editor.org/rfc/rfc7252.txt" >http://www.rfc-editor.org/rfc/rfc7252.txt</a>
  */
-public abstract class CoapServerForUdp extends CoapServer {
+public class CoapUdpMessaging extends CoapMessaging {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerForUdp.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CoapUdpMessaging.class);
     private final static long TRANSACTION_TIMEOUT_DELAY = 1000;
     private static final int DEFAULT_DUPLICATION_TIMEOUT = 30000;
     private ScheduledExecutorService scheduledExecutor;
 
     private BlockSize blockOptionSize; //null: no blocking
+    private int maxMessageSize = 1152;
     private boolean isSelfCreatedExecutor;
     private final TransactionManager transMgr = new TransactionManager();
     private final DelayedTransactionManager delayedTransMagr = new DelayedTransactionManager();
@@ -67,15 +67,14 @@ public abstract class CoapServerForUdp extends CoapServer {
     protected long delayedTransactionTimeout;
     protected TransmissionTimeout transmissionTimeout;
     protected DuplicatedCoapMessageCallback duplicatedCoapMessageCallback;
-    private CoapTransaction.Priority blockCoapTransactionPriority = CoapTransaction.Priority.HIGH;
+    private CoapTransaction.Priority specialCoapTransactionPriority = CoapTransaction.Priority.HIGH;
 
 
-
-    public static CoapServerBuilder builder() {
-        return CoapServerBuilder.newBuilder();
+    public CoapUdpMessaging(CoapTransport coapTransport) {
+        super(coapTransport);
     }
 
-    public final void init(int duplicationListSize, CoapTransport coapTransporter,
+    public final void init(int duplicationListSize,
             ScheduledExecutorService scheduledExecutor, boolean isSelfCreatedExecutor,
             MessageIdSupplier idContext,
             int maxQueueSize, CoapTransaction.Priority defaultPriority,
@@ -86,7 +85,6 @@ public abstract class CoapServerForUdp extends CoapServer {
             throw new NullPointerException();
         }
 
-        this.coapTransporter = coapTransporter;
         this.scheduledExecutor = scheduledExecutor;
         this.isSelfCreatedExecutor = isSelfCreatedExecutor;
         this.idContext = idContext;
@@ -112,17 +110,21 @@ public abstract class CoapServerForUdp extends CoapServer {
     }
 
     @Override
-    public synchronized CoapServer start() throws IOException, IllegalStateException {
-        super.start();
+    public synchronized void start(CoapRequestHandler coapRequestHandler) throws IOException, IllegalStateException {
         if (duplicationDetector != null) {
             duplicationDetector.start();
         }
         startTransactionTimeoutWorker();
-        return this;
+        super.start(coapRequestHandler);
     }
 
-    public void setBlockCoapTransactionPriority(CoapTransaction.Priority blockCoapTransactionPriority) {
-        this.blockCoapTransactionPriority = blockCoapTransactionPriority;
+
+    public void setMaxMessageSize(int maxMessageSize) {
+        this.maxMessageSize = maxMessageSize;
+    }
+
+    public void setSpecialCoapTransactionPriority(CoapTransaction.Priority specialCoapTransactionPriority) {
+        this.specialCoapTransactionPriority = specialCoapTransactionPriority;
     }
 
     private void startTransactionTimeoutWorker() {
@@ -160,18 +162,28 @@ public abstract class CoapServerForUdp extends CoapServer {
         this.transmissionTimeout = transmissionTimeout;
     }
 
-    @Override
+    /**
+     * Returns next CoAP message id
+     *
+     * @return message id
+     */
     public int getNextMID() {
         return idContext.getNextMID();
     }
 
 
     @Override
-    public final BlockSize getBlockSize(InetSocketAddress remoteAddress) {
+    public final BlockSize getLocalBlockSize() {
         return blockOptionSize;
     }
 
-    final int getMaxIncomingBlockTransferSize() {
+    @Override
+    public int getLocalMaxMessageSize() {
+        return maxMessageSize;
+    }
+
+    @Override
+    public final int getMaxIncomingBlockTransferSize() {
         return this.maxIncomingBlockTransferSize;
     }
 
@@ -184,7 +196,7 @@ public abstract class CoapServerForUdp extends CoapServer {
     }
 
     @Override
-    protected void sendResponseAndUpdateDuplicateDetector(CoapPacket request, CoapPacket resp, TransportContext ctx) {
+    public void sendResponse(CoapPacket request, CoapPacket resp, TransportContext ctx) {
         putToDuplicationDetector(request, resp);
         send(resp, request.getRemoteAddress(), ctx);
     }
@@ -195,8 +207,21 @@ public abstract class CoapServerForUdp extends CoapServer {
         }
     }
 
+
+    @Override
+    public void ping(InetSocketAddress destination, Callback<CoapPacket> callback) {
+        CoapPacket pingRequest = new CoapPacket(null, MessageType.Confirmable, destination);
+        makeRequest(pingRequest, callback, TransportContext.NULL);
+    }
+
+    @Override
     public void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext) {
         makeRequestInternal(packet, callback, transContext, defaultPriority);
+    }
+
+    @Override
+    public void makePrioritisedRequest(CoapPacket packet, Callback<CoapPacket> callback, TransportContext transContext) {
+        makeRequestInternal(packet, callback, transContext, specialCoapTransactionPriority, true);
     }
 
     /**
@@ -243,7 +268,10 @@ public abstract class CoapServerForUdp extends CoapServer {
             CoapTransaction trans = new CoapTransaction(requestCallback, packet, this, transContext, transactionPriority, this::removeCoapTransId);
             try {
                 if (transMgr.addTransactionAndGetReadyToSend(trans, forceAddToQueue)) {
+                    LOGGER.trace("Sending transaction: {}", trans);
                     trans.send();
+                } else {
+                    LOGGER.trace("Enqueued transaction: {}", trans);
                 }
             } catch (TooManyRequestsForEndpointException e) {
                 coapCallback.callException(e);
@@ -268,12 +296,8 @@ public abstract class CoapServerForUdp extends CoapServer {
 
     }
 
-    protected void makeRequestBlock(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext) {
-        makeRequestInternal(packet, callback, transContext, blockCoapTransactionPriority, true);
-    }
-
     CompletableFuture<Boolean> send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
-        if (coapPacket.getMessageType() == MessageType.NonConfirmable) {
+        if (coapPacket.getMessageType() == MessageType.NonConfirmable || coapPacket.getMessageId() == -1) {
             coapPacket.setMessageId(getNextMID());
         }
         return sendPacket(coapPacket, adr, tranContext);
@@ -297,7 +321,7 @@ public abstract class CoapServerForUdp extends CoapServer {
             delayedTransMagr.remove(delayedTransactionId);
             if (packet.getMustAcknowledge()) {
                 CoapPacket resp = packet.createResponse();
-                sendResponseAndUpdateDuplicateDetector(packet, resp);
+                sendResponse(packet, resp);
             }
 
             trans.invokeCallback(packet);
@@ -318,6 +342,26 @@ public abstract class CoapServerForUdp extends CoapServer {
 
         transaction.invokeCallback(packet);
         removeCoapTransId(transaction.getTransactionId());
+    }
+
+    @Override
+    protected void handleRequest(CoapPacket packet, TransportContext transContext) {
+        if (findDuplicate(packet, "CoAP request repeated")) {
+            return;
+        }
+        super.handleRequest(packet, transContext);
+    }
+
+    @Override
+    protected boolean handleObservation(CoapPacket packet, TransportContext transportContext) {
+        Integer observe = packet.headers().getObserve();
+        if (observe == null) {
+            return false;
+        }
+        if (findDuplicate(packet, "CoAP notification repeated")) {
+            return true;
+        }
+        return super.handleObservation(packet, transportContext);
     }
 
     @Override
@@ -358,7 +402,7 @@ public abstract class CoapServerForUdp extends CoapServer {
 
     }
 
-    @Override
+    //    @Override
     protected boolean findDuplicate(CoapPacket request, String message) {
         //request
         if (duplicationDetector != null) {
@@ -393,7 +437,6 @@ public abstract class CoapServerForUdp extends CoapServer {
                         removeCoapTransId(trans.getTransactionId());
                         LOGGER.trace("resendTimeouts: CoAP transaction final timeout [{}]", trans);
                         trans.getCallback().callException(new CoapTimeoutException(trans));
-
                     } else {
                         if (trans.getCallback() instanceof CoapTransactionCallback) {
                             ((CoapTransactionCallback) trans.getCallback()).messageResent();
@@ -415,6 +458,4 @@ public abstract class CoapServerForUdp extends CoapServer {
             LOGGER.error(ex.getMessage(), ex);
         }
     }
-
-
 }

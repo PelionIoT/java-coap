@@ -38,7 +38,7 @@ public class CoapPacket implements Serializable {
     public static final byte[] DEFAULT_TOKEN = new byte[]{};
     private byte version = 1;
     private MessageType messageType = MessageType.Confirmable;
-    private int messageId;
+    private int messageId = -1; //uninitialized
     private Code code;
     private Method method;
     private byte[] payload = new byte[0];
@@ -229,7 +229,7 @@ public class CoapPacket implements Serializable {
         }
         if (messageType == MessageType.Confirmable) {
             CoapPacket response = new CoapPacket(this.getRemoteAddress());
-            response.setMessageId(this.messageId);
+            response.setMessageIdNoCheck(this.messageId);
             response.setMessageType(MessageType.Acknowledgement);
             response.setCode(responseCode);
             if (responseCode != null) {
@@ -240,7 +240,7 @@ public class CoapPacket implements Serializable {
         }
         if (messageType == null && method != null) {
             CoapPacket response = new CoapPacket(this.getRemoteAddress());
-            response.setMessageId(this.messageId);
+            response.setMessageIdNoCheck(this.messageId);
             response.setToken(getToken());
             response.setCode(responseCode);
             return response;
@@ -305,6 +305,14 @@ public class CoapPacket implements Serializable {
         }
 
         this.messageId = messageID;
+    }
+
+    synchronized void setMessageIdNoCheck(int messageID) {
+        if (messageID > 65535 || messageID < 0) {
+            this.messageId = -1; // uninitialized
+            return;
+        }
+        setMessageId(messageID);
     }
 
     /**
@@ -387,6 +395,9 @@ public class CoapPacket implements Serializable {
             outputStream.write(tempByte);
             writeCode(outputStream, this);
 
+            if (messageId == -1) {
+                throw new CoapException("MessageID not set");
+            }
             outputStream.write(0xFF & (messageId >> 8));
             outputStream.write(0xFF & messageId);
 
@@ -401,8 +412,8 @@ public class CoapPacket implements Serializable {
                 outputStream.write(PAYLOAD_MARKER);
                 outputStream.write(payload);
             }
-        } catch (IOException iOException) {
-            throw new IllegalStateException(iOException.getMessage(), iOException);
+        } catch (IOException | CoapException exception) {
+            throw new IllegalStateException(exception.getMessage(), exception);
         }
     }
 

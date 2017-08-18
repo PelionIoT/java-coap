@@ -156,7 +156,7 @@ public class Block1TransferMaxSizeTest {
         //register observation
         ObservationTest.SyncObservationListener obsListener = new ObservationTest.SyncObservationListener();
         CoapPacket packet = client.resource(OBSERVABLE_RESOURCE_PATH).sync().observe(obsListener);
-        assertEquals(packet.getPayloadString(), expectedBody);
+        assertEquals(expectedBody, packet.getPayloadString());
 
         System.out.println("expected: " + expectedBody);
         System.out.println("received: " + packet.getPayloadString());
@@ -166,7 +166,7 @@ public class Block1TransferMaxSizeTest {
         expectedBody += "1_2345678901234|";
         observableResource.setBody(expectedBody);
         packet = obsListener.take();
-        assertEquals(packet.getPayloadString(), expectedBody);
+        assertEquals(expectedBody, packet.getPayloadString());
 
         System.out.println("expected: " + expectedBody);
         System.out.println("received: " + packet.getPayloadString());

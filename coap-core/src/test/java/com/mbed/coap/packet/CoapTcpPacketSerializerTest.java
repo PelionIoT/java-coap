@@ -63,7 +63,7 @@ public class CoapTcpPacketSerializerTest extends CoapPacketTestBase {
         assertArrayEquals(new byte[]{0x7f}, simplePacket.getToken());
         assertEquals(0, simplePacket.getPayload().length);
         assertEquals(null, simplePacket.getMethod());
-        assertEquals(0, simplePacket.getMessageId());
+        assertEquals(-1, simplePacket.getMessageId()); // not set
         assertEquals(null, simplePacket.getMessageType());
 
         byte[] bytes2 = CoapTcpPacketSerializer.serialize(simplePacket);
@@ -223,7 +223,7 @@ public class CoapTcpPacketSerializerTest extends CoapPacketTestBase {
         assertEquals(payload.length, cp2.getPayload().length);
         assertArrayEquals(payload, cp2.getPayload());
         assertEquals(null, cp2.getMethod());
-        assertEquals(0, cp2.getMessageId());
+        assertEquals(-1, cp2.getMessageId()); // not set
         assertEquals(null, cp2.getMessageType());
     }
 

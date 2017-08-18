@@ -16,10 +16,11 @@
 package com.mbed.coap.server;
 
 import com.mbed.coap.packet.BlockSize;
+import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.server.internal.CoapServerBlocks;
-import com.mbed.coap.server.internal.CoapServerForTcp;
-import com.mbed.coap.server.internal.CoapServerForUdp;
+import com.mbed.coap.server.internal.CoapTcpMessaging;
 import com.mbed.coap.server.internal.CoapTransaction;
+import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
@@ -32,155 +33,277 @@ import java.util.concurrent.ScheduledExecutorService;
 /**
  * @author szymon
  */
-public class CoapServerBuilder {
+public abstract class CoapServerBuilder {
     private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
     private static final long DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
 
-    private final CoapServerBlocks server;
-    private int duplicationMaxSize = DEFAULT_MAX_DUPLICATION_LIST_SIZE;
-    private CoapTransport coapTransport;
-    private ScheduledExecutorService scheduledExecutorService;
-    private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
-    private int maxIncomingBlockTransferSize;
-    private CoapTransaction.Priority priority = CoapTransaction.Priority.NORMAL;
-    private int maxQueueSize = 100;
-    private BlockSize blockSize;
-    private long delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
-    private DuplicatedCoapMessageCallback duplicatedCoapMessageCallback = DuplicatedCoapMessageCallback.NULL;
+    protected CoapTransport coapTransport;
+    private ObservationIDGenerator observationIDGenerator;
+    private boolean observationIdGenWasSet;
 
-    CoapServerBuilder() {
-        server = new CoapServerBlocks();
+    protected int maxIncomingBlockTransferSize;
+    protected BlockSize blockSize;
+    protected int maxMessageSize = 1152; //default
+
+
+    public static CoapServerBuilderForUdp newBuilder() {
+        return CoapServerBuilderForUdp.create();
     }
 
-    public static CoapServerBuilder newBuilder() {
-        return new CoapServerBuilder();
+    public static CoapServerBuilderForTcp newBuilderForTcp() {
+        return CoapServerBuilderForTcp.create();
     }
 
     public static CoapServer newCoapServer(CoapTransport transport) {
-        return new CoapServerBuilder().transport(transport).build();
+        return CoapServerBuilderForUdp.create().transport(transport).build();
     }
 
     public static CoapServer newCoapServerForTcp(CoapTransport transport) {
-        return new CoapServerForTcp(transport);
+        return CoapServerBuilderForTcp.create().transport(transport).build();
     }
 
-    public CoapServerBuilder transport(int port) {
-        this.coapTransport = new DatagramSocketTransport(new InetSocketAddress(port), Runnable::run);
-        return this;
-    }
-
-    public CoapServerBuilder transport(int port, Executor receivedMessageWorker) {
-        this.coapTransport = new DatagramSocketTransport(new InetSocketAddress(port), receivedMessageWorker);
-        return this;
-    }
-
-    public CoapServerBuilder transport(CoapTransport coapTransport) {
-        this.coapTransport = coapTransport;
-        return this;
-    }
-
-    public CoapServerBuilder scheduledExecutor(ScheduledExecutorService scheduledExecutorService) {
-        this.scheduledExecutorService = scheduledExecutorService;
-        return this;
-    }
-
-    public CoapServerBuilder midSupplier(MessageIdSupplier midSupplier) {
-        this.midSupplier = midSupplier;
-        return this;
-    }
-
-    public CoapServerBuilder timeout(TransmissionTimeout timeout) {
-        server.setTransmissionTimeout(timeout);
-        return this;
-    }
-
-    public CoapServerBuilder delayedTimeout(long delayedTransactionTimeout) {
-        if (delayedTransactionTimeout <= 0) {
-            throw new IllegalArgumentException();
-        }
-        this.delayedTransactionTimeout = delayedTransactionTimeout;
-        return this;
-    }
-
-    public CoapServerBuilder blockSize(BlockSize blockSize) {
+    protected void setBlockSize(BlockSize blockSize) {
         this.blockSize = blockSize;
-        return this;
     }
 
-    public CoapServerBuilder maxIncomingBlockTransferSize(int size) {
-        this.maxIncomingBlockTransferSize = size;
-        return this;
+    protected void setObservationIDGenerator(ObservationIDGenerator obsIdGenerator) {
+        this.observationIDGenerator = obsIdGenerator;
+        this.observationIdGenWasSet = true;
     }
 
-    public CoapServerBuilder duplicatedCoapMessageCallback(DuplicatedCoapMessageCallback duplicatedCallback) {
-        if (duplicatedCallback == null) {
-            throw new NullPointerException();
-        }
-        this.duplicatedCoapMessageCallback = duplicatedCallback;
-        return this;
-    }
-
-    public CoapServerBuilder defaultQueuePriority(CoapTransaction.Priority priority) {
-        this.priority = priority;
-        return this;
-    }
-
-    public CoapServerBuilder queueMaxSize(int maxQueueSize) {
-        this.maxQueueSize = maxQueueSize;
-        return this;
-    }
-
-    public CoapServerBuilder blockMessageTransactionQueuePriority(CoapTransaction.Priority priority) {
-        server.setBlockCoapTransactionPriority(priority);
-        return this;
-    }
-
-    /**
-     * Sets maximum number or requests to be kept for duplication detection.
-     *
-     * @param duplicationMaxSize maximum size
-     * @return this instance
-     */
-    public CoapServerBuilder duplicateMsgCacheSize(int duplicationMaxSize) {
-        if (duplicationMaxSize <= 0) {
-            throw new IllegalArgumentException();
-        }
-        this.duplicationMaxSize = duplicationMaxSize;
-        return this;
-    }
-
-    public CoapServerBuilder disableDuplicateCheck() {
-        this.duplicationMaxSize = -1;
-        return this;
-    }
-
-    public CoapServerForUdp start() throws IOException {
-        CoapServerForUdp coapServer = build();
+    //    public CoapServerBuilder transport(CoapTransport coapTransport) {
+    //        this.coapTransport = coapTransport;
+    //        return this;
+    //    }
+    //
+    public CoapServer start() throws IOException {
+        CoapServer coapServer = build();
         coapServer.start();
         return coapServer;
     }
 
-    public CoapServerForUdp build() {
+    public CoapServer build() {
+        CoapServer server = blockSize != null
+                ? new CoapServerBlocks(buildProtoBlocks())
+                : new CoapServer(buildProtoBlocks());
+        if (observationIdGenWasSet) {
+            server.setObservationIDGenerator(observationIDGenerator);
+        }
+        return server;
+    }
+
+    protected abstract CoapMessaging buildProtoBlocks();
+
+    protected CoapTransport checkAndGetCoapTransport() {
         if (coapTransport == null) {
             throw new IllegalArgumentException("Transport is missing");
         }
 
-        boolean isSelfCreatedExecutor = false;
-        if (scheduledExecutorService == null) {
-            scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-            isSelfCreatedExecutor = true;
-        }
-
-        server.init(duplicationMaxSize, coapTransport, scheduledExecutorService, isSelfCreatedExecutor,
-                midSupplier, maxQueueSize, priority, maxIncomingBlockTransferSize,
-                blockSize, delayedTransactionTimeout, duplicatedCoapMessageCallback);
-
-        return server;
+        return coapTransport;
     }
 
-    public CoapServerBuilder observerIdGenerator(ObservationIDGenerator observationIDGenerator) {
-        server.setObservationIDGenerator(observationIDGenerator);
-        return this;
+    public static class CoapServerBuilderForUdp extends CoapServerBuilder {
+        private int duplicationMaxSize = DEFAULT_MAX_DUPLICATION_LIST_SIZE;
+        private ScheduledExecutorService scheduledExecutorService;
+        private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
+
+        private CoapTransaction.Priority defaultTransactionPriority = CoapTransaction.Priority.NORMAL;
+        private CoapTransaction.Priority blockTransferPriority = CoapTransaction.Priority.HIGH;
+
+        private int maxQueueSize = 100;
+        private long delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
+        private DuplicatedCoapMessageCallback duplicatedCoapMessageCallback = DuplicatedCoapMessageCallback.NULL;
+        private TransmissionTimeout transmissionTimeout;
+
+        private CoapServerBuilderForUdp() {
+        }
+
+        private static CoapServerBuilderForUdp create() {
+            return new CoapServerBuilderForUdp();
+        }
+
+        public CoapServerBuilderForUdp transport(CoapTransport coapTransport) {
+            this.coapTransport = coapTransport;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp transport(int port) {
+            transport(new DatagramSocketTransport(new InetSocketAddress(port), Runnable::run));
+            return this;
+        }
+
+        public CoapServerBuilderForUdp transport(int port, Executor receivedMessageWorker) {
+            transport(new DatagramSocketTransport(new InetSocketAddress(port), receivedMessageWorker));
+            return this;
+        }
+
+        public CoapServerBuilderForUdp blockSize(BlockSize blockSize) {
+            setBlockSize(blockSize);
+            return this;
+        }
+
+        public CoapServerBuilderForUdp setMaxMessageSize(int maxMessageSize) {
+            this.maxMessageSize = maxMessageSize;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp maxIncomingBlockTransferSize(int size) {
+            this.maxIncomingBlockTransferSize = size;
+            return this;
+        }
+
+        @Override
+        protected CoapUdpMessaging buildProtoBlocks() {
+            boolean isSelfCreatedExecutor = false;
+            if (scheduledExecutorService == null) {
+                scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+                isSelfCreatedExecutor = true;
+            }
+
+            if (blockSize != null && blockSize.isBert()) {
+                throw new IllegalArgumentException("BlockSize with BERT support is defined only for CoAP overt TCP/TLS 2017 standard draft");
+            }
+
+            CoapUdpMessaging server = new CoapUdpMessaging(checkAndGetCoapTransport());
+
+            server.setSpecialCoapTransactionPriority(blockTransferPriority);
+            server.setTransmissionTimeout(transmissionTimeout);
+            server.setMaxMessageSize(maxMessageSize);
+
+            server.init(duplicationMaxSize, scheduledExecutorService, isSelfCreatedExecutor,
+                    midSupplier, maxQueueSize, defaultTransactionPriority, maxIncomingBlockTransferSize,
+                    blockSize, delayedTransactionTimeout, duplicatedCoapMessageCallback);
+
+            return server;
+        }
+
+        public CoapServerBuilderForUdp scheduledExecutor(ScheduledExecutorService scheduledExecutorService) {
+            this.scheduledExecutorService = scheduledExecutorService;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp midSupplier(MessageIdSupplier midSupplier) {
+            this.midSupplier = midSupplier;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp timeout(TransmissionTimeout timeout) {
+            transmissionTimeout = timeout;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp delayedTimeout(long delayedTransactionTimeout) {
+            if (delayedTransactionTimeout <= 0) {
+                throw new IllegalArgumentException();
+            }
+            this.delayedTransactionTimeout = delayedTransactionTimeout;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp duplicatedCoapMessageCallback(DuplicatedCoapMessageCallback duplicatedCallback) {
+            if (duplicatedCallback == null) {
+                throw new NullPointerException();
+            }
+            this.duplicatedCoapMessageCallback = duplicatedCallback;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp defaultQueuePriority(CoapTransaction.Priority priority) {
+            this.defaultTransactionPriority = priority;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp queueMaxSize(int maxQueueSize) {
+            this.maxQueueSize = maxQueueSize;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp blockMessageTransactionQueuePriority(CoapTransaction.Priority priority) {
+            blockTransferPriority = priority;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp observerIdGenerator(ObservationIDGenerator observationIDGenerator) {
+            setObservationIDGenerator(observationIDGenerator);
+            return this;
+        }
+
+
+        /**
+         * Sets maximum number or requests to be kept for duplication detection.
+         *
+         * @param duplicationMaxSize maximum size
+         * @return this instance
+         */
+        public CoapServerBuilderForUdp duplicateMsgCacheSize(int duplicationMaxSize) {
+            if (duplicationMaxSize <= 0) {
+                throw new IllegalArgumentException();
+            }
+            this.duplicationMaxSize = duplicationMaxSize;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp disableDuplicateCheck() {
+            this.duplicationMaxSize = -1;
+            return this;
+        }
+
+    }
+
+    public static class CoapServerBuilderForTcp extends CoapServerBuilder {
+        private CoapTcpCSMStorage csmStorage;
+
+        private CoapServerBuilderForTcp() {
+        }
+
+        private static CoapServerBuilderForTcp create() {
+            return new CoapServerBuilderForTcp();
+        }
+
+        @Override
+        protected CoapMessaging buildProtoBlocks() {
+            CoapTcpMessaging server = csmStorage == null
+                    ? new CoapTcpMessaging(checkAndGetCoapTransport())
+                    : new CoapTcpMessaging(checkAndGetCoapTransport(), csmStorage);
+
+            server.setLocalMaxMessageSize(maxMessageSize);
+            server.setLocalBlockSize(blockSize);
+            server.setMaxIncomingBlockTransferSize(maxIncomingBlockTransferSize);
+
+            return server;
+        }
+
+        public CoapServerBuilderForTcp blockSize(BlockSize blockSize) {
+            setBlockSize(blockSize);
+            return this;
+        }
+
+        public CoapServerBuilderForTcp setMaxMessageSize(int maxMessageSize) {
+            this.maxMessageSize = maxMessageSize;
+            return this;
+        }
+
+        public CoapServerBuilderForTcp maxIncomingBlockTransferSize(int size) {
+            this.maxIncomingBlockTransferSize = size;
+            return this;
+        }
+
+
+        public CoapServerBuilderForTcp transport(CoapTransport coapTransport) {
+            this.coapTransport = coapTransport;
+            return this;
+        }
+
+        public CoapServerBuilderForTcp setCsmStorage(CoapTcpCSMStorage csmStorage) {
+            this.csmStorage = csmStorage;
+            return this;
+        }
+
+        public CoapServerBuilderForTcp observerIdGenerator(ObservationIDGenerator observationIDGenerator) {
+            setObservationIDGenerator(observationIDGenerator);
+            return this;
+        }
+
     }
 
 }

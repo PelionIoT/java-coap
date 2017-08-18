@@ -18,35 +18,41 @@ package com.mbed.coap.client;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.CoapTcpCSMStorage;
 import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
+import com.mbed.coap.transport.javassl.SocketClientTransport;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ScheduledExecutorService;
+import javax.net.SocketFactory;
 
 /**
  * @author szymon
  */
-public final class CoapClientBuilder {
+public abstract class CoapClientBuilder {
 
-    private InetSocketAddress destination;
-    private final CoapServerBuilder coapServerBuilder = CoapServerBuilder.newBuilder();
-    private boolean isTransportDefined;
+    protected InetSocketAddress destination;
+    private final CoapServerBuilder coapServerBuilder;
+    protected boolean isTransportDefined;
 
-    CoapClientBuilder() {
+    CoapClientBuilder(CoapServerBuilder builder) {
         // nothing to initialize
+        this.coapServerBuilder = builder;
     }
 
-    CoapClientBuilder(int localPort) {
-        target(localPort);
+    CoapClientBuilder(CoapServerBuilder builder, int localPort) {
+        this(builder);
+        setTarget(localPort);
     }
 
-    CoapClientBuilder(InetSocketAddress destination) {
-        target(destination);
+    CoapClientBuilder(CoapServerBuilder builder, InetSocketAddress destination) {
+        this(builder);
+        setTarget(destination);
     }
 
     /**
@@ -54,8 +60,28 @@ public final class CoapClientBuilder {
      *
      * @return CoAP client builder instance
      */
-    public static CoapClientBuilder newBuilder() {
-        return new CoapClientBuilder();
+    public static CoapClientBuilderForUdp newBuilder() {
+        return new CoapClientBuilderForUdp(CoapServerBuilder.newBuilder());
+    }
+
+    /**
+     * Creates CoAP client builder.
+     *
+     * @return CoAP client builder instance
+     */
+    public static CoapClientBuilderForTcp newBuilderForTcp() {
+        return new CoapClientBuilderForTcp(CoapServerBuilder.newBuilderForTcp());
+    }
+
+
+    /**
+     * Creates CoAP client builder with target on localhost.
+     *
+     * @param localPort local port number
+     * @return CoAP client builder instance
+     */
+    public static CoapClientBuilderForUdp newBuilder(int localPort) {
+        return new CoapClientBuilderForUdp(CoapServerBuilder.newBuilder(), localPort);
     }
 
     /**
@@ -64,8 +90,8 @@ public final class CoapClientBuilder {
      * @param localPort local port number
      * @return CoAP client builder instance
      */
-    public static CoapClientBuilder newBuilder(int localPort) {
-        return new CoapClientBuilder(localPort);
+    public static CoapClientBuilderForTcp newBuilderForTcp(int localPort) {
+        return new CoapClientBuilderForTcp(CoapServerBuilder.newBuilderForTcp(), localPort);
     }
 
     /**
@@ -74,9 +100,20 @@ public final class CoapClientBuilder {
      * @param destination target address
      * @return CoAP client builder instance
      */
-    public static CoapClientBuilder newBuilder(InetSocketAddress destination) {
-        return new CoapClientBuilder(destination);
+    public static CoapClientBuilderForUdp newBuilder(InetSocketAddress destination) {
+        return new CoapClientBuilderForUdp(CoapServerBuilder.newBuilder(), destination);
     }
+
+    /**
+     * Creates CoAP client builder with target socket address.
+     *
+     * @param destination target address
+     * @return CoAP client builder instance
+     */
+    public static CoapClientBuilderForTcp newBuilderForTcp(InetSocketAddress destination) {
+        return new CoapClientBuilderForTcp(CoapServerBuilder.newBuilderForTcp(), destination);
+    }
+
 
     public static CoapClient clientFor(InetSocketAddress target, CoapServer server) {
         return new CoapClient(target, server);
@@ -84,17 +121,20 @@ public final class CoapClientBuilder {
 
     public CoapClient build() throws IOException {
         if (!isTransportDefined) {
-            coapServerBuilder.transport(0);
+            if (coapServerBuilder instanceof CoapServerBuilder.CoapServerBuilderForUdp) {
+                ((CoapServerBuilder.CoapServerBuilderForUdp) coapServerBuilder).transport(0);
+            } else if (coapServerBuilder instanceof CoapServerBuilder.CoapServerBuilderForTcp) {
+                ((CoapServerBuilder.CoapServerBuilderForTcp) coapServerBuilder).transport(new SocketClientTransport(destination, SocketFactory.getDefault(), true));
+            }
         }
         return new CoapClient(destination, coapServerBuilder.build().start());
     }
 
-    public CoapClientBuilder target(InetSocketAddress destination) {
+    protected final void setTarget(InetSocketAddress destination) {
         this.destination = destination;
-        return this;
     }
 
-    public CoapClientBuilder target(int localPort) {
+    protected final CoapClientBuilder setTarget(int localPort) {
         try {
             this.destination = new InetSocketAddress(InetAddress.getLocalHost(), localPort);
         } catch (UnknownHostException ex) {
@@ -103,51 +143,136 @@ public final class CoapClientBuilder {
         return this;
     }
 
-    public CoapClientBuilder transport(CoapTransport trans) {
-        coapServerBuilder.transport(trans);
-        isTransportDefined = true;
-        return this;
+    public static class CoapClientBuilderForUdp extends CoapClientBuilder {
+        private final CoapServerBuilder.CoapServerBuilderForUdp coapServerBuilderForUdp;
+
+        CoapClientBuilderForUdp(CoapServerBuilder.CoapServerBuilderForUdp builder) {
+            super(builder);
+            this.coapServerBuilderForUdp = builder;
+        }
+
+        CoapClientBuilderForUdp(CoapServerBuilder.CoapServerBuilderForUdp builder, int localPort) {
+            super(builder, localPort);
+            this.coapServerBuilderForUdp = builder;
+        }
+
+        CoapClientBuilderForUdp(CoapServerBuilder.CoapServerBuilderForUdp builder, InetSocketAddress destination) {
+            super(builder, destination);
+            this.coapServerBuilderForUdp = builder;
+        }
+
+        public CoapClientBuilderForUdp transport(CoapTransport trans) {
+            coapServerBuilderForUdp.transport(trans);
+            isTransportDefined = true;
+            return this;
+        }
+
+        public CoapClientBuilderForUdp target(InetSocketAddress destination) {
+            setTarget(destination);
+            return this;
+        }
+
+        public CoapClientBuilderForUdp target(int port) {
+            setTarget(port);
+            return this;
+        }
+
+        public CoapClientBuilderForUdp timeout(long singleTimeoutMili) {
+            coapServerBuilderForUdp.timeout(new SingleTimeout(singleTimeoutMili));
+            return this;
+        }
+
+        public CoapClientBuilderForUdp timeout(TransmissionTimeout responseTimeout) {
+            coapServerBuilderForUdp.timeout(responseTimeout);
+            return this;
+        }
+
+        public CoapClientBuilderForUdp delayedTransTimeout(int delayedTransactionTimeout) {
+            coapServerBuilderForUdp.delayedTimeout(delayedTransactionTimeout);
+            return this;
+        }
+
+        public CoapClientBuilderForUdp scheduledExec(ScheduledExecutorService scheduledExecutorService) {
+            coapServerBuilderForUdp.scheduledExecutor(scheduledExecutorService);
+            return this;
+        }
+
+        public CoapClientBuilderForUdp midSupplier(MessageIdSupplier midSupplier) {
+            coapServerBuilderForUdp.midSupplier(midSupplier);
+            return this;
+        }
+
+        public CoapClientBuilderForUdp transport(int bindingPort) {
+            coapServerBuilderForUdp.transport(bindingPort);
+            isTransportDefined = true;
+            return this;
+        }
+
+        public CoapClientBuilderForUdp blockSize(BlockSize blockSize) {
+            coapServerBuilderForUdp.blockSize(blockSize);
+            return this;
+        }
+
+        public CoapClientBuilderForUdp maxIncomingBlockTransferSize(int maxSize) {
+            coapServerBuilderForUdp.maxIncomingBlockTransferSize(maxSize);
+            return this;
+        }
+
     }
 
-    public CoapClientBuilder transport(int bindingPort) {
-        coapServerBuilder.transport(bindingPort);
-        isTransportDefined = true;
-        return this;
-    }
+    public static class CoapClientBuilderForTcp extends CoapClientBuilder {
+        private final CoapServerBuilder.CoapServerBuilderForTcp coapServerBuilderForTcp;
 
-    public CoapClientBuilder timeout(long singleTimeoutMili) {
-        coapServerBuilder.timeout(new SingleTimeout(singleTimeoutMili));
-        return this;
-    }
+        CoapClientBuilderForTcp(CoapServerBuilder.CoapServerBuilderForTcp builder) {
+            super(builder);
+            this.coapServerBuilderForTcp = builder;
+        }
 
-    public CoapClientBuilder timeout(TransmissionTimeout responseTimeout) {
-        coapServerBuilder.timeout(responseTimeout);
-        return this;
-    }
+        CoapClientBuilderForTcp(CoapServerBuilder.CoapServerBuilderForTcp builder, int localPort) {
+            super(builder, localPort);
+            this.coapServerBuilderForTcp = builder;
+        }
 
-    public CoapClientBuilder blockSize(BlockSize blockSize) {
-        coapServerBuilder.blockSize(blockSize);
-        return this;
-    }
+        CoapClientBuilderForTcp(CoapServerBuilder.CoapServerBuilderForTcp builder, InetSocketAddress destination) {
+            super(builder, destination);
+            this.coapServerBuilderForTcp = builder;
+        }
 
-    public CoapClientBuilder delayedTransTimeout(int delayedTransactionTimeout) {
-        coapServerBuilder.delayedTimeout(delayedTransactionTimeout);
-        return this;
-    }
+        public CoapClientBuilderForTcp transport(CoapTransport trans) {
+            coapServerBuilderForTcp.transport(trans);
+            isTransportDefined = true;
+            return this;
+        }
 
-    public CoapClientBuilder maxIncomingBlockTransferSize(int maxSize) {
-        coapServerBuilder.maxIncomingBlockTransferSize(maxSize);
-        return this;
-    }
+        public CoapClientBuilderForTcp setMaxMessageSize(int maxOwnMessageSize) {
+            coapServerBuilderForTcp.setMaxMessageSize(maxOwnMessageSize);
+            return this;
+        }
 
-    public CoapClientBuilder scheduledExec(ScheduledExecutorService scheduledExecutorService) {
-        coapServerBuilder.scheduledExecutor(scheduledExecutorService);
-        return this;
-    }
+        public CoapClientBuilderForTcp setCsmStorage(CoapTcpCSMStorage csmStorage) {
+            coapServerBuilderForTcp.setCsmStorage(csmStorage);
+            return this;
+        }
 
-    public CoapClientBuilder midSupplier(MessageIdSupplier midSupplier) {
-        coapServerBuilder.midSupplier(midSupplier);
-        return this;
-    }
+        public CoapClientBuilderForTcp target(InetSocketAddress destination) {
+            setTarget(destination);
+            return this;
+        }
 
+        public CoapClientBuilderForTcp target(int localPort) {
+            setTarget(localPort);
+            return this;
+        }
+
+        public CoapClientBuilderForTcp blockSize(BlockSize blockSize) {
+            coapServerBuilderForTcp.blockSize(blockSize);
+            return this;
+        }
+
+        public CoapClientBuilderForTcp maxIncomingBlockTransferSize(int maxSize) {
+            coapServerBuilderForTcp.maxIncomingBlockTransferSize(maxSize);
+            return this;
+        }
+
+    }
 }

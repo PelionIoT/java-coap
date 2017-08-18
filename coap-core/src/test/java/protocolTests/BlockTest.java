@@ -124,11 +124,9 @@ public class BlockTest {
         transport.when(newCoapPacket(1).put().block1Req(0, BlockSize.S_32, true).size1(payload.length()).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("123456789012345|123456789012345|").build())
                 .then(newCoapPacket(1).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, true).build());
 
-        transport.when(newCoapPacket(2).put().block1Req(1, BlockSize.S_16, true).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("123456789012345|").build())
-                .then(newCoapPacket(2).ack(Code.C204_CHANGED).block1Req(1, BlockSize.S_16, false).build());
-
-        transport.when(newCoapPacket(3).put().block1Req(2, BlockSize.S_16, false).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("dupa").build())
-                .then(newCoapPacket(3).ack(Code.C204_CHANGED).block1Req(2, BlockSize.S_16, false).build());
+        // see: https://tools.ietf.org/html/rfc7959#section-2.5
+        transport.when(newCoapPacket(2).put().block1Req(2, BlockSize.S_16, false).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("dupa").build())
+                .then(newCoapPacket(2).ack(Code.C204_CHANGED).block1Req(2, BlockSize.S_16, false).build());
 
         assertEquals(Code.C204_CHANGED, client.resource("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
 

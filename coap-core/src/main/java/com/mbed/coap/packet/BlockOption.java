@@ -137,15 +137,16 @@ public final class BlockOption implements Serializable {
         //b0: 0 - 15
         //b1: 16 - 31
 
-        int blocksCount = isBert()
-                ? maxPayloadSizePerBlock / getSize()
-                : 1;
-
         int startPos = blockNr * getSize();
         if (startPos > fullPayload.length - 1) {
             //payload too small
             return 0;
         }
+
+        int blocksCount = isBert()
+                ? maxPayloadSizePerBlock / getSize()
+                : 1;
+
         // maxPayloadSize is not used to round len to blockSize
         // by default, maxPayloadSizePerBlock usually should be rounded to n*blockSize
         int len = getSize() * blocksCount;
@@ -187,9 +188,10 @@ public final class BlockOption implements Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append(this.blockNr);
         sb.append('|').append(more ? "more" : "last");
-        sb.append('|').append(getSize());
         if (isBert()) {
-            sb.append('|').append("BERT");
+            sb.append("|BERT");
+        } else {
+            sb.append('|').append(getSize());
         }
         return sb.toString();
     }

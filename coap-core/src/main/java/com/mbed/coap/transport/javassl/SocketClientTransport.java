@@ -72,6 +72,7 @@ public class SocketClientTransport extends BlockingCoapTransport {
 
     private void loopReading(CoapReceiverForTcp coapReceiver) {
         try {
+            coapReceiver.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());
             while (!socket.isClosed()) {
                 try {
                     final CoapPacket coapPacket = deserialize();

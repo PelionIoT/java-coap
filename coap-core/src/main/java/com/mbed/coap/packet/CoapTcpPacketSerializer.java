@@ -267,13 +267,6 @@ public final class CoapTcpPacketSerializer {
         ByteArrayOutputStream headerOptionsStream = new ByteArrayOutputStream();
         coapPacket.headers().serialize(headerOptionsStream);
 
-        int optionsLength = headerOptionsStream.size();
-        int payloadLen = coapPacket.getPayload().length;
-        int payloadMarkerLen = payloadLen > 0 ? 1 : 0;
-
-        int packetLength = optionsLength + payloadMarkerLen + payloadLen;
-
-
         // token length
         int tokenLen = coapPacket.getToken().length;
 
@@ -282,6 +275,12 @@ public final class CoapTcpPacketSerializer {
         }
 
         // packet length or extended length code
+        int optionsLength = headerOptionsStream.size();
+        int payloadLen = coapPacket.getPayload().length;
+        int payloadMarkerLen = payloadLen > 0 ? 1 : 0;
+
+        int packetLength = optionsLength + payloadMarkerLen + payloadLen;
+
         int packetLen1Code = packetLenCode(packetLength);
 
         //first header byte

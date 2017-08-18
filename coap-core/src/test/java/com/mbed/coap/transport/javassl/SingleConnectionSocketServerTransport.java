@@ -66,6 +66,8 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
             final InputStream inputStream = new BufferedInputStream(socket.getInputStream());
             InetSocketAddress remoteSocketAddress = (InetSocketAddress) socket.getRemoteSocketAddress();
 
+            coapReceiver.onConnected(remoteSocketAddress);
+
             while (!socket.isClosed()) {
                 try {
                     final CoapPacket coapPacket = deserialize(inputStream, remoteSocketAddress);
