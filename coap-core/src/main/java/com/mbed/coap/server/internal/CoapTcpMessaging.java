@@ -30,9 +30,6 @@ import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -45,54 +42,26 @@ import org.slf4j.LoggerFactory;
 public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTcp {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapTcpMessaging.class);
 
-    private static final List<BlockSize> REVERSED_BLOCK_SIZES = Arrays.asList(BlockSize.values());
-
-    static {
-        Collections.reverse(REVERSED_BLOCK_SIZES);
-    }
-
     private final ConcurrentMap<DelayedTransactionId, RequestCallback> transactions = new ConcurrentHashMap<>();
     private final CoapTcpCSMStorage csmStorage;
-    private BlockSize blockSize = BlockSize.S_1024_BERT; //null: no blocking
+    private final BlockSize blockSize;
     private int maxMessageSize;
-    private int maxIncomingBlockTransferSize;
 
 
-    public CoapTcpMessaging(CoapTransport coapTransport) {
-        this(coapTransport, new CoapTcpCSMStorageImpl());
-    }
-
-    public CoapTcpMessaging(CoapTransport coapTransport, CoapTcpCSMStorage csmStorage) {
+    public CoapTcpMessaging(CoapTransport coapTransport, CoapTcpCSMStorage csmStorage, BlockSize localBlockSize) {
         super(coapTransport);
         this.csmStorage = csmStorage;
+        this.blockSize = localBlockSize;
     }
 
-
-    public void setLocalBlockSize(BlockSize blockSize) {
-        this.blockSize = blockSize;
-    }
 
     public void setLocalMaxMessageSize(int maxMessageSize) {
         this.maxMessageSize = maxMessageSize;
     }
 
     @Override
-    public BlockSize getLocalBlockSize() {
-        return blockSize;
-    }
-
-    @Override
     public int getLocalMaxMessageSize() {
         return maxMessageSize;
-    }
-
-    @Override
-    public int getMaxIncomingBlockTransferSize() {
-        return maxIncomingBlockTransferSize;
-    }
-
-    public void setMaxIncomingBlockTransferSize(int maxIncomingBlockTransferSize) {
-        this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
     }
 
     @Override
@@ -202,8 +171,8 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
         packet.setCode(Code.C701_CSM);
 
         SignalingOptions signalingOpts = new SignalingOptions();
-        signalingOpts.setMaxMessageSize(getLocalMaxMessageSize());
-        signalingOpts.setBlockWiseTransfer(getLocalBlockSize() != null);
+        signalingOpts.setMaxMessageSize(maxMessageSize);
+        signalingOpts.setBlockWiseTransfer(blockSize != null);
 
         packet.headers().putSignallingOptions(signalingOpts);
 
@@ -229,26 +198,6 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
         if (requestCallback != null) {
             requestCallback.callException(error);
         }
-    }
-
-    @Override
-    public BlockSize getBlockSize(InetSocketAddress remoteAddress) {
-        CoapTcpCSM capabilities = csmStorage.getOrDefault(remoteAddress);
-
-        if (capabilities.isBERTEnabled()) {
-            return BlockSize.S_1024_BERT;
-        }
-
-        if (capabilities.isBlockTransferEnabled()) {
-            long maxMessageSize = capabilities.getMaxMessageSize();
-
-            for (BlockSize blockSize : REVERSED_BLOCK_SIZES) {
-                if (blockSize.getSize() < maxMessageSize) {
-                    return blockSize;
-                }
-            }
-        }
-        return null; // no block transfers enabled for connection
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import com.mbed.coap.packet.BlockSize;
 import java.util.Optional;
 
 /**
@@ -36,7 +37,7 @@ public class CoapTcpCSM {
         maxMessageSize = BASE_MAX_MESSAGE_SIZE;
     }
 
-    private CoapTcpCSM(long maxMessageSize, boolean blockwiseTransfer) {
+    public CoapTcpCSM(long maxMessageSize, boolean blockwiseTransfer) {
         this.maxMessageSize = maxMessageSize;
         this.blockwiseTransfer = blockwiseTransfer;
     }
@@ -67,6 +68,33 @@ public class CoapTcpCSM {
 
     public boolean isBERTEnabled() {
         return blockwiseTransfer && maxMessageSize > BASE_MAX_MESSAGE_SIZE;
+    }
+
+    public BlockSize getBlockSize() {
+        if (isBERTEnabled()) {
+            return BlockSize.S_1024_BERT;
+        }
+
+        if (isBlockTransferEnabled()) {
+
+            if (maxMessageSize >= 1024) {
+                return BlockSize.S_1024;
+            } else if (maxMessageSize >= 512) {
+                return BlockSize.S_512;
+            } else if (maxMessageSize >= 256) {
+                return BlockSize.S_256;
+            } else if (maxMessageSize >= 128) {
+                return BlockSize.S_128;
+            } else if (maxMessageSize >= 64) {
+                return BlockSize.S_64;
+            } else if (maxMessageSize >= 32) {
+                return BlockSize.S_32;
+            } else {
+                return BlockSize.S_16;
+            }
+
+        }
+        return null; // no block transfers enabled for connection
     }
 
     @Override

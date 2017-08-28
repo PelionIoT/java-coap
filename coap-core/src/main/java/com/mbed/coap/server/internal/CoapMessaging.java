@@ -16,7 +16,6 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
-import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.transport.CoapReceiver;
@@ -51,11 +50,7 @@ public abstract class CoapMessaging implements CoapReceiver {
     public abstract void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext);
 
 
-    public abstract BlockSize getLocalBlockSize();
-
     public abstract int getLocalMaxMessageSize();
-
-    public abstract int getMaxIncomingBlockTransferSize();
 
     public CoapMessaging(CoapTransport coapTransport) {
         this.coapTransporter = coapTransport;
@@ -193,10 +188,6 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     protected boolean handleObservation(CoapPacket packet, TransportContext transContext) {
         return coapRequestHandler.handleObservation(packet, transContext);
-    }
-
-    BlockSize getBlockSize(InetSocketAddress remoteAddress) {
-        return getLocalBlockSize();
     }
 
     public int getMaxMessageSize(InetSocketAddress address) {
