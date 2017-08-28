@@ -73,11 +73,6 @@ public abstract class CoapServerBuilder {
         this.observationIdGenWasSet = true;
     }
 
-    //    public CoapServerBuilder transport(CoapTransport coapTransport) {
-    //        this.coapTransport = coapTransport;
-    //        return this;
-    //    }
-    //
     public CoapServer start() throws IOException {
         CoapServer coapServer = build();
         coapServer.start();
@@ -85,9 +80,7 @@ public abstract class CoapServerBuilder {
     }
 
     public CoapServer build() {
-        CoapServer server = blockSize != null
-                ? new CoapServerBlocks(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize)
-                : new CoapServer(buildCoapMessaging());
+        CoapServer server = new CoapServerBlocks(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize);
         if (observationIdGenWasSet) {
             server.setObservationIDGenerator(observationIDGenerator);
         }
@@ -146,7 +139,7 @@ public abstract class CoapServerBuilder {
             return this;
         }
 
-        public CoapServerBuilderForUdp setMaxMessageSize(int maxMessageSize) {
+        public CoapServerBuilderForUdp maxMessageSize(int maxMessageSize) {
             this.maxMessageSize = maxMessageSize;
             return this;
         }
@@ -172,7 +165,6 @@ public abstract class CoapServerBuilder {
 
             server.setSpecialCoapTransactionPriority(blockTransferPriority);
             server.setTransmissionTimeout(transmissionTimeout);
-            server.setMaxMessageSize(maxMessageSize);
 
             server.init(duplicationMaxSize, scheduledExecutorService, isSelfCreatedExecutor,
                     midSupplier, maxQueueSize, defaultTransactionPriority, delayedTransactionTimeout, duplicatedCoapMessageCallback);
@@ -185,7 +177,7 @@ public abstract class CoapServerBuilder {
             if (blockSize != null) {
                 return new CoapTcpCSMStorageImpl(new CoapTcpCSM(blockSize.getSize() + 1, true));
             } else {
-                return new CoapTcpCSMStorageImpl(new CoapTcpCSM(2000, false)); //TODO: change this default max message size
+                return new CoapTcpCSMStorageImpl(new CoapTcpCSM(maxMessageSize, false));
             }
         }
 
@@ -274,11 +266,7 @@ public abstract class CoapServerBuilder {
 
         @Override
         protected CoapMessaging buildCoapMessaging() {
-            CoapTcpMessaging server = new CoapTcpMessaging(checkAndGetCoapTransport(), csmStorage, blockSize);
-
-            server.setLocalMaxMessageSize(maxMessageSize);
-
-            return server;
+            return new CoapTcpMessaging(checkAndGetCoapTransport(), csmStorage, blockSize != null, maxMessageSize);
         }
 
         @Override
@@ -291,7 +279,7 @@ public abstract class CoapServerBuilder {
             return this;
         }
 
-        public CoapServerBuilderForTcp setMaxMessageSize(int maxMessageSize) {
+        public CoapServerBuilderForTcp maxMessageSize(int maxMessageSize) {
             this.maxMessageSize = maxMessageSize;
             return this;
         }

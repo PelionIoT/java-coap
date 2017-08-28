@@ -38,7 +38,7 @@ public class CoapPacket implements Serializable {
     public static final byte[] DEFAULT_TOKEN = new byte[]{};
     private byte version = 1;
     private MessageType messageType = MessageType.Confirmable;
-    private int messageId = -1; //uninitialized
+    private int messageId;
     private Code code;
     private Method method;
     private byte[] payload = new byte[0];
@@ -229,7 +229,7 @@ public class CoapPacket implements Serializable {
         }
         if (messageType == MessageType.Confirmable) {
             CoapPacket response = new CoapPacket(this.getRemoteAddress());
-            response.setMessageIdNoCheck(this.messageId);
+            response.setMessageId(this.messageId);
             response.setMessageType(MessageType.Acknowledgement);
             response.setCode(responseCode);
             if (responseCode != null) {
@@ -240,7 +240,7 @@ public class CoapPacket implements Serializable {
         }
         if (messageType == null && method != null) {
             CoapPacket response = new CoapPacket(this.getRemoteAddress());
-            response.setMessageIdNoCheck(this.messageId);
+            response.setMessageId(this.messageId);
             response.setToken(getToken());
             response.setCode(responseCode);
             return response;
@@ -305,14 +305,6 @@ public class CoapPacket implements Serializable {
         }
 
         this.messageId = messageID;
-    }
-
-    synchronized void setMessageIdNoCheck(int messageID) {
-        if (messageID > 65535 || messageID < 0) {
-            this.messageId = -1; // uninitialized
-            return;
-        }
-        setMessageId(messageID);
     }
 
     /**
@@ -395,9 +387,6 @@ public class CoapPacket implements Serializable {
             outputStream.write(tempByte);
             writeCode(outputStream, this);
 
-            if (messageId == -1) {
-                throw new CoapException("MessageID not set");
-            }
             outputStream.write(0xFF & (messageId >> 8));
             outputStream.write(0xFF & messageId);
 
@@ -412,7 +401,7 @@ public class CoapPacket implements Serializable {
                 outputStream.write(PAYLOAD_MARKER);
                 outputStream.write(payload);
             }
-        } catch (IOException | CoapException exception) {
+        } catch (IOException exception) {
             throw new IllegalStateException(exception.getMessage(), exception);
         }
     }
@@ -486,7 +475,6 @@ public class CoapPacket implements Serializable {
         return toString(printFullPayload, printPayloadOnlyAsHex, printAddress, false);
     }
 
-    @SuppressWarnings("PMD.AvoidDuplicateLiterals")
     public String toString(boolean printFullPayload, boolean printPayloadOnlyAsHex, boolean printAddress, boolean doNotPrintPayload) {
         StringBuilder sb = new StringBuilder();
 
@@ -503,13 +491,22 @@ public class CoapPacket implements Serializable {
         if (code != null) {
             sb.append(' ').append(code.codeToString());
         }
+
         sb.append(" MID:").append(this.messageId);
+
         if (this.token.length > 0) {
             sb.append(" Token:0x").append(HexArray.toHex(this.token));
         }
 
-        options.toString(sb);
+        options.toString(sb, code);
 
+        payloadToString(printFullPayload, printPayloadOnlyAsHex, doNotPrintPayload, sb);
+
+        return sb.toString();
+    }
+
+    @SuppressWarnings("PMD.AvoidDuplicateLiterals")
+    private void payloadToString(boolean printFullPayload, boolean printPayloadOnlyAsHex, boolean doNotPrintPayload, StringBuilder sb) {
         if (payload != null && payload.length > 0) {
             if (doNotPrintPayload) {
                 sb.append(" pl(").append(payload.length).append(')');
@@ -517,8 +514,6 @@ public class CoapPacket implements Serializable {
                 payloadToString(printFullPayload, sb, printPayloadOnlyAsHex);
             }
         }
-
-        return sb.toString();
     }
 
     private void payloadToString(boolean printFullPayload, StringBuilder sb, boolean printPayloadOnlyAsHex) {

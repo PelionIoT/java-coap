@@ -272,11 +272,11 @@ public class BasicHeaderOptions implements Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        toString(sb);
+        toString(sb, null);
         return sb.toString();
     }
 
-    public void toString(StringBuilder sb) {
+    public void toString(StringBuilder sb, Code code) {
         if (uriPath != null) {
             sb.append(" URI:").append(uriPath);
         }

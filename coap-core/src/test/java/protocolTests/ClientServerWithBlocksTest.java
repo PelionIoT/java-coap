@@ -57,7 +57,7 @@ public class ClientServerWithBlocksTest {
     @Before
     public void setUp() throws UnknownHostException, IOException {
 
-        server = CoapServerBuilder.newBuilder().transport(0).blockSize(BlockSize.S_16).setMaxMessageSize(32).build();
+        server = CoapServerBuilder.newBuilder().transport(0).blockSize(BlockSize.S_16).maxMessageSize(32).build();
         server.addRequestHandler("/bigResource", new StaticBigResource());
         server.addRequestHandler("/dynamic", new DynamicBigResource());
         server.addRequestHandler("/ultra-dynamic", new UltraDynamicBigResource());
@@ -249,117 +249,6 @@ public class ClientServerWithBlocksTest {
         assertFalse(changeableBigResource.body.equals(body));
     }
 
-    @Test
-    public void blockRequestWrongIntermediateBlockSize() throws Exception {
-        String body = "0123456789ABC"; //12 bytes
-        // no-block transfers client, we need "pure" server and make block packets in tests
-        CoapServer client = CoapServerBuilder.newBuilder().transport(0).build().start();
-
-        CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
-
-        request.setPayload(body); //12 bytes, intermediate block
-        request.headers().setBlock1Req(new BlockOption(0, BlockSize.S_16, true)); // intermediate block, more expected
-        request.setToken(DataConvertingUtility.convertVariableUInt(1234L));
-        CoapPacket resp = makeRequest(client, request);
-
-        assertEquals(resp.getPayloadString(), Code.C400_BAD_REQUEST, resp.getCode());
-        assertTrue(resp.getPayloadString().startsWith("mid block"));
-
-        request.setPayload(body + "DEF|"); // 17 bytes
-        request.headers().setBlock1Req(new BlockOption(0, BlockSize.S_16, true)); // intermediate block, more expected
-        request.setToken(DataConvertingUtility.convertVariableUInt(1234L));
-        resp = makeRequest(client, request);
-
-        assertEquals(resp.getPayloadString(), Code.C400_BAD_REQUEST, resp.getCode());
-        assertTrue(resp.getPayloadString().startsWith("mid block"));
-
-        request.setPayload(body);
-        request.headers().setBlock1Req(new BlockOption(0, BlockSize.S_16, false)); // first and last block
-        request.setToken(DataConvertingUtility.convertVariableUInt(1234L));
-        resp = makeRequest(client, request);
-
-        assertEquals(Code.C204_CHANGED, resp.getCode());
-
-    }
-
-    @Test
-    public void blockRequestWrongLastBlockSize() throws Exception {
-        String body = "0123456789ABCDEF"; //16 bytes
-        // no-block transfers client, we need "pure" server and make block packets in tests
-        CoapServer client = CoapServerBuilder.newBuilder().transport(0).build().start();
-
-        CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
-        request.setPayload(body + "0"); // 17 bytes > S_16
-        request.headers().setBlock1Req(new BlockOption(0, BlockSize.S_16, false)); // first and last block, payload size > block size
-        request.setToken(DataConvertingUtility.convertVariableUInt(1234L));
-
-        CoapPacket resp = makeRequest(client, request);
-
-        assertEquals(changeableBigResource.body, 0, changeableBigResource.body.length());
-        assertEquals(Code.C400_BAD_REQUEST, resp.getCode());
-
-        // check normal case scenario
-
-        request.setPayload(body);
-        request.headers().setBlock1Req(new BlockOption(0, BlockSize.S_16, false)); // first and last block
-        request.setToken(DataConvertingUtility.convertVariableUInt(1234L));
-        resp = makeRequest(client, request);
-
-        assertEquals(Code.C204_CHANGED, resp.getCode());
-    }
-
-    @Test
-    public void blockRequestWithWrongToken() throws Exception {
-        String body = "0123456789abcdef";
-        CoapServer client = CoapServerBuilder.newBuilder().transport(0).build().start();
-
-        CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
-        request.setPayload(body);
-        request.headers().setBlock1Req(new BlockOption(0, BlockSize.S_16, true));
-        request.setToken(DataConvertingUtility.convertVariableUInt(1234L));
-        CoapPacket resp = makeRequest(client, request);
-
-        assertEquals(Code.C231_CONTINUE, resp.getCode());
-
-        request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
-        request.setPayload(body);
-        request.headers().setBlock1Req(new BlockOption(1, BlockSize.S_16, false));
-        request.setToken(DataConvertingUtility.convertVariableUInt(1235L));
-        resp = makeRequest(client, request);
-
-        assertFalse("Error code expected", Code.C204_CHANGED == resp.getCode());
-        assertEquals(Code.C408_REQUEST_ENTITY_INCOMPLETE, resp.getCode());
-    }
-
-    @Test
-    public void blockRequestWithWrongNullToken() throws Exception {
-        String body = "0123456789ABCDEF";
-        CoapServer client = CoapServerBuilder.newBuilder().transport(0).build().start();
-
-        CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
-        request.setPayload(body);
-        request.headers().setBlock1Req(new BlockOption(0, BlockSize.S_16, true));
-        request.setToken(DataConvertingUtility.convertVariableUInt(1234L));
-
-        CoapPacket resp = makeRequest(client, request);
-        assertEquals(resp.getPayloadString(), Code.C231_CONTINUE, resp.getCode());
-
-        request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
-        request.setPayload(body);
-        request.headers().setBlock1Req(new BlockOption(1, BlockSize.S_16, true));
-        request.setToken(null);
-
-        resp = makeRequest(client, request);
-
-        assertFalse("Error code expected", Code.C204_CHANGED == resp.getCode());
-        assertEquals(Code.C408_REQUEST_ENTITY_INCOMPLETE, resp.getCode());
-        assertEquals("Token mismatch", resp.getPayloadString());
-
-    }
-
-    private static CoapPacket makeRequest(CoapServer client, CoapPacket request) throws Exception {
-        return client.makeRequest(request).join();
-    }
 
     @Test
     public void blockRequestWithEmptyUrlHeader() throws IOException, CoapException {

@@ -53,7 +53,6 @@ public class CoapUdpMessaging extends CoapMessaging {
     private static final int DEFAULT_DUPLICATION_TIMEOUT = 30000;
     private ScheduledExecutorService scheduledExecutor;
 
-    private int maxMessageSize = 1152;
     private boolean isSelfCreatedExecutor;
     private final TransactionManager transMgr = new TransactionManager();
     private final DelayedTransactionManager delayedTransMagr = new DelayedTransactionManager();
@@ -113,10 +112,6 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
 
-    public void setMaxMessageSize(int maxMessageSize) {
-        this.maxMessageSize = maxMessageSize;
-    }
-
     public void setSpecialCoapTransactionPriority(CoapTransaction.Priority specialCoapTransactionPriority) {
         this.specialCoapTransactionPriority = specialCoapTransactionPriority;
     }
@@ -161,15 +156,10 @@ public class CoapUdpMessaging extends CoapMessaging {
      *
      * @return message id
      */
-    public int getNextMID() {
+    private int getNextMID() {
         return idContext.getNextMID();
     }
 
-
-    @Override
-    public int getLocalMaxMessageSize() {
-        return maxMessageSize;
-    }
 
     long getDelayedTransactionTimeout() {
         return delayedTransactionTimeout;
@@ -182,10 +172,15 @@ public class CoapUdpMessaging extends CoapMessaging {
     @Override
     public void sendResponse(CoapPacket request, CoapPacket resp, TransportContext ctx) {
         putToDuplicationDetector(request, resp);
+
+        if (resp.getMessageType() == MessageType.NonConfirmable || request.getMessageType() == MessageType.NonConfirmable) {
+            resp.setMessageId(getNextMID());
+        }
+
         send(resp, request.getRemoteAddress(), ctx);
     }
 
-    protected final void putToDuplicationDetector(CoapPacket request, CoapPacket response) {
+    private final void putToDuplicationDetector(CoapPacket request, CoapPacket response) {
         if (duplicationDetector != null) {
             duplicationDetector.putResponse(request, response);
         }
@@ -281,9 +276,6 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
     CompletableFuture<Boolean> send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
-        if (coapPacket.getMessageType() == MessageType.NonConfirmable || coapPacket.getMessageId() == -1) {
-            coapPacket.setMessageId(getNextMID());
-        }
         return sendPacket(coapPacket, adr, tranContext);
     }
 

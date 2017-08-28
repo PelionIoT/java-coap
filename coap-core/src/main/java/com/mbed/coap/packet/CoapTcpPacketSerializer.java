@@ -37,16 +37,11 @@ public final class CoapTcpPacketSerializer {
      * @param remoteAddress remote address
      * @param inputStream input stream
      * @return CoapPacket instance
-     * @throws IOException - in case of EOF, closed stream or other low-level errors
+     * @throws IOException   - in case of EOF, closed stream or other low-level errors
      * @throws CoapException - and subclasses in case of CoAP parsing failed.
      */
     public static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream inputStream) throws IOException, CoapException {
-        try {
-            return deserialize(remoteAddress, inputStream, true);
-        } catch (NotEnoughDataException e) {
-            // should never happen, we should block on IO if there is not enough data
-            throw new IOException(e);
-        }
+        return deserialize(remoteAddress, inputStream, true);
     }
 
     /**
@@ -68,7 +63,7 @@ public final class CoapTcpPacketSerializer {
         }
     }
 
-    private static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream inputStream, boolean orBlock) throws NotEnoughDataException, IOException, CoapException {
+    private static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream inputStream, boolean orBlock) throws IOException, CoapException {
         StrictInputStream is = new StrictInputStream(inputStream);
         CoapPacketParsingContext pktContext = deserializeHeader(remoteAddress, is, orBlock);
         CoapPacket pkt = pktContext.getCoapPacket();
@@ -83,7 +78,7 @@ public final class CoapTcpPacketSerializer {
         return pkt;
     }
 
-    private static CoapPacketParsingContext deserializeHeader(InetSocketAddress remoteAddress, StrictInputStream is, boolean orBlock) throws IOException, NotEnoughDataException, CoapException {
+    private static CoapPacketParsingContext deserializeHeader(InetSocketAddress remoteAddress, StrictInputStream is, boolean orBlock) throws IOException, CoapException {
 
         int len1AndTKL = read8(is, orBlock);
 
@@ -114,7 +109,7 @@ public final class CoapTcpPacketSerializer {
         }
     }
 
-    private static long readPacketLen(int len1, StrictInputStream is, boolean orBlock) throws IOException, NotEnoughDataException {
+    private static long readPacketLen(int len1, StrictInputStream is, boolean orBlock) throws IOException {
         switch (len1) {
             case 15:
                 return read32(is, orBlock) + 65805;
@@ -128,7 +123,7 @@ public final class CoapTcpPacketSerializer {
         }
     }
 
-    private static byte[] readToken(StrictInputStream is, int tokenLength, boolean orBlock) throws IOException, NotEnoughDataException, CoapException {
+    private static byte[] readToken(StrictInputStream is, int tokenLength, boolean orBlock) throws IOException, CoapException {
         if (tokenLength == 0) {
             return null;
         }
@@ -143,62 +138,20 @@ public final class CoapTcpPacketSerializer {
     private static class CoapPacketParsingContext {
         private final CoapPacket coapPacket;
         private final long packetLength;
-        private long lengthLeft;
 
         public CoapPacketParsingContext(CoapPacket coapPacket, long packetLength) {
             this.coapPacket = coapPacket;
             this.packetLength = packetLength;
-            this.lengthLeft = packetLength;
         }
 
         public CoapPacket getCoapPacket() {
             return coapPacket;
         }
 
-        public long getPacketLength() {
+        public long getLength() {
             return packetLength;
         }
 
-        public long getLength() {
-            return lengthLeft;
-        }
-
-        public void decrement(int amount) {
-            lengthLeft -= amount;
-        }
-
-        public long decrementAndGet(int amount) {
-            decrement(amount);
-            return getLength();
-        }
-    }
-
-
-    private static int readPayloadLen(int firstByte, InputStream inputStream) throws IOException {
-        int plLen = firstByte >>> 4;
-
-        //Extended Length
-        if (plLen == 13) {
-            plLen += inputStream.read();
-
-        } else if (plLen == 14) {
-            plLen = inputStream.read() << 8;
-            plLen += inputStream.read();
-            plLen += 269;
-
-        } else if (plLen == 15) {
-            plLen = inputStream.read() << 24;
-            plLen += inputStream.read() << 16;
-            plLen += inputStream.read() << 8;
-            plLen += inputStream.read();
-            plLen += 65805;
-        }
-
-        return plLen;
-    }
-
-    public static long readPayloadLength(InputStream inputStream) throws IOException {
-        return readPayloadLen(inputStream.read(), inputStream);
     }
 
     /**

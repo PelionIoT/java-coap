@@ -51,7 +51,6 @@ public class CoapTcpPacketSerializerTest extends CoapPacketTestBase {
         assertEquals("some test payload", cp2.getPayloadString());
 
         assertSimilar(cp, cp2);
-        assertEquals(23, CoapTcpPacketSerializer.readPayloadLength(new ByteArrayInputStream(rawCp)));
     }
 
     @Test
@@ -63,13 +62,12 @@ public class CoapTcpPacketSerializerTest extends CoapPacketTestBase {
         assertArrayEquals(new byte[]{0x7f}, simplePacket.getToken());
         assertEquals(0, simplePacket.getPayload().length);
         assertEquals(null, simplePacket.getMethod());
-        assertEquals(-1, simplePacket.getMessageId()); // not set
+        assertEquals(0, simplePacket.getMessageId()); // not set
         assertEquals(null, simplePacket.getMessageType());
 
         byte[] bytes2 = CoapTcpPacketSerializer.serialize(simplePacket);
         assertArrayEquals(simpleBytes, bytes2);
         assertEquals(simplePacket, CoapTcpPacketSerializer.deserialize(null, new ByteArrayInputStream(bytes2)));
-        assertEquals(0, CoapTcpPacketSerializer.readPayloadLength(new ByteArrayInputStream(simpleBytes)));
     }
 
     @Test
@@ -207,6 +205,15 @@ public class CoapTcpPacketSerializerTest extends CoapPacketTestBase {
         assertTrue(cp2.isPresent());
     }
 
+    @Test(expected = EOFException.class)
+    public void should_throw_if_not_enough_data_to_deserialize() throws CoapException, IOException {
+        CoapPacket cp = CoapPacketBuilder.newCoapPacket().token(1234L).code(Code.C204_CHANGED).uriPath("/test").payload("some test payload").build();
+
+        byte[] rawCp = CoapTcpPacketSerializer.serialize(cp);
+
+        CoapTcpPacketSerializer.deserialize(null, new ByteArrayInputStream(rawCp, 0, rawCp.length - 2));
+    }
+
 
     private void assertSimplePacketSerializationAndDeserilization(byte[] token, byte[] payload) throws CoapException, IOException {
         CoapPacket cp = new CoapPacket(null, null, "", null);
@@ -223,7 +230,7 @@ public class CoapTcpPacketSerializerTest extends CoapPacketTestBase {
         assertEquals(payload.length, cp2.getPayload().length);
         assertArrayEquals(payload, cp2.getPayload());
         assertEquals(null, cp2.getMethod());
-        assertEquals(-1, cp2.getMessageId()); // not set
+        assertEquals(0, cp2.getMessageId());
         assertEquals(null, cp2.getMessageType());
     }
 

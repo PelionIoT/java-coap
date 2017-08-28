@@ -24,7 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Per-connection CSM storage
  */
 public class CoapTcpCSMStorageImpl implements CoapTcpCSMStorage {
-    private final ConcurrentHashMap<InetSocketAddress, CoapTcpCSM> capabilitiesMap = new ConcurrentHashMap<>();
+    //package local for tests
+    final ConcurrentHashMap<InetSocketAddress, CoapTcpCSM> capabilitiesMap = new ConcurrentHashMap<>();
     private final CoapTcpCSM defaultCapability;
 
     public CoapTcpCSMStorageImpl(CoapTcpCSM defaultCapability) {
@@ -36,15 +37,12 @@ public class CoapTcpCSMStorageImpl implements CoapTcpCSMStorage {
     }
 
     @Override
-    public void updateCapability(InetSocketAddress address, CoapTcpCSM newCapabilities) {
-
-        capabilitiesMap.compute(address, (addr, existingCapabilities) -> {
-            if (CoapTcpCSM.BASE.equals(newCapabilities)) {
-                return null;
-            } else {
-                return newCapabilities;
-            }
-        });
+    public void put(InetSocketAddress address, CoapTcpCSM newCapabilities) {
+        if (CoapTcpCSM.BASE.equals(newCapabilities)) {
+            capabilitiesMap.remove(address);
+        } else {
+            capabilitiesMap.put(address, newCapabilities);
+        }
     }
 
     @Override

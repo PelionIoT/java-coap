@@ -19,12 +19,14 @@ package com.mbed.coap.server;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.exception.ObservationNotEstablishedException;
 import com.mbed.coap.exception.ObservationTerminatedException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
@@ -32,6 +34,7 @@ import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
+import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -186,6 +189,92 @@ public class CoapServerTest {
         verify(msg, never()).sendResponse(any(), any(), any());
     }
 
+    @Test
+    public void shouldSendObservationRequest() {
+        Callback<CoapPacket> callback = mock(Callback.class);
+        server.observe("/test", LOCAL_5683, callback, "aa".getBytes(), TransportContext.NULL);
+
+        verify(msg).makeRequest(argThat(cp -> cp.headers().getUriPath().equals("/test") && cp.headers().getObserve() != null), any(), eq(TransportContext.NULL));
+    }
+
+    @Test
+    public void shouldSendObservationRequest_andAddObservationHeader() {
+        Callback<CoapPacket> callback = mock(Callback.class);
+        server.observe(newCoapPacket(LOCAL_5683).get().uriPath("/test").build(), callback, TransportContext.NULL);
+
+        verify(msg).makeRequest(argThat(cp -> cp.headers().getUriPath().equals("/test") && cp.headers().getObserve() != null), any(), eq(TransportContext.NULL));
+    }
+
+    @Test
+    public void shouldRespondToObservationRequest() {
+        CoapPacket resp = newCoapPacket().ack(Code.C205_CONTENT).obs(0).build();
+        RequestCallback respCallback = mock(RequestCallback.class);
+        server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
+
+        verifyMakeRequest_andThen().onSent();
+        verifyMakeRequest_andThen().call(resp);
+
+        verify(respCallback).onSent();
+        verify(respCallback).call(eq(resp));
+    }
+
+    @Test
+    public void shouldRespondToObservationRequest_notObserved() {
+        Callback<CoapPacket> respCallback = mock(Callback.class);
+        server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
+
+        verifyMakeRequest_andThen().onSent();
+        verifyMakeRequest_andThen().call(newCoapPacket().ack(Code.C205_CONTENT).build());
+
+        verify(respCallback).callException(isA(ObservationNotEstablishedException.class));
+    }
+
+    @Test
+    public void shouldRespondToObservationRequest_errorResponse() {
+        Callback<CoapPacket> respCallback = mock(Callback.class);
+        server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
+
+        verifyMakeRequest_andThen().call(newCoapPacket().ack(Code.C404_NOT_FOUND).build());
+
+        verify(respCallback).callException(isA(ObservationNotEstablishedException.class));
+    }
+
+    @Test
+    public void shouldRespondToObservationRequest_exception() {
+        Callback<CoapPacket> respCallback = mock(Callback.class);
+        server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
+
+        verifyMakeRequest_andThen().callException(new IOException());
+
+        verify(respCallback).callException(isA(IOException.class));
+    }
+
+    @Test()
+    public void shouldSendNotification() {
+        CoapPacket notif = newCoapPacket(LOCAL_5683).obs(12).token(11).ack(Code.C205_CONTENT).build();
+        server.sendNotification(notif, mock(Callback.class), TransportContext.NULL);
+
+        verify(msg).makeRequest(eq(notif), any(), any());
+    }
+
+    @Test()
+    public void failToSendNotificationWithout_missingHeaders() {
+
+        //observation is missing
+        assertThatThrownBy(() ->
+                server.sendNotification(newCoapPacket(LOCAL_5683).token(11).ack(Code.C205_CONTENT).build(), mock(Callback.class), TransportContext.NULL)
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        //token is missing
+        assertThatThrownBy(() ->
+                server.sendNotification(newCoapPacket(LOCAL_5683).obs(2).ack(Code.C205_CONTENT).build(), mock(Callback.class), TransportContext.NULL)
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        //wrong content type
+        assertThatThrownBy(() ->
+                server.sendNotification(newCoapPacket(LOCAL_5683).token(321).obs(2).ack(Code.C400_BAD_REQUEST).build(), mock(Callback.class), TransportContext.NULL)
+        ).isInstanceOf(IllegalArgumentException.class);
+    }
 
     //---------------
 
@@ -202,5 +291,11 @@ public class CoapServerTest {
         when(observationHandler.hasObservation(any())).thenReturn(true);
         server.setObservationHandler(observationHandler);
         return observationHandler;
+    }
+
+    private RequestCallback verifyMakeRequest_andThen() {
+        ArgumentCaptor<RequestCallback> callback = ArgumentCaptor.forClass(RequestCallback.class);
+        verify(msg).makeRequest(any(), callback.capture(), any());
+        return callback.getValue();
     }
 }

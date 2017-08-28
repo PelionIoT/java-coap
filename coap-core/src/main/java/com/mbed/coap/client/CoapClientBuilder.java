@@ -244,8 +244,8 @@ public abstract class CoapClientBuilder {
             return this;
         }
 
-        public CoapClientBuilderForTcp setMaxMessageSize(int maxOwnMessageSize) {
-            coapServerBuilderForTcp.setMaxMessageSize(maxOwnMessageSize);
+        public CoapClientBuilderForTcp maxMessageSize(int maxOwnMessageSize) {
+            coapServerBuilderForTcp.maxMessageSize(maxOwnMessageSize);
             return this;
         }
 

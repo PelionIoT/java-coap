@@ -116,7 +116,7 @@ public class SignalingOptionsTest {
         assertEquals(null, options.getBadCsmOption());
 
         System.out.println(options);
-        assertEquals(" Max-Message-Size:2 Block-Wise-Transfer", options.toString());
+        assertEquals(" MaxMsgSz:2 Blocks", options.toString());
 
         //Try putting non csm specific option
         expectedEx.expect(IllegalStateException.class);
@@ -189,7 +189,7 @@ public class SignalingOptionsTest {
         assertEquals(null, options.getBadCsmOption());
 
         System.out.println(options);
-        assertEquals(" Alt-adr:127.0.0.1:5555 Hold-Off:5", options.toString());
+        assertEquals(" AltAdr:127.0.0.1:5555 Hold-Off:5", options.toString());
 
         //        expectedEx.expect(IllegalArgumentException.class);
         //        expectedEx.expectMessage("Illegal Alternative-Address size: 300");
@@ -214,7 +214,7 @@ public class SignalingOptionsTest {
         assertEquals(7, options.getBadCsmOption().intValue());
 
         System.out.println(options);
-        assertEquals(" Bad-CSM-Option:7", options.toString());
+        assertEquals(" Bad-CSM:7", options.toString());
     }
 
     @Test
@@ -223,7 +223,7 @@ public class SignalingOptionsTest {
 
         expectedEx.expect(IllegalArgumentException.class);
         expectedEx.expectMessage("Illegal Max-Message-Size argument: ");
-        options.setMaxMessageSize(0x1FFFF);
+        options.setMaxMessageSize(0x100000000L);
     }
 
     @Test
@@ -231,8 +231,22 @@ public class SignalingOptionsTest {
         SignalingOptions options = new SignalingOptions();
 
         expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("Illegal Max-Message-Size argument: -5");
-        options.setMaxMessageSize(-5);
+        expectedEx.expectMessage("Illegal Max-Message-Size argument: -1");
+        options.setMaxMessageSize(-1L);
+    }
+
+    @Test
+    public void testZeroMessageSize() {
+        SignalingOptions options = new SignalingOptions();
+        //TODO: lower value of max message size is not defined in current draft,
+        // however values less than some small value (16 bytes for example) or
+        // max-message-size == 0 absolutely useless. This test should be changed
+        // and zero max message size should throw exception when draft will have
+        // lower limit.
+        //        expectedEx.expect(IllegalArgumentException.class);
+        //        expectedEx.expectMessage("Illegal Max-Message-Size argument: -5");
+        options.setMaxMessageSize(0);
+        assertEquals(options.getMaxMessageSize().longValue(), 0);
     }
 
     @Test
