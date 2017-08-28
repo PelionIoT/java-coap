@@ -18,7 +18,6 @@ package com.mbed.coap.server.internal;
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.exception.TooManyRequestsForEndpointException;
-import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapTransactionCallback;
@@ -54,7 +53,6 @@ public class CoapUdpMessaging extends CoapMessaging {
     private static final int DEFAULT_DUPLICATION_TIMEOUT = 30000;
     private ScheduledExecutorService scheduledExecutor;
 
-    private BlockSize blockOptionSize; //null: no blocking
     private int maxMessageSize = 1152;
     private boolean isSelfCreatedExecutor;
     private final TransactionManager transMgr = new TransactionManager();
@@ -62,7 +60,6 @@ public class CoapUdpMessaging extends CoapMessaging {
     private DuplicationDetector duplicationDetector;
     private MessageIdSupplier idContext;
     private ScheduledFuture<?> transactionTimeoutWorkerFut;
-    private int maxIncomingBlockTransferSize;
     private CoapTransaction.Priority defaultPriority;
     protected long delayedTransactionTimeout;
     protected TransmissionTimeout transmissionTimeout;
@@ -78,8 +75,7 @@ public class CoapUdpMessaging extends CoapMessaging {
             ScheduledExecutorService scheduledExecutor, boolean isSelfCreatedExecutor,
             MessageIdSupplier idContext,
             int maxQueueSize, CoapTransaction.Priority defaultPriority,
-            int maxIncomingBlockTransferSize,
-            BlockSize blockSize, long delayedTransactionTimeout, DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
+            long delayedTransactionTimeout, DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
 
         if (coapTransporter == null || scheduledExecutor == null || idContext == null || defaultPriority == null || duplicatedCoapMessageCallback == null) {
             throw new NullPointerException();
@@ -88,8 +84,6 @@ public class CoapUdpMessaging extends CoapMessaging {
         this.scheduledExecutor = scheduledExecutor;
         this.isSelfCreatedExecutor = isSelfCreatedExecutor;
         this.idContext = idContext;
-        this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
-        this.blockOptionSize = blockSize;
         this.delayedTransactionTimeout = delayedTransactionTimeout;
         this.duplicatedCoapMessageCallback = duplicatedCoapMessageCallback;
 
@@ -173,18 +167,8 @@ public class CoapUdpMessaging extends CoapMessaging {
 
 
     @Override
-    public final BlockSize getLocalBlockSize() {
-        return blockOptionSize;
-    }
-
-    @Override
     public int getLocalMaxMessageSize() {
         return maxMessageSize;
-    }
-
-    @Override
-    public final int getMaxIncomingBlockTransferSize() {
-        return this.maxIncomingBlockTransferSize;
     }
 
     long getDelayedTransactionTimeout() {

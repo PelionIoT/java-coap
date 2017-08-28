@@ -26,6 +26,7 @@ import static org.mockito.BDDMockito.verify;
 import static org.mockito.Mockito.mock;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.SignalingOptions;
@@ -48,7 +49,7 @@ public class CoapTcpMessagingTest {
 
     private final CoapTransport coapTransport = mock(CoapTransport.class);
     CoapTcpCSMStorageImpl csmStorage = new CoapTcpCSMStorageImpl();
-    CoapTcpMessaging tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage);
+    CoapTcpMessaging tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage, null);
     CoapRequestHandler coapRequestHandler = mock(CoapRequestHandler.class);
 
     @Before
@@ -167,6 +168,36 @@ public class CoapTcpMessagingTest {
         receive(newCoapPacket(LOCAL_1_5683).code(Code.C703_PONG));
 
         assertEquals(Code.C703_PONG, resp.get().getCode());
+    }
+
+    @Test
+    public void shouldSendCapabilities_whenConnected_noBlocking() throws CoapException, IOException {
+        SignalingOptions signOpt = new SignalingOptions();
+        signOpt.setMaxMessageSize(501);
+        signOpt.setBlockWiseTransfer(false);
+        tcpMessaging.setLocalMaxMessageSize(501);
+
+        //when
+        tcpMessaging.onConnected(LOCAL_5683);
+
+        //then
+        assertSent(newCoapPacket(LOCAL_5683).code(Code.C701_CSM).signalling(signOpt));
+    }
+
+    @Test
+    public void shouldSendCapabilities_whenConnected_withBlocking() throws CoapException, IOException {
+        tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage, BlockSize.S_1024_BERT);
+        tcpMessaging.start(coapRequestHandler);
+        SignalingOptions signOpt = new SignalingOptions();
+        signOpt.setMaxMessageSize(10501);
+        signOpt.setBlockWiseTransfer(true);
+        tcpMessaging.setLocalMaxMessageSize(10501);
+
+        //when
+        tcpMessaging.onConnected(LOCAL_5683);
+
+        //then
+        assertSent(newCoapPacket(LOCAL_5683).code(Code.C701_CSM).signalling(signOpt));
     }
 
     //=======================================================================

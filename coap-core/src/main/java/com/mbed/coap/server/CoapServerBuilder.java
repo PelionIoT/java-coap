@@ -18,6 +18,8 @@ package com.mbed.coap.server;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.server.internal.CoapServerBlocks;
+import com.mbed.coap.server.internal.CoapTcpCSM;
+import com.mbed.coap.server.internal.CoapTcpCSMStorageImpl;
 import com.mbed.coap.server.internal.CoapTcpMessaging;
 import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
@@ -84,15 +86,17 @@ public abstract class CoapServerBuilder {
 
     public CoapServer build() {
         CoapServer server = blockSize != null
-                ? new CoapServerBlocks(buildProtoBlocks())
-                : new CoapServer(buildProtoBlocks());
+                ? new CoapServerBlocks(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize)
+                : new CoapServer(buildCoapMessaging());
         if (observationIdGenWasSet) {
             server.setObservationIDGenerator(observationIDGenerator);
         }
         return server;
     }
 
-    protected abstract CoapMessaging buildProtoBlocks();
+    protected abstract CoapMessaging buildCoapMessaging();
+
+    protected abstract CoapTcpCSMStorage capabilities();
 
     protected CoapTransport checkAndGetCoapTransport() {
         if (coapTransport == null) {
@@ -153,7 +157,7 @@ public abstract class CoapServerBuilder {
         }
 
         @Override
-        protected CoapUdpMessaging buildProtoBlocks() {
+        protected CoapUdpMessaging buildCoapMessaging() {
             boolean isSelfCreatedExecutor = false;
             if (scheduledExecutorService == null) {
                 scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
@@ -171,10 +175,18 @@ public abstract class CoapServerBuilder {
             server.setMaxMessageSize(maxMessageSize);
 
             server.init(duplicationMaxSize, scheduledExecutorService, isSelfCreatedExecutor,
-                    midSupplier, maxQueueSize, defaultTransactionPriority, maxIncomingBlockTransferSize,
-                    blockSize, delayedTransactionTimeout, duplicatedCoapMessageCallback);
+                    midSupplier, maxQueueSize, defaultTransactionPriority, delayedTransactionTimeout, duplicatedCoapMessageCallback);
 
             return server;
+        }
+
+        @Override
+        protected CoapTcpCSMStorage capabilities() {
+            if (blockSize != null) {
+                return new CoapTcpCSMStorageImpl(new CoapTcpCSM(blockSize.getSize() + 1, true));
+            } else {
+                return new CoapTcpCSMStorageImpl(new CoapTcpCSM(2000, false)); //TODO: change this default max message size
+            }
         }
 
         public CoapServerBuilderForUdp scheduledExecutor(ScheduledExecutorService scheduledExecutorService) {
@@ -251,7 +263,7 @@ public abstract class CoapServerBuilder {
     }
 
     public static class CoapServerBuilderForTcp extends CoapServerBuilder {
-        private CoapTcpCSMStorage csmStorage;
+        private CoapTcpCSMStorage csmStorage = new CoapTcpCSMStorageImpl();
 
         private CoapServerBuilderForTcp() {
         }
@@ -261,16 +273,17 @@ public abstract class CoapServerBuilder {
         }
 
         @Override
-        protected CoapMessaging buildProtoBlocks() {
-            CoapTcpMessaging server = csmStorage == null
-                    ? new CoapTcpMessaging(checkAndGetCoapTransport())
-                    : new CoapTcpMessaging(checkAndGetCoapTransport(), csmStorage);
+        protected CoapMessaging buildCoapMessaging() {
+            CoapTcpMessaging server = new CoapTcpMessaging(checkAndGetCoapTransport(), csmStorage, blockSize);
 
             server.setLocalMaxMessageSize(maxMessageSize);
-            server.setLocalBlockSize(blockSize);
-            server.setMaxIncomingBlockTransferSize(maxIncomingBlockTransferSize);
 
             return server;
+        }
+
+        @Override
+        protected CoapTcpCSMStorage capabilities() {
+            return csmStorage;
         }
 
         public CoapServerBuilderForTcp blockSize(BlockSize blockSize) {

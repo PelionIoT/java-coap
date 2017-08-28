@@ -58,12 +58,13 @@ public class CoapServerBlocksTest {
     private CoapUdpMessaging protoServer;
     private ScheduledExecutorService scheduledExecutor = mock(ScheduledExecutorService.class);
     private BlockSize blockSize = null;
+    private CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
 
 
     @Before
     public void setUp() throws Exception {
         protoServer = new CoapUdpMessaging(coapTransport);
-        server = new CoapServerBlocks(protoServer) {
+        server = new CoapServerBlocks(protoServer, capabilities, 10000000) {
             @Override
             public byte[] observe(String uri, InetSocketAddress destination, Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) {
                 return new byte[0];
@@ -80,7 +81,7 @@ public class CoapServerBlocksTest {
 
     @Test
     public void block2_response() throws Exception {
-        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, blockSize, 120000, DuplicatedCoapMessageCallback.NULL);
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         server.addRequestHandler("/block", new ReadOnlyCoapResource("123456789012345|abcd"));
@@ -96,7 +97,7 @@ public class CoapServerBlocksTest {
 
     @Test
     public void block1_request() throws Exception {
-        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, blockSize, 120000, DuplicatedCoapMessageCallback.NULL);
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         server.addRequestHandler("/block", exchange -> {
@@ -119,7 +120,7 @@ public class CoapServerBlocksTest {
 
     @Test
     public void block1_incorrectIntermediateBlockSize() throws CoapException, IOException {
-        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, blockSize, 120000, DuplicatedCoapMessageCallback.NULL);
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         server.addRequestHandler("/block", exchange -> {
@@ -145,7 +146,7 @@ public class CoapServerBlocksTest {
 
     @Test
     public void block1_request_failAfterTokenMismatch() throws Exception {
-        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, blockSize, 120000, DuplicatedCoapMessageCallback.NULL);
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         server.addRequestHandler("/block", CoapExchange::sendResponse);
@@ -163,7 +164,8 @@ public class CoapServerBlocksTest {
 
     @Test
     public void block1_request_BERT_multiblock() throws Exception {
-        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, BlockSize.S_1024_BERT, 120000, DuplicatedCoapMessageCallback.NULL);
+        capabilities.updateCapability(LOCAL_5683, new CoapTcpCSM(1250, true));
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         byte[] payloadBlock1 = generatePayload(0, 4096).toByteArray();
@@ -204,7 +206,8 @@ public class CoapServerBlocksTest {
 
     @Test
     public void block1_BERT_incorrectIntermediateBlockSize() throws Exception {
-        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, BlockSize.S_1024_BERT, 120000, DuplicatedCoapMessageCallback.NULL);
+        capabilities.updateCapability(LOCAL_5683, new CoapTcpCSM(1250, true));
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         byte[] payloadBlock1 = generatePayload(0, 4096).toByteArray();
