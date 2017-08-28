@@ -25,14 +25,14 @@ import java.io.OutputStream;
  */
 public class PaketUtils {
 
-    public static byte[] readN(StrictInputStream is, int bytesCount, boolean orBlock) throws IOException, NotEnoughDataException {
-        assertEnoughtData(is, bytesCount, orBlock);
+    public static byte[] readN(StrictInputStream is, int bytesCount, boolean orBlock) throws IOException {
+        assertEnoughData(is, bytesCount, orBlock);
         return is.readBytes(bytesCount);
     }
 
 
-    public static long read32(InputStream is, boolean orBlock) throws IOException, NotEnoughDataException {
-        assertEnoughtData(is, 4, orBlock);
+    public static long read32(InputStream is, boolean orBlock) throws IOException {
+        assertEnoughData(is, 4, orBlock);
         long ret = is.read() << 24;
         ret |= is.read() << 16;
         ret |= is.read() << 8;
@@ -41,19 +41,19 @@ public class PaketUtils {
         return ret;
     }
 
-    public static int read16(InputStream is, boolean orBlock) throws IOException, NotEnoughDataException {
-        assertEnoughtData(is, 2, orBlock);
+    public static int read16(InputStream is, boolean orBlock) throws IOException {
+        assertEnoughData(is, 2, orBlock);
         int ret = is.read() << 8;
         ret |= is.read();
         return ret;
     }
 
-    public static int read8(InputStream is, boolean orBlock) throws IOException, NotEnoughDataException {
-        assertEnoughtData(is, 1, orBlock);
+    public static int read8(InputStream is, boolean orBlock) throws IOException {
+        assertEnoughData(is, 1, orBlock);
         return is.read();
     }
 
-    public static void assertEnoughtData(InputStream is, int expectedMinimum, boolean orBlock) throws IOException, NotEnoughDataException {
+    public static void assertEnoughData(InputStream is, int expectedMinimum, boolean orBlock) throws IOException {
         if (orBlock) {
             return;
         }
@@ -62,7 +62,7 @@ public class PaketUtils {
         }
     }
 
-    public static class NotEnoughDataException extends Exception {
+    public static class NotEnoughDataException extends IOException {
     }
 
     public static void write8(OutputStream os, int data) throws IOException {

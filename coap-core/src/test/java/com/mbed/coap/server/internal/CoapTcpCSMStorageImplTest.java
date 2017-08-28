@@ -30,9 +30,14 @@ public class CoapTcpCSMStorageImplTest {
 
         assertEquals(CoapTcpCSM.BASE, capabilities.getOrDefault(LOCAL_5683));
 
-        capabilities.updateCapability(LOCAL_5683, new CoapTcpCSM(1001, true));
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(1001, true));
 
         assertEquals(1001, capabilities.getOrDefault(LOCAL_5683).getMaxMessageSizeInt());
         assertEquals(1001, capabilities.getOrDefault(LOCAL_5683).getMaxMessageSize());
+
+        capabilities.put(LOCAL_5683, CoapTcpCSM.BASE); // remove from storage
+        assertNull(capabilities.capabilitiesMap.get(LOCAL_1_5683)); // should be removed
+
+        assertEquals(CoapTcpCSM.BASE, capabilities.getOrDefault(LOCAL_5683));
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.server.internal.CoapTcpCSM.*;
 import static org.junit.Assert.*;
 import com.mbed.coap.packet.BlockSize;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -39,6 +40,22 @@ public class CoapTcpCSMTest {
         assertEquals(BlockSize.S_1024, new CoapTcpCSM(1025, true).getBlockSize());
 
         assertEquals(BlockSize.S_1024_BERT, new CoapTcpCSM(1153, true).getBlockSize());
+    }
+
+    @Test
+    public void min() {
+        assertEquals(new CoapTcpCSM(16, true), CoapTcpCSM.min(new CoapTcpCSM(16, true), new CoapTcpCSM(16, true)));
+
+        assertEquals(new CoapTcpCSM(16, false), CoapTcpCSM.min(new CoapTcpCSM(20, false), new CoapTcpCSM(16, true)));
+        assertEquals(new CoapTcpCSM(10, false), CoapTcpCSM.min(new CoapTcpCSM(10, true), new CoapTcpCSM(16, false)));
+        assertEquals(new CoapTcpCSM(16, true), CoapTcpCSM.min(new CoapTcpCSM(20, true), new CoapTcpCSM(16, true)));
+    }
+
+    @Test
+    public void withNewOptions() {
+        assertEquals(new CoapTcpCSM(1152, false), BASE.withNewOptions(null, null));
+        assertEquals(new CoapTcpCSM(1000, false), BASE.withNewOptions(1000L, null));
+        assertEquals(new CoapTcpCSM(1000, true), BASE.withNewOptions(1000L, true));
     }
 
     @Test

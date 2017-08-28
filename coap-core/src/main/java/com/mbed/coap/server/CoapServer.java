@@ -453,7 +453,7 @@ public class CoapServer {
 
             @Override
             public void call(CoapPacket resp) {
-                if (resp.getCode() == Code.C205_CONTENT && resp.headers().getObserve() == null) {
+                if (resp.getCode() != Code.C205_CONTENT || resp.headers().getObserve() == null) {
                     respCallback.callException(new ObservationNotEstablishedException(resp));
                     return;
                 }

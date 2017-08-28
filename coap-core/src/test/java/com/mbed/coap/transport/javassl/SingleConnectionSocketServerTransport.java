@@ -73,6 +73,9 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
                     final CoapPacket coapPacket = deserialize(inputStream, remoteSocketAddress);
                     coapReceiver.handle(coapPacket, TransportContext.NULL);
                 } catch (Exception e) {
+                    if ("Connection reset".equals(e.getMessage())) {
+                        socket.close();
+                    }
                     if (e.getCause() != null && e.getCause() instanceof IOException) {
                         if (e.getCause().getMessage().startsWith("Socket is closed")) {
                             LOGGER.warn(e.getCause().getMessage());

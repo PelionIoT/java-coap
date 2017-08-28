@@ -119,6 +119,58 @@ public class CoapServerBlocksTest {
     }
 
     @Test
+    public void block1_request_shouldFailIfTooBigPayload() throws Exception {
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(5000, true));
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        server = new CoapServerBlocks(protoServer, capabilities, 10000) {
+            @Override
+            public byte[] observe(String uri, InetSocketAddress destination, Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) {
+                return new byte[0];
+            }
+
+            @Override
+            public byte[] observe(CoapPacket request, Callback<CoapPacket> respCallback, TransportContext transportContext) {
+                return new byte[0];
+            }
+        };
+        server.start();
+
+        server.addRequestHandler("/block", exchange -> {
+            fail("Should not receive exchange");
+        });
+
+
+        byte[] payloadBlock1 = generatePayload(0, 4096).toByteArray();
+        byte[] payloadBlock2 = generatePayload(4, 4096).toByteArray();
+        byte[] payloadBlock3 = generatePayload(8, 4096).toByteArray();
+
+        final ByteArrayOutputStream fullPayload = new ByteArrayOutputStream(payloadBlock1.length + payloadBlock2.length + payloadBlock3.length);
+        fullPayload.write(payloadBlock1);
+        fullPayload.write(payloadBlock2);
+        fullPayload.write(payloadBlock3);
+
+        CoapPacket pkt = newCoapPacket(LOCAL_5683).mid(10).token(0x1234).put().block1Req(0, BlockSize.S_1024_BERT, true).uriPath("/block").build();
+        pkt.setPayload(payloadBlock1);
+        receive(pkt);
+        assertSent(newCoapPacket(LOCAL_5683).mid(10).token(0x1234).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_1024_BERT, true));
+
+        pkt = newCoapPacket(LOCAL_5683).mid(11).token(0x1234).put().block1Req(4, BlockSize.S_1024_BERT, true).uriPath("/block").build();
+        pkt.setPayload(payloadBlock2);
+        receive(pkt);
+        assertSent(newCoapPacket(LOCAL_5683).mid(11).token(0x1234).ack(Code.C231_CONTINUE).block1Req(4, BlockSize.S_1024_BERT, true));
+
+        pkt = newCoapPacket(LOCAL_5683).mid(12).token(0x1234).put().block1Req(8, BlockSize.S_1024_BERT, false).uriPath("/block").build();
+        pkt.setPayload(payloadBlock3);
+        receive(pkt);
+        assertSent(newCoapPacket(LOCAL_5683).mid(12).token(0x1234)
+                .ack(Code.C413_REQUEST_ENTITY_TOO_LARGE)
+                .block1Req(8, BlockSize.S_1024_BERT, false)
+                .size1(10000)
+                .payload("Entity too large"));
+
+    }
+
+    @Test
     public void block1_incorrectIntermediateBlockSize() throws CoapException, IOException {
         protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
@@ -163,8 +215,44 @@ public class CoapServerBlocksTest {
     }
 
     @Test
+    public void block1_request_failAfterTokenAndNullMismatch1() throws Exception {
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        server.start();
+
+        server.addRequestHandler("/block", CoapExchange::sendResponse);
+
+        //block 1
+        receive(newCoapPacket(LOCAL_5683).mid(1).put().block1Req(0, BlockSize.S_16, true).size1(20).uriPath("/block").payload("123456789012345|"));
+        assertSent(newCoapPacket(LOCAL_5683).mid(1).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, true));
+
+        //block 2
+        receive(newCoapPacket(LOCAL_5683).mid(2).token(999).put().block1Req(1, BlockSize.S_16, false).uriPath("/block").payload("abcd"));
+        assertSent(newCoapPacket(LOCAL_5683).mid(2).token(999).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE)
+                .block1Req(1, BlockSize.S_16, false)
+                .payload("Token mismatch"));
+    }
+
+    @Test
+    public void block1_request_failAfterTokenAndNullMismatch2() throws Exception {
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        server.start();
+
+        server.addRequestHandler("/block", CoapExchange::sendResponse);
+
+        //block 1
+        receive(newCoapPacket(LOCAL_5683).mid(1).token(300).put().block1Req(0, BlockSize.S_16, true).size1(20).uriPath("/block").payload("123456789012345|"));
+        assertSent(newCoapPacket(LOCAL_5683).mid(1).token(300).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, true));
+
+        //block 2
+        receive(newCoapPacket(LOCAL_5683).mid(2).put().block1Req(1, BlockSize.S_16, false).uriPath("/block").payload("abcd"));
+        assertSent(newCoapPacket(LOCAL_5683).mid(2).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE)
+                .block1Req(1, BlockSize.S_16, false)
+                .payload("Token mismatch"));
+    }
+
+    @Test
     public void block1_request_BERT_multiblock() throws Exception {
-        capabilities.updateCapability(LOCAL_5683, new CoapTcpCSM(1250, true));
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(1250, true));
         protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
@@ -205,8 +293,48 @@ public class CoapServerBlocksTest {
     }
 
     @Test
+    public void block1_nonBertAgreed_BERT_received() throws Exception {
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(1150, true)); // non-BERT
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        server.start();
+
+        byte[] payloadBlock1 = generatePayload(0, 4096).toByteArray();
+
+        server.addRequestHandler("/block", exchange -> {
+            fail("Unexpected request was received");
+        });
+
+        CoapPacket pkt = newCoapPacket(LOCAL_5683).mid(10).token(0x1234).put().block1Req(0, BlockSize.S_1024_BERT, true).uriPath("/block").build();
+        pkt.setPayload(payloadBlock1);
+        receive(pkt);
+        assertSent(newCoapPacket(LOCAL_5683).mid(10).token(0x1234).ack(Code.C402_BAD_OPTION)
+                .block1Req(0, BlockSize.S_1024_BERT, true)
+                .payload("BERT is not supported"));
+    }
+
+    @Test
+    public void block1_noBlockEnabled_BERT_received() throws Exception {
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(1150, false)); // non-BERT
+        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        server.start();
+
+        byte[] payloadBlock1 = generatePayload(0, 4096).toByteArray();
+
+        server.addRequestHandler("/block", exchange -> {
+            fail("Unexpected request was received");
+        });
+
+        CoapPacket pkt = newCoapPacket(LOCAL_5683).mid(10).token(0x1234).put().block1Req(0, BlockSize.S_1024_BERT, true).uriPath("/block").build();
+        pkt.setPayload(payloadBlock1);
+        receive(pkt);
+        assertSent(newCoapPacket(LOCAL_5683).mid(10).token(0x1234).ack(Code.C402_BAD_OPTION)
+                .block1Req(0, BlockSize.S_1024_BERT, true)
+                .payload("BERT is not supported"));
+    }
+
+    @Test
     public void block1_BERT_incorrectIntermediateBlockSize() throws Exception {
-        capabilities.updateCapability(LOCAL_5683, new CoapTcpCSM(1250, true));
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(1250, true));
         protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 

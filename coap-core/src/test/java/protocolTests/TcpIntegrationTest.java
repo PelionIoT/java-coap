@@ -18,6 +18,7 @@ package protocolTests;
 import static org.junit.Assert.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
@@ -25,11 +26,12 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.javassl.SingleConnectionSocketServerTransport;
 import com.mbed.coap.transport.javassl.SocketClientTransport;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import javax.net.SocketFactory;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -37,20 +39,38 @@ import org.junit.Test;
  */
 public class TcpIntegrationTest {
 
-
     private CoapServer server;
     private InetSocketAddress serverAddress;
     private CoapClient client;
 
-    @Before
-    public void setUp() throws Exception {
-        server = CoapServerBuilder.newCoapServerForTcp(new SingleConnectionSocketServerTransport(0, true)).start();
-        serverAddress = new InetSocketAddress("localhost", server.getLocalSocketAddress().getPort());
+    private void initClient() throws IOException {
+        initClient(b -> {
+        });
+    }
+
+    private void initClient(Consumer<CoapServerBuilder.CoapServerBuilderForTcp> b) throws IOException {
+        CoapServerBuilder.CoapServerBuilderForTcp builder = CoapServerBuilder.newBuilderForTcp()
+                .transport(new SocketClientTransport(serverAddress, SocketFactory.getDefault(), true))
+                .blockSize(BlockSize.S_1024_BERT)
+                .maxMessageSize(1_200);
+
+        b.accept(builder);
 
         client = CoapClientBuilder.clientFor(
                 serverAddress,
-                CoapServerBuilder.newCoapServerForTcp(new SocketClientTransport(serverAddress, SocketFactory.getDefault(), true)).start()
+                builder.start()
         );
+    }
+
+    private void initServer() throws IOException {
+        server = CoapServerBuilder
+                .newBuilderForTcp()
+                .transport(new SingleConnectionSocketServerTransport(0, true))
+                .blockSize(BlockSize.S_1024_BERT)
+                .maxMessageSize(10_000)
+                .start();
+
+        serverAddress = new InetSocketAddress("localhost", server.getLocalSocketAddress().getPort());
     }
 
     @After
@@ -61,15 +81,53 @@ public class TcpIntegrationTest {
 
     @Test
     public void ping() throws Exception {
+        initServer();
+        initClient();
+
         assertEquals(client.ping().get().getCode(), Code.C703_PONG);
     }
 
     @Test
     public void request() throws Exception {
+        initServer();
+        initClient();
         server.addRequestHandler("/test", new ReadOnlyCoapResource("1234567890"));
 
         CompletableFuture<CoapPacket> resp = client.resource("/test").get();
 
         assertEquals("1234567890", resp.get().getPayloadString());
     }
+
+    @Test
+    public void request_withLargePayloadInResponse_blocks() throws Exception {
+        initServer();
+        initClient();
+        server.addRequestHandler("/test", new ReadOnlyCoapResource("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_"));
+
+        //unfortunately, need to wait until capabilities is exchanged
+        Thread.sleep(80);
+        CompletableFuture<CoapPacket> resp = client.resource("/test").get();
+
+        assertEquals(1300, resp.get().getPayload().length);
+        //verify that blocks was used
+        assertNotNull(resp.get().headers().getBlock2Res());
+    }
+
+    @Test
+    public void request_withLargePayloadInResponse_clientDoesNotSupportBlocks() throws Exception {
+        initServer();
+        initClient(builder -> builder
+                .blockSize(null)
+                .maxMessageSize(1300)
+        );
+
+        server.addRequestHandler("/test", new ReadOnlyCoapResource("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_"));
+
+        CompletableFuture<CoapPacket> resp = client.resource("/test").get();
+
+        assertEquals(1300, resp.get().getPayload().length);
+        //block was not used
+        assertNull(resp.get().headers().getBlock2Res());
+    }
+
 }

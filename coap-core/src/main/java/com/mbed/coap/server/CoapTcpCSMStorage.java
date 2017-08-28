@@ -23,7 +23,7 @@ import java.net.InetSocketAddress;
  * CoAP over TCP capabilities and settings storage interface
  */
 public interface CoapTcpCSMStorage {
-    void updateCapability(InetSocketAddress address, CoapTcpCSM capabilities);
+    void put(InetSocketAddress address, CoapTcpCSM capabilities);
 
     CoapTcpCSM getOrDefault(InetSocketAddress address);
 

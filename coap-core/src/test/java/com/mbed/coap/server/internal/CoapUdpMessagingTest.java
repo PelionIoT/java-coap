@@ -366,6 +366,44 @@ public class CoapUdpMessagingTest {
         verify(requestHandler, times(2)).handleObservation(any(), any());
     }
 
+    @Test
+    public void shouldSetMessageIdOnMakeRequest() throws IOException, CoapException {
+        initServer();
+        mid = 1000;
+
+        udpMessaging.makeRequest(newCoapPacket(LOCAL_5683).mid(0).get().uriPath("/test").build(), Callback.ignore(), TransportContext.NULL);
+
+        assertSent(newCoapPacket(LOCAL_5683).mid(1000).get().uriPath("/test"));
+    }
+
+    @Test
+    public void shouldSetMessageIdOnSendNonResponse() throws IOException, CoapException {
+        initServer();
+        mid = 1000;
+
+        udpMessaging.sendResponse(newCoapPacket(LOCAL_5683).mid(0).build(), newCoapPacket(LOCAL_5683).mid(0).non(Code.C205_CONTENT).build(), TransportContext.NULL);
+
+        assertSent(newCoapPacket(LOCAL_5683).mid(1000).non(Code.C205_CONTENT));
+    }
+
+    @Test
+    public void shouldSetMessageIdOnSend_resetResponse_toNonRequest() throws IOException, CoapException {
+        initServer();
+        mid = 1000;
+
+        udpMessaging.sendResponse(newCoapPacket(LOCAL_5683).mid(0).non().get().build(), newCoapPacket(LOCAL_5683).mid(0).reset().build(), TransportContext.NULL);
+
+        assertSent(newCoapPacket(LOCAL_5683).mid(1000).reset());
+    }
+
+    @Test
+    public void shouldNotSetMessageId_onSendAckResponse() throws IOException, CoapException {
+        initServer();
+
+        udpMessaging.sendResponse(newCoapPacket(LOCAL_5683).mid(2).build(), newCoapPacket(LOCAL_5683).mid(2).ack(Code.C205_CONTENT).build(), TransportContext.NULL);
+
+        assertSent(newCoapPacket(LOCAL_5683).mid(2).ack(Code.C205_CONTENT));
+    }
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {
         udpMessaging.handle(coapPacketBuilder.build(), TransportContext.NULL);

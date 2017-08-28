@@ -104,8 +104,8 @@ public class HeaderOptions extends BasicHeaderOptions {
     }
 
     @Override
-    public void toString(StringBuilder sb) {
-        super.toString(sb);
+    public void toString(StringBuilder sb, Code code) {
+        super.toString(sb, code);
 
         if (block1Req != null) {
             sb.append(" block1:").append(block1Req);
@@ -118,6 +118,17 @@ public class HeaderOptions extends BasicHeaderOptions {
         }
         if (size2Res != null) {
             sb.append(" sz2:").append(size2Res);
+        }
+
+        if (signallingOption2 != null || signallingOption4 != null) {
+            SignalingOptions signOpt = new SignalingOptions();
+            if (signallingOption2 != null) {
+                signOpt.parse(2, signallingOption2, code);
+            }
+            if (signallingOption4 != null) {
+                signOpt.parse(4, signallingOption4, code);
+            }
+            sb.append(signOpt.toString());
         }
     }
 

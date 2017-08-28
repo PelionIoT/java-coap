@@ -50,8 +50,6 @@ public abstract class CoapMessaging implements CoapReceiver {
     public abstract void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext);
 
 
-    public abstract int getLocalMaxMessageSize();
-
     public CoapMessaging(CoapTransport coapTransport) {
         this.coapTransporter = coapTransport;
     }
@@ -78,12 +76,12 @@ public abstract class CoapMessaging implements CoapReceiver {
         }
 
         isRunning = false;
-        LOGGER.trace("Stopping CoAP Proto server... :" + toString());
+        LOGGER.trace("Stopping CoapMessaging: {}", this);
         stop0();
         coapTransporter.stop();
         coapRequestHandler = null;
 
-        LOGGER.debug("CoAP Proto Server stopped: " + toString());
+        LOGGER.debug("CoapMessaging stopped: {}", this);
     }
 
     protected abstract void stop0();
@@ -188,10 +186,6 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     protected boolean handleObservation(CoapPacket packet, TransportContext transContext) {
         return coapRequestHandler.handleObservation(packet, transContext);
-    }
-
-    public int getMaxMessageSize(InetSocketAddress address) {
-        return getLocalMaxMessageSize();
     }
 
 }

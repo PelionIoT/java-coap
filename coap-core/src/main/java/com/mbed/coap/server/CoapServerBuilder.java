@@ -172,7 +172,6 @@ public abstract class CoapServerBuilder {
 
             server.setSpecialCoapTransactionPriority(blockTransferPriority);
             server.setTransmissionTimeout(transmissionTimeout);
-            server.setMaxMessageSize(maxMessageSize);
 
             server.init(duplicationMaxSize, scheduledExecutorService, isSelfCreatedExecutor,
                     midSupplier, maxQueueSize, defaultTransactionPriority, delayedTransactionTimeout, duplicatedCoapMessageCallback);
@@ -274,11 +273,7 @@ public abstract class CoapServerBuilder {
 
         @Override
         protected CoapMessaging buildCoapMessaging() {
-            CoapTcpMessaging server = new CoapTcpMessaging(checkAndGetCoapTransport(), csmStorage, blockSize);
-
-            server.setLocalMaxMessageSize(maxMessageSize);
-
-            return server;
+            return new CoapTcpMessaging(checkAndGetCoapTransport(), csmStorage, blockSize != null, maxMessageSize);
         }
 
         @Override
@@ -291,7 +286,7 @@ public abstract class CoapServerBuilder {
             return this;
         }
 
-        public CoapServerBuilderForTcp setMaxMessageSize(int maxMessageSize) {
+        public CoapServerBuilderForTcp maxMessageSize(int maxMessageSize) {
             this.maxMessageSize = maxMessageSize;
             return this;
         }

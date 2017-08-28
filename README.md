@@ -22,6 +22,8 @@ The following features are supported by the library:
     - Constrained RESTful Environments (CoRE) Link Format [RFC 6690](https://tools.ietf.org/html/rfc6690)
 * CoAP server mode
 * CoAP client mode
+* Coap over tcp [draft-ietf-core-coap-tcp-tls-09](https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09)
+    - excluding: websockets, observations with BERT blocks
 * Network transports:
     - plain text UDP
     - TLS

@@ -36,7 +36,14 @@ public class SignalingOptions {
     private Integer holdOff;
     private Integer badCsmOption;
 
-    public SignalingOptions parse(int type, byte[] data, Code code) {
+    public static SignalingOptions capabilities(int maxMessageSize, boolean useBlockwiseTransfer) {
+        SignalingOptions signalingOptions = new SignalingOptions();
+        signalingOptions.setBlockWiseTransfer(useBlockwiseTransfer);
+        signalingOptions.setMaxMessageSize(maxMessageSize);
+        return signalingOptions;
+    }
+
+    SignalingOptions parse(int type, byte[] data, Code code) {
         if (code == Code.C701_CSM && type == MAX_MESSAGE_SIZE) {
             setMaxMessageSize(DataConvertingUtility.readVariableULong(data));
         } else if (code == Code.C701_CSM && type == BLOCK_WISE_TRANSFER) {
@@ -91,23 +98,23 @@ public class SignalingOptions {
     public String toString() {
         StringBuilder sb = new StringBuilder(32);
         if (maxMessageSize != null) {
-            sb.append(" Max-Message-Size:").append(maxMessageSize);
+            sb.append(" MaxMsgSz:").append(maxMessageSize);
         }
         if (blockWiseTransfer != null && blockWiseTransfer) {
-            sb.append(" Block-Wise-Transfer");
+            sb.append(" Blocks");
         }
         if (custody != null && custody) {
             sb.append(" Custody");
         }
         if (alternativeAddress != null) {
-            sb.append(" Alt-adr:");
+            sb.append(" AltAdr:");
             sb.append(alternativeAddress);
         }
         if (holdOff != null) {
             sb.append(" Hold-Off:").append(holdOff);
         }
         if (badCsmOption != null) {
-            sb.append(" Bad-CSM-Option:").append(badCsmOption);
+            sb.append(" Bad-CSM:").append(badCsmOption);
         }
         return sb.toString();
     }
@@ -125,7 +132,7 @@ public class SignalingOptions {
         if (custody != null || alternativeAddress != null || holdOff != null || badCsmOption != null) {
             throw new IllegalStateException("Other than 7.01 specific signaling option already set");
         }
-        if (maxMessageSize != null && (maxMessageSize < 0 || maxMessageSize > 0xFFFF)) {
+        if (maxMessageSize != null && (maxMessageSize < 0 || maxMessageSize > 0xFFFFFFFFL)) {
             throw new IllegalArgumentException("Illegal Max-Message-Size argument: " + maxMessageSize);
         }
         this.maxMessageSize = maxMessageSize;

@@ -22,14 +22,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
+import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
+import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import protocolTests.utils.CoapPacketBuilder;
@@ -78,7 +80,7 @@ public class CoapServerBlocksUnitTest {
     public void shouldMakeBlockingRequest_maxMsgSz20() throws Exception {
         Callback<CoapPacket> callback;
         CoapPacket req = newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_").build();
-        capabilities.updateCapability(LOCAL_5683, new CoapTcpCSM(20, true));
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(20, true));
 
         CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
 
@@ -128,6 +130,34 @@ public class CoapServerBlocksUnitTest {
     }
 
     @Test
+    public void shoudFail_toReceive_responseWithIncorrectLastBlockSize() {
+        Callback<CoapPacket> callback;
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(20, true));
+
+        CoapPacket req = newCoapPacket(LOCAL_5683).get().uriPath("/test").build();
+        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+
+        //BLOCK 0
+        callback = assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/test"));
+
+        //response
+        reset(msg);
+        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("0123456789ABCDEF").build());
+
+        //BLOCK 1
+        callback = assertMakePriRequest(newCoapPacket(LOCAL_5683).get().block2Res(1, BlockSize.S_16, false).uriPath("/test"));
+
+        reset(msg);
+        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("0123456789abcdef_").build());
+
+        //verify
+        assertTrue(respFut.isDone());
+        assertThatThrownBy(() -> respFut.get())
+                .hasCauseExactlyInstanceOf(CoapBlockException.class)
+                .hasMessageStartingWith("com.mbed.coap.exception.CoapBlockException: Last block size mismatch with block option");
+    }
+
+    @Test
     public void shouldReceiveBlockingResponse() throws Exception {
         Callback<CoapPacket> callback;
         CoapPacket req = newCoapPacket(LOCAL_5683).get().uriPath("/test").build();
@@ -153,7 +183,6 @@ public class CoapServerBlocksUnitTest {
     }
 
     @Test
-    @Ignore
     public void shouldReceiveBlockingResponse_with_BERT() throws Exception {
         //based on https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-6.1
         Callback<CoapPacket> callback;
@@ -169,13 +198,13 @@ public class CoapServerBlocksUnitTest {
         callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, S_1024_BERT, true).payload(new byte[3072]).build());
 
         //BLOCK 1
-        callback = assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(3, S_1024_BERT, false));
+        callback = assertMakePriRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(3, S_1024_BERT, false));
 
         reset(msg);
         callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(3, S_1024_BERT, true).payload(new byte[5120]).build());
 
         //BLOCK 2
-        callback = assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(8, S_1024_BERT, false));
+        callback = assertMakePriRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(8, S_1024_BERT, false));
 
         reset(msg);
         callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(8, S_1024_BERT, false).payload(new byte[4711]).build());
@@ -188,10 +217,9 @@ public class CoapServerBlocksUnitTest {
     }
 
     @Test
-    @Ignore
     public void shouldSendBlockingRequest_with_BERT() throws Exception {
         //based on https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-6.2
-        when(msg.getMaxMessageSize(any())).thenReturn(10000);
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(10000, true));
 
         Callback<CoapPacket> callback;
         CoapPacket req = newCoapPacket(LOCAL_5683).put().uriPath("/options").payload(new byte[8192 + 8192 + 5683]).build();
@@ -218,7 +246,31 @@ public class CoapServerBlocksUnitTest {
 
         //verify
         assertTrue(respFut.isDone());
-        assertEquals(Code.C205_CONTENT, respFut.get().getCode());
+        assertEquals(Code.C204_CHANGED, respFut.get().getCode());
+    }
+
+    @Test
+    public void shouldFailSendBlockingRequest_when_blockTransferIsDisabled() throws Exception {
+        //based on https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-6.2
+
+        CoapPacket req = newCoapPacket(LOCAL_5683).put().uriPath("/options").payload(new byte[8192 + 8192 + 5683]).build();
+
+        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+
+        assertTrue(respFut.isCompletedExceptionally());
+        assertThatThrownBy(() -> respFut.get())
+                .hasCause(new CoapException("Block transfers are not enabled for localhost/127.0.0.1:5683 and payload size 22067 > max payload size 1152"));
+
+        verify(msg, never()).makeRequest(any(), any(), any());
+        verify(msg, never()).makePrioritisedRequest(any(), any(), any());
+    }
+
+    @Test
+    public void shouldThrowExceptionWhenCallBackIsNull() {
+        final CoapPacket req = newCoapPacket(LOCAL_5683).put().uriPath("/options").payload(new byte[8192 + 8192 + 5683]).build();
+        assertThatThrownBy(() ->
+                server.makeRequest(req, null, TransportContext.NULL)
+        ).isInstanceOf(NullPointerException.class).hasMessage("CallBack is null");
     }
 
 

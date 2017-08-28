@@ -16,25 +16,25 @@
 package com.mbed.coap.server.internal;
 
 import com.mbed.coap.packet.BlockSize;
-import java.util.Optional;
 
 /**
  * Created by olesmi01 on 26.07.2017.
  * Capabilities And Settings POJO for CoAP over TCP https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09
  */
 public class CoapTcpCSM {
-    public static final CoapTcpCSM BASE = new CoapTcpCSM();
-
     // see https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-5.3 for base values (5.3.1, 5.3.2)
     private static final int BASE_MAX_MESSAGE_SIZE = 1152;
     private static final boolean BASE_BLOCKWISE = false;
+    public static final CoapTcpCSM BASE = new CoapTcpCSM(BASE_MAX_MESSAGE_SIZE, BASE_BLOCKWISE);
 
     private final boolean blockwiseTransfer;
     private final long maxMessageSize;
 
-    private CoapTcpCSM() {
-        blockwiseTransfer = BASE_BLOCKWISE;
-        maxMessageSize = BASE_MAX_MESSAGE_SIZE;
+    public static CoapTcpCSM min(CoapTcpCSM cap1, CoapTcpCSM cap2) {
+        return new CoapTcpCSM(
+                Math.min(cap1.getMaxMessageSizeInt(), cap2.getMaxMessageSizeInt()),
+                cap1.blockwiseTransfer && cap2.blockwiseTransfer
+        );
     }
 
     public CoapTcpCSM(long maxMessageSize, boolean blockwiseTransfer) {
@@ -43,15 +43,10 @@ public class CoapTcpCSM {
     }
 
     public CoapTcpCSM withNewOptions(Long maxMessageSize, Boolean blockwiseTransfer) {
-        long newMaxSize = Optional.ofNullable(maxMessageSize).orElse(this.maxMessageSize);
-        boolean newBlockWise = Optional.ofNullable(blockwiseTransfer).orElse(this.blockwiseTransfer);
-
-        if (newMaxSize == BASE.maxMessageSize
-                && newBlockWise == BASE.blockwiseTransfer) {
-            return BASE;
-        }
-
-        return new CoapTcpCSM(newMaxSize, newBlockWise);
+        return new CoapTcpCSM(
+                maxMessageSize != null ? maxMessageSize : this.maxMessageSize,
+                blockwiseTransfer != null ? blockwiseTransfer : this.blockwiseTransfer
+        );
     }
 
     public boolean isBlockTransferEnabled() {
@@ -120,4 +115,10 @@ public class CoapTcpCSM {
         result = 31 * result + (int) (maxMessageSize ^ (maxMessageSize >>> 32));
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "CoapTcpCSM{block=" + blockwiseTransfer + ", size=" + maxMessageSize + '}';
+    }
+
 }

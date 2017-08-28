@@ -17,7 +17,6 @@ package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
@@ -44,24 +43,12 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
 
     private final ConcurrentMap<DelayedTransactionId, RequestCallback> transactions = new ConcurrentHashMap<>();
     private final CoapTcpCSMStorage csmStorage;
-    private final BlockSize blockSize;
-    private int maxMessageSize;
+    private final CoapTcpCSM ownCapability;
 
-
-    public CoapTcpMessaging(CoapTransport coapTransport, CoapTcpCSMStorage csmStorage, BlockSize localBlockSize) {
+    public CoapTcpMessaging(CoapTransport coapTransport, CoapTcpCSMStorage csmStorage, boolean useBlockWiseTransfer, int maxMessageSize) {
         super(coapTransport);
         this.csmStorage = csmStorage;
-        this.blockSize = localBlockSize;
-    }
-
-
-    public void setLocalMaxMessageSize(int maxMessageSize) {
-        this.maxMessageSize = maxMessageSize;
-    }
-
-    @Override
-    public int getLocalMaxMessageSize() {
-        return maxMessageSize;
+        this.ownCapability = new CoapTcpCSM(maxMessageSize, useBlockWiseTransfer);
     }
 
     @Override
@@ -90,8 +77,9 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
             SignalingOptions signalingOpts = packet.headers().toSignallingOptions(packet.getCode());
             Long maxMessageSize = signalingOpts.getMaxMessageSize();
             Boolean blockWiseTransferBERT = signalingOpts.getBlockWiseTransfer();
-            CoapTcpCSM current = csmStorage.getOrDefault(packet.getRemoteAddress());
-            csmStorage.updateCapability(packet.getRemoteAddress(), current.withNewOptions(maxMessageSize, blockWiseTransferBERT));
+            CoapTcpCSM remoteCapabilities = CoapTcpCSM.BASE.withNewOptions(maxMessageSize, blockWiseTransferBERT);
+
+            csmStorage.put(packet.getRemoteAddress(), CoapTcpCSM.min(ownCapability, remoteCapabilities));
         } else if (packet.getCode() == Code.C702_PING) {
             CoapPacket pongResp = new CoapPacket(Code.C703_PONG, MessageType.Acknowledgement, packet.getRemoteAddress());
             pongResp.setToken(packet.getToken());
@@ -113,9 +101,9 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
     public void makeRequest(CoapPacket packet, Callback<CoapPacket> callback, TransportContext transContext) {
 
         int payloadLen = packet.getPayload().length;
-        int maxMessageSize = getMaxMessageSize(packet.getRemoteAddress());
+        int maxMessageSize = csmStorage.getOrDefault(packet.getRemoteAddress()).getMaxMessageSizeInt();
 
-        if (payloadLen > maxMessageSize && !isBlockTransferSupported(packet.getRemoteAddress())) {
+        if (payloadLen > maxMessageSize) {
             callback.callException(
                     new CoapException("Request payload size is too big and no block transfer support is enabled for " + packet.getRemoteAddress() + ": " + payloadLen)
             );
@@ -143,10 +131,6 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
         sendPacket(response, response.getRemoteAddress(), transContext);
     }
 
-    private boolean isBlockTransferSupported(InetSocketAddress address) {
-        return csmStorage.getOrDefault(address).isBlockTransferEnabled();
-    }
-
     @Override
     protected boolean handleDelayedResponse(CoapPacket packet) {
         return false;
@@ -170,11 +154,9 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
         CoapPacket packet = new CoapPacket(remoteAddress);
         packet.setCode(Code.C701_CSM);
 
-        SignalingOptions signalingOpts = new SignalingOptions();
-        signalingOpts.setMaxMessageSize(maxMessageSize);
-        signalingOpts.setBlockWiseTransfer(blockSize != null);
-
-        packet.headers().putSignallingOptions(signalingOpts);
+        packet.headers().putSignallingOptions(
+                SignalingOptions.capabilities(ownCapability.getMaxMessageSizeInt(), ownCapability.isBlockTransferEnabled())
+        );
 
         coapTransporter.sendPacket(packet, remoteAddress, TransportContext.NULL);
     }
@@ -198,12 +180,6 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
         if (requestCallback != null) {
             requestCallback.callException(error);
         }
-    }
-
-    @Override
-    public int getMaxMessageSize(InetSocketAddress address) {
-        CoapTcpCSM capabilities = csmStorage.getOrDefault(address);
-        return capabilities.getMaxMessageSizeInt();
     }
 
     @Override

@@ -26,7 +26,6 @@ import static org.mockito.BDDMockito.verify;
 import static org.mockito.Mockito.mock;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.SignalingOptions;
@@ -35,6 +34,7 @@ import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import org.junit.After;
 import org.junit.Before;
@@ -49,7 +49,7 @@ public class CoapTcpMessagingTest {
 
     private final CoapTransport coapTransport = mock(CoapTransport.class);
     CoapTcpCSMStorageImpl csmStorage = new CoapTcpCSMStorageImpl();
-    CoapTcpMessaging tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage, null);
+    CoapTcpMessaging tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage, false, 501);
     CoapRequestHandler coapRequestHandler = mock(CoapRequestHandler.class);
 
     @Before
@@ -141,15 +141,24 @@ public class CoapTcpMessagingTest {
     }
 
     @Test
-    public void should_set_remote_capability() throws CoapException, IOException {
-        SignalingOptions signOpt = new SignalingOptions();
-        signOpt.setMaxMessageSize(211);
-        signOpt.setBlockWiseTransfer(false);
+    public void should_set_minimal_remote_capabilities_fromLarge() throws CoapException, IOException {
+        SignalingOptions signOpt = SignalingOptions.capabilities(10000, true);
 
         receive(newCoapPacket(LOCAL_1_5683).con(Code.C701_CSM).signalling(signOpt));
 
         assertNothingSent();
-        assertEquals(211, csmStorage.getOrDefault(LOCAL_1_5683).getMaxMessageSize());
+        assertEquals(501, csmStorage.getOrDefault(LOCAL_1_5683).getMaxMessageSize());
+        assertFalse(csmStorage.getOrDefault(LOCAL_1_5683).isBlockTransferEnabled());
+    }
+
+    @Test
+    public void should_set_minimal_remote_capabilities_fromSmall() throws CoapException, IOException {
+        SignalingOptions signOpt = SignalingOptions.capabilities(300, false);
+
+        receive(newCoapPacket(LOCAL_1_5683).con(Code.C701_CSM).signalling(signOpt));
+
+        assertNothingSent();
+        assertEquals(300, csmStorage.getOrDefault(LOCAL_1_5683).getMaxMessageSize());
         assertFalse(csmStorage.getOrDefault(LOCAL_1_5683).isBlockTransferEnabled());
     }
 
@@ -175,7 +184,6 @@ public class CoapTcpMessagingTest {
         SignalingOptions signOpt = new SignalingOptions();
         signOpt.setMaxMessageSize(501);
         signOpt.setBlockWiseTransfer(false);
-        tcpMessaging.setLocalMaxMessageSize(501);
 
         //when
         tcpMessaging.onConnected(LOCAL_5683);
@@ -186,12 +194,11 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void shouldSendCapabilities_whenConnected_withBlocking() throws CoapException, IOException {
-        tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage, BlockSize.S_1024_BERT);
+        tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage, true, 10501);
         tcpMessaging.start(coapRequestHandler);
         SignalingOptions signOpt = new SignalingOptions();
         signOpt.setMaxMessageSize(10501);
         signOpt.setBlockWiseTransfer(true);
-        tcpMessaging.setLocalMaxMessageSize(10501);
 
         //when
         tcpMessaging.onConnected(LOCAL_5683);
@@ -199,6 +206,15 @@ public class CoapTcpMessagingTest {
         //then
         assertSent(newCoapPacket(LOCAL_5683).code(Code.C701_CSM).signalling(signOpt));
     }
+
+    @Test
+    public void shouldThrowExceptionWhenTooLargePayload() throws CoapException, IOException {
+        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_5683).get().payload(new byte[1200]));
+
+        assertTrue(resp.isCompletedExceptionally());
+        assertThatThrownBy(resp::get).hasCauseExactlyInstanceOf(CoapException.class);
+    }
+
 
     //=======================================================================
 
@@ -227,7 +243,11 @@ public class CoapTcpMessagingTest {
     private CompletableFuture<CoapPacket> makeRequest(CoapPacketBuilder coapPacket) {
         FutureCallbackAdapter<CoapPacket> completableFuture = new FutureCallbackAdapter<>();
 
-        tcpMessaging.makeRequest(coapPacket.build(), completableFuture, TransportContext.NULL);
+        if (new Random().nextBoolean()) {
+            tcpMessaging.makeRequest(coapPacket.build(), completableFuture, TransportContext.NULL);
+        } else {
+            tcpMessaging.makePrioritisedRequest(coapPacket.build(), completableFuture, TransportContext.NULL);
+        }
         return completableFuture;
     }
 
