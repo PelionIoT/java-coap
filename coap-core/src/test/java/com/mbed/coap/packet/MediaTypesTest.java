@@ -24,6 +24,18 @@ import org.junit.Test;
 public class MediaTypesTest {
 
     @Test
+    public void should_return_null_for_unknown_content_format() {
+        assertNull(MediaTypes.contentFormatToString(null));
+        assertNull(MediaTypes.contentFormatToString((short) -2));
+        assertNull(MediaTypes.contentFormatToString((short) 1));
+        assertNull(MediaTypes.contentFormatToString((short) 9745));
+        assertNull(MediaTypes.contentFormatToString((short) 164));
+
+        assertNull(MediaTypes.parseContentFormat(null));
+        assertNull(MediaTypes.parseContentFormat("non/existing"));
+    }
+
+    @Test
     public void contentTypeConverterTest() {
         assertEquals("text/plain", MediaTypes.contentFormatToString((short) 0));
         assertEquals("application/xml", MediaTypes.contentFormatToString((short) 41));
@@ -32,11 +44,11 @@ public class MediaTypesTest {
         assertEquals("application/json", MediaTypes.contentFormatToString((short) 50));
         assertEquals("application/link-format", MediaTypes.contentFormatToString((short) 40));
 
-        assertNull(MediaTypes.contentFormatToString(null));
-        assertNull(MediaTypes.contentFormatToString((short) -2));
-        assertNull(MediaTypes.contentFormatToString((short) 1));
-        assertNull(MediaTypes.contentFormatToString((short) 9745));
-        assertNull(MediaTypes.contentFormatToString((short) 164));
+        assertEquals("application/cbor", MediaTypes.contentFormatToString((short) 60));
+        assertEquals("application/cose; cose-type=\"cose-mac\"", MediaTypes.contentFormatToString((short) 97));
+        assertEquals("application/cose; cose-type=\"cose-sign1\"", MediaTypes.contentFormatToString((short) 18));
+        assertEquals("application/coap-group+json", MediaTypes.contentFormatToString((short) 256));
+
 
         assertEquals((Short) MediaTypes.CT_TEXT_PLAIN, MediaTypes.parseContentFormat("text/plain"));
         assertEquals((Short) MediaTypes.CT_APPLICATION_EXI, MediaTypes.parseContentFormat("application/exi"));
@@ -45,7 +57,8 @@ public class MediaTypesTest {
         assertEquals((Short) MediaTypes.CT_APPLICATION_OCTET__STREAM, MediaTypes.parseContentFormat("application/octet-stream"));
         assertEquals((Short) MediaTypes.CT_APPLICATION_XML, MediaTypes.parseContentFormat("application/xml"));
 
-        assertNull(MediaTypes.parseContentFormat(null));
-        assertNull(MediaTypes.parseContentFormat("non/existing"));
+        assertEquals((Short) MediaTypes.CT_APPLICATION_CODE_ENCRYPT0, MediaTypes.parseContentFormat("application/cose; cose-type=\"cose-encrypt0\""));
+        assertEquals((Short) MediaTypes.CT_APPLICATION_CODE_KEY, MediaTypes.parseContentFormat("application/cose-key"));
+        assertEquals((Short) MediaTypes.CT_APPLICATION_MERGE_PATCH_JSON, MediaTypes.parseContentFormat("application/merge-patch+json"));
     }
 }
