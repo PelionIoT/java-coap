@@ -102,7 +102,7 @@ public class InMemoryCoapTransport extends BlockingCoapTransport {
     public void receive(DatagramMessage msg) {
         executor.execute(() -> {
             try {
-                coapReceiver.handle(CoapPacket.read(msg.packetData, msg.packetData.length, msg.source.toInetSocketAddress()), transportContext);
+                coapReceiver.handle(CoapPacket.read(msg.source.toInetSocketAddress(), msg.packetData, msg.packetData.length), transportContext);
             } catch (CoapException e) {
                 LOGGER.error(e.getMessage(), e);
             }

@@ -20,16 +20,34 @@ package com.mbed.coap.packet;
  */
 public enum BlockSize {
 
-    S_16(4), S_32(5), S_64(6), S_128(7), S_256(8), S_512(9), S_1024(10);
+    S_16(4, false), S_32(5, false), S_64(6, false), S_128(7, false), S_256(8, false), S_512(9, false), S_1024(10, false), S_1024_BERT(10, true);
     byte szx;
+    boolean bert;
 
-    private BlockSize(int szx) {
+    private BlockSize(int szx, boolean bert) {
         this.szx = (byte) (szx - 4);
+        this.bert = bert;
     }
 
     public int getSize() {
         return 1 << (szx + 4);
         //return 2^(szx+4);
+    }
+
+    public static BlockSize fromRawSzx(byte rawSzx) {
+        return values()[rawSzx];
+    }
+
+    public byte toRawSzx() {
+        if (bert) {
+            return 7;
+        } else {
+            return szx;
+        }
+    }
+
+    public boolean isBert() {
+        return bert;
     }
 
 }

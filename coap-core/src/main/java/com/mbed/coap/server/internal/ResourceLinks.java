@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.linkformat.LinkFormat;
 import com.mbed.coap.linkformat.LinkFormatBuilder;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
+import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.utils.CoapResource;
 import java.text.ParseException;
 import java.util.Collections;
@@ -30,7 +32,7 @@ import java.util.Map;
 /**
  * @author szymon
  */
-class ResourceLinks extends CoapResource {
+public class ResourceLinks extends CoapResource {
 
     private final CoapServer server;
 

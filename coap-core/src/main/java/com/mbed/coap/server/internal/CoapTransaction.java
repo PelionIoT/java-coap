@@ -35,17 +35,17 @@ public class CoapTransaction {
     protected CoapPacket coapRequest;
     private CoapTransactionId transId;
     private DelayedTransactionId delayedTransId;
-    private final CoapServerAbstract coapServer;
+    private final CoapUdpMessaging coapServer;
     private final TransportContext transContext;
     private final Priority transactionPriority;
     private final Consumer<CoapTransactionId> sendErrConsumer;
     private boolean isActive;
 
-    public CoapTransaction(RequestCallback callback, CoapPacket coapRequest, final CoapServerAbstract coapServer, TransportContext transContext, Consumer<CoapTransactionId> sendErrConsumer) {
+    public CoapTransaction(RequestCallback callback, CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Consumer<CoapTransactionId> sendErrConsumer) {
         this(callback, coapRequest, coapServer, transContext, Priority.NORMAL, sendErrConsumer);
     }
 
-    public CoapTransaction(RequestCallback callback, CoapPacket coapRequest, final CoapServerAbstract coapServer, TransportContext transContext, Priority transactionPriority, Consumer<CoapTransactionId> sendErrConsumer) {
+    public CoapTransaction(RequestCallback callback, CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Priority transactionPriority, Consumer<CoapTransactionId> sendErrConsumer) {
         if (callback == null) {
             throw new NullPointerException();
         }

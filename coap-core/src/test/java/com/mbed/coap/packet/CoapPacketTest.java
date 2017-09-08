@@ -37,7 +37,7 @@ import org.junit.Test;
 /**
  * @author szymon
  */
-public class CoapPacketTest {
+public class CoapPacketTest extends CoapPacketTestBase {
 
     @Test
     public void linkFormat() throws ParseException {
@@ -62,6 +62,7 @@ public class CoapPacketTest {
     @Test
     public void deserializeAfterSerializeGivesBackACoapPacketWithSameData() throws CoapException {
         CoapPacket cp = new CoapPacket(Method.GET, MessageType.Confirmable, "/test", null);
+        cp.setMessageId(14);
         byte[] rawCp = CoapPacket.serialize(cp);
         CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
 
@@ -79,6 +80,7 @@ public class CoapPacketTest {
         InetSocketAddress addr = InetSocketAddress.createUnresolved("some.host", 1234);
         CoapPacket cp = new CoapPacket(Code.C205_CONTENT, MessageType.Acknowledgement, addr);
         cp.setPayload("TEST");
+        cp.setMessageId(13);
 
         byte[] rawCp = CoapPacket.serialize(cp);
         CoapPacket cp2 = CoapPacket.read(addr, rawCp);
@@ -173,40 +175,6 @@ public class CoapPacketTest {
         assertSimilar(cp, cp2);
     }
 
-    private static void assertSimilar(CoapPacket cp1, CoapPacket cp2) {
-        assertEquals(cp1.getMethod(), cp2.getMethod());
-        assertEquals(cp1.getMessageType(), cp2.getMessageType());
-        assertEquals(cp1.getCode(), cp2.getCode());
-        assertEquals(cp1.getMessageId(), cp2.getMessageId());
-
-        assertEquals(cp1.headers().getBlock1Req(), cp2.headers().getBlock1Req());
-        assertEquals(cp1.headers().getBlock2Res(), cp2.headers().getBlock2Res());
-        assertEquals(cp1.headers().getUriPath(), cp2.headers().getUriPath());
-        assertEquals(cp1.headers().getUriAuthority(), cp2.headers().getUriAuthority());
-        assertEquals(cp1.headers().getUriHost(), cp2.headers().getUriHost());
-        assertEquals(cp1.headers().getUriQuery(), cp2.headers().getUriQuery());
-        assertEquals(cp1.headers().getLocationPath(), cp2.headers().getLocationPath());
-        assertEquals(cp1.headers().getLocationQuery(), cp2.headers().getLocationQuery());
-
-        assertArrayEquals(cp1.headers().getAccept(), cp2.headers().getAccept());
-        assertArrayEquals(cp1.headers().getIfMatch(), cp2.headers().getIfMatch());
-        assertArrayEquals(cp1.headers().getEtagArray(), cp2.headers().getEtagArray());
-
-        assertEquals(cp1.headers().getIfNonMatch(), cp2.headers().getIfNonMatch());
-        assertEquals(cp1.headers().getContentFormat(), cp2.headers().getContentFormat());
-        assertArrayEquals(cp1.headers().getEtag(), cp2.headers().getEtag());
-        assertEquals(cp1.headers().getMaxAge(), cp2.headers().getMaxAge());
-        assertEquals(cp1.headers().getObserve(), cp2.headers().getObserve());
-        assertEquals(cp1.headers().getProxyUri(), cp2.headers().getProxyUri());
-        assertArrayEquals(cp1.getToken(), cp2.getToken());
-        assertEquals(cp1.headers().getUriPort(), cp2.headers().getUriPort());
-
-        assertEquals(cp1.getPayloadString(), cp2.getPayloadString());
-        assertEquals(1, cp2.getVersion());
-
-        assertEquals(cp1.getRemoteAddress(), cp2.getRemoteAddress());
-    }
-
     @Test
     public void coapPacketTestWithEmptyLocHeader() throws CoapException {
         CoapPacket cp = new CoapPacket(Method.GET, MessageType.Reset, "", null);
@@ -240,6 +208,7 @@ public class CoapPacketTest {
     @Test
     public void unknownHeaderTest() throws CoapException {
         CoapPacket cp = new CoapPacket(null);
+        cp.setMessageId(0);
         byte[] hdrVal = new byte[]{1, 2, 3, 4, 5, 6, 7};
         int hdrType = 100;
         cp.headers().put(hdrType, hdrVal);
@@ -258,10 +227,12 @@ public class CoapPacketTest {
     @Test
     public void uriPathWithDoubleSlashes() throws CoapException {
         CoapPacket cp = new CoapPacket(null);
+        cp.setMessageId(2);
         cp.headers().setUriPath("/3/13/0/");
         cp.headers().setLocationPath("/2//1");
         cp.headers().setUriQuery("te=12&&ble=14");
         cp.toByteArray();
+        cp.setMessageId(17);
 
         CoapPacket cp2 = CoapPacket.read(null, cp.toByteArray());
         assertEquals(cp, cp2);

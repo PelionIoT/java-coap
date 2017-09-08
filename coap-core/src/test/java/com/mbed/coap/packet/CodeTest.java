@@ -38,4 +38,17 @@ public class CodeTest {
         assertEquals(Code.C505_PROXYING_NOT_SUPPORTED, Code.valueOf(5, 5));
         assertEquals(null, Code.valueOf(6, 0));
     }
+
+    @Test
+    public void testSignaling() {
+        assertTrue(Code.C701_CSM.isSignaling());
+        assertTrue(Code.C702_PING.isSignaling());
+        assertTrue(Code.C703_PONG.isSignaling());
+        assertTrue(Code.C704_RELEASE.isSignaling());
+        assertTrue(Code.C705_ABORT.isSignaling());
+
+        assertFalse(Code.C203_VALID.isSignaling());
+        assertFalse(Code.C405_METHOD_NOT_ALLOWED.isSignaling());
+        assertFalse(Code.C503_SERVICE_UNAVAILABLE.isSignaling());
+    }
 }

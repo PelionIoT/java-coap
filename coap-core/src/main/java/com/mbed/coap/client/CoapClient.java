@@ -17,7 +17,6 @@ package com.mbed.coap.client;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
@@ -61,15 +60,13 @@ public class CoapClient implements Closeable {
     }
 
     public CompletableFuture<CoapPacket> ping() throws CoapException {
-        FutureCallbackAdapter<CoapPacket> response = new FutureCallbackAdapter<>();
-        CoapPacket pingRequest = new CoapPacket(null, MessageType.Confirmable, destination);
-        coapServer.makeRequest(pingRequest, response);
-        return response;
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
+        coapServer.ping(destination, callback);
+        return callback;
     }
 
     public void ping(Callback<CoapPacket> callback) throws CoapException {
-        CoapPacket pingRequest = new CoapPacket(null, MessageType.Confirmable, destination);
-        coapServer.makeRequest(pingRequest, callback);
+        coapServer.ping(destination, callback);
     }
 
     /**

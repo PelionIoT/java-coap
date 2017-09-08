@@ -83,7 +83,7 @@ public class CoapExchangeImpl implements CoapExchange {
 
     @Override
     public void setResponse(CoapPacket message) {
-        if (this.response != null) {
+        if (this.response != null && response.getMessageId() != -1) {
             message.setMessageId(this.response.getMessageId());
         } else {
             LOGGER.debug("Coap messaging: trying to set response for request with type:" + this.getRequest().getMessageType());
@@ -158,7 +158,7 @@ public class CoapExchangeImpl implements CoapExchange {
         }
         //get all blocks
         CoapPacket fullNotifRequest = new CoapPacket(Method.GET, MessageType.Confirmable, uriPath, getRemoteAddress());
-        fullNotifRequest.headers().setBlock2Res(new BlockOption(1, request.headers().getBlock2Res().getSzx(), false));
+        fullNotifRequest.headers().setBlock2Res(new BlockOption(1, request.headers().getBlock2Res().getBlockSize(), false));
         final byte[] etag = request.headers().getEtag();
 
         getCoapServer().makeRequest(fullNotifRequest, new Callback<CoapPacket>() {

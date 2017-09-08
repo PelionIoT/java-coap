@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
@@ -28,6 +28,9 @@ import com.mbed.coap.observe.SimpleObservableResource;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.CoapResource;
@@ -49,7 +52,7 @@ public class CoapServerTransportContextTest {
 
     @Before
     public void setUp() throws IOException {
-        server = CoapServerBuilder.newBuilder().transport(srvTransport).build();
+        server = CoapServerBuilder.newBuilder().blockSize(BlockSize.S_16).transport(srvTransport).build();
         server.addRequestHandler("/test", coapResourceTest);
         server.addRequestHandler("/obs", new SimpleObservableResource("A", server));
         server.start();

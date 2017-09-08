@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.packet;
 
+import static com.mbed.coap.packet.PaketUtils.*;
 import com.mbed.coap.exception.CoapMessageFormatException;
 import com.mbed.coap.exception.CoapUnknownOptionException;
 import com.mbed.coap.utils.HexArray;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Implements CoAP basic header options.
@@ -74,7 +76,7 @@ public class BasicHeaderOptions implements Serializable {
     private Integer size1;
     private Map<Integer, RawOption> unrecognizedOptions;
 
-    protected boolean parseOption(int type, byte[] data) {
+    protected boolean parseOption(int type, byte[] data, Code code) {
         switch (type) {
             case CONTENT_FORMAT:
                 setContentFormat(DataConvertingUtility.readVariableULong(data).shortValue());
@@ -176,8 +178,8 @@ public class BasicHeaderOptions implements Serializable {
      * @param data option value as byte array
      * @return true if header type is a known, false for unknown header option
      */
-    public final boolean put(int optionNumber, byte[] data) {
-        if (parseOption(optionNumber, data)) {
+    public final boolean put(int optionNumber, byte[] data, Code code) {
+        if (parseOption(optionNumber, data, code)) {
             return true;
         }
         //unrecognizeg option header
@@ -186,6 +188,10 @@ public class BasicHeaderOptions implements Serializable {
         }
         unrecognizedOptions.put(optionNumber, new RawOption(optionNumber, data));
         return true;
+    }
+
+    public final boolean put(int optionNumber, byte[] data) {
+        return put(optionNumber, data, null);
     }
 
     /**
@@ -266,11 +272,11 @@ public class BasicHeaderOptions implements Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        toString(sb);
+        toString(sb, null);
         return sb.toString();
     }
 
-    public void toString(StringBuilder sb) {
+    public void toString(StringBuilder sb, Code code) {
         if (uriPath != null) {
             sb.append(" URI:").append(uriPath);
         }
@@ -627,46 +633,84 @@ public class BasicHeaderOptions implements Serializable {
         }
     }
 
+    boolean deserialize(InputStream inputStream, Code code) throws IOException, CoapMessageFormatException {
+        try {
+            return deserialize(inputStream, code, true, Optional.empty()) != 0;
+        } catch (NotEnoughDataException e) {
+            // should never happen
+            throw new IOException(e);
+        }
+    }
+
     /**
-     * De-serializes CoAP header options. Returns true if PayloadMarker was
-     * found.
+     * De-serializes CoAP header options. Returns left stream/data length if PayloadMarker was
+     * found or zero if no payload present.
+     * If no payload marker found but still data present - CoapMessageException is thrown.
      */
-    boolean deserialize(InputStream is) throws IOException, CoapMessageFormatException {
+    int deserialize(InputStream inputStream, Code code, boolean orBlock, Optional<Integer> optionsAndPayloadLen) throws IOException, CoapMessageFormatException, NotEnoughDataException {
+
+        StrictInputStream is = null;
+        if (inputStream instanceof StrictInputStream) {
+            is = (StrictInputStream) inputStream;
+        } else {
+            is = new StrictInputStream(inputStream);
+        }
+
+        int streamAvailable = is.available();
+
+        // olesmi:
+        // trick to be able to work both with ByteArrayInputStream containing whole packet (UDP, DTLS, old CoAP over TCP + shim)
+        // and with continuous InputStream (CoAP over TCP or TLS)
+
+        int availableInternal = optionsAndPayloadLen.orElse(streamAvailable);
 
         int headerOptNum = 0;
-        while (is.available() > 0) {
-            int hdrByte = is.read();
+        // olesmi:
+        // if we have whole packet (UDP, DTLS) we should read till end of stream, expecting whole packet contained in stream
+        // if we have TCP stream - we should try to read withing provided packetLen (optionsAndPayloadLen). If stream ends
+        // here we should throw EOFException (from underlying StrictInputStream) or should throw NotEnoughDataException if we
+        // are waiting for more data. While querying is.available() if stream is closed, unfortunately IOException will be
+        // thrown instead of EOFException (implementation for SocketInputStream)
+        while (availableInternal > 0) {
+            int hdrByte = read8(is, orBlock);
+            availableInternal--;
+
             if (hdrByte == CoapPacket.PAYLOAD_MARKER) {
-                return true;
+                return availableInternal;
             }
             int delta = hdrByte >> 4;
             int len = 0xF & hdrByte;
 
             if (delta == 15 || len == 15) {
-                throw new CoapMessageFormatException("Unexpected delta or len value in option header");
+                throw new CoapMessageFormatException("Unexpected delta or len value in option header after optNum: " + headerOptNum);
             }
             if (delta == 13) {
-                delta += is.read();
+                delta += read8(is, orBlock);
+                availableInternal--;
             } else if (delta == 14) {
-                delta = is.read() << 8;
-                delta += is.read();
-                delta += 269;
+                delta = read16(is, orBlock) + 269;
+                availableInternal -= 2;
             }
             if (len == 13) {
-                len += is.read();
+                len += read8(is, orBlock);
+                availableInternal--;
             } else if (len == 14) {
-                len = is.read() << 8;
-                len += is.read();
-                len += 269;
+                len = read16(is, orBlock) + 269;
+                availableInternal -= 2;
             }
             headerOptNum += delta;
-            byte[] headerOptData = new byte[len];
-            is.read(headerOptData);
-            put(headerOptNum, headerOptData);
-
+            byte[] headerOptData = readN(is, len, orBlock);
+            availableInternal -= len;
+            put(headerOptNum, headerOptData, code);
         }
         //end of stream
-        return false;
+        if (availableInternal > 0) {
+            throw new CoapMessageFormatException("No payload marker found and unexpected data left after options");
+        }
+        if (availableInternal < 0) {
+            throw new CoapMessageFormatException("No payload marker found and options read more that were available");
+        }
+        return availableInternal;
 
     }
 

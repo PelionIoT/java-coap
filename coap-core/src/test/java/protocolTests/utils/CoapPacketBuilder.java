@@ -22,6 +22,7 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.SignalingOptions;
 import java.net.InetSocketAddress;
 
 /**
@@ -124,6 +125,11 @@ public class CoapPacketBuilder {
         return this;
     }
 
+    public CoapPacketBuilder payload(byte[] payload) {
+        coapPacket.setPayload(payload);
+        return this;
+    }
+
     public CoapPacketBuilder obs(int observe) {
         coapPacket.headers().setObserve(observe);
         return this;
@@ -159,6 +165,11 @@ public class CoapPacketBuilder {
         return this;
     }
 
+    public CoapPacketBuilder code(Code code) {
+        coapPacket.setCode(code);
+        return this;
+    }
+
     public CoapPacketBuilder con(Code code) {
         coapPacket.setMessageType(MessageType.Confirmable);
         coapPacket.setCode(code);
@@ -189,5 +200,10 @@ public class CoapPacketBuilder {
     public CoapPacket reset(int messageId) {
         coapPacket.setToken(null);
         return mid(messageId).reset().build();
+    }
+
+    public CoapPacketBuilder signalling(SignalingOptions signOpt) {
+        coapPacket.headers().putSignallingOptions(signOpt);
+        return this;
     }
 }
