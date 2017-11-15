@@ -453,17 +453,16 @@ public class CoapServerBlocks extends CoapServer {
                         return;
                     }
 
+                    int maxBlockPayload = getMaxOutboundPayloadSize(request.getRemoteAddress());
                     BlockOption origReqBlock = request.headers().getBlock1Req();
                     if (responseBlock.getNr() == 0 && responseBlock.getSize() < origReqBlock.getSize()) {
                         // adjust block number if remote replied with smaller block size
                         // see: https://tools.ietf.org/html/rfc7959#section-2.5
-                        int newBlockNr = origReqBlock.getSize() / responseBlock.getSize() - 1;
-                        responseBlock = new BlockOption(newBlockNr, responseBlock.getBlockSize(), origReqBlock.hasMore());
+                        responseBlock = new BlockOption(responseBlock.getNr() + 1, responseBlock.getBlockSize(), origReqBlock.hasMore());
+                    } else {
+                        responseBlock = responseBlock.nextBertBlock(requestPayload, lastBertBlocksCount, maxBlockPayload);
                     }
 
-                    //create new request
-                    int maxBlockPayload = getMaxOutboundPayloadSize(request.getRemoteAddress());
-                    responseBlock = responseBlock.nextBertBlock(requestPayload, lastBertBlocksCount, maxBlockPayload);
                     request.headers().setBlock1Req(responseBlock);
                     // reset size headers for all blocks except first
                     // see https://tools.ietf.org/html/draft-ietf-core-block-18#section-4 , Implementation notes
@@ -670,6 +669,14 @@ public class CoapServerBlocks extends CoapServer {
         private int appendBlock(CoapPacket request) {
             byte[] reqPayload = request.getPayload();
             BlockOption reqBlock = request.headers().getBlock1Req();
+
+            if (payload.size() != reqBlock.getNr() * reqBlock.getSize()) {
+                //size has changed
+                byte[] receivedBytes = payload.toByteArray();
+                payload.reset();
+                payload.write(receivedBytes, 0, reqBlock.getNr() * reqBlock.getSize());
+            }
+
             lastWrittenBlocksCount = reqBlock.appendPayload(payload, reqPayload);
             return lastWrittenBlocksCount;
         }

@@ -32,6 +32,7 @@ import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import protocolTests.utils.TransportConnectorMock;
 
@@ -117,6 +118,7 @@ public class BlockTest {
     }
 
     @Test
+    @Ignore //for backward compatibility with mbed clients
     public void block1_serverChangesBlockSize() throws Exception {
 
         String payload = "123456789012345|123456789012345|dupa";

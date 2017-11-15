@@ -32,6 +32,7 @@ import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -315,6 +316,43 @@ public class CoapServerBlocksUnitTest {
         receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(new byte[17]).block1Req(1, BlockSize.S_16, true));
 
         assertSent(newCoapPacket(LOCAL_5683).ack(Code.C400_BAD_REQUEST).token(1001).block1Req(1, BlockSize.S_16, true).payload("block size mismatch"));
+    }
+
+    @Test
+    public void should_continue_block_transfer_after_block_size_change() throws ExecutionException, InterruptedException {
+        Callback<CoapPacket> callback;
+        CoapPacket req = newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_LARGE___PAYLOAD").build();
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(40, true));
+
+        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+
+        //BLOCK 0
+        callback = assertMakeRequest(
+                newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_").size1(47).block1Req(0, BlockSize.S_32, true)
+        );
+
+        //response new size=16
+        reset(msg);
+        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, false).build());
+
+
+        //BLOCK 1
+        callback = assertMakePriRequest(
+                newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_").block1Req(1, BlockSize.S_16, true)
+        );
+        reset(msg);
+        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).block1Req(1, BlockSize.S_16, false).build());
+
+        //BLOCK 2
+        callback = assertMakePriRequest(
+                newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD").block1Req(2, BlockSize.S_16, false)
+        );
+        reset(msg);
+        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C204_CHANGED).block1Req(2, BlockSize.S_16, false).build());
+
+        //verify
+        assertTrue(respFut.isDone());
+        assertEquals(Code.C204_CHANGED, respFut.get().getCode());
     }
 
     private void assertSent(CoapPacketBuilder resp) {
