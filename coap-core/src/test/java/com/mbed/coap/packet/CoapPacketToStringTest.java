@@ -106,15 +106,15 @@ public class CoapPacketToStringTest {
         CoapPacket cp = new CoapPacket(Code.C701_CSM, null, null);
 
         cp.headers().putSignallingOptions(SignalingOptions.capabilities(2000, true));
-        assertEquals(" 701 MID:0 MaxMsgSz:2000 Blocks", cp.toString());
+        assertEquals("701 MID:0 MaxMsgSz:2000 Blocks", cp.toString());
 
         cp.headers().putSignallingOptions(SignalingOptions.capabilities(2000, false));
-        assertEquals(" 701 MID:0 MaxMsgSz:2000", cp.toString());
+        assertEquals("701 MID:0 MaxMsgSz:2000", cp.toString());
 
 
         SignalingOptions signalingOptions = new SignalingOptions();
         signalingOptions.setBlockWiseTransfer(true);
         cp.headers().putSignallingOptions(signalingOptions);
-        assertEquals(" 701 MID:0 Blocks", cp.toString());
+        assertEquals("701 MID:0 Blocks", cp.toString());
     }
 }

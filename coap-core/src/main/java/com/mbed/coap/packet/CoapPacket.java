@@ -489,7 +489,10 @@ public class CoapPacket implements Serializable {
             sb.append(' ').append(method.toString());
         }
         if (code != null) {
-            sb.append(' ').append(code.codeToString());
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
+            sb.append(code.codeToString());
         }
 
         sb.append(" MID:").append(this.messageId);
