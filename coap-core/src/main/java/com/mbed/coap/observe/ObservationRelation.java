@@ -47,9 +47,6 @@ public final class ObservationRelation {
 
     synchronized Integer getNextObserveSeq() {
         this.observeSeq = 0xFFFF & (this.observeSeq + 1);
-        if (observeSeq == 1) {
-            observeSeq++;
-        }
         return this.observeSeq;
     }
 

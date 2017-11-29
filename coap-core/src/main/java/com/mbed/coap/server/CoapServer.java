@@ -253,7 +253,7 @@ public class CoapServer {
                 return false;
             }
 
-            if (observe == null || observe == 1 || (packet.getCode() != Code.C205_CONTENT && packet.getCode() != Code.C203_VALID)) {
+            if (observe == null || (packet.getCode() != Code.C205_CONTENT && packet.getCode() != Code.C203_VALID)) {
 
                 LOGGER.trace("Notification termination [{}]", packet);
 

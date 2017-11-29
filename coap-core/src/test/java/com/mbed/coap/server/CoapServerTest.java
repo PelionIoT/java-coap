@@ -168,28 +168,6 @@ public class CoapServerTest {
 
 
     @Test
-    public void receiveObservationCancellation_withDeregisterObs() throws Exception {
-        ObservationHandler observationHandler = initServerWithObservationHandler();
-
-        server.coapRequestHandler.handleObservation(newCoapPacket(LOCAL_5683).obs(1).con(Code.C203_VALID).token(33).mid(5).build(), TransportContext.NULL);
-        verify(observationHandler).callException(isA(ObservationTerminatedException.class));
-
-        //ack response
-        assertSendResponse(newCoapPacket(LOCAL_5683).emptyAck(5));
-    }
-
-    @Test
-    public void receiveObservationCancellation_withDeregisterObs_non() throws Exception {
-        ObservationHandler observationHandler = initServerWithObservationHandler();
-
-        server.coapRequestHandler.handleObservation(newCoapPacket(LOCAL_5683).obs(1).non(Code.C203_VALID).token(33).build(), TransportContext.NULL);
-        verify(observationHandler).callException(isA(ObservationTerminatedException.class));
-
-        //no ack
-        verify(msg, never()).sendResponse(any(), any(), any());
-    }
-
-    @Test
     public void shouldSendObservationRequest() {
         Callback<CoapPacket> callback = mock(Callback.class);
         server.observe("/test", LOCAL_5683, callback, "aa".getBytes(), TransportContext.NULL);
