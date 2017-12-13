@@ -32,7 +32,16 @@ class StrictInputStream extends InputStream {
 
     public byte[] readBytes(int len) throws IOException {
         byte[] bytes = new byte[len];
-        read(bytes);
+        int totalRead = 0;
+
+        //loop until all data is read or EOF
+        while (totalRead < len) {
+            int r = inputStream.read(bytes, totalRead, len - totalRead);
+            if (r == -1) {
+                throw new EOFException();
+            }
+            totalRead += r;
+        }
         return bytes;
     }
 
@@ -43,17 +52,6 @@ class StrictInputStream extends InputStream {
             throw new EOFException();
         }
         return val;
-    }
-
-    @Override
-    public int read(byte[] b) throws IOException {
-        if (b.length == 0) {
-            return 0;
-        }
-        if (inputStream.read(b) != b.length) {
-            throw new EOFException();
-        }
-        return b.length;
     }
 
     @Override

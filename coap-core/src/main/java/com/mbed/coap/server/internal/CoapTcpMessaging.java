@@ -157,7 +157,7 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
         packet.headers().putSignallingOptions(
                 SignalingOptions.capabilities(ownCapability.getMaxMessageSizeInt(), ownCapability.isBlockTransferEnabled())
         );
-
+        LOGGER.info("[" + remoteAddress + "] CoAP sent [" + packet.toString(false, false, false, true) + "]");
         coapTransporter.sendPacket(packet, remoteAddress, TransportContext.NULL);
     }
 

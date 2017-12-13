@@ -86,7 +86,7 @@ public class SocketClientTransport extends BlockingCoapTransport {
                 }
             }
         } catch (Exception ex) {
-            if (!ex.getMessage().startsWith("Socket closed")) {
+            if (!(ex.getMessage() != null && ex.getMessage().startsWith("Socket closed"))) {
                 LOGGER.error(ex.getMessage(), ex);
             }
         }

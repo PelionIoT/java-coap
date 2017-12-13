@@ -24,6 +24,7 @@ import com.mbed.coap.transport.CoapReceiverForTcp;
 import com.mbed.coap.transport.TransportContext;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -72,6 +73,8 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
                 try {
                     final CoapPacket coapPacket = deserialize(inputStream, remoteSocketAddress);
                     coapReceiver.handle(coapPacket, TransportContext.NULL);
+                } catch (EOFException e) {
+                    socket.close();
                 } catch (Exception e) {
                     if ("Connection reset".equals(e.getMessage())) {
                         socket.close();
