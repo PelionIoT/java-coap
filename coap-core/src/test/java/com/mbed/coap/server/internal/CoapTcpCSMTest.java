@@ -59,6 +59,21 @@ public class CoapTcpCSMTest {
     }
 
     @Test
+    public void should_return_maxOutboundPayloadSize() {
+        assertEquals(2000, new CoapTcpCSM(2000, false).getMaxOutboundPayloadSize());
+
+        assertEquals(16, new CoapTcpCSM(16, true).getMaxOutboundPayloadSize());
+        assertEquals(512, new CoapTcpCSM(600, true).getMaxOutboundPayloadSize());
+        assertEquals(1024, new CoapTcpCSM(1200, true).getMaxOutboundPayloadSize());
+
+        assertEquals(1024, new CoapTcpCSM(2000, true).getMaxOutboundPayloadSize());
+        assertEquals(1024, new CoapTcpCSM(3000, true).getMaxOutboundPayloadSize());
+        assertEquals(2048, new CoapTcpCSM(4000, true).getMaxOutboundPayloadSize());
+        assertEquals(3072, new CoapTcpCSM(5000, true).getMaxOutboundPayloadSize());
+        assertEquals(4096, new CoapTcpCSM(6000, true).getMaxOutboundPayloadSize());
+    }
+
+    @Test
     public void equalsAndHashTest() {
         EqualsVerifier.forClass(CoapTcpCSM.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
     }

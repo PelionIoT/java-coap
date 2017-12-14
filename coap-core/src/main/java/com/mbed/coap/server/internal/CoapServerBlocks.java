@@ -94,7 +94,7 @@ public class CoapServerBlocks extends CoapServer {
         } else {
             LOGGER.trace("makeRequest no block: {}", request);
             int payloadSize = request.getPayload().length;
-            int maxPayloadSize = getMaxOutboundPayloadSize(request.getRemoteAddress());
+            int maxPayloadSize = capabilities.getOrDefault(request.getRemoteAddress()).getMaxOutboundPayloadSize();
             if (payloadSize > maxPayloadSize) {
                 blockCallback.callException(
                         new CoapException("Block transfers are not enabled for " + request.getRemoteAddress() + " and payload size " + payloadSize + " > max payload size " + maxPayloadSize)
@@ -114,7 +114,7 @@ public class CoapServerBlocks extends CoapServer {
 
             setInitialBlockOptions(notifPacket, payloadSize, blockOption, true);
 
-            int maxBlockPayload = getMaxOutboundPayloadSize(notifPacket.getRemoteAddress());
+            int maxBlockPayload = capabilities.getOrDefault(notifPacket.getRemoteAddress()).getMaxOutboundPayloadSize();
             ByteArrayOutputStream blockPayload = new ByteArrayOutputStream(maxBlockPayload);
             blockOption.createBlockPart(notifPacket.getPayload(), blockPayload, maxBlockPayload);
 
@@ -164,40 +164,16 @@ public class CoapServerBlocks extends CoapServer {
 
         return blockSize != null
                 && requestOrResponse.getPayload() != null
-                && requestOrResponse.getPayload().length > getMaxOutboundPayloadSize(requestOrResponse.getRemoteAddress());
+                && requestOrResponse.getPayload().length > capabilities.getOrDefault(requestOrResponse.getRemoteAddress()).getMaxOutboundPayloadSize();
     }
 
-    private int getMaxOutboundPayloadSize(InetSocketAddress address) {
-        BlockSize blockSize = agreedBlockSize(address);
-        if (blockSize == null) {
-            // no blocking, just maximum packet size
-            // constant for UDP based (independently of address)
-            // taken from CSMStorage for CoAP/TCP (TLS) based on endpoint address
-            return capabilities.getOrDefault(address).getMaxMessageSizeInt();
-        }
-
-        if (!blockSize.isBert()) {
-            // non-BERT blocking, return just block size
-            return blockSize.getSize();
-        }
-
-        // BERT, magic starts here
-        // block size always 1k in BERT, but take it from enum
-        int maxMessageSize = capabilities.getOrDefault(address).getMaxMessageSizeInt();
-        int maxBertBlocksCount = maxMessageSize / blockSize.getSize();
-        if (maxBertBlocksCount > 1) {
-            // leave minimum 1k room for options if maxMessageSize is in 1k blocks
-            return (maxBertBlocksCount - 1) * blockSize.getSize();
-        } else {
-            // block size is 1k, minimum BERT message size is 1152 so we have room for options
-            return blockSize.getSize();
-        }
-    }
-
-    private static void updateBlockResponse(final BlockOption block2Response, final CoapPacket resp, final CoapExchange exchange) {
+    private void updateBlockResponse(final BlockOption block2Response, final CoapPacket resp, final CoapExchange exchange) {
         BlockOption block2Res = block2Response;
         int blFrom = block2Res.getNr() * block2Res.getSize();
-        int blTo = blFrom + block2Res.getSize();
+
+        int maxMessageSize = (!block2Res.isBert()) ? block2Res.getSize() : capabilities.getOrDefault(resp.getRemoteAddress()).getMaxOutboundPayloadSize();
+
+        int blTo = blFrom + maxMessageSize;
 
         if (blTo + 1 >= resp.getPayload().length) {
             blTo = resp.getPayload().length;
@@ -424,16 +400,18 @@ public class CoapServerBlocks extends CoapServer {
         private int resourceChanged;
         private final TransportContext outgoingTransContext;
         private int lastBertBlocksCount;
+        private final CoapTcpCSM csm;
 
         public BlockCallback(CoapPacket request, RequestCallback reqCallback, TransportContext outgoingTransContext) {
             this.reqCallback = reqCallback;
             this.request = request;
             this.requestPayload = request.getPayload();
             this.outgoingTransContext = outgoingTransContext;
+            this.csm = capabilities.getOrDefault(request.getRemoteAddress());
         }
 
         public byte[] createFirstPayloadBlockAndUpdateBlocksCount(BlockOption reqBlock) {
-            int maxBlockPayload = getMaxOutboundPayloadSize(request.getRemoteAddress());
+            int maxBlockPayload = csm.getMaxOutboundPayloadSize();
             ByteArrayOutputStream blockPayload = new ByteArrayOutputStream(maxBlockPayload);
             lastBertBlocksCount = reqBlock.createBlockPart(requestPayload, blockPayload, maxBlockPayload);
             return blockPayload.toByteArray();
@@ -453,7 +431,7 @@ public class CoapServerBlocks extends CoapServer {
                         return;
                     }
 
-                    int maxBlockPayload = getMaxOutboundPayloadSize(request.getRemoteAddress());
+                    int maxBlockPayload = csm.getMaxOutboundPayloadSize();
                     BlockOption origReqBlock = request.headers().getBlock1Req();
                     if (responseBlock.getNr() == 0 && responseBlock.getSize() < origReqBlock.getSize()) {
                         // adjust block number if remote replied with smaller block size

@@ -355,6 +355,51 @@ public class CoapServerBlocksUnitTest {
         assertEquals(Code.C204_CHANGED, respFut.get().getCode());
     }
 
+    @Test
+    public void shouldSendBlockingResponse_2k_with_BERT() throws Exception {
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(1200, true));
+        server.addRequestHandler("/large", new ReadOnlyCoapResource(new String(new byte[2000])));
+
+        //BLOCK 0
+        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/large"));
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).block2Res(0, BlockSize.S_1024_BERT, true).payload(new byte[1024]));
+
+        //BLOCK 1
+        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/large").block2Res(1, BlockSize.S_1024_BERT, false));
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).block2Res(1, BlockSize.S_1024_BERT, false).payload(new byte[976]));
+    }
+
+    @Test
+    public void shouldSendBlockingResponse_2k_no_BERT_needed() throws Exception {
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(4000, true));
+        server.addRequestHandler("/large", new ReadOnlyCoapResource(new String(new byte[2000])));
+
+        //when
+        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/large"));
+
+        //then full payload, no blocks
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).payload(new byte[2000]));
+    }
+
+    @Test
+    public void shouldSendBlockingResponse_10k_with_BERT() throws Exception {
+        capabilities.put(LOCAL_5683, new CoapTcpCSM(6000, true));
+        server.addRequestHandler("/xlarge", new ReadOnlyCoapResource(new String(new byte[10000])));
+
+        //BLOCK 0
+        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/xlarge"));
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).block2Res(0, BlockSize.S_1024_BERT, true).payload(new byte[4096]));
+
+        //BLOCK 1
+        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/xlarge").block2Res(4, BlockSize.S_1024_BERT, false));
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).block2Res(4, BlockSize.S_1024_BERT, true).payload(new byte[4096]));
+
+        //BLOCK 2
+        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/xlarge").block2Res(8, BlockSize.S_1024_BERT, false));
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).block2Res(8, BlockSize.S_1024_BERT, false).payload(new byte[1808]));
+    }
+
+
     private void assertSent(CoapPacketBuilder resp) {
         verify(msg).sendResponse(any(), eq(resp.build()), any());
     }

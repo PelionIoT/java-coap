@@ -92,6 +92,33 @@ public class CoapTcpCSM {
         return null; // no block transfers enabled for connection
     }
 
+    public int getMaxOutboundPayloadSize() {
+        BlockSize blockSize = getBlockSize();
+        if (blockSize == null) {
+            // no blocking, just maximum packet size
+            // constant for UDP based (independently of address)
+            // taken from CSMStorage for CoAP/TCP (TLS) based on endpoint address
+            return getMaxMessageSizeInt();
+        }
+
+        if (!blockSize.isBert()) {
+            // non-BERT blocking, return just block size
+            return blockSize.getSize();
+        }
+
+        // BERT, magic starts here
+        // block size always 1k in BERT, but take it from enum
+        int maxMessageSize = getMaxMessageSizeInt();
+        int maxBertBlocksCount = maxMessageSize / blockSize.getSize();
+        if (maxBertBlocksCount > 1) {
+            // leave minimum 1k room for options if maxMessageSize is in 1k blocks
+            return (maxBertBlocksCount - 1) * blockSize.getSize();
+        } else {
+            // block size is 1k, minimum BERT message size is 1152 so we have room for options
+            return blockSize.getSize();
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
