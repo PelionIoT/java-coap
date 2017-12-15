@@ -277,11 +277,11 @@ public class CoapServerBlocksUnitTest {
         final CoapPacket req = newCoapPacket(LOCAL_5683).put().uriPath("/options").payload(new byte[8192 + 8192 + 5683]).build();
         assertThatThrownBy(() ->
                 server.makeRequest(req, null, TransportContext.NULL)
-        ).isInstanceOf(NullPointerException.class).hasMessage("CallBack is null");
+        ).isInstanceOf(NullPointerException.class).hasMessage("Callback must not be null");
     }
 
     @Test
-    public void should_send_error_when_wrong_token_in_second_request() throws Exception {
+    public void should_send_error_when_wrong_token_in_second_request() {
         server.addRequestHandler("/change", new ReadOnlyCoapResource(""));
 
         //BLOCK 1
@@ -291,7 +291,7 @@ public class CoapServerBlocksUnitTest {
         //BLOCK 2 with wrong token
         receive(newCoapPacket(LOCAL_5683).put().token(90909).uriPath("/change").payload(new byte[16]).block1Req(1, BlockSize.S_16, true));
 
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE).token(90909).block1Req(1, BlockSize.S_16, true).payload("Token mismatch"));
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE).token(90909).payload("Token mismatch"));
     }
 
     @Test
@@ -301,7 +301,7 @@ public class CoapServerBlocksUnitTest {
         //BLOCK 1
         receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(new byte[17]).block1Req(0, BlockSize.S_16, true));
 
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C400_BAD_REQUEST).token(1001).block1Req(0, BlockSize.S_16, true).payload("block size mismatch"));
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C400_BAD_REQUEST).token(1001).payload("block size mismatch"));
     }
 
     @Test
@@ -315,7 +315,7 @@ public class CoapServerBlocksUnitTest {
         //BLOCK 2
         receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(new byte[17]).block1Req(1, BlockSize.S_16, true));
 
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C400_BAD_REQUEST).token(1001).block1Req(1, BlockSize.S_16, true).payload("block size mismatch"));
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C400_BAD_REQUEST).token(1001).payload("block size mismatch"));
     }
 
     @Test

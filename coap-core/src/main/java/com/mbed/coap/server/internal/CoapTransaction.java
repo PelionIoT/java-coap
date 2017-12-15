@@ -92,34 +92,19 @@ public class CoapTransaction {
 
     public final boolean send(final long currentTime) {
         this.retrAttempts++;
-        if (LOGGER.isTraceEnabled()) {
-            logSend(currentTime, "begin");
-        }
         long nextTimeout;
         if (coapRequest.getRemoteAddress().getAddress().isMulticastAddress()) {
             nextTimeout = coapServer.getTransmissionTimeout().getMulticastTimeout(this.retrAttempts);
         } else {
             nextTimeout = coapServer.getTransmissionTimeout().getTimeout(this.retrAttempts);
         }
-        if (LOGGER.isTraceEnabled()) {
-            logSend(currentTime, "nextTimeout=" + nextTimeout);
-        }
         if (nextTimeout <= 0) {
-            if (LOGGER.isTraceEnabled()) {
-                logSend(currentTime, "failed, timeout");
-            }
             return false;
-        }
-        if (LOGGER.isTraceEnabled()) {
-            logSend(currentTime, "sending");
         }
         isActive = true;
         coapServer.send(coapRequest, coapRequest.getRemoteAddress(), transContext)
                 .whenComplete((wasSent, maybeError) -> onSend(maybeError));
 
-        if (LOGGER.isTraceEnabled()) {
-            logSend(currentTime, "sent");
-        }
         this.timeout = currentTime + nextTimeout;
         return true;
     }
@@ -131,10 +116,6 @@ public class CoapTransaction {
             sendErrConsumer.accept(transId);
             callback.callException(((Exception) maybeError));
         }
-    }
-
-    private void logSend(long currentTime, String distinguisher) {
-        LOGGER.trace("send(" + currentTime + "): " + toString() + ", MID:" + coapRequest.getMessageId() + ", attempt=" + retrAttempts + ", " + distinguisher);
     }
 
     public Callback<CoapPacket> getCallback() {

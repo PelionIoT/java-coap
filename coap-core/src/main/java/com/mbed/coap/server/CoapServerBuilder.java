@@ -43,7 +43,7 @@ public abstract class CoapServerBuilder {
     private ObservationIDGenerator observationIDGenerator;
     private boolean observationIdGenWasSet;
 
-    protected int maxIncomingBlockTransferSize;
+    protected int maxIncomingBlockTransferSize = 10_000_000; //default to 10 MB
     protected BlockSize blockSize;
     protected int maxMessageSize = 1152; //default
 

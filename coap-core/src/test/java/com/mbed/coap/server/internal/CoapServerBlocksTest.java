@@ -164,9 +164,8 @@ public class CoapServerBlocksTest {
         receive(pkt);
         assertSent(newCoapPacket(LOCAL_5683).mid(12).token(0x1234)
                 .ack(Code.C413_REQUEST_ENTITY_TOO_LARGE)
-                .block1Req(8, BlockSize.S_1024_BERT, false)
                 .size1(10000)
-                .payload("Entity too large"));
+                .payload(""));
 
     }
 
@@ -186,13 +185,11 @@ public class CoapServerBlocksTest {
         //block 2 - broken
         receive(newCoapPacket(LOCAL_5683).mid(2).put().block1Req(1, BlockSize.S_16, true).uriPath("/block").payload("abcd"));
         assertSent(newCoapPacket(LOCAL_5683).mid(2).ack(Code.C400_BAD_REQUEST)
-                .block1Req(1, BlockSize.S_16, true)
                 .payload("block size mismatch"));
 
         //block 3 - should fail because no such transaction
         receive(newCoapPacket(LOCAL_5683).mid(3).put().block1Req(2, BlockSize.S_16, false).uriPath("/block").payload("abcd"));
         assertSent(newCoapPacket(LOCAL_5683).mid(3).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE)
-                .block1Req(2, BlockSize.S_16, false)
                 .payload("no prev blocks"));
     }
 
@@ -210,7 +207,6 @@ public class CoapServerBlocksTest {
         //block 2
         receive(newCoapPacket(LOCAL_5683).mid(2).token(999).put().block1Req(1, BlockSize.S_16, false).uriPath("/block").payload("abcd"));
         assertSent(newCoapPacket(LOCAL_5683).mid(2).token(999).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE)
-                .block1Req(1, BlockSize.S_16, false)
                 .payload("Token mismatch"));
     }
 
@@ -228,7 +224,6 @@ public class CoapServerBlocksTest {
         //block 2
         receive(newCoapPacket(LOCAL_5683).mid(2).token(999).put().block1Req(1, BlockSize.S_16, false).uriPath("/block").payload("abcd"));
         assertSent(newCoapPacket(LOCAL_5683).mid(2).token(999).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE)
-                .block1Req(1, BlockSize.S_16, false)
                 .payload("Token mismatch"));
     }
 
@@ -246,7 +241,6 @@ public class CoapServerBlocksTest {
         //block 2
         receive(newCoapPacket(LOCAL_5683).mid(2).put().block1Req(1, BlockSize.S_16, false).uriPath("/block").payload("abcd"));
         assertSent(newCoapPacket(LOCAL_5683).mid(2).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE)
-                .block1Req(1, BlockSize.S_16, false)
                 .payload("Token mismatch"));
     }
 
@@ -308,7 +302,6 @@ public class CoapServerBlocksTest {
         pkt.setPayload(payloadBlock1);
         receive(pkt);
         assertSent(newCoapPacket(LOCAL_5683).mid(10).token(0x1234).ack(Code.C402_BAD_OPTION)
-                .block1Req(0, BlockSize.S_1024_BERT, true)
                 .payload("BERT is not supported"));
     }
 
@@ -328,7 +321,6 @@ public class CoapServerBlocksTest {
         pkt.setPayload(payloadBlock1);
         receive(pkt);
         assertSent(newCoapPacket(LOCAL_5683).mid(10).token(0x1234).ack(Code.C402_BAD_OPTION)
-                .block1Req(0, BlockSize.S_1024_BERT, true)
                 .payload("BERT is not supported"));
     }
 
@@ -361,7 +353,6 @@ public class CoapServerBlocksTest {
         pkt.setPayload(payloadBlock2Broken);
         receive(pkt);
         assertSent(newCoapPacket(LOCAL_5683).mid(11).token(0x1234).ack(Code.C400_BAD_REQUEST)
-                .block1Req(4, BlockSize.S_1024_BERT, true)
                 .payload("block size mismatch"));
 
         // fail unknown block, we don't have such transaction (just removed because of error)
@@ -370,17 +361,15 @@ public class CoapServerBlocksTest {
         pkt.setPayload(payloadFinal);
         receive(pkt);
         assertSent(newCoapPacket(LOCAL_5683).mid(12).token(0x1234).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE)
-                .block1Req(6, BlockSize.S_1024_BERT, false)
                 .payload("no prev blocks"));
     }
 
 
     @Test
     public void equalsAndHashTest() throws Exception {
-        EqualsVerifier.forClass(CoapServerBlocks.BlockRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+        EqualsVerifier.forClass(BlockRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
 
     }
-
 
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {

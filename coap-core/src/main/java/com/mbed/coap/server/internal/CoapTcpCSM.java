@@ -53,6 +53,13 @@ public class CoapTcpCSM {
         return blockwiseTransfer;
     }
 
+    public boolean useBlockTransfer(byte[] payload) {
+        return blockwiseTransfer &&
+                payload != null &&
+                payload.length > getMaxOutboundPayloadSize();
+
+    }
+
     public long getMaxMessageSize() {
         return maxMessageSize;
     }
@@ -108,8 +115,7 @@ public class CoapTcpCSM {
 
         // BERT, magic starts here
         // block size always 1k in BERT, but take it from enum
-        int maxMessageSize = getMaxMessageSizeInt();
-        int maxBertBlocksCount = maxMessageSize / blockSize.getSize();
+        int maxBertBlocksCount = blockSize.numberOfBlocksPerMessage(getMaxMessageSizeInt());
         if (maxBertBlocksCount > 1) {
             // leave minimum 1k room for options if maxMessageSize is in 1k blocks
             return (maxBertBlocksCount - 1) * blockSize.getSize();

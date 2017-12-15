@@ -73,6 +73,27 @@ public class CoapTcpCSMTest {
         assertEquals(4096, new CoapTcpCSM(6000, true).getMaxOutboundPayloadSize());
     }
 
+
+    @Test
+    public void should_determine_to_use_block_transfer() {
+        CoapTcpCSM csm = new CoapTcpCSM(512, false);
+        assertFalse(csm.useBlockTransfer(null));
+        assertFalse(csm.useBlockTransfer(new byte[10]));
+
+        //BLOCK
+        csm = new CoapTcpCSM(512, true);
+        assertFalse(csm.useBlockTransfer(null));
+        assertFalse(csm.useBlockTransfer(new byte[10]));
+        assertTrue(csm.useBlockTransfer(new byte[513]));
+
+        //BERT
+        csm = new CoapTcpCSM(3000, true);
+        assertFalse(csm.useBlockTransfer(null));
+        assertFalse(csm.useBlockTransfer(new byte[10]));
+        assertTrue(csm.useBlockTransfer(new byte[3000]));
+    }
+
+
     @Test
     public void equalsAndHashTest() {
         EqualsVerifier.forClass(CoapTcpCSM.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();

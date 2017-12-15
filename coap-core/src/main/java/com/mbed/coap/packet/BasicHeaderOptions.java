@@ -15,7 +15,7 @@
  */
 package com.mbed.coap.packet;
 
-import static com.mbed.coap.packet.PaketUtils.*;
+import static com.mbed.coap.packet.PacketUtils.*;
 import com.mbed.coap.exception.CoapMessageFormatException;
 import com.mbed.coap.exception.CoapUnknownOptionException;
 import com.mbed.coap.utils.HexArray;

@@ -15,9 +15,11 @@
  */
 package protocolTests;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
@@ -88,21 +90,6 @@ public class ClientServerWithBlocksTest {
     }
 
     @Test
-    public void testBlock() {
-        BlockOption bo = new BlockOption(16, BlockSize.S_16, false);
-        BlockOption bo2 = new BlockOption(bo.toBytes());
-        assertEquals(bo, bo2);
-
-        bo = new BlockOption(16, BlockSize.S_16, true);
-        bo2 = new BlockOption(bo.toBytes());
-        assertEquals(bo, bo2);
-
-        bo = new BlockOption(15, BlockSize.S_16, false);
-        bo2 = new BlockOption(bo.toBytes());
-        assertEquals(bo, bo2);
-    }
-
-    @Test
     public void testBlock2Res_2() throws IOException, CoapException {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).blockSize(BlockSize.S_32).build();
 
@@ -124,17 +111,11 @@ public class ClientServerWithBlocksTest {
     }
 
     @Test
-    public void constantlyDynamicBlockResource() throws IOException, CoapException {
+    public void constantlyDynamicBlockResource() throws IOException {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).blockSize(BlockSize.S_128).build();
-        try {
-            CoapPacket msg = client.resource("/ultra-dynamic").sync().get();
-            assertEquals(Code.C408_REQUEST_ENTITY_INCOMPLETE, msg.getCode());
-        } catch (CoapCodeException ex) {
-            assertEquals(Code.C408_REQUEST_ENTITY_INCOMPLETE, ex.getCode());
-        } finally {
-            client.close();
-        }
 
+        assertThatThrownBy(() -> client.resource("/ultra-dynamic").sync().get()).isExactlyInstanceOf(CoapBlockException.class);
+        client.close();
     }
 
     @Test
@@ -181,23 +162,6 @@ public class ClientServerWithBlocksTest {
         assertEquals(body, msg.getPayloadString());
     }
 
-
-    @Test
-    public void blockRequest128() throws IOException, CoapException {
-        String body = BIG_RESOURCE + "d";
-
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).blockSize(BlockSize.S_128).build();
-
-        CoapPacket resp = client.resource("/chang-res").payload(body, MediaTypes.CT_TEXT_PLAIN).sync().put();
-
-        assertEquals(Code.C204_CHANGED, resp.getCode());
-        assertEquals(body.length(), changeableBigResource.body.length());
-        assertEquals(body, changeableBigResource.body);
-
-        CoapPacket msg = client.resource("/chang-res").sync().get();
-
-        assertEquals(body, msg.getPayloadString());
-    }
 
     @Test
     public void sizeTest() throws Exception {

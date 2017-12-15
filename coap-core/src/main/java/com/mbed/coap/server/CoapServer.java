@@ -19,6 +19,7 @@ import static com.mbed.coap.server.internal.CoapServerUtils.*;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.exception.CoapRequestEntityTooLarge;
 import com.mbed.coap.exception.ObservationNotEstablishedException;
 import com.mbed.coap.exception.ObservationTerminatedException;
 import com.mbed.coap.linkformat.LinkFormat;
@@ -290,6 +291,10 @@ public class CoapServer {
                         request.headers().criticalOptTest();
                     }
                     callRequestHandler(request, coapHandler, transportContext);
+                } catch (CoapRequestEntityTooLarge ex) {
+                    errorResponse = request.createResponse(ex.getCode());
+                    errorResponse.headers().setSize1(ex.getMaxSize());
+                    errorResponse.setPayload(ex.getMessage());
                 } catch (CoapCodeException ex) {
                     errorResponse = request.createResponse(ex.getCode());
                     errorResponse.setPayload(ex.getMessage());

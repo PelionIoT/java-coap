@@ -24,15 +24,19 @@ public enum BlockSize {
     byte szx;
     boolean bert;
 
-    private BlockSize(int szx, boolean bert) {
+    BlockSize(int szx, boolean bert) {
         this.szx = (byte) (szx - 4);
         this.bert = bert;
     }
 
     public int getSize() {
         return 1 << (szx + 4);
-        //return 2^(szx+4);
     }
+
+    public int numberOfBlocksPerMessage(int totalSize) {
+        return bert ? totalSize / getSize() : 1;
+    }
+
 
     public static BlockSize fromRawSzx(byte rawSzx) {
         return values()[rawSzx];
