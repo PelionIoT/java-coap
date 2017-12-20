@@ -26,8 +26,11 @@ import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.exception.CoapRequestEntityTooLarge;
 import com.mbed.coap.exception.ObservationNotEstablishedException;
 import com.mbed.coap.exception.ObservationTerminatedException;
+import com.mbed.coap.packet.BlockOption;
+import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.internal.CoapMessaging;
@@ -126,6 +129,28 @@ public class CoapServerTest {
         server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err").build(), TransportContext.NULL);
 
         assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C500_INTERNAL_SERVER_ERROR));
+    }
+
+    @Test
+    public void send413_when_RequestEntityTooLarge_whileHandlingRequest() {
+        server.addRequestHandler("/err", exchange -> {
+            throw new CoapRequestEntityTooLarge(100, "too big");
+        });
+
+        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err").build(), TransportContext.NULL);
+
+        assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).size1(100).ack(Code.C413_REQUEST_ENTITY_TOO_LARGE).payload("too big"));
+    }
+
+    @Test
+    public void send413_when_RequestEntityTooLarge_with_block_whileHandlingRequest() {
+        server.addRequestHandler("/err", exchange -> {
+            throw new CoapRequestEntityTooLarge(new BlockOption(0, BlockSize.S_64, true), "too big");
+        });
+
+        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err").build(), TransportContext.NULL);
+
+        assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).block1Req(0, BlockSize.S_64, true).ack(Code.C413_REQUEST_ENTITY_TOO_LARGE).payload("too big"));
     }
 
 

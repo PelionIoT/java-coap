@@ -101,7 +101,7 @@ class BlockWiseTransfer {
         int blockSize = blockOpt.getSize();
 
         if (blockOpt.isBert()) {
-            return payloadSize % blockSize == 0;
+            return payloadSize > 0 && payloadSize % blockSize == 0;
         } else {
             return payloadSize == blockSize;
         }

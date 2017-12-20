@@ -19,6 +19,7 @@ import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
+import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.DataConvertingUtility;
@@ -66,6 +67,16 @@ class BlockWiseCallback implements RequestCallback {
     @Override
     public void call(CoapPacket response) {
         LOGGER.trace("BlockWiseCallback.call(): {}", response);
+
+        if (response.getCode() == Code.C413_REQUEST_ENTITY_TOO_LARGE) {
+            if (response.headers().getBlock1Req() != null) {
+                restartBlockRequest(response.headers().getBlock1Req().getBlockSize());
+            } else {
+                reqCallback.call(response);
+            }
+            return;
+        }
+
         if (handleIfBlock1(response)) {
             return;
         }
@@ -89,6 +100,7 @@ class BlockWiseCallback implements RequestCallback {
         if (!request.headers().getBlock1Req().hasMore()) {
             return false;
         }
+
         if (response.getCode() != Code.C231_CONTINUE) {
             // if server report code other than 231_CONTINUE - abort transfer
             // see https://tools.ietf.org/html/draft-ietf-core-block-19#section-2.9
@@ -195,6 +207,17 @@ class BlockWiseCallback implements RequestCallback {
         LOGGER.trace("CoAP resource representation has changed while getting blocks");
         response = null;
         request.headers().setBlock2Res(new BlockOption(0, blResponse.headers().getBlock2Res().getBlockSize(), false));
+        makeRequest();
+    }
+
+    private void restartBlockRequest(BlockSize newSize) {
+        BlockOption block1Req = new BlockOption(0, newSize, true);
+        request.headers().setBlock1Req(block1Req);
+
+        ByteArrayOutputStream blockPayload = new ByteArrayOutputStream(block1Req.getSize());
+        BlockWiseTransfer.createBlockPart(block1Req, requestPayload, blockPayload, block1Req.getSize());
+        request.setPayload(blockPayload.toByteArray());
+
         makeRequest();
     }
 

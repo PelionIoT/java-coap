@@ -264,11 +264,37 @@ public class BlockWiseCallbackTest {
     @Test
     public void should_send_payload_in_blocks_with_block_size_negotiation() throws CoapException {
         givenPutRequest(1500);
+        assertEquals(coap().block1Req(0, S_1024, true).size1(1500).payload(new byte[1024]).put().build(), bwc.request);
 
         //when, received ACK with smaller block size
         receive(coap().block1Req(0, S_256, false).ack(C231_CONTINUE));
         //then
         assertSent(coap().block1Req(1, S_256, true).payload(new byte[256]).put());
+    }
+
+    @Test
+    public void should_adjust_request_block_size_after_413_response() throws CoapException {
+        givenPutRequest(1500);
+
+        //when, received ACK 4.13 with a new size hint
+        receive(coap().ack(C413_REQUEST_ENTITY_TOO_LARGE).block1Req(0, S_256, true));
+        //then, restart with new size
+        assertSent(coap().block1Req(0, S_256, true).size1(1500).payload(new byte[256]).put());
+
+        //and continue
+        receive(coap().ack(C231_CONTINUE).block1Req(0, S_256, true));
+        assertSent(coap().block1Req(1, S_256, true).payload(new byte[256]).put());
+    }
+
+    @Test
+    public void should_fail_transfer_when_received_413_response_without_block_size_hint() throws CoapException {
+        givenPutRequest(1500);
+
+        //when, received ACK 4.13
+        receive(coap().ack(C413_REQUEST_ENTITY_TOO_LARGE));
+        //then, restart with new size
+        assertNothingSent();
+        verify(callback).call(eq(coap().ack(C413_REQUEST_ENTITY_TOO_LARGE).build()));
     }
 
     @Test
@@ -308,6 +334,8 @@ public class BlockWiseCallbackTest {
     }
 
     private void assertSent(CoapPacketBuilder coapPacket) {
+        verify(callback, never()).call(any());
+        verify(callback, never()).callException(any());
         verify(makeRequestFunc).accept(any());
         reset(makeRequestFunc);
         assertEquals(coapPacket.build(), bwc.request);

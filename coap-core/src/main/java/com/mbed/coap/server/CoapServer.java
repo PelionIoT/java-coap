@@ -293,7 +293,12 @@ public class CoapServer {
                     callRequestHandler(request, coapHandler, transportContext);
                 } catch (CoapRequestEntityTooLarge ex) {
                     errorResponse = request.createResponse(ex.getCode());
-                    errorResponse.headers().setSize1(ex.getMaxSize());
+                    if (ex.getMaxSize() > 0) {
+                        errorResponse.headers().setSize1(ex.getMaxSize());
+                    }
+                    if (ex.getBlockOptionHint() != null) {
+                        errorResponse.headers().setBlock1Req(ex.getBlockOptionHint());
+                    }
                     errorResponse.setPayload(ex.getMessage());
                 } catch (CoapCodeException ex) {
                     errorResponse = request.createResponse(ex.getCode());

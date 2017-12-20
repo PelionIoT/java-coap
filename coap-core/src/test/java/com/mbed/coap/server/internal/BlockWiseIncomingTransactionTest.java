@@ -116,7 +116,7 @@ public class BlockWiseIncomingTransactionTest {
         ).isExactlyInstanceOf(CoapRequestEntityTooLarge.class);
 
         //payload size does not match block size
-        assertCodeException(Code.C400_BAD_REQUEST, () ->
+        assertCodeException(Code.C413_REQUEST_ENTITY_TOO_LARGE, () ->
                 bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(new byte[100]).get().build())
         );
 
@@ -148,6 +148,22 @@ public class BlockWiseIncomingTransactionTest {
                 new CoapTcpCSM(512, true));
         assertCodeException(Code.C402_BAD_OPTION, () ->
                 bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(new byte[2048]).get().build())
+        );
+
+        //payload size does not match block size
+        bwReq = new BlockWiseIncomingTransaction(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(new byte[1024]).put().build(), 10_000,
+                new CoapTcpCSM(10_000, true));
+        assertCodeException(Code.C400_BAD_REQUEST, () ->
+                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(new byte[100]).get().build())
+        );
+
+        assertCodeException(Code.C400_BAD_REQUEST, () ->
+                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(new byte[2000]).get().build())
+        );
+
+        //missing payload
+        assertCodeException(Code.C400_BAD_REQUEST, () ->
+                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).get().build())
         );
     }
 

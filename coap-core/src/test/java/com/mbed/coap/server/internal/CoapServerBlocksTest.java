@@ -183,7 +183,7 @@ public class CoapServerBlocksTest {
         assertSent(newCoapPacket(LOCAL_5683).mid(1).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, true));
 
         //block 2 - broken
-        receive(newCoapPacket(LOCAL_5683).mid(2).put().block1Req(1, BlockSize.S_16, true).uriPath("/block").payload("abcd"));
+        receive(newCoapPacket(LOCAL_5683).mid(2).put().block1Req(1, BlockSize.S_16, true).uriPath("/block").payload("abcd_dsfsd fs fsd fsd fsd fsd fsd fsd fs fsd fsd"));
         assertSent(newCoapPacket(LOCAL_5683).mid(2).ack(Code.C400_BAD_REQUEST)
                 .payload("block size mismatch"));
 

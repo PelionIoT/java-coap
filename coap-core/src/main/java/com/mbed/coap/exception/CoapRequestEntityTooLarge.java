@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.exception;
 
+import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.Code;
 
 /**
@@ -23,13 +24,25 @@ import com.mbed.coap.packet.Code;
 public class CoapRequestEntityTooLarge extends CoapCodeException {
 
     private final int maxSize;
+    private final BlockOption blockOptionHint;
 
     public CoapRequestEntityTooLarge(int maxSize, String message) {
         super(Code.C413_REQUEST_ENTITY_TOO_LARGE, message);
         this.maxSize = maxSize;
+        this.blockOptionHint = null;
+    }
+
+    public CoapRequestEntityTooLarge(BlockOption blockOptionHint, String message) {
+        super(Code.C413_REQUEST_ENTITY_TOO_LARGE, message);
+        this.maxSize = 0;
+        this.blockOptionHint = blockOptionHint;
     }
 
     public int getMaxSize() {
         return maxSize;
+    }
+
+    public BlockOption getBlockOptionHint() {
+        return blockOptionHint;
     }
 }

@@ -116,6 +116,9 @@ class BlockWiseIncomingTransaction {
 
         if (!BlockWiseTransfer.isBlockPacketValid(request, reqBlock)) {
             LOGGER.warn("Intermediate block size does not match payload size {}", request);
+            if (request.getPayload().length > 0 && request.getPayload().length < reqBlock.getSize() && !reqBlock.isBert()) {
+                throw new CoapRequestEntityTooLarge(new BlockOption(0, agreedBlockSize, true), "");
+            }
             throw new CoapCodeException(Code.C400_BAD_REQUEST, "block size mismatch");
         }
 

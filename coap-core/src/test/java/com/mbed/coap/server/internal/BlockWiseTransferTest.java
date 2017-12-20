@@ -90,6 +90,9 @@ public class BlockWiseTransferTest {
         assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(new byte[1023]).post().build(),
                 new BlockOption(2, BlockSize.S_1024_BERT, true)));
 
+        assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(new byte[0]).post().build(),
+                new BlockOption(2, BlockSize.S_1024_BERT, true)));
+
         assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(new byte[511]).post().build(),
                 new BlockOption(3, BlockSize.S_512, true)));
     }
