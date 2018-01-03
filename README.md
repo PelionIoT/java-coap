@@ -126,7 +126,7 @@ To make a CoAP request, use the class `CoapClient`. It uses fluent API. The foll
     coapResp = client.resource("/a/relay").payload("1", MediaTypes.CT_TEXT_PLAIN).sync().put();
         
     //it is important to close connection in order to release socket
-    client.closeConnection();
+    client.close();
     
 
 Example client
