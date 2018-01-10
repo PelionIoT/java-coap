@@ -92,7 +92,7 @@ public class CoapServerBlocks extends CoapServer {
     @Override
     public void sendResponse(CoapExchange exchange) {
         CoapPacket resp = exchange.getResponse();
-        if (resp != null) {
+        if (resp != null && resp.headers().getBlock2Res() == null) {
 
             //check for blocking
             BlockOption block2Res = exchange.getRequest().headers().getBlock2Res();
