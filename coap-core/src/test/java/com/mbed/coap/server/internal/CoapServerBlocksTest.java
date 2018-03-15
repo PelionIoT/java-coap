@@ -26,7 +26,6 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.transport.CoapTransport;
@@ -57,12 +56,11 @@ public class CoapServerBlocksTest {
     private CoapServerBlocks server;
     private CoapUdpMessaging protoServer;
     private ScheduledExecutorService scheduledExecutor = mock(ScheduledExecutorService.class);
-    private BlockSize blockSize = null;
     private CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
 
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         protoServer = new CoapUdpMessaging(coapTransport);
         server = new CoapServerBlocks(protoServer, capabilities, 10000000) {
             @Override
@@ -194,57 +192,6 @@ public class CoapServerBlocksTest {
     }
 
     @Test
-    public void block1_request_failAfterTokenMismatch() throws Exception {
-        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
-        server.start();
-
-        server.addRequestHandler("/block", CoapExchange::sendResponse);
-
-        //block 1
-        receive(newCoapPacket(LOCAL_5683).mid(1).token(300).put().block1Req(0, BlockSize.S_16, true).size1(20).uriPath("/block").payload("123456789012345|"));
-        assertSent(newCoapPacket(LOCAL_5683).mid(1).token(300).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, true));
-
-        //block 2
-        receive(newCoapPacket(LOCAL_5683).mid(2).token(999).put().block1Req(1, BlockSize.S_16, false).uriPath("/block").payload("abcd"));
-        assertSent(newCoapPacket(LOCAL_5683).mid(2).token(999).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE)
-                .payload("Token mismatch"));
-    }
-
-    @Test
-    public void block1_request_failAfterTokenAndNullMismatch1() throws Exception {
-        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
-        server.start();
-
-        server.addRequestHandler("/block", CoapExchange::sendResponse);
-
-        //block 1
-        receive(newCoapPacket(LOCAL_5683).mid(1).put().block1Req(0, BlockSize.S_16, true).size1(20).uriPath("/block").payload("123456789012345|"));
-        assertSent(newCoapPacket(LOCAL_5683).mid(1).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, true));
-
-        //block 2
-        receive(newCoapPacket(LOCAL_5683).mid(2).token(999).put().block1Req(1, BlockSize.S_16, false).uriPath("/block").payload("abcd"));
-        assertSent(newCoapPacket(LOCAL_5683).mid(2).token(999).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE)
-                .payload("Token mismatch"));
-    }
-
-    @Test
-    public void block1_request_failAfterTokenAndNullMismatch2() throws Exception {
-        protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
-        server.start();
-
-        server.addRequestHandler("/block", CoapExchange::sendResponse);
-
-        //block 1
-        receive(newCoapPacket(LOCAL_5683).mid(1).token(300).put().block1Req(0, BlockSize.S_16, true).size1(20).uriPath("/block").payload("123456789012345|"));
-        assertSent(newCoapPacket(LOCAL_5683).mid(1).token(300).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, true));
-
-        //block 2
-        receive(newCoapPacket(LOCAL_5683).mid(2).put().block1Req(1, BlockSize.S_16, false).uriPath("/block").payload("abcd"));
-        assertSent(newCoapPacket(LOCAL_5683).mid(2).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE)
-                .payload("Token mismatch"));
-    }
-
-    @Test
     public void block1_request_BERT_multiblock() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(1250, true));
         protoServer.init(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
@@ -275,15 +222,15 @@ public class CoapServerBlocksTest {
         receive(pkt);
         assertSent(newCoapPacket(LOCAL_5683).mid(10).token(0x1234).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_1024_BERT, true));
 
-        pkt = newCoapPacket(LOCAL_5683).mid(11).token(0x1234).put().block1Req(4, BlockSize.S_1024_BERT, true).uriPath("/block").build();
+        pkt = newCoapPacket(LOCAL_5683).mid(11).token(0x1235).put().block1Req(4, BlockSize.S_1024_BERT, true).uriPath("/block").build();
         pkt.setPayload(payloadBlock2);
         receive(pkt);
-        assertSent(newCoapPacket(LOCAL_5683).mid(11).token(0x1234).ack(Code.C231_CONTINUE).block1Req(4, BlockSize.S_1024_BERT, true));
+        assertSent(newCoapPacket(LOCAL_5683).mid(11).token(0x1235).ack(Code.C231_CONTINUE).block1Req(4, BlockSize.S_1024_BERT, true));
 
-        pkt = newCoapPacket(LOCAL_5683).mid(12).token(0x1234).put().block1Req(6, BlockSize.S_1024_BERT, false).uriPath("/block").build();
+        pkt = newCoapPacket(LOCAL_5683).mid(12).token(0x1236).put().block1Req(6, BlockSize.S_1024_BERT, false).uriPath("/block").build();
         pkt.setPayload(payloadFinal);
         receive(pkt);
-        assertSent(newCoapPacket(LOCAL_5683).mid(12).token(0x1234).ack(Code.C204_CHANGED).block1Req(6, BlockSize.S_1024_BERT, false));
+        assertSent(newCoapPacket(LOCAL_5683).mid(12).token(0x1236).ack(Code.C204_CHANGED).block1Req(6, BlockSize.S_1024_BERT, false));
     }
 
     @Test

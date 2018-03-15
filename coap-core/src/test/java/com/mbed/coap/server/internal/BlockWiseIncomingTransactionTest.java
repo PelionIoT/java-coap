@@ -43,6 +43,15 @@ public class BlockWiseIncomingTransactionTest {
     }
 
     @Test
+    public void should_appendBlock_with_different_tokens() throws Exception {
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).token(1).block1Req(0, BlockSize.S_512, true).payload(new byte[512]).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).token(2).block1Req(1, BlockSize.S_512, true).payload(new byte[512]).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).token(3).block1Req(2, BlockSize.S_512, false).payload(new byte[100]).put().build());
+
+        assertEquals(1124, bwReq.getCombinedPayload().length);
+    }
+
+    @Test
     public void should_appendBlock_changing_block_sizes() throws Exception {
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(new byte[512]).put().build());
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_256, true).payload(new byte[256]).put().build());
@@ -80,26 +89,6 @@ public class BlockWiseIncomingTransactionTest {
         assertThatThrownBy(() ->
                 bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(8, BlockSize.S_1024_BERT, false).payload(new byte[2000]).put().build())
         ).isExactlyInstanceOf(CoapRequestEntityTooLarge.class);
-    }
-
-    @Test
-    public void should_fail_to_appendBlock_when_wrong_token() throws Exception {
-        assertThatThrownBy(() ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_1024_BERT, false).token(222).payload(new byte[2000]).put().build())
-        ).isExactlyInstanceOf(CoapCodeException.class);
-
-
-        bwReq = new BlockWiseIncomingTransaction(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).token(111).payload(new byte[1024]).put().build(), 10_000, new CoapTcpCSM(4096, true));
-        assertThatThrownBy(() ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_1024_BERT, false).token(222).payload(new byte[2000]).put().build())
-        ).isExactlyInstanceOf(CoapCodeException.class);
-
-        //empty token
-        bwReq = new BlockWiseIncomingTransaction(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(new byte[1024]).put().build(), 10_000, new CoapTcpCSM(4096, true));
-        assertThatThrownBy(() ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_1024_BERT, false).token(222).payload(new byte[2000]).put().build())
-        ).isExactlyInstanceOf(CoapCodeException.class);
-
     }
 
     @Test

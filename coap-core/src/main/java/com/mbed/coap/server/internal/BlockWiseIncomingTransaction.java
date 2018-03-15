@@ -24,7 +24,6 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +34,6 @@ class BlockWiseIncomingTransaction {
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockWiseIncomingTransaction.class.getName());
 
     private final ByteArrayOutputStream payload;
-    private final byte[] token;
     private final int maxIncomingBlockTransferSize;
     private final CoapTcpCSM csm;
 
@@ -48,12 +46,10 @@ class BlockWiseIncomingTransaction {
         int allocationSize = expectedPayloadSize != null ? expectedPayloadSize : blockOption.getSize() * 4;
 
         this.payload = new ByteArrayOutputStream(allocationSize);
-        this.token = request.getToken();
     }
 
     void appendBlock(CoapPacket request) throws CoapCodeException {
         validateIncomingRequest(request);
-        validateToken(request);
         validateAlreadyReceivedPayloadSize(request);
 
         BlockOption reqBlock = request.headers().getBlock1Req();
@@ -91,16 +87,6 @@ class BlockWiseIncomingTransaction {
 
     private boolean isTooBigPayloadSize(int payloadSize) {
         return payloadSize > maxIncomingBlockTransferSize;
-    }
-
-    private void validateToken(CoapPacket request) throws CoapCodeException {
-        boolean isTokenMismatch = !Arrays.equals(token, request.getToken());
-
-        if (isTokenMismatch) {
-            //token mismatch, send error, stop collecting blocks
-            LOGGER.warn("callRequestHandler() block token mismatch {}: {}", token, request);
-            throw new CoapCodeException(Code.C408_REQUEST_ENTITY_INCOMPLETE, "Token mismatch");
-        }
     }
 
     private void validateIncomingRequest(CoapPacket request) throws CoapCodeException {

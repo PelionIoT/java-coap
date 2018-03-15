@@ -28,11 +28,14 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
+import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -281,17 +284,37 @@ public class CoapServerBlocksUnitTest {
     }
 
     @Test
-    public void should_send_error_when_wrong_token_in_second_request() {
-        server.addRequestHandler("/change", new ReadOnlyCoapResource(""));
+    public void should_send_blocs_with_different_tokens() {
+        final AtomicReference<byte[]> receivedPayload = new AtomicReference<>();
+        server.addRequestHandler("/change", new CoapResource() {
+            @Override
+            public void get(CoapExchange exchange) {
+
+            }
+
+            @Override
+            public void put(CoapExchange exchange) {
+                receivedPayload.set(exchange.getRequestBody());
+                exchange.setResponseCode(Code.C204_CHANGED);
+                exchange.sendResponse();
+            }
+        });
+
 
         //BLOCK 1
         receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(new byte[16]).block1Req(0, BlockSize.S_16, true));
         assertSent(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).token(1001).block1Req(0, BlockSize.S_16, true));
 
-        //BLOCK 2 with wrong token
-        receive(newCoapPacket(LOCAL_5683).put().token(90909).uriPath("/change").payload(new byte[16]).block1Req(1, BlockSize.S_16, true));
+        //BLOCK 2
+        receive(newCoapPacket(LOCAL_5683).put().token(2002).uriPath("/change").payload(new byte[16]).block1Req(1, BlockSize.S_16, true));
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).token(2002).block1Req(1, BlockSize.S_16, true));
 
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C408_REQUEST_ENTITY_INCOMPLETE).token(90909).payload("Token mismatch"));
+        //BLOCK 3
+        receive(newCoapPacket(LOCAL_5683).put().token(3003).uriPath("/change").payload(new byte[1]).block1Req(2, BlockSize.S_16, false));
+        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C204_CHANGED).token(3003).block1Req(2, BlockSize.S_16, false));
+
+
+        assertEquals(33, receivedPayload.get().length);
     }
 
     @Test
