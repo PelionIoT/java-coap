@@ -1,7 +1,6 @@
 mbed CoAP
 =========
 
-[![](https://jitpack.io/v/com.mbed/java-coap.svg)](https://jitpack.io/#com.mbed/java-coap)
 ![CircleCI](https://img.shields.io/circleci/project/github/ARMmbed/java-coap/master.svg)
 [![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)](LICENSE)
 [![codecov](https://codecov.io/gh/ARMmbed/java-coap/branch/master/graph/badge.svg)](https://codecov.io/gh/ARMmbed/java-coap)
@@ -22,7 +21,7 @@ The following features are supported by the library:
     - Constrained RESTful Environments (CoRE) Link Format [RFC 6690](https://tools.ietf.org/html/rfc6690)
 * CoAP server mode
 * CoAP client mode
-* Coap over tcp [draft-ietf-core-coap-tcp-tls-09](https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09)
+* Coap over tcp, tls [RFC 8323](https://tools.ietf.org/html/rfc8323)
     - excluding: websockets, observations with BERT blocks
 * Network transports:
     - plain text UDP
@@ -82,8 +81,7 @@ To stop a server, use the `stop()` method.
 You can add handlers before or while the server is running. There can be several URI paths assigned to the same handler. 
 You can also remove a handler at any time.
 
-    CoapHandler handler = new SimpleCoapResource("24", "ucum:Cel", 0);
-    server.addRequestHandler("/s/temp", handler);
+    CoapHandler handler = new ReadOnlyCoapResource("24");
     server.addRequestHandler("/temperature", handler);
     
     server.removeRequestHandler(handler);
