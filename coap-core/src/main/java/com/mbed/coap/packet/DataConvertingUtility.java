@@ -67,15 +67,6 @@ public final class DataConvertingUtility {
         return val;
     }
 
-    static byte[][] writeVariableUInt(short[] value) {
-        List<byte[]> btList = new ArrayList<>();
-
-        for (short aValue : value) {
-            btList.add(writeVariableUInt(aValue, 1));
-        }
-        return btList.toArray(new byte[btList.size()][1]);
-    }
-
     /**
      * Splits string with given character. Unlike String.split(..) this method
      * does not remove empty elements.
@@ -143,23 +134,12 @@ public final class DataConvertingUtility {
      * @param value number to convert
      * @return converted byte array
      */
-    public static byte[] convertVariableUInt(Long value) {
-        if (value == null) {
-            return null;
-        }
-        return writeVariableUInt(value, 1);
-    }
-
     public static byte[] convertVariableUInt(long value) {
-        return writeVariableUInt(value, 1);
-    }
-
-    static byte[] writeVariableUInt(long value, int minBytes) {
         int len = 1;
         if (value > 0) {
             len = (int) Math.ceil((Math.log10(value + 1) / Math.log10(2)) / 8); //calculates needed minimum length
         }
-        len = Math.max(len, minBytes);
+
         byte[] data = new byte[len];
         for (int i = 0; i < len; i++) {
             data[i] = (byte) (0xFF & (value >> 8 * (len - (i + 1))));

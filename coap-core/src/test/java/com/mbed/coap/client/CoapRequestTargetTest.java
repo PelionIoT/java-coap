@@ -50,7 +50,7 @@ public class CoapRequestTargetTest {
         req.token(45463L);
 
         CoapPacket packet = new CoapPacket(Method.GET, MessageType.NonConfirmable, "/0/1/2", destination);
-        packet.headers().setAccept(new short[]{(short) 1});
+        packet.headers().setAccept((short) 1);
         packet.headers().setEtag(new byte[]{10, 8, 6});
         packet.headers().setUriHost("arm.com");
         packet.headers().setIfMatch(new byte[][]{new byte[]{9, 7, 5}});

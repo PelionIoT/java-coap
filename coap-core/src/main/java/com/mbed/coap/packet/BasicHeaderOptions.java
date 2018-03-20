@@ -67,7 +67,7 @@ public class BasicHeaderOptions implements Serializable {
     private String locationQuery;
     private String uriPath;
     private String uriQuery;
-    private short[] accept;
+    private Integer accept;
     private byte[][] ifMatch;
     private Boolean ifNonMatch;
     private String proxyUri;
@@ -109,7 +109,7 @@ public class BasicHeaderOptions implements Serializable {
                 proxyScheme = DataConvertingUtility.decodeToString(data);
                 break;
             case ACCEPT:
-                accept = DataConvertingUtility.extendOption(accept, data);
+                accept = DataConvertingUtility.readVariableULong(data).intValue();
                 break;
             case IF_MATCH:
                 ifMatch = DataConvertingUtility.extendOption(ifMatch, data);
@@ -233,7 +233,7 @@ public class BasicHeaderOptions implements Serializable {
             list.add(RawOption.fromString(PROXY_SCHEME, proxyScheme));
         }
         if (this.accept != null) {
-            list.add(RawOption.fromUint(ACCEPT, accept));
+            list.add(RawOption.fromUint(ACCEPT, accept.longValue()));
         }
         if (this.uriPort != null) {
             list.add(RawOption.fromUint(URI_PORT, uriPort.longValue()));
@@ -323,8 +323,8 @@ public class BasicHeaderOptions implements Serializable {
         if (ifNonMatch != null && ifNonMatch) {
             sb.append(" ifNonMatch");
         }
-        if (accept != null && accept.length > 0) {
-            sb.append(" accept:").append(accept[0]);
+        if (accept != null) {
+            sb.append(" accept:").append(accept);
         }
         if (size1 != null) {
             sb.append(" sz1:").append(size1);
@@ -501,15 +501,18 @@ public class BasicHeaderOptions implements Serializable {
         }
     }
 
-    public void setAccept(short[] accept) {
-        if (accept == null || accept.length == 0) {
-            this.accept = null;
-        } else {
-            this.accept = accept;
-        }
+    public void setAccept(short accept) {
+        setAccept(((int) accept));
     }
 
-    public short[] getAccept() {
+    public void setAccept(Integer accept) {
+        if (accept != null && (accept < 0 || accept > 0xFFFF)) {
+            throw new IllegalArgumentException();
+        }
+        this.accept = accept;
+    }
+
+    public Integer getAccept() {
         return accept;
     }
 
@@ -725,7 +728,7 @@ public class BasicHeaderOptions implements Serializable {
         hash = 41 * hash + (this.locationQuery != null ? this.locationQuery.hashCode() : 0);
         hash = 41 * hash + (this.uriPath != null ? this.uriPath.hashCode() : 0);
         hash = 41 * hash + (this.uriQuery != null ? this.uriQuery.hashCode() : 0);
-        hash = 41 * hash + Arrays.hashCode(this.accept);
+        hash = 41 * hash + (this.accept != null ? this.accept.hashCode() : 0);
         hash = 41 * hash + Arrays.deepHashCode(this.ifMatch);
         hash = 41 * hash + (this.ifNonMatch != null ? this.ifNonMatch.hashCode() : 0);
         hash = 41 * hash + (this.proxyUri != null ? this.proxyUri.hashCode() : 0);
@@ -769,7 +772,7 @@ public class BasicHeaderOptions implements Serializable {
         if ((this.uriQuery == null) ? (other.uriQuery != null) : !this.uriQuery.equals(other.uriQuery)) {
             return false;
         }
-        if (!Arrays.equals(this.accept, other.accept)) {
+        if ((this.accept == null) ? (other.accept != null) : !this.accept.equals(other.accept)) {
             return false;
         }
         if (!Arrays.deepEquals(this.ifMatch, other.ifMatch)) {

@@ -23,23 +23,19 @@ import java.util.Arrays;
  */
 final class RawOption implements Comparable<RawOption>, Serializable {
 
-    int optNumber;
-    byte[][] optValues;
+    final int optNumber;
+    final byte[][] optValues;
 
     static RawOption fromString(int num, String[] stringVal) {
         return new RawOption(num, DataConvertingUtility.stringArrayToBytes(stringVal));
     }
 
-    static RawOption fromUint(int num, Long uintVal) {
+    static RawOption fromUint(int num, long uintVal) {
         return new RawOption(num, new byte[][]{DataConvertingUtility.convertVariableUInt(uintVal)});
     }
 
     static RawOption fromString(int num, String stringVal) {
         return new RawOption(num, new byte[][]{DataConvertingUtility.encodeString(stringVal)});
-    }
-
-    static RawOption fromUint(int num, short[] uintVal) {
-        return new RawOption(num, DataConvertingUtility.writeVariableUInt(uintVal));
     }
 
     static RawOption fromEmpty(int num) {
@@ -63,7 +59,7 @@ final class RawOption implements Comparable<RawOption>, Serializable {
 
     @Override
     public int compareTo(RawOption o) {
-        return (optNumber < o.optNumber ? -1 : (optNumber == o.optNumber ? 0 : 1));
+        return (Integer.compare(optNumber, o.optNumber));
     }
 
     @Override

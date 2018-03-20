@@ -100,27 +100,9 @@ public class ServerIntegrationTest {
         request.headers().setUriPath("/test2");
         request.setMessageId(1647);
 
-        short[] acceptList = {MediaTypes.CT_APPLICATION_JSON};
-        request.headers().setAccept(acceptList);
+        request.headers().setAccept(MediaTypes.CT_APPLICATION_JSON);
 
         assertEquals(Code.C406_NOT_ACCEPTABLE, cnn.makeRequest(request).get().getCode());
-        cnn.stop();
-    }
-
-    @Test
-    public void requestWithAccept2() throws UnknownHostException, IOException, InterruptedException, Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().transport(0).build();
-        cnn.start();
-
-        CoapPacket request = new CoapPacket(new InetSocketAddress("127.0.0.1", SERVER_PORT));
-        request.setMethod(Method.GET);
-        request.headers().setUriPath("/test2");
-        request.setMessageId(1647);
-
-        short[] acceptList = {MediaTypes.CT_APPLICATION_JSON, MediaTypes.CT_APPLICATION_XML, MediaTypes.CT_TEXT_PLAIN};
-        request.headers().setAccept(acceptList);
-
-        assertEquals(Code.C205_CONTENT, cnn.makeRequest(request).get().getCode());
         cnn.stop();
     }
 
@@ -202,15 +184,13 @@ public class ServerIntegrationTest {
         private short contentType = MediaTypes.CT_TEXT_PLAIN;
 
         @Override
-        public void get(CoapExchange exchange) throws CoapCodeException {
+        public void get(CoapExchange exchange) {
             if (exchange.getRequestHeaders().getAccept() != null) {
                 boolean isFound = false;
-                for (Short ac : exchange.getRequestHeaders().getAccept()) {
-                    if (ac == contentType) {
-                        isFound = true;
-                        break;
-                    }
+                if (exchange.getRequestHeaders().getAccept() == contentType) {
+                    isFound = true;
                 }
+
                 if (!isFound) {
                     //did not found accepted content type
                     exchange.setResponseCode(Code.C406_NOT_ACCEPTABLE);

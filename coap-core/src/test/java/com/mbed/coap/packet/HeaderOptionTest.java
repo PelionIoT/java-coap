@@ -120,23 +120,25 @@ public class HeaderOptionTest {
     @Test
     public void testWithAccept() throws IOException, CoapException {
         HeaderOptions hdr = new HeaderOptions();
-        hdr.setAccept(new short[]{123});
+        hdr.setAccept((short) 123);
         HeaderOptions hdr2 = deserialize(serialize(hdr), hdr.getOptionCount());
 
         System.out.println(hdr.toString());
         System.out.println(hdr2.toString());
-        assertEquals((short) 123, hdr2.getAccept()[0]);
+        assertEquals(123, hdr2.getAccept().intValue());
         assertEquals(hdr, hdr2);
 
         hdr.setAccept(null);
         hdr2 = deserialize(serialize(hdr), hdr.getOptionCount());
         assertEquals(hdr, hdr2);
+    }
 
-        hdr.setAccept(new short[]{69, 46});
-        hdr2 = deserialize(serialize(hdr), hdr.getOptionCount());
-        System.out.println(hdr.toString());
-        System.out.println(hdr2.toString());
-        assertEquals(hdr, hdr2);
+    @Test
+    public void should_fail_when_illegal_accept_value() {
+        HeaderOptions hdr = new HeaderOptions();
+
+        assertThatThrownBy(() -> hdr.setAccept(-1)).isExactlyInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> hdr.setAccept(0x10000)).isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

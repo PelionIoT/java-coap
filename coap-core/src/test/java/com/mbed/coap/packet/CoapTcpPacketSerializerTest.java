@@ -135,7 +135,6 @@ public class CoapTcpPacketSerializerTest extends CoapPacketTestBase {
         CoapPacket cp = new CoapPacket(Method.PUT, null, "", null);
         cp.headers().setUriPath("/test2");
         cp.headers().setLocationPath("");
-        cp.headers().setAccept(new short[]{});
         cp.setPayload("t�m� on varsin miel??$�");
         byte[] rawCp = CoapTcpPacketSerializer.serialize(cp);
         CoapPacket cp2 = CoapTcpPacketSerializer.deserialize(null, new ByteArrayInputStream(rawCp));

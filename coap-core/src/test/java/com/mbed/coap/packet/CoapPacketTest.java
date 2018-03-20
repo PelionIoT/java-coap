@@ -95,7 +95,6 @@ public class CoapPacketTest extends CoapPacketTestBase {
         cp.setMessageId(1234);
         cp.headers().setUriPath("/test2");
         cp.headers().setLocationPath("");
-        cp.headers().setAccept(new short[]{});
         cp.setPayload("t�m� on varsin miel??$�");
         byte[] rawCp = CoapPacket.serialize(cp);
         CoapPacket cp2 = CoapPacket.deserialize(null, new ByteArrayInputStream(rawCp));
@@ -153,7 +152,7 @@ public class CoapPacketTest extends CoapPacketTestBase {
     @Test
     public void coapPacketTestWithHeaders() throws CoapException {
         CoapPacket cp = new CoapPacket(Method.DELETE, MessageType.NonConfirmable, null, null);
-        cp.headers().setAccept(new short[]{12, 432});
+        cp.headers().setAccept(((short) 432));
         cp.headers().setIfMatch(new byte[][]{{(byte) 98, (byte) 53}});
         cp.headers().setIfNonMatch(Boolean.TRUE);
         cp.headers().setContentFormat((short) 423);

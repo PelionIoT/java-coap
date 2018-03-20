@@ -113,7 +113,7 @@ public class CoapRequestTarget {
     }
 
     public CoapRequestTarget accept(short contentFormat) {
-        requestPacket.headers().setAccept(new short[]{contentFormat});
+        requestPacket.headers().setAccept(((int) contentFormat));
         return this;
     }
 

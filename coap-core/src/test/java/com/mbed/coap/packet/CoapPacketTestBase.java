@@ -35,7 +35,7 @@ abstract class CoapPacketTestBase {
         assertEquals(cp1.headers().getLocationPath(), cp2.headers().getLocationPath());
         assertEquals(cp1.headers().getLocationQuery(), cp2.headers().getLocationQuery());
 
-        assertArrayEquals(cp1.headers().getAccept(), cp2.headers().getAccept());
+        assertEquals(cp1.headers().getAccept(), cp2.headers().getAccept());
         assertArrayEquals(cp1.headers().getIfMatch(), cp2.headers().getIfMatch());
         assertArrayEquals(cp1.headers().getEtagArray(), cp2.headers().getEtagArray());
 

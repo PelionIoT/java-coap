@@ -100,13 +100,16 @@ public class DataConvertingUtilityTest {
     }
 
     @Test
-    public void testConvertVariableUInt() throws Exception {
+    public void testConvertVariableUInt() {
+        assertArrayEquals(fromHex("00"), convertVariableUInt(0x00));
         assertArrayEquals(fromHex("02"), convertVariableUInt(0x02));
-        assertArrayEquals(fromHex("0203"), convertVariableUInt(new Long(0x0203)));
+        assertArrayEquals(fromHex("ff"), convertVariableUInt(0xFF));
+        assertArrayEquals(fromHex("0100"), convertVariableUInt(0x0100));
+        assertArrayEquals(fromHex("0203"), convertVariableUInt(0x0203));
+        assertArrayEquals(fromHex("ffff"), convertVariableUInt(0xFFFF));
+        assertArrayEquals(fromHex("010000"), convertVariableUInt(0x010000));
         assertArrayEquals(fromHex("020304"), convertVariableUInt(0x020304));
         assertArrayEquals(fromHex("02030405"), convertVariableUInt(0x02030405));
-
-        assertNull(convertVariableUInt(null));
 
     }
 
