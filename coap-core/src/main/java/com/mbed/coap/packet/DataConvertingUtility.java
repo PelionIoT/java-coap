@@ -158,17 +158,6 @@ public final class DataConvertingUtility {
         }
     }
 
-    static short[] extendOption(short[] orig, byte[] extend) {
-        if (orig == null || orig.length == 0) {
-            return new short[]{readVariableULong(extend).shortValue()};
-        } else {
-            short[] arr = new short[orig.length + 1];
-            System.arraycopy(orig, 0, arr, 0, orig.length);
-            arr[orig.length] = readVariableULong(extend).shortValue();
-            return arr;
-        }
-    }
-
     static String extendOption(String orig, byte[] extend, String delimiter, boolean startWithDelimiter) {
         String extOption = orig;
         if (extOption == null) {
