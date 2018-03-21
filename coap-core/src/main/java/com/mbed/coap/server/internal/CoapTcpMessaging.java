@@ -75,11 +75,14 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
 
         if (packet.getCode() == Code.C701_CSM) {
             SignalingOptions signalingOpts = packet.headers().toSignallingOptions(packet.getCode());
-            Long maxMessageSize = signalingOpts.getMaxMessageSize();
-            Boolean blockWiseTransferBERT = signalingOpts.getBlockWiseTransfer();
-            CoapTcpCSM remoteCapabilities = CoapTcpCSM.BASE.withNewOptions(maxMessageSize, blockWiseTransferBERT);
-
+            CoapTcpCSM remoteCapabilities = CoapTcpCSM.BASE;
+            if (signalingOpts != null) {
+                Long maxMessageSize = signalingOpts.getMaxMessageSize();
+                Boolean blockWiseTransferBERT = signalingOpts.getBlockWiseTransfer();
+                remoteCapabilities = CoapTcpCSM.BASE.withNewOptions(maxMessageSize, blockWiseTransferBERT);
+            }
             csmStorage.put(packet.getRemoteAddress(), CoapTcpCSM.min(ownCapability, remoteCapabilities));
+
         } else if (packet.getCode() == Code.C702_PING) {
             CoapPacket pongResp = new CoapPacket(Code.C703_PONG, MessageType.Acknowledgement, packet.getRemoteAddress());
             pongResp.setToken(packet.getToken());

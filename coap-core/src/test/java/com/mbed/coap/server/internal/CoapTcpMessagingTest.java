@@ -42,9 +42,6 @@ import org.junit.Test;
 import protocolTests.utils.CoapPacketBuilder;
 
 
-/*
-    draft-ietf-core-coap-tcp-tls-09
- */
 public class CoapTcpMessagingTest {
 
     private final CoapTransport coapTransport = mock(CoapTransport.class);
@@ -61,7 +58,7 @@ public class CoapTcpMessagingTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         tcpMessaging.stop();
     }
 
@@ -159,6 +156,15 @@ public class CoapTcpMessagingTest {
 
         assertNothingSent();
         assertEquals(300, csmStorage.getOrDefault(LOCAL_1_5683).getMaxMessageSize());
+        assertFalse(csmStorage.getOrDefault(LOCAL_1_5683).isBlockTransferEnabled());
+    }
+
+    @Test
+    public void should_set_remote_capabilities_when_empty_csm() throws CoapException, IOException {
+        receive(newCoapPacket(LOCAL_1_5683).con(Code.C701_CSM));
+
+        assertNothingSent();
+        assertEquals(501, csmStorage.getOrDefault(LOCAL_1_5683).getMaxMessageSize());
         assertFalse(csmStorage.getOrDefault(LOCAL_1_5683).isBlockTransferEnabled());
     }
 
