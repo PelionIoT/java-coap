@@ -146,7 +146,7 @@ public class HeaderOptions extends BasicHeaderOptions {
      */
     public void setObserve(Integer observe) {
         if (observe < 0 || observe > 0xFFFFFF) {
-            throw new IllegalArgumentException("Illegal observer argument: " + observe);
+            throw new IllegalArgumentException("Illegal observe argument: " + observe);
         }
         this.observe = observe;
     }

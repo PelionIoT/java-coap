@@ -121,7 +121,7 @@ public abstract class CoapMessaging implements CoapReceiver {
             return;
         }
 
-        if (packet.getMethod() != null) {
+        if (packet.getMethod() != null && packet.getMessageType() != MessageType.Acknowledgement) {
             handleRequest(packet, transportContext);
             return;
         } else {

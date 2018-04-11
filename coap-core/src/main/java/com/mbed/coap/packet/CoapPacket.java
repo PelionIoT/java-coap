@@ -155,6 +155,9 @@ public class CoapPacket implements Serializable {
             messageType = MessageType.valueOf((tempByte >> 4) & 0x3);
 
             byte tokenLen = (byte) (tempByte & 0x0F);
+            if (tokenLen > 8) {
+                throw new CoapException("Wrong TOKEN value, size should be within range 0-8");
+            }
 
             tempByte = inputStream.read();         //second byte
             if (tempByte >= 1 && tempByte <= 10) {
@@ -182,8 +185,8 @@ public class CoapPacket implements Serializable {
                 inputStream.read(payload);
             }
 
-        } catch (IOException iOException) {
-            throw new CoapException(iOException);
+        } catch (IOException | IllegalArgumentException ex) {
+            throw new CoapException(ex);
         }
     }
 
