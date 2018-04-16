@@ -21,8 +21,8 @@ import javax.net.ssl.SSLServerSocket;
 
 public class SingleConnectionSSLSocketServerTransport extends SingleConnectionSocketServerTransport {
 
-    public SingleConnectionSSLSocketServerTransport(SSLContext sslContext, int port, boolean isTcpCoapPacket) throws IOException {
-        super(sslContext.getServerSocketFactory().createServerSocket(port), isTcpCoapPacket);
+    public SingleConnectionSSLSocketServerTransport(SSLContext sslContext, int port, CoapSerializer serializer) throws IOException {
+        super(sslContext.getServerSocketFactory().createServerSocket(port), serializer);
         ((SSLServerSocket) serverSocket).setNeedClientAuth(true);
     }
 }

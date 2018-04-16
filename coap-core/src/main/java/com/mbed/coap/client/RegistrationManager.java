@@ -135,7 +135,7 @@ public class RegistrationManager {
         register();
     }
 
-    private void registrationFailed(String errMessage) {
+    protected void registrationFailed(String errMessage) {
         lastRetryDelay = nextDelay(lastRetryDelay);
         registrationLocation = Optional.empty();
         scheduledExecutor.schedule(this::register, lastRetryDelay.getSeconds(), TimeUnit.SECONDS);

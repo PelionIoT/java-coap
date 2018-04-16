@@ -23,6 +23,7 @@ import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
+import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.javassl.SocketClientTransport;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -124,7 +125,7 @@ public abstract class CoapClientBuilder {
             if (coapServerBuilder instanceof CoapServerBuilder.CoapServerBuilderForUdp) {
                 ((CoapServerBuilder.CoapServerBuilderForUdp) coapServerBuilder).transport(0);
             } else if (coapServerBuilder instanceof CoapServerBuilder.CoapServerBuilderForTcp) {
-                ((CoapServerBuilder.CoapServerBuilderForTcp) coapServerBuilder).transport(new SocketClientTransport(destination, SocketFactory.getDefault(), true));
+                ((CoapServerBuilder.CoapServerBuilderForTcp) coapServerBuilder).transport(new SocketClientTransport(destination, SocketFactory.getDefault(), CoapSerializer.TCP));
             }
         }
         return new CoapClient(destination, coapServerBuilder.build().start());

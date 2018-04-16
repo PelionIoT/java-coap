@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 public class SSLSocketClientTransport extends SocketClientTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SSLSocketClientTransport.class);
 
-    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory, boolean isTcpCoapPacket) {
-        super(destination, socketFactory, isTcpCoapPacket);
+    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory, CoapSerializer serializer) {
+        super(destination, socketFactory, serializer);
     }
 
     @Override

@@ -17,7 +17,6 @@ package com.mbed.coap.transport.javassl;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.packet.CoapTcpPacketSerializer;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapReceiverForTcp;
@@ -45,12 +44,12 @@ public class SocketClientTransport extends BlockingCoapTransport {
     protected Socket socket;
     private Thread readerThread;
     protected final SocketFactory socketFactory;
-    private final boolean isTcpCoapPacket;
+    private final CoapSerializer serializer;
 
-    public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, boolean isTcpCoapPacket) {
+    public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, CoapSerializer serializer) {
         this.destination = destination;
         this.socketFactory = socketFactory;
-        this.isTcpCoapPacket = isTcpCoapPacket;
+        this.serializer = serializer;
     }
 
     @Override
@@ -75,7 +74,7 @@ public class SocketClientTransport extends BlockingCoapTransport {
             coapReceiver.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());
             while (!socket.isClosed()) {
                 try {
-                    final CoapPacket coapPacket = deserialize();
+                    final CoapPacket coapPacket = serializer.deserialize(inputStream, ((InetSocketAddress) socket.getRemoteSocketAddress()));
                     coapReceiver.handle(coapPacket, TransportContext.NULL);
                 } catch (CoapException e) {
                     if (e.getCause() != null && e.getCause() instanceof IOException) {
@@ -98,25 +97,8 @@ public class SocketClientTransport extends BlockingCoapTransport {
         if (!adr.equals(this.destination)) {
             throw new IllegalStateException("No connection with: " + adr);
         }
-        serialize(coapPacket);
+        serializer.serialize(outputStream, coapPacket);
         outputStream.flush();
-    }
-
-    private CoapPacket deserialize() throws CoapException, IOException {
-        if (isTcpCoapPacket) {
-            return CoapTcpPacketSerializer.deserialize(((InetSocketAddress) socket.getRemoteSocketAddress()), inputStream);
-        } else {
-            return CoapPacket.deserialize(((InetSocketAddress) socket.getRemoteSocketAddress()), inputStream);
-        }
-    }
-
-
-    private void serialize(CoapPacket coapPacket) throws CoapException, IOException {
-        if (isTcpCoapPacket) {
-            CoapTcpPacketSerializer.writeTo(outputStream, coapPacket);
-        } else {
-            coapPacket.writeTo(outputStream);
-        }
     }
 
     @Override

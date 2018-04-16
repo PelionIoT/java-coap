@@ -37,13 +37,13 @@ public class SSLSocketClientTransportTest {
         SSLContext srvSslContext = SSLUtils.sslContext(SRV_KS, SECRET);
         SSLContext clientSslContext = SSLUtils.sslContext(CLI_KS, SECRET);
         CoapServer srv = CoapServer.builder()
-                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, false))
+                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, CoapSerializer.UDP))
                 .build().start();
 
 
         InetSocketAddress serverAdr = new InetSocketAddress("localhost", srv.getLocalSocketAddress().getPort());
         CoapClient client = CoapClientBuilder.clientFor(serverAdr,
-                CoapServer.builder().transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), false)).build().start()
+                CoapServer.builder().transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), CoapSerializer.UDP)).build().start()
         );
 
         //        assertNotNull(client.ping().get());

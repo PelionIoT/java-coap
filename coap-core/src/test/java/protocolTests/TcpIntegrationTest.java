@@ -23,6 +23,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.javassl.SingleConnectionSocketServerTransport;
 import com.mbed.coap.transport.javassl.SocketClientTransport;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
@@ -50,7 +51,7 @@ public class TcpIntegrationTest {
 
     private void initClient(Consumer<CoapServerBuilder.CoapServerBuilderForTcp> b) throws IOException {
         CoapServerBuilder.CoapServerBuilderForTcp builder = CoapServerBuilder.newBuilderForTcp()
-                .transport(new SocketClientTransport(serverAddress, SocketFactory.getDefault(), true))
+                .transport(new SocketClientTransport(serverAddress, SocketFactory.getDefault(), CoapSerializer.TCP))
                 .blockSize(BlockSize.S_1024_BERT)
                 .maxMessageSize(1_200);
 
@@ -65,7 +66,7 @@ public class TcpIntegrationTest {
     private void initServer() throws IOException {
         server = CoapServerBuilder
                 .newBuilderForTcp()
-                .transport(new SingleConnectionSocketServerTransport(0, true))
+                .transport(new SingleConnectionSocketServerTransport(0, CoapSerializer.TCP))
                 .blockSize(BlockSize.S_1024_BERT)
                 .maxMessageSize(10_000)
                 .start();

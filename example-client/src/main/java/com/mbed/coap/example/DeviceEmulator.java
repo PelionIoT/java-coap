@@ -21,6 +21,7 @@ import com.mbed.coap.observe.SimpleObservableResource;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.CoapTransport;
+import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.javassl.SSLSocketClientTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
@@ -108,7 +109,7 @@ public class DeviceEmulator {
 
             SSLContext sslContext = sslContextFromKeystore(keystoreFile, "secret".toCharArray());
 
-            coapTransport = new SSLSocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), sslContext.getSocketFactory(), false);
+            coapTransport = new SSLSocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), sslContext.getSocketFactory(), CoapSerializer.UDP);
         } else {
             throw new IllegalArgumentException("Protocol not supported: " + uri.getScheme());
         }

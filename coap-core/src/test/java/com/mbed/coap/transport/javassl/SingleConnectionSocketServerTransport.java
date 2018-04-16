@@ -17,7 +17,6 @@ package com.mbed.coap.transport.javassl;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.packet.CoapTcpPacketSerializer;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapReceiverForTcp;
@@ -43,15 +42,15 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
     private Thread serverThread;
     final ServerSocket serverSocket;
     private OutputStream outputStream;
-    private final boolean isTcpCoapPacket;
+    private final CoapSerializer serializer;
 
-    SingleConnectionSocketServerTransport(ServerSocket serverSocket, boolean isTcpCoapPacket) throws IOException {
+    SingleConnectionSocketServerTransport(ServerSocket serverSocket, CoapSerializer serializer) {
         this.serverSocket = serverSocket;
-        this.isTcpCoapPacket = isTcpCoapPacket;
+        this.serializer = serializer;
     }
 
-    public SingleConnectionSocketServerTransport(int port, boolean isTcpCoapPacket) throws IOException {
-        this(new ServerSocket(port), isTcpCoapPacket);
+    public SingleConnectionSocketServerTransport(int port, CoapSerializer serializer) throws IOException {
+        this(new ServerSocket(port), serializer);
     }
 
 
@@ -71,7 +70,7 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
 
             while (!socket.isClosed()) {
                 try {
-                    final CoapPacket coapPacket = deserialize(inputStream, remoteSocketAddress);
+                    final CoapPacket coapPacket = serializer.deserialize(inputStream, remoteSocketAddress);
                     coapReceiver.handle(coapPacket, TransportContext.NULL);
                 } catch (EOFException e) {
                     socket.close();
@@ -116,7 +115,7 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
 
     @Override
     public synchronized void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
-        serialize(coapPacket);
+        serializer.serialize(outputStream, coapPacket);
         outputStream.flush();
     }
 
@@ -125,20 +124,4 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
         return (InetSocketAddress) serverSocket.getLocalSocketAddress();
     }
 
-    private CoapPacket deserialize(InputStream inputStream, InetSocketAddress remoteSocketAddress) throws CoapException, IOException {
-        if (isTcpCoapPacket) {
-            return CoapTcpPacketSerializer.deserialize(remoteSocketAddress, inputStream);
-        } else {
-            return CoapPacket.deserialize(remoteSocketAddress, inputStream);
-        }
-    }
-
-
-    private void serialize(CoapPacket coapPacket) throws CoapException, IOException {
-        if (isTcpCoapPacket) {
-            CoapTcpPacketSerializer.writeTo(outputStream, coapPacket);
-        } else {
-            coapPacket.writeTo(outputStream);
-        }
-    }
 }
