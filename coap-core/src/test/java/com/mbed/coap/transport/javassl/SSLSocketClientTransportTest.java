@@ -98,4 +98,26 @@ public class SSLSocketClientTransportTest {
         srv.stop();
 
     }
+
+    @Test
+    public void successfulConnection_with_shim_serializer() throws Exception {
+
+        CoapServer srv = CoapServer.builder()
+                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, new CoapShimSerializer(50_000)))
+                .build().start();
+
+
+        InetSocketAddress serverAdr = new InetSocketAddress("localhost", srv.getLocalSocketAddress().getPort());
+        CoapClient client = CoapClientBuilder.clientFor(serverAdr,
+                CoapServer.builder().maxMessageSize(50_000).transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), new CoapShimSerializer(50_000), false)).build().start()
+        );
+
+        assertNotNull(client.resource("/test").payload(new byte[2000]).put().get());
+
+
+        client.close();
+        srv.stop();
+
+    }
+
 }
