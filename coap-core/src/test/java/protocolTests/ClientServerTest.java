@@ -257,7 +257,7 @@ public class ClientServerTest {
 
     @Test
     public void reusePortSocketImpl() throws IOException, CoapException {
-        MulticastSocketTransport udpConnector = new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run); //new UDPMulticastConnector(61601, UDPMulticastConnector.MCAST_LINKLOCAL_ALLNODES);
+        MulticastSocketTransport udpConnector = new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES); //new UDPMulticastConnector(61601, UDPMulticastConnector.MCAST_LINKLOCAL_ALLNODES);
         CoapServer srv = CoapServer.builder().transport(udpConnector).build();
         srv.addRequestHandler("/test", new ReadOnlyCoapResource("TTEESSTT"));
         srv.start();
@@ -268,7 +268,7 @@ public class ClientServerTest {
 
         srv.stop();
 
-        MulticastSocketTransport udpConnector2 = new MulticastSocketTransport(new InetSocketAddress(port), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run);
+        MulticastSocketTransport udpConnector2 = new MulticastSocketTransport(new InetSocketAddress(port), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES);
         CoapServer srv2 = CoapServerBuilder.newBuilder().transport(udpConnector2).build();
         srv2.addRequestHandler("/test", new ReadOnlyCoapResource("TTEESSTT2"));
         srv2.start();

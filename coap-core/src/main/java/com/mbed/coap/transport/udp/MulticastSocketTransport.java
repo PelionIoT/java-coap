@@ -27,7 +27,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
-import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +37,6 @@ public final class MulticastSocketTransport extends BlockingCoapTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MulticastSocketTransport.class.getName());
     private final InetSocketAddress bindSocket;
-    private final Executor receivedMessageWorker;
     private MulticastSocket mcastSocket;
     private final InetAddress mcastGroup;
     private Thread readerThread;
@@ -46,9 +44,8 @@ public final class MulticastSocketTransport extends BlockingCoapTransport {
     public final static String MCAST_LINKLOCAL_ALLNODES = "FF02::1";    //NOPMD
     public final static String MCAST_NODELOCAL_ALLNODES = "FF01::1";    //NOPMD
 
-    public MulticastSocketTransport(InetSocketAddress bindSocket, String multicastGroup, Executor receivedMessageWorker) throws UnknownHostException {
+    public MulticastSocketTransport(InetSocketAddress bindSocket, String multicastGroup) throws UnknownHostException {
         this.bindSocket = bindSocket;
-        this.receivedMessageWorker = receivedMessageWorker;
         mcastGroup = InetAddress.getByName(multicastGroup);
     }
 
@@ -82,7 +79,7 @@ public final class MulticastSocketTransport extends BlockingCoapTransport {
 
                 try {
                     final CoapPacket coapPacket = CoapPacket.read(adr, datagramPacket.getData(), datagramPacket.getLength());
-                    receivedMessageWorker.execute(() -> coapReceiver.handle(coapPacket, TransportContext.NULL));
+                    coapReceiver.handle(coapPacket, TransportContext.NULL);
                 } catch (CoapException e) {
                     LOGGER.warn(e.getMessage());
                 }

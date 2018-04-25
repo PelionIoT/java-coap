@@ -33,7 +33,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -55,7 +54,7 @@ public class TimeoutTest {
     @Test
     @Ignore
     public void timeoutTestIgn() throws Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616, Executors.newCachedThreadPool()).build();
+        CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616).build();
         cnn.start();
 
         CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), 60666));

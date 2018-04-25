@@ -16,7 +16,6 @@
 package com.mbed.coap.transport.udp;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
@@ -50,7 +49,7 @@ public class DatagramSocketTransportTest {
     }
 
     private static DatagramSocketTransport createDatagramSocketTransport() {
-        return new DatagramSocketTransport(0, Runnable::run);
+        return new DatagramSocketTransport(0);
     }
 
     @Test
@@ -85,7 +84,7 @@ public class DatagramSocketTransportTest {
 
     @Test
     public void initializeWithParameters() throws Exception {
-        DatagramSocketTransport trans = new DatagramSocketTransport(new InetSocketAddress(0), Runnable::run, false);
+        DatagramSocketTransport trans = new DatagramSocketTransport(new InetSocketAddress(0), false);
         trans.setReuseAddress(false);
         trans.setSocketBufferSize(12345);
         trans.start(mock(CoapReceiver.class));
@@ -109,7 +108,7 @@ public class DatagramSocketTransportTest {
         assertTrue(trans.getSocket().isClosed());
 
         //bind again to same port
-        trans = new DatagramSocketTransport(localPort, Runnable::run);
+        trans = new DatagramSocketTransport(localPort);
 
         trans.start(mock(CoapReceiver.class));
         assertFalse(trans.getSocket().isClosed());
@@ -118,47 +117,18 @@ public class DatagramSocketTransportTest {
     }
 
     @Test
-    public void sendingWithTrafficClass() throws Exception {
-        final DatagramSocket socket = spy(new QoSDatagramSocket(new InetSocketAddress(0)));
-        DatagramSocketTransport trans = spy(createDatagramSocketTransport());
-        when(trans.createSocket()).thenReturn(socket);
+    public void initializeWithProvidedDatagramSocket() throws Exception {
 
-        trans.start(mock(CoapReceiver.class));
+        DatagramSocket udpSocket = new DatagramSocket(0);
+        DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(udpSocket);
 
-        trans.sendPacket(COAP_PACKET, new InetSocketAddress("::1", 5683), TrafficClassTransportContext.create(TrafficClassTransportContext.HIGH, TransportContext.NULL));
-        verify(socket).setTrafficClass(TrafficClassTransportContext.HIGH);
-        verify(socket).setTrafficClass(0);
+        datagramSocketTransport.start(mock(CoapReceiver.class));
 
-        reset(socket);
-        trans.sendPacket(COAP_PACKET, new InetSocketAddress("::1", 5683), TrafficClassTransportContext.create(89, TransportContext.NULL));
-        verify(socket).setTrafficClass(89);
-        verify(socket).setTrafficClass(0);
+        assertEquals(udpSocket.getLocalPort(), datagramSocketTransport.getLocalSocketAddress().getPort());
 
-        //no traffic class
-        reset(socket);
-        trans.sendPacket(COAP_PACKET, new InetSocketAddress("::1", 5683), null);
-        verify(socket, never()).setTrafficClass(anyInt());
 
-        trans.stop();
+        datagramSocketTransport.stop();
+        assertTrue(udpSocket.isClosed());
 
-    }
-
-    @Test
-    public void sendingCoapWithTrafficClass() throws Exception {
-        final DatagramSocket socket = spy(new QoSDatagramSocket(new InetSocketAddress(0)));
-        DatagramSocketTransport trans = spy(createDatagramSocketTransport());
-        when(trans.createSocket()).thenReturn(socket);
-
-        CoapClient client = CoapClientBuilder.newBuilder(5683).transport(trans).timeout(10000).build();
-
-        client.resource("/test").context(TrafficClassTransportContext.create(TrafficClassTransportContext.HIGH, TransportContext.NULL)).get();
-        verify(socket).setTrafficClass(TrafficClassTransportContext.HIGH);
-        verify(socket).setTrafficClass(0);
-
-        reset(socket);
-        client.resource("/test").get();
-        verify(socket, never()).setTrafficClass(anyInt());
-
-        client.close();
     }
 }

@@ -37,7 +37,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.List;
-import java.util.concurrent.Executors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +51,7 @@ public class ServerIntegrationTest {
 
     @Before
     public void setUp() throws IOException {
-        server = CoapServerBuilder.newBuilder().transport(0, Executors.newCachedThreadPool()).build();
+        server = CoapServerBuilder.newBuilder().transport(0).build();
         server.addRequestHandler("/test/1", new ReadOnlyCoapResource("Dziala", "simple", -1));
         server.addRequestHandler("/test2", new TestResource());
         server.addRequestHandler(CoapConstants.WELL_KNOWN_CORE, server.getResourceLinkResource());

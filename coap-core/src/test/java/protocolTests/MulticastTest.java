@@ -45,7 +45,7 @@ public class MulticastTest {
     //    @Ignore
     public void multicastConnection() throws IOException, CoapException {
         CoapServer server = CoapServerBuilder.newBuilder()
-                .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run)).build();
+                .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES)).build();
         server.addRequestHandler("/multicast", new ReadOnlyCoapResource(
                 "multicast"));
         // server.setMulticastGroup(InetAddress.getByName("FF02::1"));
@@ -56,7 +56,7 @@ public class MulticastTest {
         //                MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, port);
 
         CoapServer cnnServer = CoapServerBuilder.newBuilder()
-                .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES, Runnable::run))
+                .transport(new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES))
                 .timeout(new SingleTimeout(1000000)).build();
         cnnServer.start();
 
@@ -122,7 +122,7 @@ public class MulticastTest {
     @Ignore
     public void multicastTest() throws IOException {
 
-        CoapServer server = CoapServerBuilder.newBuilder().transport(new DatagramSocketTransport(new InetSocketAddress("::1", 61619), Runnable::run)).build();
+        CoapServer server = CoapServerBuilder.newBuilder().transport(new DatagramSocketTransport(new InetSocketAddress("::1", 61619))).build();
         server.start();
 
         DatagramSocket soc = null;

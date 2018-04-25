@@ -56,7 +56,7 @@ public class MalformedPacketTest {
 
     @Test
     public void simpleRequest() throws Exception {
-        DatagramSocketTransport clientTransport = new DatagramSocketTransport(new InetSocketAddress(0), Runnable::run);
+        DatagramSocketTransport clientTransport = new DatagramSocketTransport(new InetSocketAddress(0));
 
         CoapClient cnn = CoapClientBuilder
                 .newBuilder(InMemoryCoapTransport.createAddress(serverPort))
