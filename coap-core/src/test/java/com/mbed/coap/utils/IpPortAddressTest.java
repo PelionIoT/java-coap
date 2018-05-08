@@ -68,4 +68,12 @@ public class IpPortAddressTest {
         addr = new IpPortAddress(new InetSocketAddress("127.0.0.1", 61616));
         assertEquals("127.0.0.1:61616", addr.toString());
     }
+
+    @Test
+    public void create_instance_for_localhost() {
+        IpPortAddress ipPort = IpPortAddress.local(5683);
+
+        assertTrue(ipPort.toInetSocketAddress().getAddress().isLoopbackAddress());
+        assertEquals("127.0.0.1:5683", ipPort.toString());
+    }
 }

@@ -53,6 +53,10 @@ public class IpPortAddress implements Serializable {
         return new IpPortAddress(address);
     }
 
+    public static IpPortAddress local(int localPort) {
+        return new IpPortAddress(new byte[]{127, 0, 0, 1}, localPort);
+    }
+
     public byte[] getIp() {
         return ip;
     }
