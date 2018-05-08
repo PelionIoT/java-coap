@@ -94,16 +94,16 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     private void logCoapSent(CoapPacket coapPacket, Throwable maybeError) {
         if (maybeError != null) {
-            LOGGER.warn("[{}] Failed to sent: {}", coapPacket.getRemoteAddress(), maybeError.toString());
+            LOGGER.warn("[{}] CoAP sent failed [{}] {}", coapPacket.getRemoteAddress(), coapPacket.toString(false, false, false, true), maybeError.toString());
             return;
         }
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("CoAP sent [" + coapPacket.toString(true) + "]");
+            LOGGER.trace("CoAP sent [{}]", coapPacket.toString(true));
         } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("CoAP sent [" + coapPacket.toString(false) + "]");
+            LOGGER.debug("CoAP sent [{}]", coapPacket.toString(false));
         } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("[" + coapPacket.getRemoteAddress() + "] CoAP sent [" + coapPacket.toString(false, false, false, true) + "]");
+            LOGGER.info("[{}] CoAP sent [{}]", coapPacket.getRemoteAddress(), coapPacket.toString(false, false, false, true));
         }
     }
 
