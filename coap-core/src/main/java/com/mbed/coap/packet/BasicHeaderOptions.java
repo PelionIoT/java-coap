@@ -706,10 +706,6 @@ public class BasicHeaderOptions implements Serializable {
             availableInternal -= len;
             put(headerOptNum, headerOptData, code);
         }
-        //end of stream
-        if (availableInternal > 0) {
-            throw new CoapMessageFormatException("No payload marker found and unexpected data left after options");
-        }
         if (availableInternal < 0) {
             throw new CoapMessageFormatException("No payload marker found and options read more that were available");
         }
@@ -784,7 +780,7 @@ public class BasicHeaderOptions implements Serializable {
         if ((this.proxyUri == null) ? (other.proxyUri != null) : !this.proxyUri.equals(other.proxyUri)) {
             return false;
         }
-        if (this.uriPort != other.uriPort && (this.uriPort == null || !this.uriPort.equals(other.uriPort))) {
+        if ((this.uriPort == null) ? (other.uriPort != null) : !this.uriPort.equals(other.uriPort)) {
             return false;
         }
         if ((this.size1 == null) ? (other.size1 != null) : !this.size1.equals(other.size1)) {

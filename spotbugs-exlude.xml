@@ -42,4 +42,9 @@
         </Or>
     </Match>
 
+    <Match>
+        <Class name="com.mbed.coap.example.DeviceEmulator"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+
 </FindBugsFilter>

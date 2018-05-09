@@ -127,9 +127,9 @@ public class DeviceEmulator {
 
 
     static SSLContext sslContextFromKeystore(String resource, char[] secret) {
-        try {
+        try (FileInputStream f = new FileInputStream(resource)) {
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(resource), secret);
+            ks.load(f, secret);
 
             final KeyManagerFactory kmf;
             kmf = KeyManagerFactory.getInstance("SunX509");
