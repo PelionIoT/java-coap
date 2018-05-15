@@ -25,7 +25,7 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.ObservationHandler;
 import com.mbed.coap.utils.Callback;
-import java.util.Arrays;
+import com.mbed.coap.utils.Token;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -120,38 +120,6 @@ class ObservationHandlerImpl implements ObservationHandler {
     @Override
     public boolean hasObservation(byte[] token) {
         return observationMap.containsKey(new Token(token));
-    }
-
-    static class Token {
-
-        private final byte[] tokenVal;
-
-        public Token(byte[] tokenVal) {
-            this.tokenVal = tokenVal;
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 37 * hash + Arrays.hashCode(this.tokenVal);
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final Token other = (Token) obj;
-            if (!Arrays.equals(this.tokenVal, other.tokenVal)) {
-                return false;
-            }
-            return true;
-        }
-
     }
 
     private static class ObservationListenerContainer {
