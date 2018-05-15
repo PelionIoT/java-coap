@@ -32,6 +32,7 @@ import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
+import com.mbed.coap.utils.Token;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -244,7 +245,7 @@ public class CoapClientTest {
 
     @Test
     public void equalsAndHashTest() throws Exception {
-        EqualsVerifier.forClass(ObservationHandlerImpl.Token.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+        EqualsVerifier.forClass(Token.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
     }
 
 
