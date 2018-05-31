@@ -24,6 +24,7 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.RequestCallback;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -420,6 +421,25 @@ public class TransactionManagerTest {
     @Test(expected = NullPointerException.class)
     public void failWhenCallbackIsNull() throws Exception {
         new CoapTransaction(null, mock(CoapPacket.class), mock(CoapUdpMessaging.class), TransportContext.NULL, mock(Consumer.class));
+    }
+
+    @Test
+    public void should_close_all_transactions_on_stop() throws TooManyRequestsForEndpointException {
+        RequestCallback callback1 = mock(RequestCallback.class);
+        RequestCallback callback2 = mock(RequestCallback.class);
+
+        //given, two transactions
+        transMgr.addTransactionAndGetReadyToSend(new CoapTransaction(callback1, newCoapPacket(REMOTE_ADR).mid(11).con().get().uriPath("/test1").build(), mock(CoapUdpMessaging.class), TransportContext.NULL, mock(Consumer.class)));
+        transMgr.addTransactionAndGetReadyToSend(new CoapTransaction(callback2, newCoapPacket(REMOTE_ADR).mid(11).con().get().uriPath("/test2").build(), mock(CoapUdpMessaging.class), TransportContext.NULL, mock(Consumer.class)));
+        assertEquals(2, transMgr.getNumberOfTransactions());
+
+
+        //when
+        transMgr.close();
+
+        //then
+        verify(callback1).callException(isA(IOException.class));
+        verify(callback2).callException(isA(IOException.class));
     }
 
     private CoapTransaction createTransaction(InetSocketAddress remote, int mid, CoapTransaction.Priority priority) {

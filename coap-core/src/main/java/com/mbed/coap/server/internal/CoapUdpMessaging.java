@@ -139,6 +139,9 @@ public class CoapUdpMessaging extends CoapMessaging {
         if (isSelfCreatedExecutor) {
             scheduledExecutor.shutdown();
         }
+
+        transMgr.close();
+        delayedTransMagr.close();
     }
 
 

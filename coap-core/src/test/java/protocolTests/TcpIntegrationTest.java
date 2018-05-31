@@ -15,6 +15,7 @@
  */
 package protocolTests;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
@@ -75,8 +76,10 @@ public class TcpIntegrationTest {
     }
 
     @After
-    public void tearDown() throws Exception {
-        client.close();
+    public void tearDown() {
+        if (client != null) {
+            client.close();
+        }
         server.stop();
     }
 
@@ -129,6 +132,26 @@ public class TcpIntegrationTest {
         assertEquals(1300, resp.get().getPayload().length);
         //block was not used
         assertNull(resp.get().headers().getBlock2Res());
+    }
+
+    @Test
+    public void stop_server() throws Exception {
+        initServer();
+        initClient();
+        server.addRequestHandler("/slow", new ReadOnlyCoapResource(() -> {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                //ignore
+            }
+            return "";
+        }));
+
+        CompletableFuture<CoapPacket> resp = client.resource("/slow").get();
+        client.close();
+        client = null;
+
+        assertThatThrownBy(resp::get).hasCauseInstanceOf(IOException.class);
     }
 
 }

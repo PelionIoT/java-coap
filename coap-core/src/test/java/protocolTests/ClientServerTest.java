@@ -15,7 +15,9 @@
  */
 package protocolTests;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
+import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
@@ -54,6 +56,7 @@ public class ClientServerTest {
 
     private CoapServer server = null;
     private int SERVER_PORT;
+    private InetSocketAddress serverAddress;
 
     @Before
     public void setUp() throws IOException {
@@ -64,6 +67,7 @@ public class ClientServerTest {
         server.useCriticalOptionTest(false);
         server.start();
         SERVER_PORT = server.getLocalSocketAddress().getPort();
+        serverAddress = new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT);
     }
 
     @After
@@ -76,7 +80,7 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        CoapPacket request = new CoapPacket(serverAddress);
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
@@ -92,7 +96,7 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        CoapPacket request = new CoapPacket(serverAddress);
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
@@ -110,7 +114,7 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        CoapPacket request = new CoapPacket(serverAddress);
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
@@ -128,7 +132,7 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        CoapPacket request = new CoapPacket(serverAddress);
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
@@ -145,7 +149,7 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
+        CoapPacket request = new CoapPacket(serverAddress);
         request.setMethod(Method.GET);
         request.headers().setUriPath("/");
         request.setMessageId(1648);
@@ -250,7 +254,7 @@ public class ClientServerTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().transport(0).build();
         cnn.start();
 
-        CoapClient client = CoapClientBuilder.clientFor(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT), cnn);
+        CoapClient client = CoapClientBuilder.clientFor(serverAddress, cnn);
         assertEquals("Dziala", client.resource("/test/1").maxAge(2635593050L).get().join().getPayloadString());
         cnn.stop();
     }
@@ -373,6 +377,50 @@ public class ClientServerTest {
     public void testMakeRequestNullRequest() throws CoapException {
         server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null), new FutureCallbackAdapter<CoapPacket>());
     }
+
+
+    @Test
+    public void should_invoke_callback_exceptionally_when_server_stops() throws Exception {
+        server.addRequestHandler("/slow", new ReadOnlyCoapResource(() -> {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                //ignore
+            }
+            return "";
+        }));
+
+        CoapServer cnn = CoapServer.builder().transport(0).build();
+        cnn.start();
+
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
+        cnn.makeRequest(newCoapPacket(serverAddress).mid(11).con().get().uriPath("/slow").build(), callback);
+        cnn.stop();
+
+        assertThatThrownBy(callback::get).hasCauseInstanceOf(IOException.class);
+    }
+
+    @Test
+    public void should_invoke_callback_exceptionally_when_server_stops_and_non_request() throws Exception {
+        server.addRequestHandler("/slow", new ReadOnlyCoapResource(() -> {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                //ignore
+            }
+            return "";
+        }));
+
+        CoapServer cnn = CoapServer.builder().transport(0).build();
+        cnn.start();
+
+        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
+        cnn.makeRequest(newCoapPacket(serverAddress).mid(11).non().get().token(12).uriPath("/slow").build(), callback);
+        cnn.stop();
+
+        assertThatThrownBy(callback::get).hasCauseInstanceOf(IOException.class);
+    }
+
 
     private static class DroppingPacketsTransportWrapper extends InMemoryCoapTransport {
         private final byte probability; //0-100

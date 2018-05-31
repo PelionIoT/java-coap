@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -57,4 +58,10 @@ public class DelayedTransactionManager {
         return transTimeOut;
     }
 
+    public void close() {
+        for (CoapTransaction t : transactions.values()) {
+            t.callback.callException(new IOException("Server stopped"));
+        }
+        transactions.clear();
+    }
 }

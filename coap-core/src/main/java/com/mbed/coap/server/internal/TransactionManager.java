@@ -19,8 +19,10 @@ import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.internal.TransactionQueue.QueueUpdateResult;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -126,4 +128,16 @@ public class TransactionManager {
         return ret;
     }
 
+    public void close() {
+        Enumeration<InetSocketAddress> keys = transactionQueues.keys();
+
+        while (keys.hasMoreElements()) {
+            InetSocketAddress key = keys.nextElement();
+            TransactionQueue transQueue = transactionQueues.remove(key);
+            if (transQueue != null) {
+                transQueue.stream().forEach(t -> t.getCallback().callException(new IOException("Server stopped")));
+            }
+        }
+
+    }
 }
