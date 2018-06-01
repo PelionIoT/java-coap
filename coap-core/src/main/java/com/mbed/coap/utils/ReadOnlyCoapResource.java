@@ -15,7 +15,6 @@
  */
 package com.mbed.coap.utils;
 
-import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapExchange;
 import java.util.function.Supplier;
@@ -64,7 +63,7 @@ public class ReadOnlyCoapResource extends CoapResource {
     }
 
     @Override
-    public void get(CoapExchange ex) throws CoapCodeException {
+    public void get(CoapExchange ex) {
         ex.setResponseBody(payloadSupplier.get());
         ex.setResponseCode(Code.C205_CONTENT);
         if (contentType != null) {

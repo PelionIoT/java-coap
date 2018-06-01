@@ -17,4 +17,4 @@
 
 
 ARGS=$@
-mvn compile exec:java -Dexec.args="$ARGS"
+mvn -q compile exec:java -Dexec.args="$ARGS"

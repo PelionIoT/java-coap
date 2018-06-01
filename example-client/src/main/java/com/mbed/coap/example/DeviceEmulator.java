@@ -18,6 +18,7 @@ package com.mbed.coap.example;
 import com.mbed.coap.client.RegistrationManager;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.observe.SimpleObservableResource;
+import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.CoapTransport;
@@ -54,11 +55,21 @@ public class DeviceEmulator {
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
-            System.out.println("Usage: {registration-uri}");
+            System.out.println("Usage: ");
+            System.out.println("  ./run.sh [-k KEYSTORE_FILE] <registration-url> \n");
+            System.out.println("  example:");
+            System.out.println("  ./run.sh -k device01.jks 'coaps://localhost:5684/rd?ep=device01&aid=d'");
             return;
         }
-        String uri = args[0];
-        String keystoreFile = args.length > 1 ? args[1] : null;
+
+        //parse arguments
+        String keystoreFile = null;
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].equals("-k")) {
+                keystoreFile = args[++i];
+            }
+        }
+        String uri = args[args.length - 1];
 
         final DeviceEmulator deviceEmulator = new DeviceEmulator(uri, keystoreFile);
 
@@ -82,6 +93,7 @@ public class DeviceEmulator {
         emulatorServer.addRequestHandler("/3/0/1", new ReadOnlyCoapResource("ARM"));
         emulatorServer.addRequestHandler("/3/0/2", new ReadOnlyCoapResource("Emulator"));
         emulatorServer.addRequestHandler("/3/0/3", new ReadOnlyCoapResource("0.0.1"));
+        emulatorServer.addRequestHandler("/delayed-10s", new DelayedReadOnlyCoapResource("OK", 10));
 
         //observable resource
         SimpleObservableResource timeResource = new SimpleObservableResource("", emulatorServer);
@@ -147,15 +159,31 @@ public class DeviceEmulator {
                 String certCN = ((X509Certificate) ks.getCertificate(alias)).getSubjectDN().toString();
 
                 if (ks.isKeyEntry(alias)) {
-                    LOGGER.info("Using certificate CN: " + certCN);
+                    LOGGER.info("Using certificate: " + certCN);
                 } else {
-                    LOGGER.info("Using trusted certificate CN: " + certCN);
+                    LOGGER.info("Using trusted certificate: " + certCN);
                 }
             }
 
             return sslContext;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private class DelayedReadOnlyCoapResource extends ReadOnlyCoapResource {
+
+        private final int delay;
+
+        public DelayedReadOnlyCoapResource(String resp, int delay) {
+            super(resp, null, 0);
+            this.delay = delay;
+        }
+
+        @Override
+        public void get(CoapExchange ex) {
+            ex.sendDelayedAck();
+            scheduledExecutor.schedule(() -> super.get(ex), delay, TimeUnit.SECONDS);
         }
     }
 }

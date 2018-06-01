@@ -6,7 +6,7 @@ This is an example coap client application, that can be use with any LwM2M Serve
 Usage
 -----
 
-    ./run.sh <registration-url> [<keystore-file>]
+    ./run.sh [-k KEYSTORE_FILE] <registration-url>
 
 *For example:*
         
