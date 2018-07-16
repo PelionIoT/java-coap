@@ -19,10 +19,10 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.CoapReceiverForTcp;
 import com.mbed.coap.transport.TransportContext;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,57 +39,70 @@ public class SocketClientTransport extends BlockingCoapTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SSLSocketClientTransport.class);
 
     protected final InetSocketAddress destination;
-    private OutputStream outputStream;
-    private InputStream inputStream;
+    protected OutputStream outputStream;
+    protected InputStream inputStream;
     protected Socket socket;
     private Thread readerThread;
     protected final SocketFactory socketFactory;
     private final CoapSerializer serializer;
+    private final boolean autoReconnect;
 
-    public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, CoapSerializer serializer) {
+    public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect) {
         this.destination = destination;
         this.socketFactory = socketFactory;
         this.serializer = serializer;
+        this.autoReconnect = autoReconnect;
     }
 
     @Override
     public void start(CoapReceiver coapReceiver) throws IOException {
-        initSocket();
+        connect(coapReceiver);
+
+        readerThread = new Thread(() -> loopReading(coapReceiver), "tls-client-read");
+        readerThread.start();
+    }
+
+    protected void connect(CoapReceiver coapReceiver) throws IOException {
+        socket = socketFactory.createSocket(destination.getAddress(), destination.getPort());
 
         synchronized (this) {
             outputStream = new BufferedOutputStream(socket.getOutputStream());
         }
         inputStream = new BufferedInputStream(socket.getInputStream(), 1024);
 
-        readerThread = new Thread(() -> loopReading(CoapReceiverForTcp.from(coapReceiver)), "tls-client-read");
-        readerThread.start();
+        coapReceiver.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());
     }
 
-    protected void initSocket() throws IOException {
-        socket = socketFactory.createSocket(destination.getAddress(), destination.getPort());
-    }
+    private void loopReading(CoapReceiver coapReceiver) {
+        while (autoReconnect || !socket.isClosed()) {
+            try {
+                if (socket.isClosed()) {
+                    Thread.sleep(100);
+                    LOGGER.debug("reconnecting to " + destination);
+                    connect(coapReceiver);
+                }
 
-    private void loopReading(CoapReceiverForTcp coapReceiver) {
-        try {
-            coapReceiver.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());
-            while (!socket.isClosed()) {
-                try {
-                    final CoapPacket coapPacket = serializer.deserialize(inputStream, ((InetSocketAddress) socket.getRemoteSocketAddress()));
-                    coapReceiver.handle(coapPacket, TransportContext.NULL);
-                } catch (CoapException e) {
-                    if (e.getCause() != null && e.getCause() instanceof IOException) {
-                        throw ((IOException) e.getCause());
+                while (!socket.isClosed()) {
+                    try {
+                        final CoapPacket coapPacket = serializer.deserialize(inputStream, ((InetSocketAddress) socket.getRemoteSocketAddress()));
+                        coapReceiver.handle(coapPacket, TransportContext.NULL);
+                    } catch (CoapException e) {
+                        if (e.getCause() != null && e.getCause() instanceof IOException) {
+                            throw ((IOException) e.getCause());
+                        }
+                        LOGGER.warn("Closing socket connection, due to parsing error: " + e.getMessage());
+                        socket.close();
+                    } catch (EOFException ex) {
+                        socket.close();
                     }
-                    LOGGER.warn("Closing socket connection, due to parsing error: " + e.getMessage());
-                    socket.close();
+                }
+            } catch (Exception ex) {
+                if (!(ex.getMessage() != null && ex.getMessage().startsWith("Socket closed"))) {
+                    LOGGER.error(ex.toString());
                 }
             }
-        } catch (Exception ex) {
-            if (!(ex.getMessage() != null && ex.getMessage().startsWith("Socket closed"))) {
-                LOGGER.error(ex.getMessage(), ex);
-            }
+            coapReceiver.onDisconnected(destination);
         }
-        coapReceiver.onDisconnected(destination);
     }
 
     @Override

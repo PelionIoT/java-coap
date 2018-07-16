@@ -39,8 +39,10 @@ import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
 import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -277,6 +279,18 @@ public class CoapServerTest {
         assertThatThrownBy(() ->
                 server.sendNotification(newCoapPacket(LOCAL_5683).token(321).obs(2).ack(Code.C400_BAD_REQUEST).build(), mock(Callback.class), TransportContext.NULL)
         ).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void should_pass_disconnectionHandler() {
+        Consumer<InetSocketAddress> disconnectConsumer = inetSocketAddress -> {
+        };
+
+        //when
+        server.setConnectHandler(disconnectConsumer);
+
+        //then
+        verify(msg).setConnectHandler(eq(disconnectConsumer));
     }
 
     //---------------

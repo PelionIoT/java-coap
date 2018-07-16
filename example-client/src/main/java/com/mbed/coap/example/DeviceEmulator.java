@@ -118,18 +118,18 @@ public class DeviceEmulator {
             case "coaps":
                 sslContext = sslContextFromKeystore(keystoreFile, "secret".toCharArray());
                 return CoapServerBuilder.newBuilder().transport(
-                        new SSLSocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), sslContext.getSocketFactory(), CoapSerializer.UDP)
+                        new SSLSocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), sslContext.getSocketFactory(), CoapSerializer.UDP, true)
                 ).scheduledExecutor(scheduledExecutor);
 
             case "coaps+tcp":
                 sslContext = sslContextFromKeystore(keystoreFile, "secret".toCharArray());
                 return CoapServerBuilder.newBuilderForTcp().transport(
-                        new SSLSocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), sslContext.getSocketFactory(), CoapSerializer.TCP)
+                        new SSLSocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), sslContext.getSocketFactory(), CoapSerializer.TCP, true)
                 );
 
             case "coap+tcp":
                 return CoapServerBuilder.newBuilderForTcp().transport(
-                        new SocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), SocketFactory.getDefault(), CoapSerializer.TCP)
+                        new SocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), SocketFactory.getDefault(), CoapSerializer.TCP, true)
                 );
 
             default:

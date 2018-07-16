@@ -34,8 +34,10 @@ import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -214,13 +216,24 @@ public class CoapTcpMessagingTest {
     }
 
     @Test
-    public void shouldThrowExceptionWhenTooLargePayload() throws CoapException, IOException {
+    public void shouldThrowExceptionWhenTooLargePayload() {
         CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_5683).get().payload(new byte[1200]));
 
         assertTrue(resp.isCompletedExceptionally());
         assertThatThrownBy(resp::get).hasCauseExactlyInstanceOf(CoapException.class);
     }
 
+    @Test
+    public void should_call_handler_when_connected() {
+        Consumer<InetSocketAddress> handler = mock(Consumer.class);
+        tcpMessaging.setConnectHandler(handler);
+
+        tcpMessaging.onConnected(LOCAL_1_5683);
+        verify(handler).accept(eq(LOCAL_1_5683));
+
+        tcpMessaging.onConnected(LOCAL_5683);
+        verify(handler).accept(eq(LOCAL_5683));
+    }
 
     //=======================================================================
 

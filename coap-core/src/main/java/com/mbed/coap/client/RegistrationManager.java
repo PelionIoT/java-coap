@@ -93,6 +93,11 @@ public class RegistrationManager {
         this.registrationLinks = () -> LinkFormatBuilder.toString(server.getResourceLinks());
         this.minRetryDelay = minRetryDelay;
         this.maxRetryDelay = maxRetryDelay;
+
+        server.setConnectHandler(address -> {
+            LOGGER.info("Reconnected, updating registration...");
+            updateRegistration();
+        });
     }
 
     private String epNameFrom(URI registrationUri) {
@@ -122,7 +127,7 @@ public class RegistrationManager {
     }
 
     private void scheduleUpdate(long lifetime) {
-        scheduledExecutor.schedule(this::updateRegistration, lifetime > 60 ? lifetime - 30 : lifetime, TimeUnit.SECONDS);
+        scheduledExecutor.schedule(this::updateRegistration, lifetime > 60 ? lifetime - 30 : lifetime - 5, TimeUnit.SECONDS);
     }
 
     private void updateRegistration() {

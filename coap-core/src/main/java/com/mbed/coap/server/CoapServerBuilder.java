@@ -90,7 +90,7 @@ public abstract class CoapServerBuilder {
 
     protected abstract CoapTcpCSMStorage capabilities();
 
-    protected CoapTransport checkAndGetCoapTransport() {
+    protected CoapTransport getCoapTransport() {
         if (coapTransport == null) {
             throw new IllegalArgumentException("Transport is missing");
         }
@@ -155,7 +155,7 @@ public abstract class CoapServerBuilder {
                 throw new IllegalArgumentException("BlockSize with BERT support is defined only for CoAP overt TCP/TLS 2017 standard draft");
             }
 
-            CoapUdpMessaging server = new CoapUdpMessaging(checkAndGetCoapTransport());
+            CoapUdpMessaging server = new CoapUdpMessaging(getCoapTransport());
 
             server.setSpecialCoapTransactionPriority(blockTransferPriority);
             server.setTransmissionTimeout(transmissionTimeout);
@@ -260,7 +260,7 @@ public abstract class CoapServerBuilder {
 
         @Override
         protected CoapMessaging buildCoapMessaging() {
-            return new CoapTcpMessaging(checkAndGetCoapTransport(), csmStorage, blockSize != null, maxMessageSize);
+            return new CoapTcpMessaging(getCoapTransport(), csmStorage, blockSize != null, maxMessageSize);
         }
 
         @Override

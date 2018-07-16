@@ -125,7 +125,7 @@ public abstract class CoapClientBuilder {
             if (coapServerBuilder instanceof CoapServerBuilder.CoapServerBuilderForUdp) {
                 ((CoapServerBuilder.CoapServerBuilderForUdp) coapServerBuilder).transport(0);
             } else if (coapServerBuilder instanceof CoapServerBuilder.CoapServerBuilderForTcp) {
-                ((CoapServerBuilder.CoapServerBuilderForTcp) coapServerBuilder).transport(new SocketClientTransport(destination, SocketFactory.getDefault(), CoapSerializer.TCP));
+                ((CoapServerBuilder.CoapServerBuilderForTcp) coapServerBuilder).transport(new SocketClientTransport(destination, SocketFactory.getDefault(), CoapSerializer.TCP, false));
             }
         }
         return new CoapClient(destination, coapServerBuilder.build().start());

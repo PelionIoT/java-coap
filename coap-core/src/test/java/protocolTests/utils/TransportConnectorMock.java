@@ -73,6 +73,10 @@ public class TransportConnectorMock extends BlockingCoapTransport {
 
     }
 
+    public void mockOnConnected() {
+        transReceiver.onConnected(InetSocketAddress.createUnresolved("localhost", 5683));
+    }
+
     public CoapPacket getLastOutgoingMessage() {
         return lastOutgoingMessage;
     }

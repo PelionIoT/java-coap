@@ -19,7 +19,6 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.CoapReceiverForTcp;
 import com.mbed.coap.transport.TransportContext;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -43,6 +42,7 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
     final ServerSocket serverSocket;
     private OutputStream outputStream;
     private final CoapSerializer serializer;
+    private Socket socket;
 
     SingleConnectionSocketServerTransport(ServerSocket serverSocket, CoapSerializer serializer) {
         this.serverSocket = serverSocket;
@@ -54,10 +54,10 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
     }
 
 
-    private void serverLoop(CoapReceiverForTcp coapReceiver) {
+    private void serverLoop(CoapReceiver coapReceiver) {
         try {
             LOGGER.debug("SSLSocketServer is listening on " + serverSocket.getLocalSocketAddress());
-            Socket socket = serverSocket.accept();
+            socket = serverSocket.accept();
 
             //connected with client
             synchronized (this) {
@@ -98,14 +98,17 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
     }
 
     @Override
-    public void start(CoapReceiver coapReceiver) throws IOException {
-        serverThread = new Thread(() -> serverLoop(CoapReceiverForTcp.from(coapReceiver)), "sslsocket-server");
+    public void start(CoapReceiver coapReceiver) {
+        serverThread = new Thread(() -> serverLoop(coapReceiver), "sslsocket-server");
         serverThread.start();
     }
 
     @Override
     public void stop() {
         try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
             serverSocket.close();
         } catch (IOException e) {
             throw new RuntimeException(e);

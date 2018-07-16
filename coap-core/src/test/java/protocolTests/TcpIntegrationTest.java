@@ -52,7 +52,7 @@ public class TcpIntegrationTest {
 
     private void initClient(Consumer<CoapServerBuilder.CoapServerBuilderForTcp> b) throws IOException {
         CoapServerBuilder.CoapServerBuilderForTcp builder = CoapServerBuilder.newBuilderForTcp()
-                .transport(new SocketClientTransport(serverAddress, SocketFactory.getDefault(), CoapSerializer.TCP))
+                .transport(new SocketClientTransport(serverAddress, SocketFactory.getDefault(), CoapSerializer.TCP, true))
                 .blockSize(BlockSize.S_1024_BERT)
                 .maxMessageSize(1_200);
 
@@ -64,10 +64,10 @@ public class TcpIntegrationTest {
         );
     }
 
-    private void initServer() throws IOException {
+    private void initServer(int port) throws IOException {
         server = CoapServerBuilder
                 .newBuilderForTcp()
-                .transport(new SingleConnectionSocketServerTransport(0, CoapSerializer.TCP))
+                .transport(new SingleConnectionSocketServerTransport(port, CoapSerializer.TCP))
                 .blockSize(BlockSize.S_1024_BERT)
                 .maxMessageSize(10_000)
                 .start();
@@ -85,7 +85,7 @@ public class TcpIntegrationTest {
 
     @Test
     public void ping() throws Exception {
-        initServer();
+        initServer(0);
         initClient();
 
         assertEquals(client.ping().get().getCode(), Code.C703_PONG);
@@ -93,7 +93,7 @@ public class TcpIntegrationTest {
 
     @Test
     public void request() throws Exception {
-        initServer();
+        initServer(0);
         initClient();
         server.addRequestHandler("/test", new ReadOnlyCoapResource("1234567890"));
 
@@ -103,8 +103,27 @@ public class TcpIntegrationTest {
     }
 
     @Test
+    public void reconnect() throws Exception {
+        initServer(0);
+        initClient();
+        assertEquals(client.ping().get().getCode(), Code.C703_PONG);
+
+        server.stop();
+
+        initServer(serverAddress.getPort());
+
+        CompletableFuture<CoapPacket> ping = client.ping();
+        while (ping.isCompletedExceptionally()) {
+            Thread.sleep(100);
+            ping = client.ping();
+        }
+
+        assertEquals(ping.get().getCode(), Code.C703_PONG);
+    }
+
+    @Test
     public void request_withLargePayloadInResponse_blocks() throws Exception {
-        initServer();
+        initServer(0);
         initClient();
         server.addRequestHandler("/test", new ReadOnlyCoapResource("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_"));
 
@@ -119,7 +138,7 @@ public class TcpIntegrationTest {
 
     @Test
     public void request_withLargePayloadInResponse_clientDoesNotSupportBlocks() throws Exception {
-        initServer();
+        initServer(0);
         initClient(builder -> builder
                 .blockSize(null)
                 .maxMessageSize(1300)
@@ -136,7 +155,7 @@ public class TcpIntegrationTest {
 
     @Test
     public void stop_server() throws Exception {
-        initServer();
+        initServer(0);
         initClient();
         server.addRequestHandler("/slow", new ReadOnlyCoapResource(() -> {
             try {

@@ -29,7 +29,6 @@ import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.exception.TooManyRequestsForEndpointException;
-import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
@@ -60,7 +59,6 @@ public class CoapUdpMessagingTest {
     private final MessageIdSupplier midSupplier = () -> mid++;
     private CoapUdpMessaging udpMessaging;
     private ScheduledExecutorService scheduledExecutor = mock(ScheduledExecutorService.class);
-    private BlockSize blockSize = null;
 
 
     @Before

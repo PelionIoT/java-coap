@@ -15,6 +15,9 @@
  */
 package com.mbed.coap.transport.javassl;
 
+import com.mbed.coap.transport.CoapReceiver;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -26,12 +29,12 @@ import org.slf4j.LoggerFactory;
 public class SSLSocketClientTransport extends SocketClientTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SSLSocketClientTransport.class);
 
-    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory, CoapSerializer serializer) {
-        super(destination, socketFactory, serializer);
+    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect) {
+        super(destination, socketFactory, serializer, autoReconnect);
     }
 
     @Override
-    protected void initSocket() throws IOException {
+    protected void connect(CoapReceiver coapReceiver) throws IOException {
         SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(destination.getAddress(), destination.getPort());
 
         sslSocket.addHandshakeCompletedListener(handshakeCompletedEvent -> {
@@ -40,11 +43,17 @@ public class SSLSocketClientTransport extends SocketClientTransport {
                     } catch (SSLPeerUnverifiedException e) {
                         LOGGER.warn(e.getMessage(), e);
                     }
+            coapReceiver.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());
                 }
         );
         sslSocket.startHandshake();
 
         this.socket = sslSocket;
+
+        synchronized (this) {
+            outputStream = new BufferedOutputStream(socket.getOutputStream());
+        }
+        inputStream = new BufferedInputStream(socket.getInputStream(), 1024);
     }
 
     public SSLSocket getSslSocket() {

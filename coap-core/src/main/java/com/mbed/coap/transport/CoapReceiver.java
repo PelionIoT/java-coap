@@ -16,8 +16,14 @@
 package com.mbed.coap.transport;
 
 import com.mbed.coap.packet.CoapPacket;
+import java.net.InetSocketAddress;
 
 public interface CoapReceiver {
 
     void handle(CoapPacket packet, TransportContext transportContext);
+
+    void onDisconnected(InetSocketAddress remoteAddress);
+
+    void onConnected(InetSocketAddress remoteAddress);
+
 }

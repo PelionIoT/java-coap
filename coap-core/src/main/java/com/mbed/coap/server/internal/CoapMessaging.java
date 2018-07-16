@@ -25,6 +25,7 @@ import com.mbed.coap.utils.Callback;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +39,7 @@ public abstract class CoapMessaging implements CoapReceiver {
     final CoapTransport coapTransporter;
 
     private CoapRequestHandler coapRequestHandler;
+    private Consumer<InetSocketAddress> connectedHandler;
 
     private boolean isRunning;
 
@@ -162,6 +164,23 @@ public abstract class CoapMessaging implements CoapReceiver {
         } else {
             handleNotProcessedMessageWeAreNotRespondingTo(packet);
         }
+    }
+
+    public void setConnectHandler(Consumer<InetSocketAddress> connectHandler) {
+        this.connectedHandler = connectHandler;
+    }
+
+    @Override
+    public void onDisconnected(InetSocketAddress remoteAddress) {
+        LOGGER.debug("[{}] Disconnected", remoteAddress);
+    }
+
+    @Override
+    public void onConnected(InetSocketAddress remoteAddress) {
+        if (connectedHandler != null) {
+            connectedHandler.accept(remoteAddress);
+        }
+        LOGGER.debug("[{}] Connected", remoteAddress);
     }
 
     private static void handleNotProcessedMessageWeAreNotRespondingTo(CoapPacket packet) {

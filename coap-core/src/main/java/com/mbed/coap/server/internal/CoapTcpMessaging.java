@@ -22,7 +22,6 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.SignalingOptions;
 import com.mbed.coap.server.CoapTcpCSMStorage;
-import com.mbed.coap.transport.CoapReceiverForTcp;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
@@ -38,7 +37,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Implementation of Coap server for reliable transport (draft-ietf-core-coap-tcp-tls-09)
  */
-public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTcp {
+public class CoapTcpMessaging extends CoapMessaging {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapTcpMessaging.class);
 
     private final ConcurrentMap<DelayedTransactionId, RequestCallback> transactions = new ConcurrentHashMap<>();
@@ -152,6 +151,7 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
         return false;
     }
 
+
     @Override
     public void onConnected(InetSocketAddress remoteAddress) {
         CoapPacket packet = new CoapPacket(remoteAddress);
@@ -162,6 +162,8 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
         );
         LOGGER.info("[" + remoteAddress + "] CoAP sent [" + packet.toString(false, false, false, true) + "]");
         coapTransporter.sendPacket(packet, remoteAddress, TransportContext.NULL);
+
+        super.onConnected(remoteAddress);
     }
 
     @Override
@@ -175,7 +177,7 @@ public class CoapTcpMessaging extends CoapMessaging implements CoapReceiverForTc
             }
         }
 
-        LOGGER.info("[{}] Disconnected", remoteAddress);
+        super.onDisconnected(remoteAddress);
     }
 
     private void removeTransactionExceptionally(DelayedTransactionId transId, Exception error) {
