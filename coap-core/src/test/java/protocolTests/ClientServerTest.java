@@ -46,6 +46,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -179,6 +180,7 @@ public class ClientServerTest {
     }
 
     @Test
+    @Ignore
     public void simpleIPv6Request() throws CoapException, IOException {
         InetAddress adr = InetAddress.getByName("::1");
 

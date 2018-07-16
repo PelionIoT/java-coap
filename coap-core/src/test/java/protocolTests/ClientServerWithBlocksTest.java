@@ -39,6 +39,7 @@ import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
@@ -192,7 +193,7 @@ public class ClientServerWithBlocksTest {
         server.addRequestHandler("/small", new ReadOnlyCoapResource(BODY));
 
         CoapServer cnn = CoapServerBuilder.newBuilder().blockSize(BlockSize.S_256).transport(InMemoryCoapTransport.create()).build().start();
-        CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, "/small", new InetSocketAddress("localhost", SERVER_PORT));
+        CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, "/small", new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
         request.headers().setBlock2Res(new BlockOption(0, BlockSize.S_256, true));
         request.headers().setSize2Res(0);
 
@@ -226,7 +227,7 @@ public class ClientServerWithBlocksTest {
         // no-block transfers client, we need "pure" server and make block packets in tests
         CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create()).build().start();
 
-        CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress("127.0.0.1", SERVER_PORT));
+        CoapPacket request = new CoapPacket(Method.PUT, MessageType.Confirmable, "/chang-res", new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
         request.setPayload(body);
         request.headers().setBlock1Req(new BlockOption(1, BlockSize.S_128, true));
         CoapPacket resp = cnn.makeRequest(request).join();

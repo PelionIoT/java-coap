@@ -19,7 +19,9 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.utils.IpPortAddress;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +38,15 @@ import org.slf4j.LoggerFactory;
 public class InMemoryCoapTransport extends BlockingCoapTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryCoapTransport.class.getName());
-    public final static String LOCALHOST = "localhost";
+    private final static InetAddress LOCALHOST;
+
+    static {
+        try {
+            LOCALHOST = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private CoapReceiver coapReceiver;
     private final static BindingManager BINDING_MANAGER = new BindingManager();
