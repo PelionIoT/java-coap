@@ -30,8 +30,6 @@ public class CoapTransactionIdTest {
 
         EqualsVerifier.forClass(DelayedTransactionId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
 
-        EqualsVerifier.forClass(MulticastTransactionId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
-
         EqualsVerifier.forClass(UriMatcher.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
 
         EqualsVerifier.forClass(DuplicationDetector.CoapRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();

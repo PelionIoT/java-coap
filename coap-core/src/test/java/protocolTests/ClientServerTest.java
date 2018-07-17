@@ -32,7 +32,6 @@ import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.transport.udp.MulticastSocketTransport;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
@@ -257,29 +256,6 @@ public class ClientServerTest {
         CoapClient client = CoapClientBuilder.clientFor(serverAddress, cnn);
         assertEquals("Dziala", client.resource("/test/1").maxAge(2635593050L).get().join().getPayloadString());
         cnn.stop();
-    }
-
-    @Test
-    public void reusePortSocketImpl() throws IOException, CoapException {
-        MulticastSocketTransport udpConnector = new MulticastSocketTransport(new InetSocketAddress(0), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES); //new UDPMulticastConnector(61601, UDPMulticastConnector.MCAST_LINKLOCAL_ALLNODES);
-        CoapServer srv = CoapServer.builder().transport(udpConnector).build();
-        srv.addRequestHandler("/test", new ReadOnlyCoapResource("TTEESSTT"));
-        srv.start();
-        final int port = srv.getLocalSocketAddress().getPort();
-
-        CoapClient cnn = CoapClientBuilder.newBuilder(port).build();
-        assertEquals("TTEESSTT", cnn.resource("/test").sync().get().getPayloadString());
-
-        srv.stop();
-
-        MulticastSocketTransport udpConnector2 = new MulticastSocketTransport(new InetSocketAddress(port), MulticastSocketTransport.MCAST_LINKLOCAL_ALLNODES);
-        CoapServer srv2 = CoapServerBuilder.newBuilder().transport(udpConnector2).build();
-        srv2.addRequestHandler("/test", new ReadOnlyCoapResource("TTEESSTT2"));
-        srv2.start();
-
-        assertEquals("TTEESSTT2", cnn.resource("/test").sync().get().getPayloadString());
-
-        srv2.stop();
     }
 
     @Test

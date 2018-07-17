@@ -54,11 +54,7 @@ public class CoapTransaction {
         this.callback = callback;
         this.coapRequest = coapRequest;
         this.transactionPriority = transactionPriority;
-        if (coapRequest.getRemoteAddress().getAddress().isMulticastAddress()) {
-            this.transId = new MulticastTransactionId(coapRequest);
-        } else {
-            this.transId = new CoapTransactionId(coapRequest);
-        }
+        this.transId = new CoapTransactionId(coapRequest);
         this.retrAttempts = 0;
         this.transContext = transContext;
     }
