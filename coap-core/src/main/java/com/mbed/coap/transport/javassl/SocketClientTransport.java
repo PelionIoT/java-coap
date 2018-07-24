@@ -68,7 +68,7 @@ public class SocketClientTransport extends BlockingCoapTransport {
         synchronized (this) {
             outputStream = new BufferedOutputStream(socket.getOutputStream());
         }
-        inputStream = new BufferedInputStream(socket.getInputStream(), 1024);
+        inputStream = new BufferedInputStream(socket.getInputStream(), 2048);
 
         coapReceiver.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());
     }
