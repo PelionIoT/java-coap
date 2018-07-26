@@ -54,7 +54,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
-            <version>2.7.22</version>
         </dependency>
 
         <dependency>

@@ -34,11 +34,12 @@ Requirements
 
 ### Runtime:
 
-* JRE v1.8
+* JRE 8
+* JRE 10
 
 ### Development:
 
-* JDK v1.8
+* JDK 8
 * maven 3.x
 
 
