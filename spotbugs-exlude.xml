@@ -43,7 +43,7 @@
     </Match>
 
     <Match>
-        <Class name="com.mbed.coap.example.DeviceEmulator"/>
+        <Class name="com.mbed.coap.example.CliUtils"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
 

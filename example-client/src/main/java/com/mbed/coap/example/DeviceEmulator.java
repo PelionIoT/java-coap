@@ -20,27 +20,13 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.observe.SimpleObservableResource;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.transport.javassl.CoapSerializer;
-import com.mbed.coap.transport.javassl.SSLSocketClientTransport;
-import com.mbed.coap.transport.javassl.SocketClientTransport;
-import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.URI;
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import javax.net.SocketFactory;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +68,7 @@ public class DeviceEmulator {
     public DeviceEmulator(String registrationUri, String keystoreFile) throws IOException {
         URI uri = URI.create(registrationUri);
 
-        emulatorServer = builderFrom(keystoreFile, uri).build().start();
+        emulatorServer = CliUtils.builderFrom(keystoreFile, uri).build().start();
 
 
         //read only resources
@@ -108,34 +94,7 @@ public class DeviceEmulator {
         registrationManager.register();
     }
 
-    private CoapServerBuilder builderFrom(String keystoreFile, URI uri) {
-        SSLContext sslContext;
 
-        switch (uri.getScheme()) {
-            case "coap":
-                return CoapServerBuilder.newBuilder().transport(new DatagramSocketTransport(0));
-
-            case "coaps":
-                sslContext = sslContextFromKeystore(keystoreFile, "secret".toCharArray());
-                return CoapServerBuilder.newBuilder().transport(
-                        new SSLSocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), sslContext.getSocketFactory(), CoapSerializer.UDP, true)
-                ).scheduledExecutor(scheduledExecutor);
-
-            case "coaps+tcp":
-                sslContext = sslContextFromKeystore(keystoreFile, "secret".toCharArray());
-                return CoapServerBuilder.newBuilderForTcp().transport(
-                        new SSLSocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), sslContext.getSocketFactory(), CoapSerializer.TCP, true)
-                );
-
-            case "coap+tcp":
-                return CoapServerBuilder.newBuilderForTcp().transport(
-                        new SocketClientTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), SocketFactory.getDefault(), CoapSerializer.TCP, true)
-                );
-
-            default:
-                throw new IllegalArgumentException("Protocol not supported: " + uri.getScheme());
-        }
-    }
 
     RegistrationManager getRegistrationManager() {
         return registrationManager;
@@ -147,38 +106,7 @@ public class DeviceEmulator {
     }
 
 
-    static SSLContext sslContextFromKeystore(String resource, char[] secret) {
-        try (FileInputStream f = new FileInputStream(resource)) {
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(f, secret);
 
-            final KeyManagerFactory kmf;
-            kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, secret);
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-            tmf.init(ks);
-
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-            //print all certificates subject
-            Enumeration<String> aliases = ks.aliases();
-            while (aliases.hasMoreElements()) {
-                String alias = aliases.nextElement();
-                String certCN = ((X509Certificate) ks.getCertificate(alias)).getSubjectDN().toString();
-
-                if (ks.isKeyEntry(alias)) {
-                    LOGGER.info("Using certificate: " + certCN);
-                } else {
-                    LOGGER.info("Using trusted certificate: " + certCN);
-                }
-            }
-
-            return sslContext;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     private class DelayedReadOnlyCoapResource extends ReadOnlyCoapResource {
 
