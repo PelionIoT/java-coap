@@ -187,6 +187,11 @@ public class CoapRequestTarget {
         return this;
     }
 
+    public CoapRequestTarget proxy(String proxyUri) {
+        requestPacket.headers().setProxyUri(proxyUri);
+        return this;
+    }
+
     public CompletableFuture<CoapPacket> get() {
         updatePacketWithBlock2();
         return request();

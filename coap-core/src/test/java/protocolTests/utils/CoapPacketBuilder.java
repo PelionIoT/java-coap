@@ -165,6 +165,11 @@ public class CoapPacketBuilder {
         return this;
     }
 
+    public CoapPacketBuilder proxy(String proxyUri) {
+        coapPacket.headers().setProxyUri(proxyUri);
+        return this;
+    }
+
     public CoapPacketBuilder code(Code code) {
         coapPacket.setCode(code);
         return this;

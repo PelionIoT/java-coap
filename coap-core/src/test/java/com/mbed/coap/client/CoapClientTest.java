@@ -244,6 +244,15 @@ public class CoapClientTest {
     }
 
     @Test
+    public void requestWithProxyUri() throws Exception {
+        CompletableFuture<CoapPacket> resp = client.resource("/test").proxy("/external").get();
+        assertSent(newCoapPacket(LOCAL_5683).mid(100).uriPath("/test").proxy("/external").get());
+
+        cliReceive(newCoapPacket(LOCAL_5683).mid(100).payload("EXT-ABC").ack(Code.C205_CONTENT));
+        assertEquals("EXT-ABC", resp.get().getPayloadString());
+    }
+
+    @Test
     public void equalsAndHashTest() throws Exception {
         EqualsVerifier.forClass(Token.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
     }
