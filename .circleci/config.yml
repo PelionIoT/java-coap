@@ -11,18 +11,17 @@ jobs:
 
     # Restore the dependency cache
     - restore_cache:
-        key: mbed-java-coap-{{ checksum "pom.xml" }}
+        key: mbed-java-coap
 
-    - run: mvn dependency:go-offline install -DskipTests
+    # Build and test
+    - run: mvn install -P ci
 
     # Save dependency cache
     - save_cache:
-        key: mbed-java-coap-{{ checksum "pom.xml" }}
+        key: mbed-java-coap
         paths:
         - ~/.m2
 
-    # Test
-    - run: mvn install -P ci
 
     # publish coverage
     - run: bash <(curl -s https://codecov.io/bash)
