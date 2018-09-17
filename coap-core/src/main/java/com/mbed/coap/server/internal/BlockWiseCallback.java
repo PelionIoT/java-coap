@@ -180,7 +180,7 @@ class BlockWiseCallback implements RequestCallback {
         BlockOption responseBlock = blResponse.headers().getBlock2Res();
         if (requestBlock != null && requestBlock.getNr() != responseBlock.getNr()) {
             String msg = "Requested and received block number mismatch: req=" + requestBlock + ", resp=" + responseBlock + ", stopping transaction";
-            LOGGER.warn(msg + " [req: " + request.toString() + ", resp: " + blResponse.toString() + "]");
+            LOGGER.warn(msg + " [req: " + request.toString() + ", resp: " + blResponse.toString(false, false, true, true) + "]");
             throw new CoapBlockException(msg);
         }
 
