@@ -36,6 +36,7 @@ Requirements
 
 * JRE 8
 * JRE 10
+* JRE 11
 
 ### Development:
 

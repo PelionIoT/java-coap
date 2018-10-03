@@ -44,6 +44,11 @@ jobs:
     - image: circleci/openjdk:10-jdk-browsers
     <<: *defaults
 
+  java-11:
+    docker:
+    - image: circleci/openjdk:11-jdk-browsers
+    <<: *defaults
+
 
 workflows:
   version: 2
@@ -51,3 +56,4 @@ workflows:
     jobs:
       - java-8
       - java-10
+      - java-11
