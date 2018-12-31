@@ -52,7 +52,19 @@ jobs:
 
 workflows:
   version: 2
-  build_jobs:
+  commit:
+    jobs:
+      - java-8
+      - java-10
+      - java-11
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
     jobs:
       - java-8
       - java-10
