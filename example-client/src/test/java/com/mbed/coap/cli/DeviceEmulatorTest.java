@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.example;
+package com.mbed.coap.cli;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.packet.CoapPacket;

@@ -43,8 +43,15 @@
     </Match>
 
     <Match>
-        <Class name="com.mbed.coap.example.CliUtils"/>
-        <Bug pattern="PATH_TRAVERSAL_IN"/>
+        <Class name="com.mbed.coap.cli.CoapSchemas"/>
+        <Or>
+            <Bug pattern="PATH_TRAVERSAL_IN"/>
+            <Bug pattern="HARD_CODE_PASSWORD"/>
+        </Or>
+    </Match>
+    <Match>
+        <Class name="com.mbed.coap.transport.stdio.OpensslProcessTransport"/>
+        <Bug pattern="COMMAND_INJECTION"/>
     </Match>
 
 </FindBugsFilter>
