@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.example;
+package com.mbed.coap.cli;
 
 import com.mbed.coap.client.RegistrationManager;
 import com.mbed.coap.exception.CoapException;
@@ -43,10 +43,11 @@ public class DeviceEmulator {
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
             System.out.println("Usage: ");
-            System.out.println("  ./run.sh [-k KEYSTORE_FILE] <registration-url> \n");
-            System.out.println("  examples:");
-            System.out.println("  ./run.sh -k device01.jks 'coaps://localhost:5684/rd?ep=device01&aid=d'");
-            System.out.println("  ./run.sh -k device01.jks 'coaps+tcp://localhost:5684/rd?ep=device01&aid=d'");
+            System.out.println("  ./run.sh [-k KEYSTORE_FILE] <schema>://<registration-url> \n");
+            System.out.println("Schemas: " + CoapSchemas.INSTANCE.supportedSchemas().replaceAll("\n", "\n         "));
+            System.out.println("\nExamples:");
+            System.out.println("  ./run.sh -k device01.jks 'coaps+tcp://localhost:5685/rd?ep=device01&aid=d'");
+            System.out.println("  ./run.sh -k device01.jks 'coaps+tcp-d2://localhost:5684/rd?ep=device01&aid=d'");
             return;
         }
 
@@ -68,7 +69,7 @@ public class DeviceEmulator {
     public DeviceEmulator(String registrationUri, String keystoreFile) throws IOException {
         URI uri = URI.create(registrationUri);
 
-        emulatorServer = CliUtils.builderFrom(keystoreFile, uri).build().start();
+        emulatorServer = CoapSchemas.INSTANCE.create(keystoreFile, uri).build().start();
 
 
         //read only resources

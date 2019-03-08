@@ -12,3 +12,4 @@ nb-configuration.xml
 .DS_Store
 example-client/*.pem
 example-client/*.jks
+*.tmp

@@ -25,7 +25,8 @@ The following features are supported by the library:
 * Coap over tcp, tls [RFC 8323](https://tools.ietf.org/html/rfc8323)
     - excluding: websockets, observations with BERT blocks
 * Network transports:
-    - plain text UDP
+    - UDP (plain text)
+    - TCP (plain text)
     - TLS
 * LwM2M TLV and JSON data formats
 

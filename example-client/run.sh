@@ -17,4 +17,4 @@
 
 
 ARGS=$@
-mvn -q compile exec:java -Dexec.mainClass="com.mbed.coap.example.DeviceEmulator" -Dexec.args="$ARGS"
+mvn -q compile exec:java -Dexec.mainClass="com.mbed.coap.cli.DeviceEmulator" -Dexec.args="$ARGS"

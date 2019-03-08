@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.example;
+package com.mbed.coap.cli;
 
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.client.CoapClient;
@@ -34,8 +34,9 @@ public class CoapCli {
 
     public static void main(String[] args) {
         if (args.length == 0) {
-            System.out.println("Usage: [options...] <method> coap://<host>:<port>/<uri-path> [<payload>]");
+            System.out.println("Usage: [options...] <method> <schema>://<host>:<port>/<uri-path> [<payload>]");
             System.out.println("Method: GET | POST | PUT | DELETE");
+            System.out.println("Schemas: " + CoapSchemas.INSTANCE.supportedSchemas().replaceAll("\n", "\n         "));
             System.out.println("Options:");
             System.out.println("     -k <file>          KeyStore file");
             System.out.println("     -b <block size>    Block size, one of: 16, 32, 64, 128, 256, 512, 1024");
@@ -77,7 +78,7 @@ public class CoapCli {
 
     public CoapCli(String keystoreFile, BlockSize blockSize, String proxyUri, String method, URI uri, String payload) throws IOException, InterruptedException, CoapException {
 
-        CoapServer cliServer = CliUtils.builderFrom(keystoreFile, uri).build().start();
+        CoapServer cliServer = CoapSchemas.INSTANCE.create(keystoreFile, uri).build().start();
 
         InetSocketAddress destination = new InetSocketAddress(uri.getHost(), uri.getPort());
         CoapClient cli = CoapClientBuilder.clientFor(destination, cliServer);
