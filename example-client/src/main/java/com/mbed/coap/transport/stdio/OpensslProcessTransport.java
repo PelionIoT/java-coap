@@ -16,6 +16,7 @@
 package com.mbed.coap.transport.stdio;
 
 import com.mbed.coap.transport.javassl.CoapSerializer;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Optional;
@@ -44,8 +45,11 @@ public class OpensslProcessTransport extends StreamBlockingTransport {
         String opensslBinPath = Optional.ofNullable(System.getenv("OPENSSL_BIN_PATH")).map(p -> p + "/").orElse("");
 
         InetSocketAddress adr = InetSocketAddress.createUnresolved(destination.getHostName(), destination.getPort());
-        String cmd = String.format("%sopenssl s_client -crlf -ign_eof -connect %s -cert %s -cipher ECDHE-ECDSA-AES128-SHA256 -dtls -quiet",
-                opensslBinPath, adr, certPemFile);
+        String sessIn = new File("openssl-session.tmp").exists() ? "-sess_in openssl-session.tmp " : "";
+
+        String cmd = String.format("%sopenssl s_client -crlf -ign_eof -connect %s -cert %s -cipher ECDHE-ECDSA-AES128-SHA256 %s-sess_out openssl-session.tmp -dtls -quiet",
+                opensslBinPath, adr, certPemFile, sessIn);
+
         LOGGER.info("Running " + cmd);
         Process process = new ProcessBuilder(cmd.split(" "))
                 .redirectError(ProcessBuilder.Redirect.INHERIT)
