@@ -39,11 +39,6 @@ jobs:
     <<: *defaults
 
 
-  java-10:
-    docker:
-    - image: circleci/openjdk:10-jdk-browsers
-    <<: *defaults
-
   java-11:
     docker:
     - image: circleci/openjdk:11-jdk-browsers
@@ -55,7 +50,6 @@ workflows:
   commit:
     jobs:
       - java-8
-      - java-10
       - java-11
   nightly:
     triggers:
@@ -67,5 +61,4 @@ workflows:
                 - master
     jobs:
       - java-8
-      - java-10
       - java-11
