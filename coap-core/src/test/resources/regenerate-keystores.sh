@@ -6,7 +6,7 @@ CLI_KS="-keystore test-client.jks -storepass secret"
 mkdir -p target
 
 # server
-keytool $SRV_KS -genkey -keyalg EC -keysize 256  -alias server-ca -validity 720 -keypass secret -dname "CN=server-ca" -ext bc=ca:true
+keytool $SRV_KS -genkey -keyalg EC -keysize 256  -alias server-ca -validity 720 -keypass secret -dname "CN=server-ca" -ext bc=ca:true -deststoretype pkcs12
 keytool $SRV_KS -genkeypair -keyalg EC -keysize 256  -alias server -validity 720  -dname "CN=server" -keypass secret
 keytool $SRV_KS -certreq -alias server -file target/server.csr
 keytool $SRV_KS -gencert -alias server-ca -infile target/server.csr -outfile target/server.cer -validity 720
@@ -15,7 +15,7 @@ keytool $SRV_KS -export -alias server-ca -file target/server-ca.cer
 
 
 # client
-keytool $CLI_KS -genkey -keyalg EC -keysize 256  -alias client-ca -validity 720 -keypass secret -dname "CN=client-ca" -ext bc=ca:true
+keytool $CLI_KS -genkey -keyalg EC -keysize 256  -alias client-ca -validity 720 -keypass secret -dname "CN=client-ca" -ext bc=ca:true -deststoretype pkcs12
 keytool $CLI_KS -genkeypair -keyalg EC -keysize 256  -alias client -validity 720  -dname "CN=client" -keypass secret
 keytool $CLI_KS -certreq -alias client -file target/client.csr
 keytool $CLI_KS -gencert -alias client-ca -infile target/client.csr -outfile target/client.cer -validity 720
