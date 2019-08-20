@@ -34,7 +34,7 @@ import java.util.concurrent.ScheduledExecutorService;
 /**
  * @author szymon
  */
-public abstract class CoapServerBuilder {
+public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
     private static final long DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
 
@@ -45,6 +45,8 @@ public abstract class CoapServerBuilder {
     protected int maxIncomingBlockTransferSize = 10_000_000; //default to 10 MB
     protected BlockSize blockSize;
     protected int maxMessageSize = 1152; //default
+
+    protected abstract T me();
 
 
     public static CoapServerBuilderForUdp newBuilder() {
@@ -63,13 +65,20 @@ public abstract class CoapServerBuilder {
         return CoapServerBuilderForTcp.create().transport(transport).build();
     }
 
-    protected void setBlockSize(BlockSize blockSize) {
+    public final T blockSize(BlockSize blockSize) {
         this.blockSize = blockSize;
+        return me();
     }
 
-    protected void setObservationIDGenerator(ObservationIDGenerator obsIdGenerator) {
+    public final T transport(CoapTransport coapTransport) {
+        this.coapTransport = coapTransport;
+        return me();
+    }
+
+    public final T observerIdGenerator(ObservationIDGenerator obsIdGenerator) {
         this.observationIDGenerator = obsIdGenerator;
         this.observationIdGenWasSet = true;
+        return me();
     }
 
     public CoapServer start() throws IOException {
@@ -98,7 +107,7 @@ public abstract class CoapServerBuilder {
         return coapTransport;
     }
 
-    public static class CoapServerBuilderForUdp extends CoapServerBuilder {
+    public static class CoapServerBuilderForUdp extends CoapServerBuilder<CoapServerBuilderForUdp> {
         private int duplicationMaxSize = DEFAULT_MAX_DUPLICATION_LIST_SIZE;
         private ScheduledExecutorService scheduledExecutorService;
         private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
@@ -118,18 +127,13 @@ public abstract class CoapServerBuilder {
             return new CoapServerBuilderForUdp();
         }
 
-        public CoapServerBuilderForUdp transport(CoapTransport coapTransport) {
-            this.coapTransport = coapTransport;
+        @Override
+        protected CoapServerBuilderForUdp me() {
             return this;
         }
 
         public CoapServerBuilderForUdp transport(int port) {
             transport(new DatagramSocketTransport(new InetSocketAddress(port)));
-            return this;
-        }
-
-        public CoapServerBuilderForUdp blockSize(BlockSize blockSize) {
-            setBlockSize(blockSize);
             return this;
         }
 
@@ -221,12 +225,6 @@ public abstract class CoapServerBuilder {
             return this;
         }
 
-        public CoapServerBuilderForUdp observerIdGenerator(ObservationIDGenerator observationIDGenerator) {
-            setObservationIDGenerator(observationIDGenerator);
-            return this;
-        }
-
-
         /**
          * Sets maximum number or requests to be kept for duplication detection.
          *
@@ -248,7 +246,7 @@ public abstract class CoapServerBuilder {
 
     }
 
-    public static class CoapServerBuilderForTcp extends CoapServerBuilder {
+    public static class CoapServerBuilderForTcp extends CoapServerBuilder<CoapServerBuilderForTcp> {
         private CoapTcpCSMStorage csmStorage = new CoapTcpCSMStorageImpl();
 
         private CoapServerBuilderForTcp() {
@@ -259,6 +257,11 @@ public abstract class CoapServerBuilder {
         }
 
         @Override
+        protected CoapServerBuilderForTcp me() {
+            return this;
+        }
+
+        @Override
         protected CoapMessaging buildCoapMessaging() {
             return new CoapTcpMessaging(getCoapTransport(), csmStorage, blockSize != null, maxMessageSize);
         }
@@ -266,11 +269,6 @@ public abstract class CoapServerBuilder {
         @Override
         protected CoapTcpCSMStorage capabilities() {
             return csmStorage;
-        }
-
-        public CoapServerBuilderForTcp blockSize(BlockSize blockSize) {
-            setBlockSize(blockSize);
-            return this;
         }
 
         public CoapServerBuilderForTcp maxMessageSize(int maxMessageSize) {
@@ -284,20 +282,11 @@ public abstract class CoapServerBuilder {
         }
 
 
-        public CoapServerBuilderForTcp transport(CoapTransport coapTransport) {
-            this.coapTransport = coapTransport;
-            return this;
-        }
-
         public CoapServerBuilderForTcp setCsmStorage(CoapTcpCSMStorage csmStorage) {
             this.csmStorage = csmStorage;
             return this;
         }
 
-        public CoapServerBuilderForTcp observerIdGenerator(ObservationIDGenerator observationIDGenerator) {
-            setObservationIDGenerator(observationIDGenerator);
-            return this;
-        }
 
     }
 
