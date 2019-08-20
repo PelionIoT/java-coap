@@ -45,6 +45,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     protected int maxIncomingBlockTransferSize = 10_000_000; //default to 10 MB
     protected BlockSize blockSize;
     protected int maxMessageSize = 1152; //default
+    protected CoapTcpCSMStorage csmStorage;
 
     protected abstract T me();
 
@@ -80,6 +81,12 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
         this.observationIdGenWasSet = true;
         return me();
     }
+
+    public T csmStorage(CoapTcpCSMStorage csmStorage) {
+        this.csmStorage = csmStorage;
+        return me();
+    }
+
 
     public CoapServer start() throws IOException {
         CoapServer coapServer = build();
@@ -172,11 +179,15 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
 
         @Override
         protected CoapTcpCSMStorage capabilities() {
-            if (blockSize != null) {
-                return new CoapTcpCSMStorageImpl(new CoapTcpCSM(blockSize.getSize() + 1, true));
-            } else {
-                return new CoapTcpCSMStorageImpl(new CoapTcpCSM(maxMessageSize, false));
+            if (csmStorage == null) {
+                if (blockSize != null) {
+                    csmStorage = new CoapTcpCSMStorageImpl(new CoapTcpCSM(blockSize.getSize() + 1, true));
+                } else {
+                    csmStorage = new CoapTcpCSMStorageImpl(new CoapTcpCSM(maxMessageSize, false));
+                }
             }
+
+            return csmStorage;
         }
 
         public CoapServerBuilderForUdp scheduledExecutor(ScheduledExecutorService scheduledExecutorService) {
@@ -247,9 +258,9 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     }
 
     public static class CoapServerBuilderForTcp extends CoapServerBuilder<CoapServerBuilderForTcp> {
-        private CoapTcpCSMStorage csmStorage = new CoapTcpCSMStorageImpl();
 
         private CoapServerBuilderForTcp() {
+            csmStorage = new CoapTcpCSMStorageImpl();
         }
 
         private static CoapServerBuilderForTcp create() {
@@ -282,9 +293,9 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
         }
 
 
+        @Deprecated
         public CoapServerBuilderForTcp setCsmStorage(CoapTcpCSMStorage csmStorage) {
-            this.csmStorage = csmStorage;
-            return this;
+            return csmStorage(csmStorage);
         }
 
 

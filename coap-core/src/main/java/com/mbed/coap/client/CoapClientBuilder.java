@@ -250,9 +250,14 @@ public abstract class CoapClientBuilder {
             return this;
         }
 
-        public CoapClientBuilderForTcp setCsmStorage(CoapTcpCSMStorage csmStorage) {
-            coapServerBuilderForTcp.setCsmStorage(csmStorage);
+        public CoapClientBuilderForTcp csmStorage(CoapTcpCSMStorage csmStorage) {
+            coapServerBuilderForTcp.csmStorage(csmStorage);
             return this;
+        }
+
+        @Deprecated
+        public CoapClientBuilderForTcp setCsmStorage(CoapTcpCSMStorage csmStorage) {
+            return csmStorage(csmStorage);
         }
 
         public CoapClientBuilderForTcp target(InetSocketAddress destination) {
