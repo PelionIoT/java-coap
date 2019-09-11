@@ -17,6 +17,7 @@ package com.mbed.coap.cli;
 
 import com.mbed.coap.client.RegistrationManager;
 import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.linkformat.LinkFormatBuilder;
 import com.mbed.coap.observe.SimpleObservableResource;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
@@ -36,42 +37,74 @@ import org.slf4j.LoggerFactory;
 public class DeviceEmulator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DeviceEmulator.class);
-    private final CoapServer emulatorServer;
-    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-    private final RegistrationManager registrationManager;
+    protected CoapServer emulatorServer;
+    protected final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+    private RegistrationManager registrationManager;
+    protected final CoapSchemes providers;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
+        main(args, new DeviceEmulator(new CoapSchemes()));
+    }
+
+    public static void main(String[] args, DeviceEmulator deviceEmulator) {
         if (args.length == 0) {
             System.out.println("Usage: ");
-            System.out.println("  ./run.sh [-k KEYSTORE_FILE] <scheme>://<registration-url> \n");
-            System.out.println("Schemes: " + CoapSchemes.INSTANCE.supportedSchemas().replaceAll("\n", "\n         "));
-            System.out.println("\nExamples:");
-            System.out.println("  ./run.sh -k device01.jks 'coaps+tcp://localhost:5685/rd?ep=device01&aid=d'");
-            System.out.println("  ./run.sh -k device01.jks 'coaps+tcp-d2://localhost:5684/rd?ep=device01&aid=d'");
+            System.out.println("  ./run.sh [options...] <scheme>://<registration-url>");
+            System.out.println("Options:");
+            System.out.println("     -s <ssl provider>  jdk <default>,");
+            System.out.println("                        openssl (requires installed openssl that supports dtls),");
+            System.out.println("                        stdio (standard IO)");
+            System.out.println("     -k <file>          KeyStore file");
+            System.out.println("Schemes: " + deviceEmulator.providers.supportedSchemes().replaceAll("\n", "\n         "));
+            System.out.println();
+            System.out.println("Examples:");
+            System.out.println("  ./run.sh 'coap://localhost:5683/rd?ep=device01&aid=dm'");
+            System.out.println("  ./run.sh -k device01.jks 'coaps+tcp://localhost:5685/rd?ep=device01&aid=dm'");
             return;
         }
 
         //parse arguments
         String keystoreFile = null;
+        TransportProvider transportProvider = deviceEmulator.providers.defaultProvider();
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-k")) {
                 keystoreFile = args[++i];
+            } else if (args[i].equals("-s")) {
+                transportProvider = deviceEmulator.providers.transportProviderFor(args[++i]);
             }
         }
         String uri = args[args.length - 1];
 
-        final DeviceEmulator deviceEmulator = new DeviceEmulator(uri, keystoreFile);
+        try {
+            deviceEmulator.start(transportProvider, uri, keystoreFile);
+            Runtime.getRuntime().addShutdownHook(new Thread(deviceEmulator::stop));
+        } catch (IllegalArgumentException ex) {
+            LOGGER.error(ex.getMessage());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
-        Runtime.getRuntime().addShutdownHook(new Thread(deviceEmulator::stop));
+    }
+
+    public DeviceEmulator(CoapSchemes providers) {
+        this.providers = providers;
     }
 
 
-    public DeviceEmulator(String registrationUri, String keystoreFile) throws IOException {
+    void start(TransportProvider transportProvider, String registrationUri, String keystoreFile) throws IOException {
         URI uri = URI.create(registrationUri);
 
-        emulatorServer = CoapSchemes.INSTANCE.create(keystoreFile, uri).build().start();
+        emulatorServer = providers.create(transportProvider, keystoreFile, uri).build().start();
 
+        addResources();
 
+        //registration
+        this.registrationManager = new RegistrationManager(emulatorServer, uri, scheduledExecutor);
+        LOGGER.info("Resources: {}", LinkFormatBuilder.toString(emulatorServer.getResourceLinks()));
+        registrationManager.register();
+    }
+
+    protected void addResources() {
         //read only resources
         emulatorServer.addRequestHandler("/3/0/1", new ReadOnlyCoapResource("ARM"));
         emulatorServer.addRequestHandler("/3/0/2", new ReadOnlyCoapResource("Emulator"));
@@ -88,13 +121,7 @@ public class DeviceEmulator {
                 LOGGER.error(e.getMessage(), e);
             }
         }, 30, 30, TimeUnit.SECONDS);
-
-
-        //registration
-        this.registrationManager = new RegistrationManager(emulatorServer, uri, scheduledExecutor);
-        registrationManager.register();
     }
-
 
 
     RegistrationManager getRegistrationManager() {
@@ -105,8 +132,6 @@ public class DeviceEmulator {
         registrationManager.removeRegistration();
         emulatorServer.stop();
     }
-
-
 
 
     private class DelayedReadOnlyCoapResource extends ReadOnlyCoapResource {

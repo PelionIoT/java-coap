@@ -26,18 +26,29 @@ import com.mbed.coap.server.CoapServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by szymon
  */
 public class CoapCli {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CoapCli.class);
+
     public static void main(String[] args) {
+        main(args, new CoapSchemes());
+    }
+
+    public static void main(String[] args, CoapSchemes providers) {
         if (args.length == 0) {
             System.out.println("Usage: [options...] <method> <scheme>://<host>:<port>/<uri-path> [<payload>]");
             System.out.println("Method: GET | POST | PUT | DELETE");
-            System.out.println("Schemes: " + CoapSchemes.INSTANCE.supportedSchemas().replaceAll("\n", "\n         "));
+            System.out.println("Schemes: " + providers.supportedSchemes().replaceAll("\n", "\n         "));
             System.out.println("Options:");
+            System.out.println("     -s <ssl provider>  jdk <default>,");
+            System.out.println("                        openssl (requires installed openssl that supports dtls),");
+            System.out.println("                        stdio (standard IO)");
             System.out.println("     -k <file>          KeyStore file");
             System.out.println("     -b <block size>    Block size, one of: 16, 32, 64, 128, 256, 512, 1024");
             System.out.println("     -p <proxy>         Proxy-Uri");
@@ -51,6 +62,7 @@ public class CoapCli {
             String keystoreFile = null;
             String proxyUri = null;
             BlockSize blockSize = null;
+            TransportProvider transportProvider = providers.defaultProvider();
             int i;
             for (i = 0; i < args.length; i++) {
                 if (args[i].equals("-k")) {
@@ -59,6 +71,10 @@ public class CoapCli {
                     proxyUri = args[++i];
                 } else if (args[i].equals("-b")) {
                     blockSize = BlockSize.valueOf("S_" + args[++i]);
+                } else if (args[i].equals("-s")) {
+                    transportProvider = providers.transportProviderFor(args[++i]);
+                } else if (args[i].charAt(0) == '-') {
+                    throw new IllegalArgumentException("Unrecognised flag: " + args[i]);
                 } else {
                     break;
                 }
@@ -69,16 +85,18 @@ public class CoapCli {
 
             String payload = (args.length > i) ? args[i] : null;
 
-            new CoapCli(keystoreFile, blockSize, proxyUri, method, uri, payload);
+            new CoapCli(providers, transportProvider, keystoreFile, blockSize, proxyUri, method, uri, payload);
+        } catch (IllegalArgumentException ex) {
+            LOGGER.error(ex.getMessage());
         } catch (Exception ex) {
             ex.printStackTrace();
         }
         System.exit(0);
     }
 
-    public CoapCli(String keystoreFile, BlockSize blockSize, String proxyUri, String method, URI uri, String payload) throws IOException, InterruptedException, CoapException {
+    public CoapCli(CoapSchemes providers, TransportProvider transportProvider, String keystoreFile, BlockSize blockSize, String proxyUri, String method, URI uri, String payload) throws IOException, InterruptedException, CoapException {
 
-        CoapServer cliServer = CoapSchemes.INSTANCE.create(keystoreFile, uri).build().start();
+        CoapServer cliServer = providers.create(transportProvider, keystoreFile, uri).build().start();
 
         InetSocketAddress destination = new InetSocketAddress(uri.getHost(), uri.getPort());
         CoapClient cli = CoapClientBuilder.clientFor(destination, cliServer);
@@ -92,8 +110,10 @@ public class CoapCli {
                 .payload(payload)
                 .sync().invokeMethod(Method.valueOf(method));
 
-        System.out.println("");
-        System.out.println(resp.getPayloadString());
+        if (resp.getPayload().length > 0) {
+            System.out.println();
+            System.out.println(resp.getPayloadString());
+        }
 
         cliServer.stop();
     }

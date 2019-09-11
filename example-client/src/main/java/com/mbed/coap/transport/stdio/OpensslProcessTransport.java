@@ -31,8 +31,8 @@ public class OpensslProcessTransport extends StreamBlockingTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpensslProcessTransport.class);
     private final Process process;
 
-    private OpensslProcessTransport(Process process, InetSocketAddress destination) {
-        super(process.getOutputStream(), process.getInputStream(), destination, CoapSerializer.UDP);
+    public OpensslProcessTransport(Process process, InetSocketAddress destination, CoapSerializer coapSerializer) {
+        super(process.getOutputStream(), process.getInputStream(), destination, coapSerializer);
         this.process = process;
     }
 
@@ -41,21 +41,21 @@ public class OpensslProcessTransport extends StreamBlockingTransport {
         process.destroy();
     }
 
-    public static OpensslProcessTransport create(String certPemFile, InetSocketAddress destination) throws IOException {
+    public static ProcessBuilder createProcess(String certPemFile, InetSocketAddress destination, boolean isDtls) throws IOException {
         String opensslBinPath = Optional.ofNullable(System.getenv("OPENSSL_BIN_PATH")).map(p -> p + "/").orElse("");
 
         InetSocketAddress adr = InetSocketAddress.createUnresolved(destination.getHostName(), destination.getPort());
         String sessIn = new File("openssl-session.tmp").exists() ? "-sess_in openssl-session.tmp " : "";
+        String dtls = isDtls ? "-dtls " : "";
 
-        String cmd = String.format("%sopenssl s_client -crlf -ign_eof -connect %s -cert %s -cipher ECDHE-ECDSA-AES128-SHA256 %s-sess_out openssl-session.tmp -dtls -quiet",
-                opensslBinPath, adr, certPemFile, sessIn);
+        String cmd = String.format("%sopenssl s_client -crlf -ign_eof -connect %s -cert %s -cipher ECDHE-ECDSA-AES128-SHA256 %s -sess_out openssl-session.tmp %s -quiet",
+                opensslBinPath, adr, certPemFile, sessIn, dtls)
+                .replace("  ", " ");
 
         LOGGER.info("Running " + cmd);
-        Process process = new ProcessBuilder(cmd.split(" "))
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .start();
 
-        return new OpensslProcessTransport(process, destination);
+        return new ProcessBuilder(cmd.split(" "))
+                .redirectError(ProcessBuilder.Redirect.INHERIT);
     }
 
 }

@@ -18,6 +18,7 @@ package com.mbed.coap.cli;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import com.mbed.coap.cli.providers.PlainTextProvider;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
@@ -26,6 +27,7 @@ import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import com.mbed.coap.utils.CoapResource;
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.function.Consumer;
 import org.junit.After;
@@ -75,15 +77,16 @@ public class DeviceEmulatorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         stubServer.stop();
     }
 
     @Test
-    public void registerEmulator() throws Exception {
+    public void registerEmulator() throws IOException {
         final int port = stubServer.getLocalSocketAddress().getPort();
 
-        DeviceEmulator deviceEmulator = new DeviceEmulator(String.format("coap://localhost:%d/rd?ep=dev123&lt=60", port), null);
+        DeviceEmulator deviceEmulator = new DeviceEmulator(new CoapSchemes());
+        deviceEmulator.start(new PlainTextProvider(), String.format("coap://localhost:%d/rd?ep=dev123&lt=60", port), null);
 
 
         verify(registered, timeout(10000)).accept(eq("dev123"));
