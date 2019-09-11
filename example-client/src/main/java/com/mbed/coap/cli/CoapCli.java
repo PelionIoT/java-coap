@@ -50,6 +50,7 @@ public class CoapCli {
             System.out.println("                        openssl (requires installed openssl that supports dtls),");
             System.out.println("                        stdio (standard IO)");
             System.out.println("     -k <file>          KeyStore file");
+            System.out.println("     --cipher <name>    Cipher suite");
             System.out.println("     -b <block size>    Block size, one of: 16, 32, 64, 128, 256, 512, 1024");
             System.out.println("     -p <proxy>         Proxy-Uri");
             System.out.println("");
@@ -63,6 +64,7 @@ public class CoapCli {
             String proxyUri = null;
             BlockSize blockSize = null;
             TransportProvider transportProvider = providers.defaultProvider();
+            String cipherSuite = null;
             int i;
             for (i = 0; i < args.length; i++) {
                 if (args[i].equals("-k")) {
@@ -73,12 +75,16 @@ public class CoapCli {
                     blockSize = BlockSize.valueOf("S_" + args[++i]);
                 } else if (args[i].equals("-s")) {
                     transportProvider = providers.transportProviderFor(args[++i]);
+                } else if (args[i].equals("--cipher")) {
+                    cipherSuite = args[++i];
                 } else if (args[i].charAt(0) == '-') {
                     throw new IllegalArgumentException("Unrecognised flag: " + args[i]);
                 } else {
                     break;
                 }
             }
+
+            transportProvider.setCipherSuite(cipherSuite);
 
             String method = args[i++];
             URI uri = URI.create(args[i++]);

@@ -22,10 +22,18 @@ import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 
-public interface TransportProvider {
+public abstract class TransportProvider {
 
-    CoapTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException;
+    protected String cipherSuite;
 
-    CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException;
+    public abstract CoapTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException;
+
+    public abstract CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException;
+
+    final void setCipherSuite(String cipherSuite) {
+        if (cipherSuite != null) {
+            this.cipherSuite = cipherSuite;
+        }
+    }
 
 }

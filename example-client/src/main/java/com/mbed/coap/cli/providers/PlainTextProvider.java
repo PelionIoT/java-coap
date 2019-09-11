@@ -24,7 +24,7 @@ import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import javax.net.SocketFactory;
 
-public class PlainTextProvider implements TransportProvider {
+public class PlainTextProvider extends TransportProvider {
 
     @Override
     public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) {

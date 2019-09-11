@@ -31,7 +31,7 @@ import javax.net.ssl.TrustManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JdkProvider implements TransportProvider {
+public class JdkProvider extends TransportProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdkProvider.class);
 

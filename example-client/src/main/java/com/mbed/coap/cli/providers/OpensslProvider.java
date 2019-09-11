@@ -32,7 +32,11 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateEncodingException;
 import java.util.Base64;
 
-public class OpensslProvider implements TransportProvider {
+public class OpensslProvider extends TransportProvider {
+
+    public OpensslProvider() {
+        this.cipherSuite = "ECDHE-ECDSA-AES128-SHA256";
+    }
 
     @Override
     public CoapTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException {
@@ -48,7 +52,7 @@ public class OpensslProvider implements TransportProvider {
         String alias = findKeyAlias(ks);
         File temp = keyPairToTempFile(alias, ks);
 
-        ProcessBuilder process = OpensslProcessTransport.createProcess(temp.getAbsolutePath(), destAdr, isDtls);
+        ProcessBuilder process = OpensslProcessTransport.createProcess(temp.getAbsolutePath(), destAdr, isDtls, cipherSuite);
 
         return new OpensslProcessTransport(process.start(), destAdr, coapSerializer);
     }

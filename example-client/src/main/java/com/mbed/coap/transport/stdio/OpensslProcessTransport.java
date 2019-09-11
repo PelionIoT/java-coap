@@ -41,15 +41,15 @@ public class OpensslProcessTransport extends StreamBlockingTransport {
         process.destroy();
     }
 
-    public static ProcessBuilder createProcess(String certPemFile, InetSocketAddress destination, boolean isDtls) throws IOException {
+    public static ProcessBuilder createProcess(String certPemFile, InetSocketAddress destination, boolean isDtls, String cipherSuite) throws IOException {
         String opensslBinPath = Optional.ofNullable(System.getenv("OPENSSL_BIN_PATH")).map(p -> p + "/").orElse("");
 
         InetSocketAddress adr = InetSocketAddress.createUnresolved(destination.getHostName(), destination.getPort());
         String sessIn = new File("openssl-session.tmp").exists() ? "-sess_in openssl-session.tmp " : "";
         String dtls = isDtls ? "-dtls " : "";
 
-        String cmd = String.format("%sopenssl s_client -crlf -ign_eof -connect %s -cert %s -cipher ECDHE-ECDSA-AES128-SHA256 %s -sess_out openssl-session.tmp %s -quiet",
-                opensslBinPath, adr, certPemFile, sessIn, dtls)
+        String cmd = String.format("%sopenssl s_client -crlf -ign_eof -connect %s -cert %s -cipher %s %s -sess_out openssl-session.tmp %s -quiet",
+                opensslBinPath, adr, certPemFile, cipherSuite, sessIn, dtls)
                 .replace("  ", " ");
 
         LOGGER.info("Running " + cmd);

@@ -22,7 +22,7 @@ import com.mbed.coap.transport.stdio.StreamBlockingTransport;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
 
-public class StandardIoProvider implements TransportProvider {
+public class StandardIoProvider extends TransportProvider {
 
     @Override
     public CoapTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) {
