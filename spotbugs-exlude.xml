@@ -43,7 +43,7 @@
     </Match>
 
     <Match>
-        <Class name="com.mbed.coap.cli.CoapSchemas"/>
+        <Class name="com.mbed.coap.cli.CoapSchemes"/>
         <Or>
             <Bug pattern="PATH_TRAVERSAL_IN"/>
             <Bug pattern="HARD_CODE_PASSWORD"/>

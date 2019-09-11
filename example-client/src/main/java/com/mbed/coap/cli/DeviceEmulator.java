@@ -43,8 +43,8 @@ public class DeviceEmulator {
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
             System.out.println("Usage: ");
-            System.out.println("  ./run.sh [-k KEYSTORE_FILE] <schema>://<registration-url> \n");
-            System.out.println("Schemas: " + CoapSchemas.INSTANCE.supportedSchemas().replaceAll("\n", "\n         "));
+            System.out.println("  ./run.sh [-k KEYSTORE_FILE] <scheme>://<registration-url> \n");
+            System.out.println("Schemes: " + CoapSchemes.INSTANCE.supportedSchemas().replaceAll("\n", "\n         "));
             System.out.println("\nExamples:");
             System.out.println("  ./run.sh -k device01.jks 'coaps+tcp://localhost:5685/rd?ep=device01&aid=d'");
             System.out.println("  ./run.sh -k device01.jks 'coaps+tcp-d2://localhost:5684/rd?ep=device01&aid=d'");
@@ -69,7 +69,7 @@ public class DeviceEmulator {
     public DeviceEmulator(String registrationUri, String keystoreFile) throws IOException {
         URI uri = URI.create(registrationUri);
 
-        emulatorServer = CoapSchemas.INSTANCE.create(keystoreFile, uri).build().start();
+        emulatorServer = CoapSchemes.INSTANCE.create(keystoreFile, uri).build().start();
 
 
         //read only resources

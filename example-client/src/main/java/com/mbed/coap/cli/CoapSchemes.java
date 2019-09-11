@@ -46,16 +46,16 @@ import javax.net.ssl.TrustManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CoapSchemas {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CoapSchemas.class);
+public class CoapSchemes {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CoapSchemes.class);
 
-    static final CoapSchemas INSTANCE;
+    static final CoapSchemes INSTANCE;
     static final char[] SECRET = "secret".toCharArray();
 
     static {
         try {
-            Class coapTransportBuilderClass = Class.forName(System.getProperty("coap.cli.CoapSchemas", "com.mbed.coap.cli.CoapSchemas"));
-            INSTANCE = ((CoapSchemas) coapTransportBuilderClass.newInstance());
+            Class coapTransportBuilderClass = Class.forName(System.getProperty("coap.cli.CoapSchemes", "com.mbed.coap.cli.CoapSchemes"));
+            INSTANCE = ((CoapSchemes) coapTransportBuilderClass.newInstance());
 
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);

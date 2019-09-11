@@ -6,9 +6,9 @@ This is an example coap client application, that can be use with any LwM2M Serve
 Usage
 -----
 
-    ./run.sh [-k KEYSTORE_FILE] <schema>://<registration-url>
+    ./run.sh [-k KEYSTORE_FILE] <scheme>://<registration-url>
 
-### Schemas
+### Schemes
 
 - `coap://` (UDP)
 - `coap+tcp://` (TCP)
