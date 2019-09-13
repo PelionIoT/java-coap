@@ -66,13 +66,19 @@ public class DeviceEmulator {
         //parse arguments
         String keystoreFile = null;
         TransportProvider transportProvider = deviceEmulator.providers.defaultProvider();
+        String cipherSuite = null;
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-k")) {
                 keystoreFile = args[++i];
             } else if (args[i].equals("-s")) {
                 transportProvider = deviceEmulator.providers.transportProviderFor(args[++i]);
+            } else if (args[i].equals("--cipher")) {
+                cipherSuite = args[++i];
             }
         }
+
+        transportProvider.setCipherSuite(cipherSuite);
+
         String uri = args[args.length - 1];
 
         try {
