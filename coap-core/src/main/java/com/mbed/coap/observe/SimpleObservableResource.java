@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.observe;
 
+import static com.mbed.coap.CoapConstants.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.Code;
@@ -26,16 +27,16 @@ import com.mbed.coap.server.CoapServer;
  */
 public class SimpleObservableResource extends AbstractObservableResource {
 
-    private String body;
+    private byte[] body;
 
     public SimpleObservableResource(String body, CoapServer coapServer) {
         super(coapServer);
-        this.body = body;
+        this.body = body.getBytes(DEFAULT_CHARSET);
     }
 
     public SimpleObservableResource(String body, CoapServer coapServer, boolean includeObservableFlag) {
         super(coapServer, includeObservableFlag);
-        this.body = body;
+        this.body = body.getBytes(DEFAULT_CHARSET);
     }
 
     @Override
@@ -52,16 +53,37 @@ public class SimpleObservableResource extends AbstractObservableResource {
      * @throws CoapException coap exception
      */
     public void setBody(String body) throws CoapException {
+        this.body = body.getBytes(DEFAULT_CHARSET);
+        notifyChange(body.getBytes(DEFAULT_CHARSET), null);
+    }
+
+    /**
+     * Changes body for this resource, sends notification to all subscribers.
+     *
+     * @param body new payload in bytes
+     * @throws CoapException coap exception
+     */
+    public void setBody(byte[] body) throws CoapException {
         this.body = body;
-        notifyChange(body.getBytes(), null);
+
+        notifyChange(body, null);
     }
 
     public void setBody(String body, NotificationDeliveryListener deliveryListener) throws CoapException {
+        this.body = body.getBytes(DEFAULT_CHARSET);
+        notifyChange(body.getBytes(DEFAULT_CHARSET), null, null, null, deliveryListener);
+    }
+
+    public void setBody(byte[] body, NotificationDeliveryListener deliveryListener) throws CoapException {
         this.body = body;
-        notifyChange(body.getBytes(), null, null, null, deliveryListener);
+        notifyChange(body, null, null, null, deliveryListener);
     }
 
     public String getBody() {
+        return new String(body, DEFAULT_CHARSET);
+    }
+
+    public byte[] getBodyBytes() {
         return body;
     }
 

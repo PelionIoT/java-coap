@@ -30,6 +30,8 @@ import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.Base64;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -139,6 +141,24 @@ public class SimpleObservableResourceTest {
     @Test(expected = NullPointerException.class)
     public void setBodyWithNull() throws CoapException {
         obsResource.setBody("", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void setBodyInBase64WithNull() throws CoapException {
+        obsResource.setBody(new byte [0], null);
+    }
+
+    @Test
+    public void testSetBodyAndGetBody() throws CoapException {
+        obsResource.setBody("test");
+        assertEquals("test", obsResource.getBody());
+    }
+
+    @Test
+    public void testSetBodyInBytesAndGetBodyBytes() throws CoapException {
+        obsResource.setBody(Base64.getDecoder().decode("dGVyY2Vz"));
+        assertEquals("terces", obsResource.getBody());
+        assert (Arrays.equals(Base64.getDecoder().decode("dGVyY2Vz"), (obsResource.getBodyBytes())));
     }
 
     @Test
