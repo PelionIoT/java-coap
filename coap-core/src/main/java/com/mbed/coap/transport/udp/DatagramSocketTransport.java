@@ -20,11 +20,13 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.transport.TransportExecutors;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,22 +42,28 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     private DatagramSocket socket;
     private int socketBufferSize = -1;
     protected boolean reuseAddress;
-    private Thread readerThread;
-    private final boolean initReaderThread;
-
-    protected DatagramSocketTransport(InetSocketAddress bindSocket, boolean initReaderThread) {
-        this.bindSocket = bindSocket;
-        this.initReaderThread = initReaderThread;
-    }
+    private final Executor readingWorker;
 
     public DatagramSocketTransport(InetSocketAddress bindSocket) {
-        this(bindSocket, true);
+        this(null, bindSocket, null);
     }
 
-    public DatagramSocketTransport(DatagramSocket datagramSocket) {
+    public DatagramSocketTransport(InetSocketAddress bindSocket, Executor readingWorker) {
+        this(null, bindSocket, readingWorker);
+    }
+
+    public DatagramSocketTransport(DatagramSocket datagramSocket, Executor readingWorker) {
+        this(datagramSocket, ((InetSocketAddress) datagramSocket.getLocalSocketAddress()), readingWorker);
+    }
+
+    private DatagramSocketTransport(DatagramSocket datagramSocket, InetSocketAddress bindSocket, Executor readingWorker) {
         this.socket = datagramSocket;
-        this.bindSocket = ((InetSocketAddress) datagramSocket.getLocalSocketAddress());
-        this.initReaderThread = true;
+        this.bindSocket = bindSocket;
+        if (readingWorker != null) {
+            this.readingWorker = readingWorker;
+        } else {
+            this.readingWorker = TransportExecutors.newWorker("udp-reader");
+        }
     }
 
     public DatagramSocketTransport(int localPort) {
@@ -92,22 +100,18 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
             LOGGER.debug("DatagramSocket [receiveBuffer: " + socket.getReceiveBufferSize() + ", sendBuffer: " + socket.getSendBufferSize() + "]");
         }
 
-        readerThread = new Thread(() -> readingLoop(coapReceiver), "multicast-reader");
-        if (initReaderThread) {
-            readerThread.start();
-        }
+        TransportExecutors.loop(readingWorker, () -> readingLoop(coapReceiver));
     }
 
-    private void readingLoop(CoapReceiver coapReceiver) {
+    private boolean readingLoop(CoapReceiver coapReceiver) {
         byte[] readBuffer = new byte[2048];
 
         try {
-            while (true) {
-                DatagramPacket datagramPacket = new DatagramPacket(readBuffer, readBuffer.length);
-                socket.receive(datagramPacket);
+            DatagramPacket datagramPacket = new DatagramPacket(readBuffer, readBuffer.length);
+            socket.receive(datagramPacket);
 
-                receive(coapReceiver, datagramPacket);
-            }
+            receive(coapReceiver, datagramPacket);
+            return true;
         } catch (IOException ex) {
             if (!ex.getMessage().startsWith("Socket closed")) {
                 LOGGER.warn(ex.getMessage(), ex);
@@ -115,6 +119,7 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
         } catch (Exception ex) {
             LOGGER.warn(ex.getMessage());
         }
+        return false;
     }
 
     protected void receive(CoapReceiver coapReceiver, DatagramPacket datagramPacket) {
@@ -133,9 +138,9 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     @Override
     public void stop() {
         if (socket != null) {
-            readerThread.interrupt();
             socket.close();
         }
+        TransportExecutors.shutdown(readingWorker);
     }
 
     @Override

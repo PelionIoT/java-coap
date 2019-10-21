@@ -27,6 +27,7 @@ import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.util.concurrent.Executor;
 import org.junit.Test;
 import protocolTests.utils.CoapPacketBuilder;
 
@@ -84,7 +85,7 @@ public class DatagramSocketTransportTest {
 
     @Test
     public void initializeWithParameters() throws Exception {
-        DatagramSocketTransport trans = new DatagramSocketTransport(new InetSocketAddress(0), false);
+        DatagramSocketTransport trans = new DatagramSocketTransport(new InetSocketAddress(0), mock(Executor.class));
         trans.setReuseAddress(false);
         trans.setSocketBufferSize(12345);
         trans.start(mock(CoapReceiver.class));
@@ -120,7 +121,7 @@ public class DatagramSocketTransportTest {
     public void initializeWithProvidedDatagramSocket() throws Exception {
 
         DatagramSocket udpSocket = new DatagramSocket(0);
-        DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(udpSocket);
+        DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(udpSocket, null);
 
         datagramSocketTransport.start(mock(CoapReceiver.class));
 

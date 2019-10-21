@@ -20,6 +20,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.transport.TransportExecutors;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -27,6 +28,7 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +40,7 @@ public class StreamBlockingTransport extends BlockingCoapTransport {
     private final OutputStream outputStream;
     private final InputStream inputStream;
     protected final InetSocketAddress destination;
-    private Thread readerThread;
+    private final Executor readingWorker = TransportExecutors.newWorker("stream-reader");
     private volatile Boolean isRunning = false;
     private final CoapSerializer serializer;
 
@@ -66,14 +68,14 @@ public class StreamBlockingTransport extends BlockingCoapTransport {
 
     @Override
     public void start(CoapReceiver coapReceiver) {
-        readerThread = new Thread(() -> readingLoop(coapReceiver), "stream-reader");
-        readerThread.start();
+        isRunning = true;
+        TransportExecutors.loop(readingWorker, () -> readingLoop(coapReceiver));
     }
 
     @Override
     public void stop() {
         isRunning = false;
-        readerThread.interrupt();
+        TransportExecutors.shutdown(readingWorker);
     }
 
     @Override
@@ -81,20 +83,19 @@ public class StreamBlockingTransport extends BlockingCoapTransport {
         return null;
     }
 
-    private void readingLoop(CoapReceiver coapReceiver) {
-        isRunning = true;
+    private boolean readingLoop(CoapReceiver coapReceiver) {
         try {
-            while (isRunning) {
-                coapReceiver.handle(serializer.deserialize(inputStream, destination), TransportContext.NULL);
-            }
+            coapReceiver.handle(serializer.deserialize(inputStream, destination), TransportContext.NULL);
         } catch (InterruptedIOException e) {
             //IGNORE
+            isRunning = false;
         } catch (Exception e) {
-                LOGGER.error(e.toString(), e);
+            LOGGER.error(e.toString(), e);
+            isRunning = false;
         } finally {
             isRunning = false;
         }
-
+        return isRunning;
     }
 
     boolean isRunning() {
