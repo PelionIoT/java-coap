@@ -26,6 +26,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,7 +104,7 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
         TransportExecutors.loop(readingWorker, () -> readingLoop(coapReceiver));
     }
 
-    private boolean readingLoop(CoapReceiver coapReceiver) {
+    protected boolean readingLoop(CoapReceiver coapReceiver) {
         byte[] readBuffer = new byte[2048];
 
         try {
@@ -111,6 +112,8 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
             socket.receive(datagramPacket);
 
             receive(coapReceiver, datagramPacket);
+            return true;
+        } catch (SocketTimeoutException ex) {
             return true;
         } catch (IOException ex) {
             if (!ex.getMessage().startsWith("Socket closed")) {
@@ -132,7 +135,9 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     }
 
     protected DatagramSocket createSocket() throws SocketException {
-        return new DatagramSocket(bindSocket);
+        DatagramSocket datagramSocket = new DatagramSocket(bindSocket);
+        datagramSocket.setSoTimeout(200);
+        return datagramSocket;
     }
 
     @Override
