@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.Executor;
 import javax.net.SocketFactory;
 import org.slf4j.Logger;
@@ -101,6 +102,8 @@ public class SocketClientTransport extends BlockingCoapTransport {
                     socket.close();
                 }
             }
+        } catch (SocketTimeoutException ex) {
+            return true;
         } catch (Exception ex) {
             if (!(ex.getMessage() != null && ex.getMessage().startsWith("Socket closed"))) {
                 LOGGER.error(ex.toString());

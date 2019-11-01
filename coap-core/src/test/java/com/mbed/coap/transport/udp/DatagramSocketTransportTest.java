@@ -132,4 +132,18 @@ public class DatagramSocketTransportTest {
         assertTrue(udpSocket.isClosed());
 
     }
+
+    @Test
+    public void continueReadingWhenAfterReadingTimeout() throws Exception {
+        DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(new InetSocketAddress(0), mock(Executor.class));
+
+        //start
+        datagramSocketTransport.start(mock(CoapReceiver.class));
+        assertTrue(datagramSocketTransport.readingLoop(mock(CoapReceiver.class)));
+        assertTrue(datagramSocketTransport.readingLoop(mock(CoapReceiver.class)));
+
+        //stop
+        datagramSocketTransport.stop();
+        assertFalse(datagramSocketTransport.readingLoop(mock(CoapReceiver.class)));
+    }
 }
