@@ -15,7 +15,9 @@
  */
 package com.mbed.coap.utils;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
+
 import org.junit.Test;
 
 /**
@@ -45,8 +47,22 @@ public class HexArrayTest {
     }
 
     @Test
-    public void fromHex() throws Exception {
+    public void fromHex() {
+        assertArrayEquals(new byte[]{1}, HexArray.fromHex("01"));
+        assertArrayEquals(new byte[]{((byte) 0xFF)}, HexArray.fromHex("ff"));
         assertArrayEquals(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, HexArray.fromHex("0102030405060708090a0b0c"));
+    }
+
+    @Test
+    public void malformedHex() {
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> HexArray.fromHex("0g"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> HexArray.fromHex("0A"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> HexArray.fromHex("dupa"));
     }
 
 }

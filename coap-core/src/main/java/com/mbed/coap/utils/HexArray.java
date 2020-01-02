@@ -80,10 +80,18 @@ public final class HexArray implements Serializable {
     public static byte[] fromHex(String hex) {
         byte[] b = new byte[hex.length() / 2];
         for (int i = 0; i < hex.length(); i += 2) {
-            b[i / 2] = (byte) (HEX_DIGIT_STRING.indexOf(hex.charAt(i)) * 16 + HEX_DIGIT_STRING.indexOf(hex.charAt(i + 1)));
+            b[i / 2] = (byte) (hexIndex(hex.charAt(i)) * 16 + hexIndex(hex.charAt(i + 1)));
         }
 
         return b;
+    }
+
+    private static int hexIndex(char ch) {
+        int index = HEX_DIGIT_STRING.indexOf(ch);
+        if (index < 0) {
+            throw new IllegalArgumentException("Illegal hex character");
+        }
+        return index;
     }
 
     public HexArray(byte... data) {

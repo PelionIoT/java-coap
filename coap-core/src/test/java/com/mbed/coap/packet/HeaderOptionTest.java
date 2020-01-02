@@ -18,6 +18,7 @@ package com.mbed.coap.packet;
 import static com.mbed.coap.packet.BasicHeaderOptions.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
+
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapMessageFormatException;
 import com.mbed.coap.exception.CoapUnknownOptionException;
@@ -478,10 +479,10 @@ public class HeaderOptionTest {
     @Test
     public void failToDeserializeWithMalformedData() throws Exception {
 
-        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(HexArray.fromHex("F2")), null))
+        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(HexArray.fromHex("f2")), null))
                 .isExactlyInstanceOf(CoapMessageFormatException.class);
 
-        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(HexArray.fromHex("3F")), null))
+        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(HexArray.fromHex("3f")), null))
                 .isExactlyInstanceOf(CoapMessageFormatException.class);
 
     }
