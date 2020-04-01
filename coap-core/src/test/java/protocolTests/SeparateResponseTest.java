@@ -78,4 +78,22 @@ public class SeparateResponseTest {
         transport.receive(newCoapPacket(2).token(123).con(Code.C205_CONTENT).payload("dupa").build(), SERVER_ADDRESS);
         assertEquals("dupa", futResp.get().getPayloadString());
     }
+
+    @Test
+    public void shouldResponseWithSeparateResponseBlock1_withoutEmptyAck() throws Exception {
+        //given
+        CompletableFuture<CoapPacket> futResp = client.resource("/path1").token(123).payload("aaaaaaaaa|aaaaaaaaa|aaaaaaaaa|aaaaaaaaa|").post();
+
+        //when
+        transport.receive(newCoapPacket(1).token(123).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_32, true).build(), SERVER_ADDRESS);
+
+        //and, separate response
+        transport.receive(newCoapPacket(2).emptyAck(2), SERVER_ADDRESS);
+        transport.receive(newCoapPacket(3).token(123).con(Code.C201_CREATED).block1Req(1, BlockSize.S_32, false).payload("ok").build(), SERVER_ADDRESS);
+
+        //then
+        assertEquals("ok", futResp.get().getPayloadString());
+        //and ACK response should be sent
+        assertEquals(newCoapPacket(SERVER_ADDRESS).emptyAck(3), transport.getLastOutgoingMessage());
+    }
 }
