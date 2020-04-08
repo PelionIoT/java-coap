@@ -225,11 +225,6 @@ class BlockWiseCallback implements RequestCallback {
         makeRequestFunc.accept(this);
     }
 
-    @Override
-    public void onSent() {
-        reqCallback.onSent();
-    }
-
 
     static BlockOption nextBertBlock(BlockOption blockOption, int fullPayloadSize, int lastBlocksCountPerMessage, int maxPayloadSizePerBlock) {
 

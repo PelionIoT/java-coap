@@ -16,6 +16,7 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
+
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.CoapPacket;
@@ -272,9 +273,7 @@ public class CoapUdpMessaging extends CoapMessaging {
             delayedTransMagr.add(delayedTransactionId, new CoapTransaction(requestCallback, packet, this, transContext, transactionPriority, this::removeCoapTransId));
             this.send(packet, packet.getRemoteAddress(), transContext)
                     .whenComplete((wasSent, maybeError) -> {
-                        if (maybeError == null) {
-                            requestCallback.onSent();
-                        } else {
+                        if (maybeError != null) {
                             delayedTransMagr.remove(delayedTransactionId);
                             requestCallback.callException(((Exception) maybeError));
                         }

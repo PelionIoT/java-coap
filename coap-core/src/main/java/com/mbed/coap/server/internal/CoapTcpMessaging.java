@@ -16,6 +16,7 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
+
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
@@ -120,9 +121,7 @@ public class CoapTcpMessaging extends CoapMessaging {
 
         sendPacket(packet, packet.getRemoteAddress(), transContext)
                 .whenComplete((wasSent, maybeError) -> {
-                    if (maybeError == null) {
-                        requestCallback.onSent();
-                    } else {
+                    if (maybeError != null) {
                         removeTransactionExceptionally(transId, (Exception) maybeError);
                     }
                 });

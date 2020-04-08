@@ -106,9 +106,7 @@ public class CoapTransaction {
     }
 
     private void onSend(Throwable maybeError) {
-        if (maybeError == null) {
-            callback.onSent();
-        } else {
+        if (maybeError != null) {
             sendErrConsumer.accept(transId);
             callback.callException(((Exception) maybeError));
         }

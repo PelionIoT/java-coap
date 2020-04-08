@@ -16,6 +16,7 @@
 package com.mbed.coap.server;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
+
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
@@ -452,13 +453,6 @@ public class CoapServer {
             request.setToken(observationIDGenerator.nextObservationID(request.headers().getUriPath()));
         }
         makeRequest(request, new RequestCallback() {
-
-            @Override
-            public void onSent() {
-                if (respCallback instanceof RequestCallback) {
-                    ((RequestCallback) respCallback).onSent();
-                }
-            }
 
             @Override
             public void callException(Exception ex) {

@@ -18,12 +18,13 @@ package com.mbed.coap.server;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
+
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapRequestEntityTooLarge;
@@ -216,10 +217,8 @@ public class CoapServerTest {
         RequestCallback respCallback = mock(RequestCallback.class);
         server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
 
-        verifyMakeRequest_andThen().onSent();
         verifyMakeRequest_andThen().call(resp);
 
-        verify(respCallback).onSent();
         verify(respCallback).call(eq(resp));
     }
 
@@ -228,7 +227,6 @@ public class CoapServerTest {
         Callback<CoapPacket> respCallback = mock(Callback.class);
         server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
 
-        verifyMakeRequest_andThen().onSent();
         verifyMakeRequest_andThen().call(newCoapPacket().ack(Code.C205_CONTENT).build());
 
         verify(respCallback).callException(isA(ObservationNotEstablishedException.class));

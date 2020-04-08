@@ -58,9 +58,5 @@ public class CoapServerUtils {
             callback.callException(ex);
         }
 
-        @Override
-        public void onSent() {
-            //ignore
-        }
     }
 }

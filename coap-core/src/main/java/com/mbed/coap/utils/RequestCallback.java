@@ -28,11 +28,6 @@ public interface RequestCallback extends Callback<CoapPacket> {
     RequestCallback NULL = new RequestCallback() {
 
         @Override
-        public void onSent() {
-            //ignore
-        }
-
-        @Override
         public void call(CoapPacket packet) {
             //ignore
         }
@@ -42,7 +37,5 @@ public interface RequestCallback extends Callback<CoapPacket> {
             LOGGER.error(ex.getMessage(), ex);
         }
     };
-
-    void onSent();
 
 }

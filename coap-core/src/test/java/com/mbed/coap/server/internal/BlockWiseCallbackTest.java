@@ -20,6 +20,7 @@ import static com.mbed.coap.packet.Code.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
+
 import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapException;
@@ -300,9 +301,6 @@ public class BlockWiseCallbackTest {
     @Test
     public void should_forward_wrapped_method_calls() throws CoapException {
         givenGetRequest();
-
-        bwc.onSent();
-        verify(callback).onSent();
 
         bwc.callException(new IOException());
         verify(callback).callException(isA(IOException.class));

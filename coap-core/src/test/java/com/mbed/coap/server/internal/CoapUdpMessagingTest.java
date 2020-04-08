@@ -18,7 +18,9 @@ package com.mbed.coap.server.internal;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
+
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.exception.TooManyRequestsForEndpointException;
@@ -320,33 +322,6 @@ public class CoapUdpMessagingTest {
         assertThatThrownBy(resp2::get).hasCauseExactlyInstanceOf(IOException.class);
     }
 
-    @Test
-    public void should_receive_onSent_callback_when_message_is_sent() throws Exception {
-        initServer();
-
-        RequestCallback callback = mock(RequestCallback.class);
-        CompletableFuture<Boolean> fut = new CompletableFuture<>();
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(fut);
-
-        udpMessaging.makeRequest(newCoapPacket(LOCAL_1_5683).con().get().uriPath("/test").build(), callback, TransportContext.NULL);
-
-        verify(callback, never()).onSent();
-
-        fut.complete(true);
-        verify(callback).onSent();
-    }
-
-    @Test
-    public void should_receive_onSent_callback_when_NON_message_is_sent() throws Exception {
-        initServer();
-
-        RequestCallback callback = mock(RequestCallback.class);
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(CompletableFuture.completedFuture(true));
-
-        udpMessaging.makeRequest(newCoapPacket(LOCAL_1_5683).non().get().uriPath("/test").build(), callback, TransportContext.NULL);
-
-        verify(callback).onSent();
-    }
 
     @Test
     public void network_fail_when_sending_NON_request() throws Exception {
@@ -357,7 +332,6 @@ public class CoapUdpMessagingTest {
 
         udpMessaging.makeRequest(newCoapPacket(LOCAL_1_5683).non().token(12).get().uriPath("/test").build(), callback, TransportContext.NULL);
 
-        verify(callback, never()).onSent();
         verify(callback).callException(any());
     }
 
