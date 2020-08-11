@@ -20,6 +20,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.function.Supplier;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -29,12 +30,18 @@ import org.slf4j.LoggerFactory;
 public class SSLSocketClientTransport extends SocketClientTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SSLSocketClientTransport.class);
 
-    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect) {
+    public SSLSocketClientTransport(Supplier<InetSocketAddress> destination, SSLSocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect) {
         super(destination, socketFactory, serializer, autoReconnect);
+    }
+
+    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect) {
+        this(() -> destination, socketFactory, serializer, autoReconnect);
     }
 
     @Override
     protected void connect(CoapReceiver coapReceiver) throws IOException {
+        InetSocketAddress destination = destinationSupplier.get();
+
         SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(destination.getAddress(), destination.getPort());
 
         sslSocket.addHandshakeCompletedListener(handshakeCompletedEvent -> {

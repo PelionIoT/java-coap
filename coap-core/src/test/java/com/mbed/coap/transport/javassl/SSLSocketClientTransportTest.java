@@ -35,17 +35,9 @@ public class SSLSocketClientTransportTest {
     SSLContext clientSslContext = SSLUtils.sslContext(CLI_KS, SECRET);
 
 
-    @Test
-    public void successfulConnection() throws Exception {
-
-        CoapServer srv = CoapServer.builder()
-                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, CoapSerializer.UDP))
-                .build().start();
-
-
-        InetSocketAddress serverAdr = new InetSocketAddress("localhost", srv.getLocalSocketAddress().getPort());
+    private void connectionTest(CoapServer srv, InetSocketAddress serverAdr, SSLSocketClientTransport transport) throws Exception {
         CoapClient client = CoapClientBuilder.clientFor(serverAdr,
-                CoapServer.builder().transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), CoapSerializer.UDP, false)).build().start()
+                CoapServer.builder().transport(transport).build().start()
         );
 
         //        assertNotNull(client.ping().get());
@@ -54,7 +46,28 @@ public class SSLSocketClientTransportTest {
 
         client.close();
         srv.stop();
+    }
 
+    @Test
+    public void successfulConnection() throws Exception {
+        CoapServer srv = CoapServer.builder()
+                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, CoapSerializer.UDP))
+                .build().start();
+        InetSocketAddress serverAdr = new InetSocketAddress("localhost", srv.getLocalSocketAddress().getPort());
+
+        SSLSocketClientTransport transport = new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), CoapSerializer.UDP, false);
+        connectionTest(srv, serverAdr, transport);
+    }
+
+    @Test
+    public void successfulConnectionWithLambdaAddress() throws Exception {
+        CoapServer srv = CoapServer.builder()
+                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, CoapSerializer.UDP))
+                .build().start();
+        InetSocketAddress serverAdr = new InetSocketAddress("localhost", srv.getLocalSocketAddress().getPort());
+
+        SSLSocketClientTransport transport = new SSLSocketClientTransport(() -> serverAdr, clientSslContext.getSocketFactory(), CoapSerializer.UDP, false);
+        connectionTest(srv, serverAdr, transport);
     }
 
     @Test
