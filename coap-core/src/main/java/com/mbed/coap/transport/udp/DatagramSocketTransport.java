@@ -19,6 +19,7 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
+import com.mbed.coap.transport.WithReconnectionSupport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.TransportExecutors;
 import java.io.IOException;
@@ -28,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,35 +38,43 @@ import org.slf4j.LoggerFactory;
  *
  * @author szymon
  */
-public class DatagramSocketTransport extends BlockingCoapTransport {
+public class DatagramSocketTransport extends BlockingCoapTransport implements WithReconnectionSupport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatagramSocketTransport.class.getName());
-    private final InetSocketAddress bindSocket;
+    private final Supplier<InetSocketAddress> bindAddressSupplier;
     private DatagramSocket socket;
     private int socketBufferSize = -1;
     protected boolean reuseAddress;
     private final Executor readingWorker;
 
-    public DatagramSocketTransport(InetSocketAddress bindSocket) {
-        this(null, bindSocket, null);
+    public DatagramSocketTransport(InetSocketAddress bindAddress) {
+        this(null, bindAddress, null);
     }
 
-    public DatagramSocketTransport(InetSocketAddress bindSocket, Executor readingWorker) {
-        this(null, bindSocket, readingWorker);
+    public DatagramSocketTransport(InetSocketAddress bindAddress, Executor readingWorker) {
+        this(null, bindAddress, readingWorker);
     }
 
     public DatagramSocketTransport(DatagramSocket datagramSocket, Executor readingWorker) {
         this(datagramSocket, ((InetSocketAddress) datagramSocket.getLocalSocketAddress()), readingWorker);
     }
 
-    private DatagramSocketTransport(DatagramSocket datagramSocket, InetSocketAddress bindSocket, Executor readingWorker) {
+    public DatagramSocketTransport(Supplier<InetSocketAddress> bindAddress, Executor readingWorker) {
+        this(null, bindAddress, readingWorker);
+    }
+
+    private DatagramSocketTransport(DatagramSocket datagramSocket, Supplier<InetSocketAddress> bindAddress, Executor readingWorker) {
         this.socket = datagramSocket;
-        this.bindSocket = bindSocket;
+        this.bindAddressSupplier = bindAddress;
         if (readingWorker != null) {
             this.readingWorker = readingWorker;
         } else {
             this.readingWorker = TransportExecutors.newWorker("udp-reader");
         }
+    }
+
+    private DatagramSocketTransport(DatagramSocket datagramSocket, InetSocketAddress bindAddress, Executor readingWorker) {
+        this(datagramSocket, ()->bindAddress, readingWorker);
     }
 
     public DatagramSocketTransport(int localPort) {
@@ -86,17 +96,19 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     }
 
     @Override
+    public void reconnect() throws SocketException {
+        if (socket != null) {
+            socket.close();
+        }
+        socket = createSocket();
+    }
+
+    @Override
     public void start(CoapReceiver coapReceiver) throws IOException {
         if (socket == null) {
             socket = createSocket();
         }
 
-        if (socketBufferSize > 0) {
-            socket.setReceiveBufferSize(socketBufferSize);
-            socket.setSendBufferSize(socketBufferSize);
-        }
-        socket.setReuseAddress(reuseAddress);
-        LOGGER.info("CoAP server binds on " + socket.getLocalSocketAddress());
         if (socketBufferSize > 0 && LOGGER.isDebugEnabled()) {
             LOGGER.debug("DatagramSocket [receiveBuffer: " + socket.getReceiveBufferSize() + ", sendBuffer: " + socket.getSendBufferSize() + "]");
         }
@@ -135,8 +147,14 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     }
 
     protected DatagramSocket createSocket() throws SocketException {
-        DatagramSocket datagramSocket = new DatagramSocket(bindSocket);
+        DatagramSocket datagramSocket = new DatagramSocket(bindAddressSupplier.get());
         datagramSocket.setSoTimeout(200);
+        if (socketBufferSize > 0) {
+            datagramSocket.setReceiveBufferSize(socketBufferSize);
+            datagramSocket.setSendBufferSize(socketBufferSize);
+        }
+        datagramSocket.setReuseAddress(reuseAddress);
+        LOGGER.info("CoAP server binds on " + datagramSocket.getLocalSocketAddress());
         return datagramSocket;
     }
 
