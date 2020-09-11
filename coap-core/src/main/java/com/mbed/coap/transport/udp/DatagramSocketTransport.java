@@ -29,7 +29,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,40 +40,32 @@ import org.slf4j.LoggerFactory;
 public class DatagramSocketTransport extends BlockingCoapTransport implements WithReconnectionSupport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatagramSocketTransport.class.getName());
-    private final Supplier<InetSocketAddress> bindAddressSupplier;
+    private final InetSocketAddress bindSocket;
     private DatagramSocket socket;
     private int socketBufferSize = -1;
     protected boolean reuseAddress;
     private final Executor readingWorker;
 
-    public DatagramSocketTransport(InetSocketAddress bindAddress) {
-        this(null, bindAddress, null);
+    public DatagramSocketTransport(InetSocketAddress bindSocket) {
+        this(null, bindSocket, null);
     }
 
-    public DatagramSocketTransport(InetSocketAddress bindAddress, Executor readingWorker) {
-        this(null, bindAddress, readingWorker);
+    public DatagramSocketTransport(InetSocketAddress bindSocket, Executor readingWorker) {
+        this(null, bindSocket, readingWorker);
     }
 
     public DatagramSocketTransport(DatagramSocket datagramSocket, Executor readingWorker) {
         this(datagramSocket, ((InetSocketAddress) datagramSocket.getLocalSocketAddress()), readingWorker);
     }
 
-    public DatagramSocketTransport(Supplier<InetSocketAddress> bindAddress, Executor readingWorker) {
-        this(null, bindAddress, readingWorker);
-    }
-
-    private DatagramSocketTransport(DatagramSocket datagramSocket, Supplier<InetSocketAddress> bindAddress, Executor readingWorker) {
+    private DatagramSocketTransport(DatagramSocket datagramSocket, InetSocketAddress bindSocket, Executor readingWorker) {
         this.socket = datagramSocket;
-        this.bindAddressSupplier = bindAddress;
+        this.bindSocket = bindSocket;
         if (readingWorker != null) {
             this.readingWorker = readingWorker;
         } else {
             this.readingWorker = TransportExecutors.newWorker("udp-reader");
         }
-    }
-
-    private DatagramSocketTransport(DatagramSocket datagramSocket, InetSocketAddress bindAddress, Executor readingWorker) {
-        this(datagramSocket, ()->bindAddress, readingWorker);
     }
 
     public DatagramSocketTransport(int localPort) {
@@ -147,7 +138,7 @@ public class DatagramSocketTransport extends BlockingCoapTransport implements Wi
     }
 
     protected DatagramSocket createSocket() throws SocketException {
-        DatagramSocket datagramSocket = new DatagramSocket(bindAddressSupplier.get());
+        DatagramSocket datagramSocket = new DatagramSocket(bindSocket);
         datagramSocket.setSoTimeout(200);
         if (socketBufferSize > 0) {
             datagramSocket.setReceiveBufferSize(socketBufferSize);

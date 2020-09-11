@@ -134,28 +134,6 @@ public class DatagramSocketTransportTest {
     }
 
     @Test
-    public void initializeWithProvidedAddressSupplier() throws Exception {
-
-        DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(()->new InetSocketAddress(0), null);
-
-        datagramSocketTransport.start(mock(CoapReceiver.class));
-        DatagramSocket udpSocket = datagramSocketTransport.getSocket();
-
-        assertEquals(udpSocket.getLocalPort(), datagramSocketTransport.getLocalSocketAddress().getPort());
-
-
-        datagramSocketTransport.reconnect();
-
-        DatagramSocket udpSocket2 = datagramSocketTransport.getSocket();
-
-        assert(udpSocket2 != udpSocket);
-        datagramSocketTransport.stop();
-        assertTrue(udpSocket.isClosed());
-        assertTrue(udpSocket2.isClosed());
-    }
-
-
-    @Test
     public void continueReadingWhenAfterReadingTimeout() throws Exception {
         DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(new InetSocketAddress(0), mock(Executor.class));
 
