@@ -66,61 +66,16 @@ public class DatagramSocketTransportTest {
 
             trans.start(mock(CoapReceiver.class));
 
-            try {
-                trans.setReuseAddress(true);
-                fail();
-            } catch (Exception e) {
-                assertTrue(e instanceof IllegalStateException);
-            }
-            try {
-                trans.setSocketBufferSize(1234);
-                fail();
-            } catch (Exception e) {
-                assertTrue(e instanceof IllegalStateException);
-            }
         } finally {
             trans.stop();
         }
     }
 
-    @Test
-    public void initializeWithParameters() throws Exception {
-        DatagramSocketTransport trans = new DatagramSocketTransport(new InetSocketAddress(0), mock(Executor.class));
-        trans.setReuseAddress(false);
-        trans.setSocketBufferSize(12345);
-        trans.start(mock(CoapReceiver.class));
-
-        assertTrue(trans.getSocket().isBound());
-        assertFalse(trans.getSocket().isClosed());
-        assertEquals(12345, trans.getSocket().getSendBufferSize());
-        assertFalse(trans.getSocket().getReuseAddress());
-
-        trans.stop();
-        assertTrue(trans.getSocket().isClosed());
-    }
-
-    @Test
-    public void reopenSamePort() throws IOException {
-        DatagramSocketTransport trans = createDatagramSocketTransport();
-        trans.start(mock(CoapReceiver.class));
-        assertFalse(trans.getSocket().isClosed());
-        int localPort = trans.getLocalSocketAddress().getPort();
-        trans.stop();
-        assertTrue(trans.getSocket().isClosed());
-
-        //bind again to same port
-        trans = new DatagramSocketTransport(localPort);
-
-        trans.start(mock(CoapReceiver.class));
-        assertFalse(trans.getSocket().isClosed());
-        System.out.println(trans.getLocalSocketAddress());
-        trans.stop();
-    }
 
     @Test
     public void initializeWithProvidedDatagramSocket() throws Exception {
 
-        DatagramSocket udpSocket = new DatagramSocket(0);
+        DatagramSocketAdapter udpSocket = new DatagramSocketAdapter(0);
         DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(udpSocket, null);
 
         datagramSocketTransport.start(mock(CoapReceiver.class));

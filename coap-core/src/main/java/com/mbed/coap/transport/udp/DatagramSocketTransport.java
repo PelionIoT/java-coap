@@ -23,7 +23,6 @@ import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.TransportExecutors;
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -40,9 +39,7 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatagramSocketTransport.class.getName());
     private final InetSocketAddress bindSocket;
-    private DatagramSocket socket;
-    private int socketBufferSize = -1;
-    protected boolean reuseAddress;
+    private BlockingSocket socket;
     private final Executor readingWorker;
 
     public DatagramSocketTransport(InetSocketAddress bindSocket) {
@@ -53,11 +50,11 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
         this(null, bindSocket, readingWorker);
     }
 
-    public DatagramSocketTransport(DatagramSocket datagramSocket, Executor readingWorker) {
-        this(datagramSocket, ((InetSocketAddress) datagramSocket.getLocalSocketAddress()), readingWorker);
+    public DatagramSocketTransport(BlockingSocket datagramSocket, Executor readingWorker) {
+        this(datagramSocket, datagramSocket.getOwnAddress(), readingWorker);
     }
 
-    private DatagramSocketTransport(DatagramSocket datagramSocket, InetSocketAddress bindSocket, Executor readingWorker) {
+    private DatagramSocketTransport(BlockingSocket datagramSocket, InetSocketAddress bindSocket, Executor readingWorker) {
         this.socket = datagramSocket;
         this.bindSocket = bindSocket;
         if (readingWorker != null) {
@@ -71,35 +68,13 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
         this(new InetSocketAddress(localPort));
     }
 
-    public void setSocketBufferSize(int socketBufferSize) {
-        if (socket != null) {
-            throw new IllegalStateException();
-        }
-        this.socketBufferSize = socketBufferSize;
-    }
-
-    public void setReuseAddress(boolean reuseAddress) {
-        if (socket != null) {
-            throw new IllegalStateException();
-        }
-        this.reuseAddress = reuseAddress;
-    }
-
     @Override
     public void start(CoapReceiver coapReceiver) throws IOException {
         if (socket == null) {
             socket = createSocket();
         }
 
-        if (socketBufferSize > 0) {
-            socket.setReceiveBufferSize(socketBufferSize);
-            socket.setSendBufferSize(socketBufferSize);
-        }
-        socket.setReuseAddress(reuseAddress);
-        LOGGER.info("CoAP server binds on " + socket.getLocalSocketAddress());
-        if (socketBufferSize > 0 && LOGGER.isDebugEnabled()) {
-            LOGGER.debug("DatagramSocket [receiveBuffer: " + socket.getReceiveBufferSize() + ", sendBuffer: " + socket.getSendBufferSize() + "]");
-        }
+        LOGGER.info("CoAP server binds on " + socket.getOwnAddress());
 
         TransportExecutors.loop(readingWorker, () -> readingLoop(coapReceiver));
     }
@@ -134,9 +109,10 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
         }
     }
 
-    protected DatagramSocket createSocket() throws SocketException {
-        DatagramSocket datagramSocket = new DatagramSocket(bindSocket);
+    protected BlockingSocket createSocket() throws SocketException {
+        DatagramSocketAdapter datagramSocket = new DatagramSocketAdapter(bindSocket);
         datagramSocket.setSoTimeout(200);
+        datagramSocket.setReuseAddress(false);
         return datagramSocket;
     }
 
@@ -162,10 +138,10 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
 
     @Override
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) socket.getLocalSocketAddress();
+        return socket.getOwnAddress();
     }
 
-    protected DatagramSocket getSocket() {
+    protected BlockingSocket getSocket() {
         return socket;
     }
 
