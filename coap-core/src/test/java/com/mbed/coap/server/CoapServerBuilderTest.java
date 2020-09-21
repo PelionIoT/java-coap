@@ -19,6 +19,7 @@ import static com.mbed.coap.server.CoapServerBuilder.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
+import java.net.InetAddress;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Test;
 
@@ -32,6 +33,15 @@ public class CoapServerBuilderTest {
         ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
 
         CoapServer server = newBuilder().transport(0).scheduledExecutor(scheduledExecutorService).build();
+
+        assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getCoapMessaging()).getScheduledExecutor());
+    }
+
+    @Test
+    public void scheduleExecutorWithPort() throws Exception {
+        ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
+
+        CoapServer server = newBuilder().transport(InetAddress.getByName("localhost"),0).scheduledExecutor(scheduledExecutorService).build();
 
         assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getCoapMessaging()).getScheduledExecutor());
     }
