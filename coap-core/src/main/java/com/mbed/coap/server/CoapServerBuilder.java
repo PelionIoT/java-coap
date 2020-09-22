@@ -27,6 +27,7 @@ import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -141,6 +142,11 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
 
         public CoapServerBuilderForUdp transport(int port) {
             transport(new DatagramSocketTransport(new InetSocketAddress(port)));
+            return this;
+        }
+        
+        public CoapServerBuilderForUdp transport(InetAddress address,int port) {
+            transport(new DatagramSocketTransport(new InetSocketAddress(address,port)));
             return this;
         }
 
