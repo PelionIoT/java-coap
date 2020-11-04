@@ -1,10 +1,10 @@
 mbed CoAP
 =========
 
-![CircleCI](https://img.shields.io/circleci/project/github/ARMmbed/java-coap/master.svg)
+![CircleCI](https://img.shields.io/circleci/project/github/PelionIoT/java-coap/master.svg)
 [![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)](LICENSE)
-[![codecov](https://codecov.io/gh/ARMmbed/java-coap/branch/master/graph/badge.svg)](https://codecov.io/gh/ARMmbed/java-coap)
-[![Known Vulnerabilities](https://snyk.io/test/github/armmbed/java-coap/badge.svg)](https://snyk.io/test/github/armmbed/java-coap)
+[![codecov](https://codecov.io/gh/PelionIoT/java-coap/branch/master/graph/badge.svg)](https://codecov.io/gh/PelionIoT/java-coap)
+[![Known Vulnerabilities](https://snyk.io/test/github/PelionIoT/java-coap/badge.svg)](https://snyk.io/test/github/PelionIoT/java-coap)
 
 Introduction
 ------------

@@ -1,6 +1,6 @@
 version: 2
 defaults: &defaults
-    working_directory: ~/ARMmbed/java-coap
+    working_directory: ~/PelionIoT/java-coap
 
     steps:
     - checkout

@@ -26,7 +26,7 @@
 
     <name>mbed Java CoAP</name>
     <description>Java implementation of CoAP protocol</description>
-    <url>https://github.com/ARMmbed/java-coap</url>
+    <url>https://github.com/PelionIoT/java-coap</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -63,9 +63,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/ARMmbed/java-coap.git</connection>
-        <developerConnection>scm:git:ssh://github.com:ARMmbed/java-coap.git</developerConnection>
-        <url>http://github.com/ARMmbed/java-coap</url>
+        <connection>scm:git:git://github.com/PelionIoT/java-coap.git</connection>
+        <developerConnection>scm:git:ssh://github.com:PelionIoT/java-coap.git</developerConnection>
+        <url>http://github.com/PelionIoT/java-coap</url>
     </scm>
 
     <modules>
