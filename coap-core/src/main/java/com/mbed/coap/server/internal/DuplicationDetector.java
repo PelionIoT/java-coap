@@ -34,16 +34,18 @@ import org.slf4j.LoggerFactory;
  * @author szymon
  */
 public class DuplicationDetector implements Runnable {
-
+    public static final long DEFAULT_DUPLICATION_TIMEOUT_MILLIS = 30000; // Duplicate detection will end for a message after 30 seconds by default.
+    public static final long DEFAULT_WARN_INTERVAL_MILLIS = 10000; //show warning message maximum every 10 seconds by default
+    public static final long DEFAULT_CLEAN_INTERVAL_MILLIS = 10000; //clean expired messages every 10 seconds by default
     public static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket(null);
     private static final Logger LOGGER = LoggerFactory.getLogger(DuplicationDetector.class.getName());
-    public static final int WARN_FREQ_MILLI = 10000; //show warning message maximum every 10 seconds
 
     private final Lock REDUCE_LOCK = new ReentrantLock();
     private final long requestIdTimeout;
-    private final long maxSize;
+    private long maxSize;
+    private long warnIntervalMillis;
     private final ConcurrentMap<CoapRequestId, CoapPacket> requestMap = new ConcurrentHashMap<>();
-    private long cleanDelayMili = 10000;
+    private long cleanDelayMili;
     private final ScheduledExecutorService scheduledExecutor;
     private ScheduledFuture<?> cleanWorkerFut;
     private final long overSizeMargin;
@@ -53,9 +55,28 @@ public class DuplicationDetector implements Runnable {
         this.cleanDelayMili = cleanDelayMili;
     }
 
-    public DuplicationDetector(TimeUnit unit, long duplicationTimeout, long maxSize, ScheduledExecutorService scheduledExecutor) {
+    public DuplicationDetector(TimeUnit unit,
+            long duplicationTimeout,
+            long maxSize,
+            ScheduledExecutorService scheduledExecutor) {
+        this(unit,
+                duplicationTimeout,
+                maxSize,
+                DEFAULT_CLEAN_INTERVAL_MILLIS,
+                DEFAULT_WARN_INTERVAL_MILLIS,
+                scheduledExecutor);
+    }
+
+    public DuplicationDetector(TimeUnit unit,
+            long duplicationTimeout,
+            long maxSize,
+            long cleanIntervalMillis,
+            long warningMessageIntervalMillis,
+            ScheduledExecutorService scheduledExecutor) {
         requestIdTimeout = TimeUnit.MILLISECONDS.convert(duplicationTimeout, unit);
         this.maxSize = maxSize;
+        this.warnIntervalMillis = warningMessageIntervalMillis;
+        this.cleanDelayMili = cleanIntervalMillis;
         this.overSizeMargin = maxSize / 100; //1%
         this.scheduledExecutor = scheduledExecutor;
         LOGGER.debug("Coap duplicate detector init (max traffic: " + (int) (maxSize / (requestIdTimeout / 1000.0d)) + " msg/sec)");
@@ -92,7 +113,7 @@ public class DuplicationDetector implements Runnable {
 
                 if (nextWarnMessage < System.currentTimeMillis()) {
                     LOGGER.warn("CoAP request duplicate list has reached max size (" + maxSize + "), reduced by " + overSizeMargin);
-                    nextWarnMessage = System.currentTimeMillis() + WARN_FREQ_MILLI;
+                    nextWarnMessage = System.currentTimeMillis() + warnIntervalMillis;
                 }
             } finally {
                 REDUCE_LOCK.unlock();

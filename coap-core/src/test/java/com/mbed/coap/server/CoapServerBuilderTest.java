@@ -41,7 +41,7 @@ public class CoapServerBuilderTest {
     public void scheduleExecutorWithPort() throws Exception {
         ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
 
-        CoapServer server = newBuilder().transport(InetAddress.getByName("localhost"),0).scheduledExecutor(scheduledExecutorService).build();
+        CoapServer server = newBuilder().transport(InetAddress.getByName("localhost"), 0).scheduledExecutor(scheduledExecutorService).build();
 
         assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getCoapMessaging()).getScheduledExecutor());
     }
@@ -49,6 +49,21 @@ public class CoapServerBuilderTest {
     @Test(expected = IllegalArgumentException.class)
     public void shouldFail_when_illegal_duplicateMsgCacheSize() throws Exception {
         newBuilder().duplicateMsgCacheSize(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldFail_when_illegal_duplicateMsgCleanIntervalInMillis() throws Exception {
+        newBuilder().duplicateMsgCleanIntervalInMillis(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldFail_when_illegal_duplicateMsgWarningMessageIntervalInMillis() throws Exception {
+        newBuilder().duplicateMsgWarningMessageIntervalInMillis(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldFail_when_illegal_duplicateMsgDetectionTimeInMillis() throws Exception {
+        newBuilder().duplicateMsgDetectionTimeInMillis(0);
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -37,6 +37,9 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
+    private static final int DEFAULT_DUPLICATE_DETECTOR_CLEAN_INTERVAL_MILLIS = 10000;
+    private static final int DEFAULT_DUPLICATE_DETECTOR_WARNING_INTERVAL_MILLIS = 10000;
+    private static final int DEFAULT_DUPLICATE_DETECTOR_DETECTION_TIME_MILLIS = 30000;
     private static final long DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
 
     protected CoapTransport coapTransport;
@@ -117,6 +120,10 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
 
     public static class CoapServerBuilderForUdp extends CoapServerBuilder<CoapServerBuilderForUdp> {
         private int duplicationMaxSize = DEFAULT_MAX_DUPLICATION_LIST_SIZE;
+        private long duplicateMsgCleanIntervalMillis = DEFAULT_DUPLICATE_DETECTOR_CLEAN_INTERVAL_MILLIS;
+        private long duplicateMsgWarningMessageIntervalMillis = DEFAULT_DUPLICATE_DETECTOR_WARNING_INTERVAL_MILLIS;
+        private long duplicateMsgDetectionTimeMillis = DEFAULT_DUPLICATE_DETECTOR_DETECTION_TIME_MILLIS;
+
         private ScheduledExecutorService scheduledExecutorService;
         private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
 
@@ -177,8 +184,17 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             server.setSpecialCoapTransactionPriority(blockTransferPriority);
             server.setTransmissionTimeout(transmissionTimeout);
 
-            server.init(duplicationMaxSize, scheduledExecutorService, isSelfCreatedExecutor,
-                    midSupplier, maxQueueSize, defaultTransactionPriority, delayedTransactionTimeout, duplicatedCoapMessageCallback);
+            server.init(duplicationMaxSize,
+                    duplicateMsgCleanIntervalMillis,
+                    duplicateMsgWarningMessageIntervalMillis,
+                    duplicateMsgDetectionTimeMillis,
+                    scheduledExecutorService,
+                    isSelfCreatedExecutor,
+                    midSupplier,
+                    maxQueueSize,
+                    defaultTransactionPriority,
+                    delayedTransactionTimeout,
+                    duplicatedCoapMessageCallback);
 
             return server;
         }
@@ -253,6 +269,30 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
                 throw new IllegalArgumentException();
             }
             this.duplicationMaxSize = duplicationMaxSize;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp duplicateMsgCleanIntervalInMillis(long intervalInMillis) {
+            if (intervalInMillis < 1000) {
+                throw new IllegalArgumentException();
+            }
+            this.duplicateMsgCleanIntervalMillis = intervalInMillis;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp duplicateMsgWarningMessageIntervalInMillis(long intervalInMillis) {
+            if (intervalInMillis < 1000) {
+                throw new IllegalArgumentException();
+            }
+            this.duplicateMsgWarningMessageIntervalMillis = intervalInMillis;
+            return this;
+        }
+
+        public CoapServerBuilderForUdp duplicateMsgDetectionTimeInMillis(long intervalInMillis) {
+            if (intervalInMillis < 1000) {
+                throw new IllegalArgumentException();
+            }
+            this.duplicateMsgDetectionTimeMillis = intervalInMillis;
             return this;
         }
 
