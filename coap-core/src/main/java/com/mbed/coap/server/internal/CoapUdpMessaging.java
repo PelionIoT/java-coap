@@ -49,8 +49,7 @@ import org.slf4j.LoggerFactory;
 public class CoapUdpMessaging extends CoapMessaging {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapUdpMessaging.class);
-    private final static long TRANSACTION_TIMEOUT_DELAY = 1000;
-    private static final int DEFAULT_DUPLICATION_TIMEOUT = 30000;
+    private final static long TRANSACTION_TIMEOUT_DELAY_MILLIS = 1000;
     private ScheduledExecutorService scheduledExecutor;
 
     private boolean isSelfCreatedExecutor;
@@ -71,10 +70,38 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
     public final void init(int duplicationListSize,
-            ScheduledExecutorService scheduledExecutor, boolean isSelfCreatedExecutor,
+            ScheduledExecutorService scheduledExecutor,
+            boolean isSelfCreatedExecutor,
             MessageIdSupplier idContext,
-            int maxQueueSize, CoapTransaction.Priority defaultPriority,
-            long delayedTransactionTimeout, DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
+            int maxQueueSize,
+            CoapTransaction.Priority defaultPriority,
+            long delayedTransactionTimeout,
+            DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
+        init(duplicationListSize,
+                DuplicationDetector.DEFAULT_CLEAN_INTERVAL_MILLIS,
+                DuplicationDetector.DEFAULT_WARN_INTERVAL_MILLIS,
+                DuplicationDetector.DEFAULT_DUPLICATION_TIMEOUT_MILLIS,
+                scheduledExecutor,
+                isSelfCreatedExecutor,
+                idContext,
+                maxQueueSize,
+                defaultPriority,
+                delayedTransactionTimeout,
+                duplicatedCoapMessageCallback);
+
+    }
+
+    public final void init(int duplicationListSize,
+            long duplicateMsgCleanIntervalMillis,
+            long duplicateMsgWarningMessageIntervalMillis,
+            long duplicateMsgDetectionTimeMillis,
+            ScheduledExecutorService scheduledExecutor,
+            boolean isSelfCreatedExecutor,
+            MessageIdSupplier idContext,
+            int maxQueueSize,
+            CoapTransaction.Priority defaultPriority,
+            long delayedTransactionTimeout,
+            DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
 
         if (coapTransporter == null || scheduledExecutor == null || idContext == null || defaultPriority == null || duplicatedCoapMessageCallback == null) {
             throw new NullPointerException();
@@ -94,7 +121,13 @@ public class CoapUdpMessaging extends CoapMessaging {
         }
 
         if (duplicationListSize > 0) {
-            duplicationDetector = new DuplicationDetector(TimeUnit.MILLISECONDS, DEFAULT_DUPLICATION_TIMEOUT, duplicationListSize, scheduledExecutor);
+            duplicationDetector = new DuplicationDetector(
+                    TimeUnit.MILLISECONDS,
+                    duplicateMsgDetectionTimeMillis,
+                    duplicationListSize,
+                    duplicateMsgCleanIntervalMillis,
+                    duplicateMsgWarningMessageIntervalMillis,
+                    scheduledExecutor);
         }
     }
 
@@ -118,7 +151,7 @@ public class CoapUdpMessaging extends CoapMessaging {
 
     private void startTransactionTimeoutWorker() {
         transactionTimeoutWorkerFut = scheduledExecutor.scheduleWithFixedDelay(this::resendTimeouts,
-                0, TRANSACTION_TIMEOUT_DELAY, TimeUnit.MILLISECONDS);
+                0, TRANSACTION_TIMEOUT_DELAY_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     private void stopTransactionTimeoutWorker() {
