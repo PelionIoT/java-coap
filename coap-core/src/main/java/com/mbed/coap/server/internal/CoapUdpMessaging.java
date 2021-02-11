@@ -27,6 +27,8 @@ import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.utils.Cache;
+import com.mbed.coap.utils.CacheImpl;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
@@ -103,10 +105,47 @@ public class CoapUdpMessaging extends CoapMessaging {
             long delayedTransactionTimeout,
             DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
 
+        Cache cache = null;
+        if (duplicationListSize > 0) {
+            cache = new CacheImpl<DuplicationDetector.CoapRequestId, CoapPacket>(
+                    "Default cache",
+                    duplicationListSize,
+                    duplicateMsgCleanIntervalMillis,
+                    duplicateMsgWarningMessageIntervalMillis,
+                    scheduledExecutor);
+        }
+        init(cache,
+                duplicateMsgDetectionTimeMillis,
+                isSelfCreatedExecutor,
+                idContext,
+                maxQueueSize,
+                defaultPriority,
+                delayedTransactionTimeout,
+                duplicatedCoapMessageCallback,
+                scheduledExecutor);
+
+
+    }
+
+    public final void init(
+            Cache<DuplicationDetector.CoapRequestId, CoapPacket> cache,
+            long duplicateMsgDetectionTimeMillis,
+            boolean isSelfCreatedExecutor,
+            MessageIdSupplier idContext,
+            int maxQueueSize,
+            CoapTransaction.Priority defaultPriority,
+            long delayedTransactionTimeout,
+            DuplicatedCoapMessageCallback duplicatedCoapMessageCallback,
+            ScheduledExecutorService scheduledExecutor
+    ) {
         if (coapTransporter == null || scheduledExecutor == null || idContext == null || defaultPriority == null || duplicatedCoapMessageCallback == null) {
             throw new NullPointerException();
         }
-
+        if (cache != null) {
+            this.duplicationDetector = new DuplicationDetector(
+                    TimeUnit.MILLISECONDS,
+                    duplicateMsgDetectionTimeMillis, cache);
+        }
         this.scheduledExecutor = scheduledExecutor;
         this.isSelfCreatedExecutor = isSelfCreatedExecutor;
         this.idContext = idContext;
@@ -118,16 +157,6 @@ public class CoapUdpMessaging extends CoapMessaging {
 
         if (transmissionTimeout == null) {
             this.transmissionTimeout = new CoapTimeout();
-        }
-
-        if (duplicationListSize > 0) {
-            duplicationDetector = new DuplicationDetector(
-                    TimeUnit.MILLISECONDS,
-                    duplicateMsgDetectionTimeMillis,
-                    duplicationListSize,
-                    duplicateMsgCleanIntervalMillis,
-                    duplicateMsgWarningMessageIntervalMillis,
-                    scheduledExecutor);
         }
     }
 

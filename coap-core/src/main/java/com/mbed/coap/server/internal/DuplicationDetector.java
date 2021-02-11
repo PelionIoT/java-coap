@@ -16,15 +16,12 @@
 package com.mbed.coap.server.internal;
 
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.utils.Cache;
+import com.mbed.coap.utils.CacheImpl;
+import com.mbed.coap.utils.ExpiringKey;
 import java.net.InetSocketAddress;
-import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,19 +37,11 @@ public class DuplicationDetector implements Runnable {
     public static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket(null);
     private static final Logger LOGGER = LoggerFactory.getLogger(DuplicationDetector.class.getName());
 
-    private final Lock REDUCE_LOCK = new ReentrantLock();
     private final long requestIdTimeout;
-    private long maxSize;
-    private long warnIntervalMillis;
-    private final ConcurrentMap<CoapRequestId, CoapPacket> requestMap = new ConcurrentHashMap<>();
-    private long cleanDelayMili;
-    private final ScheduledExecutorService scheduledExecutor;
-    private ScheduledFuture<?> cleanWorkerFut;
-    private final long overSizeMargin;
-    private long nextWarnMessage;
+    private final Cache<CoapRequestId, CoapPacket> requestMap;
 
     public void setCleanDelayMili(long cleanDelayMili) {
-        this.cleanDelayMili = cleanDelayMili;
+        this.requestMap.setCleanIntervalMillis(cleanDelayMili);
     }
 
     public DuplicationDetector(TimeUnit unit,
@@ -73,21 +62,27 @@ public class DuplicationDetector implements Runnable {
             long cleanIntervalMillis,
             long warningMessageIntervalMillis,
             ScheduledExecutorService scheduledExecutor) {
+        this(unit, duplicationTimeout, new CacheImpl("CoAP duplicate detection cache",
+                maxSize,
+                cleanIntervalMillis,
+                warningMessageIntervalMillis,
+                scheduledExecutor));
+        LOGGER.debug("Duplicate detector: init (max traffic: " + (int) (maxSize / (duplicationTimeout / 1000.0d)) + " msg/sec)");
+    }
+
+    public DuplicationDetector(TimeUnit unit,
+            long duplicationTimeout,
+            Cache<CoapRequestId, CoapPacket> cache) {
         requestIdTimeout = TimeUnit.MILLISECONDS.convert(duplicationTimeout, unit);
-        this.maxSize = maxSize;
-        this.warnIntervalMillis = warningMessageIntervalMillis;
-        this.cleanDelayMili = cleanIntervalMillis;
-        this.overSizeMargin = maxSize / 100; //1%
-        this.scheduledExecutor = scheduledExecutor;
-        LOGGER.debug("Coap duplicate detector init (max traffic: " + (int) (maxSize / (requestIdTimeout / 1000.0d)) + " msg/sec)");
+        this.requestMap = cache;
     }
 
     public void start() {
-        cleanWorkerFut = scheduledExecutor.scheduleWithFixedDelay(this, cleanDelayMili, cleanDelayMili, TimeUnit.MILLISECONDS);
+        requestMap.start();
     }
 
     public void stop() {
-        cleanWorkerFut.cancel(true);
+        requestMap.stop();
     }
 
     public CoapPacket isMessageRepeated(CoapPacket request) {
@@ -97,28 +92,7 @@ public class DuplicationDetector implements Runnable {
         if (resp != null) {
             return resp;
         }
-        if (requestMap.size() > maxSize + overSizeMargin && REDUCE_LOCK.tryLock()) {
-            try {
-                //reduce map size in bulk
-                Iterator<CoapRequestId> it = requestMap.keySet().iterator();
-                try {
-                    for (int i = 0; i <= overSizeMargin && it.hasNext(); i++) {
-                        it.next();
-                        it.remove();
-                        //requestList.remove(it.next());
-                    }
-                } catch (Exception e) {
-                    LOGGER.error(e.getMessage(), e);
-                }
-
-                if (nextWarnMessage < System.currentTimeMillis()) {
-                    LOGGER.warn("CoAP request duplicate list has reached max size (" + maxSize + "), reduced by " + overSizeMargin);
-                    nextWarnMessage = System.currentTimeMillis() + warnIntervalMillis;
-                }
-            } finally {
-                REDUCE_LOCK.unlock();
-            }
-        }
+        requestMap.cleanupBulk();
         return null;
     }
 
@@ -129,21 +103,10 @@ public class DuplicationDetector implements Runnable {
 
     @Override
     public void run() {
-        int removedItems = 0;
-        Iterator<CoapRequestId> it = requestMap.keySet().iterator();
-        final long currentTimeMillis = System.currentTimeMillis();
-        while (it.hasNext()) {
-            if (!it.next().isValid(currentTimeMillis)) {
-                it.remove();
-                removedItems++;
-            }
-        }
-        if (LOGGER.isTraceEnabled() && removedItems > 0) {
-            LOGGER.trace("CoAP request duplicate list, non valid items removed: " + removedItems + " ");
-        }
+        requestMap.clean();
     }
 
-    static class CoapRequestId {
+    static public class CoapRequestId implements ExpiringKey {
 
         private final int mid;
         private final InetSocketAddress sourceAddress;
@@ -172,6 +135,7 @@ public class DuplicationDetector implements Runnable {
             return sourceAddress != null ? sourceAddress.equals(objRequestId.sourceAddress) : objRequestId.sourceAddress == null;
         }
 
+        @Override
         public boolean isValid(final long timestamp) {
             return validTimeout > timestamp;
         }
