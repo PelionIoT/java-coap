@@ -16,8 +16,7 @@
 package com.mbed.coap.server.internal;
 
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.utils.Cache;
-import com.mbed.coap.utils.CacheImpl;
+import com.mbed.coap.server.Cache;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;

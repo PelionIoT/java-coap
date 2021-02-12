@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.utils;
+package com.mbed.coap.server;
 
 public interface Cache<K, V> {
     V putIfAbsent(K key, V value);

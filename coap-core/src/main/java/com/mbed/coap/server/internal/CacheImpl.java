@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.utils;
+package com.mbed.coap.server.internal;
 
+import com.mbed.coap.server.Cache;
 import com.mbed.coap.server.internal.DuplicationDetector;
+import com.mbed.coap.utils.ExpiringKey;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;

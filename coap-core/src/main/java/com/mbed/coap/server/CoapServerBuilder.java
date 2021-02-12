@@ -28,7 +28,6 @@ import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
-import com.mbed.coap.utils.Cache;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
