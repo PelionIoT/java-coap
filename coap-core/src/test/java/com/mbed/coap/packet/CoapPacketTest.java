@@ -26,7 +26,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Inet6Address;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -350,4 +352,10 @@ public class CoapPacketTest extends CoapPacketTestBase {
         EqualsVerifier.forClass(CoapPacket.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
     }
 
+    @Test
+    public void ignoreIpv6Scope_getRemoteAddrString() throws UnknownHostException {
+        byte[] addr = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        CoapPacket coapPacket = new CoapPacket(new InetSocketAddress(Inet6Address.getByAddress(null, addr, 1), 6666));
+        assertEquals("102:304:506:708:90a:b0c:d0e:f10:6666", coapPacket.getRemoteAddrString());
+    }
 }

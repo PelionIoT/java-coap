@@ -115,6 +115,15 @@ public class CoapPacket implements Serializable {
         return remoteAddress;
     }
 
+    public String getRemoteAddrString() {
+        if (remoteAddress != null) {
+            // to ignore scope_id in case of ipv6
+            return remoteAddress.getHostString().split("%")[0].concat(":" + remoteAddress.getPort());
+        } else {
+            return null;
+        }
+    }
+
     /**
      * De-serialize CoAP message from input stream.
      *
@@ -481,8 +490,8 @@ public class CoapPacket implements Serializable {
     public String toString(boolean printFullPayload, boolean printPayloadOnlyAsHex, boolean printAddress, boolean doNotPrintPayload) {
         StringBuilder sb = new StringBuilder();
 
-        if (printAddress && this.getRemoteAddress() != null) {
-            sb.append(this.getRemoteAddress()).append(' ');
+        if (printAddress && this.getRemoteAddrString() != null) {
+            sb.append(this.getRemoteAddrString()).append(' ');
         }
 
         if (messageType != null) {

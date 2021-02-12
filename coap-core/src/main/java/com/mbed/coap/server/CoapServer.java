@@ -272,7 +272,7 @@ public class CoapServer {
             }
 
             //            if (!findDuplicate(packet, "CoAP notification repeated")) {
-            LOGGER.trace("Notification [{}]", packet.getRemoteAddress());
+            LOGGER.trace("Notification [{}]", packet.getRemoteAddrString());
             CoapExchange exchange = new CoapExchangeImpl(packet, CoapServer.this, context);
             obsHdlr.call(exchange);
             //            }

@@ -96,7 +96,7 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     private void logCoapSent(CoapPacket coapPacket, Throwable maybeError) {
         if (maybeError != null) {
-            LOGGER.warn("[{}] CoAP sent failed [{}] {}", coapPacket.getRemoteAddress(), coapPacket.toString(false, false, false, true), maybeError.toString());
+            LOGGER.warn("[{}] CoAP sent failed [{}] {}", coapPacket.getRemoteAddrString(), coapPacket.toString(false, false, false, true), maybeError.toString());
             return;
         }
 
@@ -105,7 +105,7 @@ public abstract class CoapMessaging implements CoapReceiver {
         } else if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("CoAP sent [{}]", coapPacket.toString(false));
         } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("[{}] CoAP sent [{}]", coapPacket.getRemoteAddress(), coapPacket.toString(false, false, false, true));
+            LOGGER.info("[{}] CoAP sent [{}]", coapPacket.getRemoteAddrString(), coapPacket.toString(false, false, false, true));
         }
     }
 
@@ -114,9 +114,9 @@ public abstract class CoapMessaging implements CoapReceiver {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("CoAP received [" + packet.toString(true) + "]");
         } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[" + packet.getRemoteAddress() + "] CoAP received [" + packet.toString(false) + "]");
+            LOGGER.debug("[" + packet.getRemoteAddrString() + "] CoAP received [" + packet.toString(false) + "]");
         } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("[" + packet.getRemoteAddress() + "] CoAP received [" + packet.toString(false, false, false, true) + "]");
+            LOGGER.info("[" + packet.getRemoteAddrString() + "] CoAP received [" + packet.toString(false, false, false, true) + "]");
         }
 
         if (handlePing(packet)) {

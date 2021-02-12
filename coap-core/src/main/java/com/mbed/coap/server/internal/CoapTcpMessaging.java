@@ -93,7 +93,7 @@ public class CoapTcpMessaging extends CoapMessaging {
             onDisconnected(packet.getRemoteAddress());
 
         } else {
-            LOGGER.debug("[{}] Ignored signal message: {}", packet.getRemoteAddress(), packet.getCode());
+            LOGGER.debug("[{}] Ignored signal message: {}", packet.getRemoteAddrString(), packet.getCode());
         }
 
         return true;
