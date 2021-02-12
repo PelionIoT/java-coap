@@ -15,9 +15,7 @@
  */
 package com.mbed.coap.server.internal;
 
-import com.mbed.coap.server.Cache;
-import com.mbed.coap.server.internal.DuplicationDetector;
-import com.mbed.coap.utils.ExpiringKey;
+import com.mbed.coap.server.PutOnlyMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,21 +26,28 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CacheImpl<K extends ExpiringKey, V> implements Cache<K, V> {
+public class PutOnlyMapImpl<K extends Timestamped, V> implements PutOnlyMap<K, V> {
     private static final Logger LOGGER = LoggerFactory.getLogger(DuplicationDetector.class.getName());
     private final Lock REDUCE_LOCK = new ReentrantLock();
     private final ConcurrentHashMap<K, V> underlying;
     private final long maxSize;
     private final long overSizeMargin;
     private final long warnIntervalMillis;
-    private long cleanIntervalMillis;
+    private final long cleanIntervalMillis;
     private long nextWarnMessage;
+    private final long duplicateDetectionTimeMillis;
     private final String cacheName;
     private final ScheduledExecutorService scheduledExecutor;
     private ScheduledFuture<?> cleanWorkerFut;
 
-    public CacheImpl(String cacheName, long maxSize, long cleanIntervalMillis, long warnIntervalMillis, ScheduledExecutorService scheduledExecutor) {
+    public PutOnlyMapImpl(String cacheName,
+            long maxSize,
+            long duplicateDetectionTimeMillis,
+            long cleanIntervalMillis,
+            long warnIntervalMillis,
+            ScheduledExecutorService scheduledExecutor) {
         this.cacheName = cacheName;
+        this.duplicateDetectionTimeMillis = duplicateDetectionTimeMillis;
         this.maxSize = maxSize;
         this.cleanIntervalMillis = cleanIntervalMillis;
         this.warnIntervalMillis = warnIntervalMillis;
@@ -51,24 +56,23 @@ public class CacheImpl<K extends ExpiringKey, V> implements Cache<K, V> {
         underlying = new ConcurrentHashMap<>();
     }
 
-    @Override
-    public void setCleanIntervalMillis(long cleanIntervalMillis) {
-        this.cleanIntervalMillis = cleanIntervalMillis;
-    }
-
-    @Override
     public void start() {
         cleanWorkerFut = scheduledExecutor.scheduleWithFixedDelay(() -> clean(), cleanIntervalMillis, cleanIntervalMillis, TimeUnit.MILLISECONDS);
     }
 
-    @Override
     public void stop() {
         cleanWorkerFut.cancel(true);
     }
 
     @Override
     public V putIfAbsent(K key, V value) {
-        return underlying.putIfAbsent(key, value);
+        V result = underlying.putIfAbsent(key, value);
+        // Cleanup only if new entry was added to map.
+        if (result == null) {
+            cleanupBulk();
+        }
+        return result;
+
     }
 
     @Override
@@ -76,18 +80,12 @@ public class CacheImpl<K extends ExpiringKey, V> implements Cache<K, V> {
         underlying.put(key, value);
     }
 
-    @Override
-    public V get(K key) {
-        return underlying.get(key);
-    }
-
-    @Override
     public void clean() {
         int removedItems = 0;
         Iterator<K> it = underlying.keySet().iterator();
         final long currentTimeMillis = System.currentTimeMillis();
         while (it.hasNext()) {
-            if (!it.next().isValid(currentTimeMillis)) {
+            if (currentTimeMillis - it.next().getCreatedTimestampMillis() > duplicateDetectionTimeMillis) {
                 it.remove();
                 removedItems++;
             }
@@ -97,7 +95,6 @@ public class CacheImpl<K extends ExpiringKey, V> implements Cache<K, V> {
         }
     }
 
-    @Override
     public void cleanupBulk() {
         if (underlying.size() > maxSize + overSizeMargin && REDUCE_LOCK.tryLock()) {
             try {

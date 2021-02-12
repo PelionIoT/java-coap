@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2011-2018   ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.server.internal;
 
-public interface Cache<K, V> {
-    V putIfAbsent(K key, V value);
-
-    void put(K key, V value);
-
-    V get(K key);
-
-    void setCleanIntervalMillis(long cleanIntervalMillis);
-
-    void start();
-
-    void stop();
-
-    void clean();
-
-    void cleanupBulk();
+public interface Timestamped {
+    long getCreatedTimestampMillis();
 }

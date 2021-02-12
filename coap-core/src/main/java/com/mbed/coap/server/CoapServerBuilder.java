@@ -25,6 +25,7 @@ import com.mbed.coap.server.internal.CoapTcpCSMStorageImpl;
 import com.mbed.coap.server.internal.CoapTcpMessaging;
 import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
+import com.mbed.coap.server.internal.PutOnlyMapImpl;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
@@ -125,7 +126,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
         private long duplicateMsgCleanIntervalMillis = DEFAULT_DUPLICATE_DETECTOR_CLEAN_INTERVAL_MILLIS;
         private long duplicateMsgWarningMessageIntervalMillis = DEFAULT_DUPLICATE_DETECTOR_WARNING_INTERVAL_MILLIS;
         private long duplicateMsgDetectionTimeMillis = DEFAULT_DUPLICATE_DETECTOR_DETECTION_TIME_MILLIS;
-        private Cache<CoapRequestId, CoapPacket> duplicateDetectionCache;
+        private PutOnlyMap<CoapRequestId, CoapPacket> duplicateDetectionCache;
 
         private ScheduledExecutorService scheduledExecutorService;
         private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
@@ -187,30 +188,24 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             server.setSpecialCoapTransactionPriority(blockTransferPriority);
             server.setTransmissionTimeout(transmissionTimeout);
 
-            if (duplicateDetectionCache != null) {
-                server.init(duplicateDetectionCache,
+            if (duplicateDetectionCache == null) {
+                duplicateDetectionCache = new PutOnlyMapImpl<>(
+                        "Default cache",
+                        duplicationMaxSize,
                         duplicateMsgDetectionTimeMillis,
-                        isSelfCreatedExecutor,
-                        midSupplier,
-                        maxQueueSize,
-                        defaultTransactionPriority,
-                        delayedTransactionTimeout,
-                        duplicatedCoapMessageCallback,
-                        scheduledExecutorService);
-            } else {
-                server.init(duplicationMaxSize,
                         duplicateMsgCleanIntervalMillis,
                         duplicateMsgWarningMessageIntervalMillis,
-                        duplicateMsgDetectionTimeMillis,
-                        scheduledExecutorService,
-                        isSelfCreatedExecutor,
-                        midSupplier,
-                        maxQueueSize,
-                        defaultTransactionPriority,
-                        delayedTransactionTimeout,
-                        duplicatedCoapMessageCallback);
+                        scheduledExecutorService);
             }
 
+            server.init(duplicateDetectionCache,
+                    isSelfCreatedExecutor,
+                    midSupplier,
+                    maxQueueSize,
+                    defaultTransactionPriority,
+                    delayedTransactionTimeout,
+                    duplicatedCoapMessageCallback,
+                    scheduledExecutorService);
             return server;
         }
 
@@ -311,7 +306,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             return this;
         }
 
-        public CoapServerBuilderForUdp duplicateMessageDetectorCache(Cache<CoapRequestId, CoapPacket> cache) {
+        public CoapServerBuilderForUdp duplicateMessageDetectorCache(PutOnlyMap<CoapRequestId, CoapPacket> cache) {
             this.duplicateDetectionCache = cache;
             return this;
         }

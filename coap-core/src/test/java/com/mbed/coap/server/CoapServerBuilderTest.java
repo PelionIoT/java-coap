@@ -19,9 +19,9 @@ import static com.mbed.coap.server.CoapServerBuilder.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.server.internal.CacheImpl;
 import com.mbed.coap.server.internal.CoapRequestId;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
+import com.mbed.coap.server.internal.PutOnlyMapImpl;
 import java.net.InetAddress;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Test;
@@ -72,9 +72,9 @@ public class CoapServerBuilderTest {
     @Test(expected = IllegalArgumentException.class)
     public void usingCustomCacheWithoutTransport() throws Exception {
         ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
-        CacheImpl<CoapRequestId, CoapPacket> cache = new CacheImpl<>("testCache", 100, 120_1000, 10_000, scheduledExecutorService);
+        PutOnlyMapImpl<CoapRequestId, CoapPacket> cache =
+                new PutOnlyMapImpl<>("testCache", 100, 120_1000, 10_000, 10_000, scheduledExecutorService);
         newBuilder().duplicateMessageDetectorCache(cache).build();
-
     }
 
     @Test(expected = IllegalArgumentException.class)

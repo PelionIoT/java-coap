@@ -15,19 +15,23 @@
  */
 package com.mbed.coap.server.internal;
 
-import com.mbed.coap.utils.ExpiringKey;
 import java.net.InetSocketAddress;
+import java.util.Objects;
 
-public class CoapRequestId implements ExpiringKey {
+public class CoapRequestId implements Timestamped {
 
     private final int mid;
     private final InetSocketAddress sourceAddress;
-    private final transient long validTimeout;
+    private final transient long createdTimestampMillis;
 
-    public CoapRequestId(int mid, InetSocketAddress sourceAddress, long requestIdTimeout) {
+    public CoapRequestId(int mid, InetSocketAddress sourceAddress) {
         this.mid = mid;
         this.sourceAddress = sourceAddress;
-        this.validTimeout = System.currentTimeMillis() + requestIdTimeout;
+        this.createdTimestampMillis = System.currentTimeMillis();
+    }
+
+    public long getCreatedTimestampMillis() {
+        return createdTimestampMillis;
     }
 
     @Override
@@ -44,12 +48,7 @@ public class CoapRequestId implements ExpiringKey {
         if (mid != objRequestId.mid) {
             return false;
         }
-        return sourceAddress != null ? sourceAddress.equals(objRequestId.sourceAddress) : objRequestId.sourceAddress == null;
-    }
-
-    @Override
-    public boolean isValid(final long timestamp) {
-        return validTimeout > timestamp;
+        return Objects.equals(sourceAddress, objRequestId.sourceAddress);
     }
 
     @Override

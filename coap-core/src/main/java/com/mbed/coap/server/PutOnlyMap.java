@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.utils;
+package com.mbed.coap.server;
 
-public interface ExpiringKey {
-    boolean isValid(final long timestampInMs);
+public interface PutOnlyMap<K, V> {
+    V putIfAbsent(K key, V value);
+
+    void put(K key, V value);
 }
