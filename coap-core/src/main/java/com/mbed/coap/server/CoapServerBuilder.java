@@ -18,13 +18,13 @@ package com.mbed.coap.server;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.internal.CoapMessaging;
+import com.mbed.coap.server.internal.CoapRequestId;
 import com.mbed.coap.server.internal.CoapServerBlocks;
 import com.mbed.coap.server.internal.CoapTcpCSM;
 import com.mbed.coap.server.internal.CoapTcpCSMStorageImpl;
 import com.mbed.coap.server.internal.CoapTcpMessaging;
 import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
-import com.mbed.coap.server.internal.DuplicationDetector;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
@@ -126,7 +126,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
         private long duplicateMsgCleanIntervalMillis = DEFAULT_DUPLICATE_DETECTOR_CLEAN_INTERVAL_MILLIS;
         private long duplicateMsgWarningMessageIntervalMillis = DEFAULT_DUPLICATE_DETECTOR_WARNING_INTERVAL_MILLIS;
         private long duplicateMsgDetectionTimeMillis = DEFAULT_DUPLICATE_DETECTOR_DETECTION_TIME_MILLIS;
-        private Cache<DuplicationDetector.CoapRequestId, CoapPacket> duplicateDetectionCache;
+        private Cache<CoapRequestId, CoapPacket> duplicateDetectionCache;
 
         private ScheduledExecutorService scheduledExecutorService;
         private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
@@ -312,7 +312,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             return this;
         }
 
-        public CoapServerBuilderForUdp duplicateMessageDetectorCache(Cache<DuplicationDetector.CoapRequestId, CoapPacket> cache) {
+        public CoapServerBuilderForUdp duplicateMessageDetectorCache(Cache<CoapRequestId, CoapPacket> cache) {
             this.duplicateDetectionCache = cache;
             return this;
         }

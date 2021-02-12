@@ -32,6 +32,6 @@ public class CoapTransactionIdTest {
 
         EqualsVerifier.forClass(UriMatcher.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
 
-        EqualsVerifier.forClass(DuplicationDetector.CoapRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+        EqualsVerifier.forClass(CoapRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
     }
 }

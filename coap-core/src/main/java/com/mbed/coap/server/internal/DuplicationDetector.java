@@ -18,8 +18,6 @@ package com.mbed.coap.server.internal;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.utils.Cache;
 import com.mbed.coap.utils.CacheImpl;
-import com.mbed.coap.utils.ExpiringKey;
-import java.net.InetSocketAddress;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -106,45 +104,4 @@ public class DuplicationDetector implements Runnable {
         requestMap.clean();
     }
 
-    static public class CoapRequestId implements ExpiringKey {
-
-        private final int mid;
-        private final InetSocketAddress sourceAddress;
-        private final transient long validTimeout;
-
-        public CoapRequestId(int mid, InetSocketAddress sourceAddress, long requestIdTimeout) {
-            this.mid = mid;
-            this.sourceAddress = sourceAddress;
-            this.validTimeout = System.currentTimeMillis() + requestIdTimeout;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null || getClass() != obj.getClass()) {
-                return false;
-            }
-
-            CoapRequestId objRequestId = (CoapRequestId) obj;
-
-            if (mid != objRequestId.mid) {
-                return false;
-            }
-            return sourceAddress != null ? sourceAddress.equals(objRequestId.sourceAddress) : objRequestId.sourceAddress == null;
-        }
-
-        @Override
-        public boolean isValid(final long timestamp) {
-            return validTimeout > timestamp;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = mid;
-            result = 31 * result + (sourceAddress != null ? sourceAddress.hashCode() : 0);
-            return result;
-        }
-    }
 }

@@ -107,7 +107,7 @@ public class CoapUdpMessaging extends CoapMessaging {
 
         Cache cache = null;
         if (duplicationListSize > 0) {
-            cache = new CacheImpl<DuplicationDetector.CoapRequestId, CoapPacket>(
+            cache = new CacheImpl<CoapRequestId, CoapPacket>(
                     "Default cache",
                     duplicationListSize,
                     duplicateMsgCleanIntervalMillis,
@@ -128,7 +128,7 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
     public final void init(
-            Cache<DuplicationDetector.CoapRequestId, CoapPacket> cache,
+            Cache<CoapRequestId, CoapPacket> cache,
             long duplicateMsgDetectionTimeMillis,
             boolean isSelfCreatedExecutor,
             MessageIdSupplier idContext,
