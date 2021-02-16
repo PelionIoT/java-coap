@@ -74,61 +74,6 @@ public class CoapUdpMessaging extends CoapMessaging {
         super(coapTransport);
     }
 
-    public final void init(int duplicationListSize,
-            ScheduledExecutorService scheduledExecutor,
-            boolean isSelfCreatedExecutor,
-            MessageIdSupplier idContext,
-            int maxQueueSize,
-            CoapTransaction.Priority defaultPriority,
-            long delayedTransactionTimeout,
-            DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
-        init(duplicationListSize,
-                DEFAULT_CLEAN_INTERVAL_MILLIS,
-                DEFAULT_WARN_INTERVAL_MILLIS,
-                DEFAULT_DUPLICATION_TIMEOUT_MILLIS,
-                scheduledExecutor,
-                isSelfCreatedExecutor,
-                idContext,
-                maxQueueSize,
-                defaultPriority,
-                delayedTransactionTimeout,
-                duplicatedCoapMessageCallback);
-
-    }
-
-    public final void init(int duplicationListSize,
-            long duplicateMsgCleanIntervalMillis,
-            long duplicateMsgWarningMessageIntervalMillis,
-            long duplicateMsgDetectionTimeMillis,
-            ScheduledExecutorService scheduledExecutor,
-            boolean isSelfCreatedExecutor,
-            MessageIdSupplier idContext,
-            int maxQueueSize,
-            CoapTransaction.Priority defaultPriority,
-            long delayedTransactionTimeout,
-            DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
-
-        if (duplicationListSize > 0) {
-            cache = new DefaultDuplicateDetectorCache<CoapRequestId, CoapPacket>(
-                    "Default cache",
-                    duplicationListSize,
-                    duplicateMsgDetectionTimeMillis,
-                    duplicateMsgCleanIntervalMillis,
-                    duplicateMsgWarningMessageIntervalMillis,
-                    scheduledExecutor);
-        }
-        init(cache,
-                isSelfCreatedExecutor,
-                idContext,
-                maxQueueSize,
-                defaultPriority,
-                delayedTransactionTimeout,
-                duplicatedCoapMessageCallback,
-                scheduledExecutor);
-
-
-    }
-
     public final void init(
             PutOnlyMap<CoapRequestId, CoapPacket> cache,
             boolean isSelfCreatedExecutor,
@@ -139,12 +84,13 @@ public class CoapUdpMessaging extends CoapMessaging {
             DuplicatedCoapMessageCallback duplicatedCoapMessageCallback,
             ScheduledExecutorService scheduledExecutor
     ) {
-        if (coapTransporter == null || scheduledExecutor == null || idContext == null || defaultPriority == null || duplicatedCoapMessageCallback == null) {
+        if (coapTransporter == null || scheduledExecutor == null || idContext == null || defaultPriority == null || duplicatedCoapMessageCallback == null || cache == null) {
             throw new NullPointerException();
         }
-        if (cache != null) {
-            this.duplicationDetector = new DuplicationDetector(cache);
+        if (cache instanceof DefaultDuplicateDetectorCache) {
+            this.cache = (DefaultDuplicateDetectorCache) cache;
         }
+        this.duplicationDetector = new DuplicationDetector(cache);
         this.scheduledExecutor = scheduledExecutor;
         this.isSelfCreatedExecutor = isSelfCreatedExecutor;
         this.idContext = idContext;

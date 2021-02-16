@@ -62,7 +62,9 @@ public class DefaultDuplicateDetectorCache<K extends CoapRequestId, V extends Co
     }
 
     public void stop() {
-        cleanWorkerFut.cancel(true);
+        if (cleanWorkerFut != null) {
+            cleanWorkerFut.cancel(true);
+        }
     }
 
     @Override
