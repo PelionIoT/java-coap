@@ -55,6 +55,7 @@ public class CoapUdpMessaging extends CoapMessaging {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapUdpMessaging.class);
     private final static long TRANSACTION_TIMEOUT_DELAY_MILLIS = 1000;
     private ScheduledExecutorService scheduledExecutor;
+    private PutOnlyMapImpl cache;
 
     private boolean isSelfCreatedExecutor;
     private final TransactionManager transMgr = new TransactionManager();
@@ -107,7 +108,6 @@ public class CoapUdpMessaging extends CoapMessaging {
             long delayedTransactionTimeout,
             DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
 
-        PutOnlyMap cache = null;
         if (duplicationListSize > 0) {
             cache = new PutOnlyMapImpl<CoapRequestId, CoapPacket>(
                     "Default cache",
@@ -165,6 +165,9 @@ public class CoapUdpMessaging extends CoapMessaging {
 
     @Override
     public synchronized void start(CoapRequestHandler coapRequestHandler) throws IOException, IllegalStateException {
+        if (cache != null) {
+            cache.start();
+        }
         startTransactionTimeoutWorker();
         super.start(coapRequestHandler);
     }
@@ -188,6 +191,10 @@ public class CoapUdpMessaging extends CoapMessaging {
 
     @Override
     public void stop0() {
+        if (cache != null) {
+            cache.stop();
+        }
+
         stopTransactionTimeoutWorker();
 
         if (isSelfCreatedExecutor) {
