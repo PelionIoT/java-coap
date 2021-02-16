@@ -32,8 +32,8 @@ public class DuplicationDetectorTest {
         final int detectionTimeoutMillis = 300;
         final int collectionSize = 1;
         final int cleanupInterval = 100;
-        PutOnlyMapImpl<CoapRequestId, CoapPacket> cache =
-                new PutOnlyMapImpl<>("Default cache",
+        DefaultDuplicateDetectorCache<CoapRequestId, CoapPacket> cache =
+                new DefaultDuplicateDetectorCache<>("Default cache",
                         collectionSize,
                         detectionTimeoutMillis,
                         cleanupInterval,
@@ -62,8 +62,8 @@ public class DuplicationDetectorTest {
         final int detectionTimeoutMillis = 300;
         final int collectionSize = 1;
         final int cleanupInterval = 100;
-        PutOnlyMapImpl<CoapRequestId, CoapPacket> cache =
-                new PutOnlyMapImpl<>("Default cache",
+        DefaultDuplicateDetectorCache<CoapRequestId, CoapPacket> cache =
+                new DefaultDuplicateDetectorCache<>("Default cache",
                         collectionSize,
                         detectionTimeoutMillis,
                         cleanupInterval,
@@ -93,8 +93,8 @@ public class DuplicationDetectorTest {
         final int collectionSize = 100;
         final int cleanupIntervalMillis = 10_000;
         final int warnIntervalMillis = 10_000;
-        PutOnlyMapImpl<CoapRequestId, CoapPacket> cache =
-                new PutOnlyMapImpl<>("Default cache",
+        DefaultDuplicateDetectorCache<CoapRequestId, CoapPacket> cache =
+                new DefaultDuplicateDetectorCache<>("Default cache",
                         collectionSize,
                         detectionTimeoutMillis,
                         cleanupIntervalMillis,

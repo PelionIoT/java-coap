@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.internal.CoapRequestId;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
-import com.mbed.coap.server.internal.PutOnlyMapImpl;
+import com.mbed.coap.server.internal.DefaultDuplicateDetectorCache;
 import java.net.InetAddress;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Test;
@@ -72,8 +72,8 @@ public class CoapServerBuilderTest {
     @Test(expected = IllegalArgumentException.class)
     public void usingCustomCacheWithoutTransport() throws Exception {
         ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
-        PutOnlyMapImpl<CoapRequestId, CoapPacket> cache =
-                new PutOnlyMapImpl<>("testCache", 100, 120_1000, 10_000, 10_000, scheduledExecutorService);
+        DefaultDuplicateDetectorCache<CoapRequestId, CoapPacket> cache =
+                new DefaultDuplicateDetectorCache<>("testCache", 100, 120_1000, 10_000, 10_000, scheduledExecutorService);
         newBuilder().duplicateMessageDetectorCache(cache).build();
     }
 

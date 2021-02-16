@@ -18,7 +18,7 @@ package com.mbed.coap.server.internal;
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
-public class CoapRequestId implements Timestamped {
+public class CoapRequestId {
 
     private final int mid;
     private final InetSocketAddress sourceAddress;

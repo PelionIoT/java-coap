@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.PutOnlyMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PutOnlyMapImpl<K extends Timestamped, V> implements PutOnlyMap<K, V> {
+public class DefaultDuplicateDetectorCache<K extends CoapRequestId, V extends CoapPacket> implements PutOnlyMap<K, V> {
     private static final Logger LOGGER = LoggerFactory.getLogger(DuplicationDetector.class.getName());
     private final Lock REDUCE_LOCK = new ReentrantLock();
     private final ConcurrentHashMap<K, V> underlying;
@@ -40,7 +41,7 @@ public class PutOnlyMapImpl<K extends Timestamped, V> implements PutOnlyMap<K, V
     private final ScheduledExecutorService scheduledExecutor;
     private ScheduledFuture<?> cleanWorkerFut;
 
-    public PutOnlyMapImpl(String cacheName,
+    public DefaultDuplicateDetectorCache(String cacheName,
             long maxSize,
             long duplicateDetectionTimeMillis,
             long cleanIntervalMillis,

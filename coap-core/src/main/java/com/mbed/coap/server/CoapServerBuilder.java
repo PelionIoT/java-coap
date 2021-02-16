@@ -25,7 +25,7 @@ import com.mbed.coap.server.internal.CoapTcpCSMStorageImpl;
 import com.mbed.coap.server.internal.CoapTcpMessaging;
 import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
-import com.mbed.coap.server.internal.PutOnlyMapImpl;
+import com.mbed.coap.server.internal.DefaultDuplicateDetectorCache;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
@@ -189,7 +189,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             server.setTransmissionTimeout(transmissionTimeout);
 
             if (duplicateDetectionCache == null) {
-                duplicateDetectionCache = new PutOnlyMapImpl<>(
+                duplicateDetectionCache = new DefaultDuplicateDetectorCache<>(
                         "Default cache",
                         duplicationMaxSize,
                         duplicateMsgDetectionTimeMillis,
