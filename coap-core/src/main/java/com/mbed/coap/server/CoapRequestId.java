@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server.internal;
+package com.mbed.coap.server;
 
 import java.net.InetSocketAddress;
 import java.util.Objects;

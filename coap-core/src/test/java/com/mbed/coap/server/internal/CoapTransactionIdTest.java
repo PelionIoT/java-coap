@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import com.mbed.coap.server.CoapRequestId;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;

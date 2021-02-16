@@ -24,6 +24,7 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.server.CoapRequestId;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.server.PutOnlyMap;

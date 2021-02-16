@@ -18,7 +18,6 @@ package com.mbed.coap.server;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.internal.CoapMessaging;
-import com.mbed.coap.server.internal.CoapRequestId;
 import com.mbed.coap.server.internal.CoapServerBlocks;
 import com.mbed.coap.server.internal.CoapTcpCSM;
 import com.mbed.coap.server.internal.CoapTcpCSMStorageImpl;

@@ -19,7 +19,6 @@ import static com.mbed.coap.server.CoapServerBuilder.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.server.internal.CoapRequestId;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.server.internal.DefaultDuplicateDetectorCache;
 import java.net.InetAddress;
