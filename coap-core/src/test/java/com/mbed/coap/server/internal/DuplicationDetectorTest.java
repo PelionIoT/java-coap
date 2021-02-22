@@ -20,46 +20,58 @@ import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.server.CoapRequestId;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 public class DuplicationDetectorTest {
 
     @Test
     public void testDuplicationAfterCleanUpTimeout() throws Exception {
-        final int timeout = 300;
+        final int detectionTimeoutMillis = 300;
         final int collectionSize = 1;
-        DuplicationDetector detector = new DuplicationDetector(TimeUnit.MILLISECONDS, timeout, collectionSize, Executors.newSingleThreadScheduledExecutor());
         final int cleanupInterval = 100;
-        detector.setCleanDelayMili(cleanupInterval);
-        detector.start();
+        DefaultDuplicateDetectorCache<CoapRequestId, CoapPacket> cache =
+                new DefaultDuplicateDetectorCache<>("Default cache",
+                        collectionSize,
+                        detectionTimeoutMillis,
+                        cleanupInterval,
+                        10_000,
+                        Executors.newSingleThreadScheduledExecutor());
+        DuplicationDetector detector = new DuplicationDetector(cache);
+        cache.start();
         try {
             CoapPacket packet = mock(CoapPacket.class);
             when(packet.getRemoteAddress()).thenReturn(InetSocketAddress.createUnresolved("testHost", 8080));
             when(packet.getMessageId()).thenReturn(9);
 
             CoapPacket firstIsDuplicated = detector.isMessageRepeated(packet);
-            Thread.sleep(timeout + cleanupInterval + 10);
+            Thread.sleep(detectionTimeoutMillis + cleanupInterval + 10);
             CoapPacket secondIsDuplicated = detector.isMessageRepeated(packet);
 
             assertNull("insertion to empty duplicate check list fails", firstIsDuplicated);
             assertNull("second insertion after timeout with same id fails", secondIsDuplicated);
         } finally {
-            detector.stop();
+            cache.stop();
         }
     }
 
     @Test
     public void testDuplicationWithinCleanUpTimeout() throws Exception {
-        final int timeout = 300;
+        final int detectionTimeoutMillis = 300;
         final int collectionSize = 1;
-        DuplicationDetector instance = new DuplicationDetector(TimeUnit.MILLISECONDS, timeout, collectionSize, Executors.newSingleThreadScheduledExecutor());
         final int cleanupInterval = 100;
-        instance.setCleanDelayMili(cleanupInterval);
-        instance.start();
+        DefaultDuplicateDetectorCache<CoapRequestId, CoapPacket> cache =
+                new DefaultDuplicateDetectorCache<>("Default cache",
+                        collectionSize,
+                        detectionTimeoutMillis,
+                        cleanupInterval,
+                        10_000,
+                        Executors.newSingleThreadScheduledExecutor());
+        DuplicationDetector instance = new DuplicationDetector(cache);
+        cache.start();
         try {
             CoapPacket packet = mock(CoapPacket.class);
             when(packet.getRemoteAddress()).thenReturn(InetSocketAddress.createUnresolved("testHost", 8080));
@@ -72,13 +84,24 @@ public class DuplicationDetectorTest {
             assertNull("insertion to empty duplicate check list fails", firstIsDuplicated);
             assertNotNull("second insertion within timeout with same id succeeds", secondIsDuplicated);
         } finally {
-            instance.stop();
+            cache.stop();
         }
     }
 
     @Test
     public void reduceMapWhenOverSize() throws Exception {
-        DuplicationDetector d = new DuplicationDetector(TimeUnit.SECONDS, 10, 100, mock(ScheduledExecutorService.class));
+        final int detectionTimeoutMillis = 10_000;
+        final int collectionSize = 100;
+        final int cleanupIntervalMillis = 10_000;
+        final int warnIntervalMillis = 10_000;
+        DefaultDuplicateDetectorCache<CoapRequestId, CoapPacket> cache =
+                new DefaultDuplicateDetectorCache<>("Default cache",
+                        collectionSize,
+                        detectionTimeoutMillis,
+                        cleanupIntervalMillis,
+                        warnIntervalMillis,
+                        mock(ScheduledExecutorService.class));
+        DuplicationDetector d = new DuplicationDetector(cache);
 
         for (int i = 0; i < 110; i++) {
             CoapPacket req = newCoapPacket(LOCAL_5683).mid(i).con().get().build();

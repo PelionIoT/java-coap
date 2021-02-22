@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import com.mbed.coap.server.CoapRequestId;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
@@ -32,6 +33,6 @@ public class CoapTransactionIdTest {
 
         EqualsVerifier.forClass(UriMatcher.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
 
-        EqualsVerifier.forClass(DuplicationDetector.CoapRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+        EqualsVerifier.forClass(CoapRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
     }
 }
