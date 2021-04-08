@@ -362,9 +362,16 @@ public class CoapUdpMessaging extends CoapMessaging {
             maybeTrans = transMgr.findMatchAndRemoveForSeparateResponse(packet);
         }
 
-        return maybeTrans
+        boolean packetHandled = maybeTrans
                 .map(trans -> handleResponse(trans, packet))
                 .orElse(false);
+
+        if (packetHandled && packet.headers().getObserve() != null && packet.getMessageType() == MessageType.Acknowledgement) {
+            // put the response to duplicate detector to avoid duplicate observation for retransmitted request.
+            findDuplicate(packet, "CoAP notification repeated (for first response)");
+        }
+
+        return packetHandled;
     }
 
     private boolean handleResponse(CoapTransaction trans, CoapPacket packet) {

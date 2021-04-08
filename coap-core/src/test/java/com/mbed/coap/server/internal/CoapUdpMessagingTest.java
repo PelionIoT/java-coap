@@ -189,6 +189,20 @@ public class CoapUdpMessagingTest {
     }
 
     @Test
+    public void duplicateResponseToGetRequest() throws Exception {
+        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 1, Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessaging.start(requestHandler);
+        CoapPacketBuilder reqPacket = newCoapPacket(LOCAL_5683).get().uriPath("/10").obs(0).token(33);
+        CompletableFuture<CoapPacket> resp1 = makeRequest(reqPacket);
+        assertFalse(resp1.isDone());
+        CoapPacket respPacket = newCoapPacket(LOCAL_5683).mid(100).obs(0).ack(Code.C205_CONTENT).token(33).payload("A").build();
+        receive(respPacket);
+        assertTrue(resp1.isDone());
+        receive(respPacket);
+        verify(requestHandler, times(0)).handleObservation(any(), any());
+    }
+
+    @Test
     public void duplicateRequest_noDuplicateDetector() throws Exception {
         udpMessagingInit(0, scheduledExecutor, false, midSupplier, 1, Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(requestHandler);
