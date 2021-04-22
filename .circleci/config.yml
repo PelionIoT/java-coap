@@ -19,8 +19,7 @@ defaults: &defaults
         - ~/.m2
 
 
-    # publish coverage
-    - run: bash <(curl -s https://codecov.io/bash)
+    # publish reports
     - run:
         name: Save test results
         command: |
