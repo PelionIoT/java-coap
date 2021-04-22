@@ -484,7 +484,9 @@ public class CoapUdpMessagingTest {
                 CoapUdpMessaging.DEFAULT_CLEAN_INTERVAL_MILLIS,
                 CoapUdpMessaging.DEFAULT_WARN_INTERVAL_MILLIS,
                 scheduledExecutor);
-        udpMessaging.init(cache,
+        DuplicationDetector detector = new DuplicationDetectorImpl(cache);
+        udpMessaging.init(detector,
+                cache,
                 isSelfCreatedExecutor,
                 idContext,
                 maxQueueSize,

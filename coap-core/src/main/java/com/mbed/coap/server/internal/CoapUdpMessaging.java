@@ -76,6 +76,7 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
     public final void init(
+            DuplicationDetector duplicateDetector,
             PutOnlyMap<CoapRequestId, CoapPacket> cache,
             boolean isSelfCreatedExecutor,
             MessageIdSupplier idContext,
@@ -91,7 +92,11 @@ public class CoapUdpMessaging extends CoapMessaging {
         if (cache instanceof DefaultDuplicateDetectorCache) {
             this.cache = (DefaultDuplicateDetectorCache) cache;
         }
-        this.duplicationDetector = new DuplicationDetector(cache);
+        if (duplicateDetector != null) {
+            this.duplicationDetector = duplicateDetector;
+        } else {
+            this.duplicationDetector = new DuplicationDetectorImpl(cache);
+        }
         this.scheduledExecutor = scheduledExecutor;
         this.isSelfCreatedExecutor = isSelfCreatedExecutor;
         this.idContext = idContext;
@@ -402,7 +407,7 @@ public class CoapUdpMessaging extends CoapMessaging {
         if (duplicationDetector != null) {
             CoapPacket duplResp = duplicationDetector.isMessageRepeated(request);
             if (duplResp != null) {
-                if (duplResp != DuplicationDetector.EMPTY_COAP_PACKET) {
+                if (duplResp != DuplicationDetectorImpl.EMPTY_COAP_PACKET) {
                     sendPacket(duplResp, request.getRemoteAddress(), TransportContext.NULL);
                     LOGGER.debug("{}, resending response [{}]", message, request);
                 } else {

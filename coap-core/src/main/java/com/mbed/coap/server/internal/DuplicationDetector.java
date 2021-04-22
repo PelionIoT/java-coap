@@ -16,32 +16,8 @@
 package com.mbed.coap.server.internal;
 
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.server.CoapRequestId;
-import com.mbed.coap.server.PutOnlyMap;
 
-/**
- * Checks if incoming request has been repeated
- *
- * @author szymon
- */
-public class DuplicationDetector {
-    public static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket(null);
-
-    private final PutOnlyMap<CoapRequestId, CoapPacket> requestMap;
-
-    public DuplicationDetector(PutOnlyMap<CoapRequestId, CoapPacket> cache) {
-        this.requestMap = cache;
-    }
-
-    public CoapPacket isMessageRepeated(CoapPacket request) {
-        CoapRequestId requestId = new CoapRequestId(request.getMessageId(), request.getRemoteAddress());
-
-        return requestMap.putIfAbsent(requestId, EMPTY_COAP_PACKET);
-    }
-
-    public void putResponse(CoapPacket request, CoapPacket response) {
-        CoapRequestId requestId = new CoapRequestId(request.getMessageId(), request.getRemoteAddress());
-        requestMap.put(requestId, response);
-    }
-
+public interface DuplicationDetector {
+    CoapPacket isMessageRepeated(CoapPacket request);
+    void putResponse(CoapPacket request, CoapPacket response);
 }

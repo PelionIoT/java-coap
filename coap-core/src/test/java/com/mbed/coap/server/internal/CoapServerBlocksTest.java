@@ -361,7 +361,8 @@ public class CoapServerBlocksTest {
                 CoapUdpMessaging.DEFAULT_WARN_INTERVAL_MILLIS,
                 scheduledExecutor);
 
-        protoServer.init(cache,
+        protoServer.init(null,
+                cache,
                 isSelfCreatedExecutor,
                 idContext,
                 maxQueueSize,

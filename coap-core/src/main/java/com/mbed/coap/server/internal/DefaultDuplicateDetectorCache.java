@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultDuplicateDetectorCache<K extends CoapRequestId, V extends CoapPacket> implements PutOnlyMap<K, V> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DuplicationDetector.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDuplicateDetectorCache.class.getName());
     private final Lock REDUCE_LOCK = new ReentrantLock();
     private final ConcurrentHashMap<K, V> underlying;
     private final long maxSize;

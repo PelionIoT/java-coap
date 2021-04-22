@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Test;
 
-public class DuplicationDetectorTest {
+public class DuplicationDetectorImplTest {
 
     @Test
     public void testDuplicationAfterCleanUpTimeout() throws Exception {
@@ -40,7 +40,7 @@ public class DuplicationDetectorTest {
                         cleanupInterval,
                         10_000,
                         Executors.newSingleThreadScheduledExecutor());
-        DuplicationDetector detector = new DuplicationDetector(cache);
+        DuplicationDetector detector = new DuplicationDetectorImpl(cache);
         cache.start();
         try {
             CoapPacket packet = mock(CoapPacket.class);
@@ -70,7 +70,7 @@ public class DuplicationDetectorTest {
                         cleanupInterval,
                         10_000,
                         Executors.newSingleThreadScheduledExecutor());
-        DuplicationDetector instance = new DuplicationDetector(cache);
+        DuplicationDetector instance = new DuplicationDetectorImpl(cache);
         cache.start();
         try {
             CoapPacket packet = mock(CoapPacket.class);
@@ -101,7 +101,7 @@ public class DuplicationDetectorTest {
                         cleanupIntervalMillis,
                         warnIntervalMillis,
                         mock(ScheduledExecutorService.class));
-        DuplicationDetector d = new DuplicationDetector(cache);
+        DuplicationDetector d = new DuplicationDetectorImpl(cache);
 
         for (int i = 0; i < 110; i++) {
             CoapPacket req = newCoapPacket(LOCAL_5683).mid(i).con().get().build();
