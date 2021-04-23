@@ -17,7 +17,11 @@ package com.mbed.coap.server.internal;
 
 import com.mbed.coap.packet.CoapPacket;
 
+/**
+ * Checks if incoming request has been repeated
+ */
 public interface DuplicationDetector {
     CoapPacket isMessageRepeated(CoapPacket request);
+
     void putResponse(CoapPacket request, CoapPacket response);
 }
