@@ -23,6 +23,7 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapRequestId;
 import com.mbed.coap.server.CoapTransactionCallback;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
+import com.mbed.coap.server.DuplicationDetector;
 import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.server.PutOnlyMap;
 import com.mbed.coap.transmission.CoapTimeout;

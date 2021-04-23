@@ -21,6 +21,7 @@ import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapRequestId;
+import com.mbed.coap.server.DuplicationDetector;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

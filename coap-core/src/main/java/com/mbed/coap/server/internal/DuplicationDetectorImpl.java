@@ -17,6 +17,7 @@ package com.mbed.coap.server.internal;
 
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.CoapRequestId;
+import com.mbed.coap.server.DuplicationDetector;
 import com.mbed.coap.server.PutOnlyMap;
 
 public class DuplicationDetectorImpl implements DuplicationDetector {

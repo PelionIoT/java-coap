@@ -25,7 +25,6 @@ import com.mbed.coap.server.internal.CoapTcpMessaging;
 import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.server.internal.DefaultDuplicateDetectorCache;
-import com.mbed.coap.server.internal.DuplicationDetector;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
