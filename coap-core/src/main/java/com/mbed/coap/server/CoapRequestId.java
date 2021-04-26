@@ -34,6 +34,14 @@ public class CoapRequestId {
         return createdTimestampMillis;
     }
 
+    public int getMid() {
+        return mid;
+    }
+
+    public InetSocketAddress getSourceAddress() {
+        return sourceAddress;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
