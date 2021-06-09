@@ -109,7 +109,7 @@ public class BlockWiseIncomingTransactionTest {
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, true).payload(payload2).put().build());
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(payload3).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
 
         assertTrue(Arrays.equals(combinedBytes(payload0, payload1, payload2, payload3), bwReq.getCombinedPayload()));
@@ -126,8 +126,8 @@ public class BlockWiseIncomingTransactionTest {
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, true).payload(payload2).put().build());
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(payload3).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(payload3).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(payload2).put().build());
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
 
         assertTrue(Arrays.equals(combinedBytes(payload0, payload1, payload2, payload3), bwReq.getCombinedPayload()));
