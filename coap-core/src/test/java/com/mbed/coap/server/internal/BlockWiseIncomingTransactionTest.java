@@ -99,6 +99,41 @@ public class BlockWiseIncomingTransactionTest {
     }
 
     @Test
+    public void should_appendBlock_with_resend1() throws Exception {
+        byte[] payload0 = bytesWithId(0, 512);
+        byte[] payload1 = bytesWithId(1, 512);
+        byte[] payload2 = bytesWithId(2, 512);
+        byte[] payload3 = bytesWithId(3, 92);
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, true).payload(payload2).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(payload3).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
+
+        assertTrue(Arrays.equals(combinedBytes(payload0, payload1, payload2, payload3), bwReq.getCombinedPayload()));
+    }
+
+    @Test
+    public void should_appendBlock_with_resend2() throws Exception {
+        byte[] payload0 = bytesWithId(0, 512);
+        byte[] payload1 = bytesWithId(1, 512);
+        byte[] payload2 = bytesWithId(2, 512);
+        byte[] payload3 = bytesWithId(3, 92);
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, true).payload(payload2).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(payload3).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(payload3).put().build());
+        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
+
+        assertTrue(Arrays.equals(combinedBytes(payload0, payload1, payload2, payload3), bwReq.getCombinedPayload()));
+    }
+
+    @Test
     public void should_appendBlock_restart_from_beginning() throws Exception {
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_256, true).payload(new byte[256]).put().build());
         bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_128, true).payload(new byte[128]).put().build());
