@@ -55,17 +55,15 @@ class BlockWiseIncomingTransaction {
         BlockOption reqBlock = request.headers().getBlock1Req();
 
         int assumedCollectedPayloadSize = reqBlock.getNr() * reqBlock.getSize();
-        if (payload.size() > assumedCollectedPayloadSize) {
-            //size has changed
-            byte[] receivedBytes = payload.toByteArray();
-            payload.reset();
-            payload.write(receivedBytes, 0, assumedCollectedPayloadSize);
-        } else if (payload.size() < assumedCollectedPayloadSize) {
+        if (payload.size() < assumedCollectedPayloadSize) {
             throw new CoapRequestEntityIncomplete();
         }
 
         try {
-            payload.write(request.getPayload());
+            // Don't append in case of resends.
+            if (payload.size() == assumedCollectedPayloadSize) {
+                payload.write(request.getPayload());
+            }
         } catch (IOException e) {
             // should never happen
             throw new CoapCodeException(Code.C500_INTERNAL_SERVER_ERROR, e);
