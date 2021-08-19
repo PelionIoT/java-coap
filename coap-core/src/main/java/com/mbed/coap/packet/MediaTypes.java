@@ -51,6 +51,15 @@ public class MediaTypes {
     public final static short CT_APPLICATION_CBOR = 60;
     //RFC7390
     public final static short CT_APPLICATION_COAP_GROUP_JSON = 256;
+    //RFC8428
+    public final static short CT_APPLICATION_SENML_JSON = 110;
+    public final static short CT_APPLICATION_SENSML_JSON = 111;
+    public final static short CT_APPLICATION_SENML_CBOR = 112;
+    public final static short CT_APPLICATION_SENSML_CBOR = 113;
+    public final static short CT_APPLICATION_SENML_EXI = 114;
+    public final static short CT_APPLICATION_SENSML_EXI = 115;
+    public final static short CT_APPLICATION_SENML_XML = 310;
+    public final static short CT_APPLICATION_SENSML_XML = 311;
 
 
     static final Map<Short, String> MEDIA_TYPE_MAP = new HashMap<>();
@@ -82,6 +91,15 @@ public class MediaTypes {
         MEDIA_TYPE_MAP.put(CT_APPLICATION_CBOR, "application/cbor");
         //RFC7390
         MEDIA_TYPE_MAP.put(CT_APPLICATION_COAP_GROUP_JSON, "application/coap-group+json");
+        //RFC8428
+        MEDIA_TYPE_MAP.put(CT_APPLICATION_SENML_JSON, "application/senml+json");
+        MEDIA_TYPE_MAP.put(CT_APPLICATION_SENSML_JSON, "application/sensml+json");
+        MEDIA_TYPE_MAP.put(CT_APPLICATION_SENML_CBOR, "application/senml+cbor");
+        MEDIA_TYPE_MAP.put(CT_APPLICATION_SENSML_CBOR, "application/sensml+cbor");
+        MEDIA_TYPE_MAP.put(CT_APPLICATION_SENML_EXI, "application/senml-exi");
+        MEDIA_TYPE_MAP.put(CT_APPLICATION_SENSML_EXI, "application/sensml-exi");
+        MEDIA_TYPE_MAP.put(CT_APPLICATION_SENML_XML, "application/senml+xml");
+        MEDIA_TYPE_MAP.put(CT_APPLICATION_SENSML_XML, "application/sensml+xml");
 
     }
 
