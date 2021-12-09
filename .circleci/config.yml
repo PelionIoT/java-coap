@@ -40,7 +40,12 @@ jobs:
 
   java-11:
     docker:
-    - image: circleci/openjdk:11-jdk-browsers
+      - image: circleci/openjdk:11-jdk-browsers
+    <<: *defaults
+
+  java-17:
+    docker:
+      - image: cimg/openjdk:17.0-browsers
     <<: *defaults
 
 
@@ -50,6 +55,7 @@ workflows:
     jobs:
       - java-8
       - java-11
+      - java-17
   nightly:
     triggers:
       - schedule:
@@ -61,3 +67,4 @@ workflows:
     jobs:
       - java-8
       - java-11
+      - java-17
