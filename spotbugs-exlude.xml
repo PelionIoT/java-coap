@@ -53,5 +53,9 @@
         <Class name="com.mbed.coap.transport.stdio.OpensslProcessTransport"/>
         <Bug pattern="COMMAND_INJECTION"/>
     </Match>
+    <Match>
+        <Class name="com.mbed.coap.linkformat.LinkFormat"/>
+        <Bug pattern="DCN_NULLPOINTER_EXCEPTION"/>
+    </Match>
 
 </FindBugsFilter>
