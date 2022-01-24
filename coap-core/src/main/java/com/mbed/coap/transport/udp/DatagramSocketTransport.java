@@ -89,7 +89,7 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
         } catch (SocketTimeoutException ex) {
             return true;
         } catch (IOException ex) {
-            if (!ex.getMessage().startsWith("Socket closed")) {
+            if (!ex.getMessage().startsWith("Socket closed")&&!ex.getMessage().startsWith("socket closed")) {
                 LOGGER.warn(ex.getMessage(), ex);
             }
         } catch (Exception ex) {
