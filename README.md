@@ -1,16 +1,14 @@
-mbed CoAP
-=========
+CoAP's library for JVM
+======================
 
-![CircleCI](https://img.shields.io/circleci/project/github/PelionIoT/java-coap/master.svg)
 [![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)](LICENSE)
-[![codecov](https://codecov.io/gh/PelionIoT/java-coap/branch/master/graph/badge.svg)](https://codecov.io/gh/PelionIoT/java-coap)
-[![Known Vulnerabilities](https://snyk.io/test/github/PelionIoT/java-coap/badge.svg)](https://snyk.io/test/github/PelionIoT/java-coap)
+![Status:Production](https://img.shields.io/badge/Project%20status-Production-brightgreen.svg)
 
 Introduction
 ------------
 
-This library makes it easy to integrate a Java SE enabled device with coap based services like [mbed Cloud](https://www.mbed.com/en/platform/cloud). 
-It can also help to emulate an embedded device for prototyping and testing purposes. 
+This library makes it possible to create jvm enabled device or coap based services. It can also help to emulate an
+embedded device for prototyping and testing purposes.
 
 The following features are supported by the library:
 
@@ -35,35 +33,17 @@ Requirements
 
 ### Runtime:
 
-* JRE 8
-* JRE 11
+* JRE 8 or 11
 
 ### Development:
 
-* JDK 8
-* maven 3.x
-
+* JDK 8 or 11
+* gradle
 
 Using the Library
 -----------------
 
-Add repository to build file:
-
-    <repositories>
-		<repository>
-		    <id>jitpack.io</id>
-		    <url>https://jitpack.io</url>
-		</repository>
-	</repositories>
-
-Add dependency into your `pom.xml`:
-
-    <dependency>
-        <groupId>com.mbed.java-coap</groupId>
-        <artifactId>coap-core</artifactId>
-        <version>{VERSION}</version>
-    </dependency>
-
+_TBD_
 
 ### Creating a Server
 
@@ -141,16 +121,7 @@ Development
 
 ### Build
 
-    mvn clean install
-     
-### Build with all checks enabled
-     
-    mvn clean install -P ci
-
-### Update license header
-
-    mvn com.mycila:license-maven-plugin:format
-
+    ./gradlew build
 
 Contributions
 -------------

@@ -17,4 +17,4 @@
 
 
 ARGS=$@
-mvn -q compile exec:java -Dexec.mainClass="com.mbed.coap.cli.DeviceEmulator" -Dexec.args="$ARGS"
+gradle -q runDeviceEmulator --args="$ARGS"

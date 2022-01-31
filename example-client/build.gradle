@@ -1,0 +1,33 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+description = 'example-client'
+
+compileJava {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
+
+dependencies {
+    implementation project(':coap-core')
+    implementation project(':lwm2m')
+    implementation 'org.slf4j:slf4j-api:1.7.26'
+    implementation 'ch.qos.logback:logback-classic:1.2.7'
+
+    testImplementation 'org.mockito:mockito-core:2.28.2'
+    testImplementation 'junit:junit:4.13.1'
+}
+
+application {
+    mainClassName = 'com.mbed.coap.cli.CoapCli'
+}
+
+task(runDeviceEmulator, dependsOn: 'classes', type: JavaExec) {
+    main = 'com.mbed.coap.cli.DeviceEmulator'
+    classpath = sourceSets.main.runtimeClasspath
+}

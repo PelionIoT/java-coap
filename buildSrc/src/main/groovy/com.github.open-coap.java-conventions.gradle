@@ -1,0 +1,40 @@
+plugins {
+    id 'java-library'
+    id 'jacoco'
+    id 'pmd'
+    id "com.github.spotbugs"
+    id 'maven-publish'
+}
+
+repositories {
+    mavenCentral()
+}
+
+group = 'com.mbed.java-coap'
+version = '5.2.0-SNAPSHOT'
+
+compileJava {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+    options.encoding = 'UTF-8'
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+pmd {
+    toolVersion = "5.6.1"
+    consoleOutput = true
+    sourceSets = [sourceSets.main]
+    incrementalAnalysis = false
+    ruleSets = []
+    ruleSetFiles = files("../pmd-rules.xml")
+}
+
+spotbugs {
+    effort = 'Max'
+    excludeFilter = file("../spotbugs-exlude.xml")
+}
+spotbugsTest.enabled = false
+

@@ -2,7 +2,7 @@
 .project
 .settings
 classes/
-target/
+build/
 nbactions.xml
 nb-configuration.xml
 *.iml
@@ -13,3 +13,4 @@ nb-configuration.xml
 example-client/*.pem
 example-client/*.jks
 *.tmp
+.gradle/

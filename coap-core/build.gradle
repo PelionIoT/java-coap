@@ -1,0 +1,17 @@
+plugins {
+    id 'com.github.open-coap.java-conventions'
+}
+
+
+description = 'coap-core'
+
+
+dependencies {
+    implementation 'org.slf4j:slf4j-api:1.7.26'
+
+    testImplementation 'ch.qos.logback:logback-classic:1.2.7'
+    testImplementation 'org.mockito:mockito-core:2.28.2'
+    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'org.assertj:assertj-core:3.12.2'
+    testImplementation 'nl.jqno.equalsverifier:equalsverifier:3.8'
+}

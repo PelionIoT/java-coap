@@ -1,0 +1,3 @@
+include(':coap-core')
+include(':lwm2m')
+include(':example-client')
