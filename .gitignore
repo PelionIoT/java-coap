@@ -7,10 +7,11 @@ nbactions.xml
 nb-configuration.xml
 *.iml
 .idea/
-!.idea/codeStyleSettings.xml
 !.idea/copyright
+!.idea/codeStyles
 .DS_Store
 example-client/*.pem
 example-client/*.jks
 *.tmp
 .gradle/
+out/
