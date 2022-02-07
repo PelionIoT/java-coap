@@ -10,7 +10,6 @@ repositories {
     mavenCentral()
 }
 
-group = 'com.mbed.java-coap'
 version = '5.2.0-SNAPSHOT'
 
 compileJava {
@@ -38,3 +37,59 @@ spotbugs {
 }
 spotbugsTest.enabled = false
 
+
+// --- PUBLISHING ---
+
+task sourceJar(type: Jar) {
+    classifier 'sources'
+    from sourceSets.main.allJava
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/" + System.getenv("GITHUB_REPOSITORY"))
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+    publications {
+        gpr(MavenPublication) {
+            pom {
+                name = 'Java CoAP'
+                description = 'Java implementation of CoAP protocol'
+                url = 'https://github.com/open-coap/java-coap'
+                licenses {
+                    license {
+                        name = 'Apache License, Version 2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+            }
+
+            groupId 'com.github.open-coap.java-coap'
+            artifact tasks.sourceJar
+            from(components.java)
+        }
+    }
+}
+
+def evaluateVersion() {
+    String gitVer = 'git describe --tags --exact-match'.execute().getText().trim().replaceAll('"', '')
+
+    if (gitVer == "") {
+        return version
+    } else if (gitVer.startsWith("v")) {
+        return gitVer.substring(1)
+    }
+    return gitVer
+}
+
+tasks.register('versionFromGit') {
+    doLast {
+        version = evaluateVersion()
+    }
+}

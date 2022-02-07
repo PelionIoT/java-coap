@@ -43,13 +43,55 @@ Requirements
 Using the Library
 -----------------
 
-_TBD_
+### Gradle
+
+Add to your `build.gradle`
+
+```groovy
+repositories {
+  ...
+  maven {
+    url = uri("https://maven.pkg.github.com/open-coap/java-coap")
+  }
+}
+
+...
+
+dependencies {
+  implementation 'com.github.open-coap.java-coap:coap-core:VERSION'
+}
+```
+
+### Maven
+
+Add repository to build file:
+
+```xml
+
+<repositories>
+  <repository>
+    <id>github-opencoap</id>
+    <url>https://maven.pkg.github.com/open-coap/java-coap</url>
+  </repository>
+</repositories>
+```    
+
+Add dependency into your `pom.xml`:
+
+```xml
+
+<dependency>
+  <groupId>com.github.open-coap.java-coap</groupId>
+  <artifactId>coap-core</artifactId>
+  <version>{VERSION}</version>
+</dependency>
+```
 
 ### Creating a Server
 
 #### Initializing, starting and stopping the server
 
-To initialize a server, you must at minimum define the port number. You must set the server parameters before starting a server. 
+To initialize a server, you must at minimum define the port number. You must set the server parameters before starting a server.
 
     CoapServer server = CoapServer.builder().transport(5683).build();
     server.start();
@@ -123,6 +165,10 @@ Development
 
     ./gradlew build
 
+### Publish to local maven
+
+    ./gradlew publishToMavenLocal
+
 Contributions
 -------------
 
@@ -131,5 +177,4 @@ All contributions are Apache 2.0. Only submit contributions where you have autho
 License
 -------
 
-Unless specifically indicated otherwise in a file, files are licensed under the Apache 2.0 license, 
-as can be found in: [LICENSE](LICENSE)
+Unless specifically indicated otherwise in a file, files are licensed under the Apache 2.0 license, as can be found in: [LICENSE](LICENSE)
