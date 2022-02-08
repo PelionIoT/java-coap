@@ -15,16 +15,19 @@
  */
 package com.mbed.coap.cli;
 
+import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.client.RegistrationManager;
-import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.linkformat.LinkFormatBuilder;
-import com.mbed.coap.observe.SimpleObservableResource;
-import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.observe.ObservableResourceService;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.utils.ReadOnlyCoapResource;
+import com.mbed.coap.server.RouterService;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Date;
+import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -100,33 +103,36 @@ public class DeviceEmulator {
     void start(TransportProvider transportProvider, String registrationUri, String keystoreFile) throws IOException {
         URI uri = URI.create(registrationUri);
 
-        emulatorServer = providers.create(transportProvider, keystoreFile, uri).build().start();
-
-        addResources();
+        emulatorServer = providers.create(transportProvider, keystoreFile, uri)
+                .route(createRouting())
+                .build().start();
 
         //registration
-        this.registrationManager = new RegistrationManager(emulatorServer, uri, scheduledExecutor);
-        LOGGER.info("Resources: {}", LinkFormatBuilder.toString(emulatorServer.getResourceLinks()));
+        String links = "</3/0/1>,</3/0/2>,</3/0/3>,</delayed-10s>";
+        this.registrationManager = new RegistrationManager(emulatorServer, uri, links, scheduledExecutor);
+        LOGGER.info("Resources: {}", links);
         registrationManager.register();
     }
 
-    protected void addResources() {
-        //read only resources
-        emulatorServer.addRequestHandler("/3/0/1", new ReadOnlyCoapResource("ARM"));
-        emulatorServer.addRequestHandler("/3/0/2", new ReadOnlyCoapResource("Emulator"));
-        emulatorServer.addRequestHandler("/3/0/3", new ReadOnlyCoapResource("0.0.1"));
-        emulatorServer.addRequestHandler("/delayed-10s", new DelayedReadOnlyCoapResource("OK", 10));
+    protected Service<CoapRequest, CoapResponse> createRouting() {
+        ObservableResourceService timeResource = new ObservableResourceService(CoapResponse.ok(Instant.now().toString()));
+        scheduledExecutor.scheduleAtFixedRate(() ->
+                        timeResource.putPayload(Opaque.of(Instant.now().toString())),
+                30, 30, TimeUnit.SECONDS
+        );
 
-        //observable resource
-        SimpleObservableResource timeResource = new SimpleObservableResource("", emulatorServer);
-        emulatorServer.addRequestHandler("/time", timeResource);
-        scheduledExecutor.scheduleAtFixedRate(() -> {
-            try {
-                timeResource.setBody(new Date().toString());
-            } catch (CoapException e) {
-                LOGGER.error(e.getMessage(), e);
-            }
-        }, 30, 30, TimeUnit.SECONDS);
+        return RouterService.builder()
+                .get("/3/0/1", __ -> completedFuture(CoapResponse.ok("Acme")))
+                .get("/3/0/2", __ -> completedFuture(CoapResponse.ok("Emulator")))
+                .get("/3/0/3", __ -> completedFuture(CoapResponse.ok("0.0.1")))
+                .get("/delayed-10s", __ -> {
+                    CompletableFuture<CoapResponse> promise = new CompletableFuture<>();
+                    scheduledExecutor.schedule(() -> promise.complete(CoapResponse.ok("OK")), 10, TimeUnit.SECONDS);
+                    return promise;
+                })
+                .get("/time", timeResource)
+                .build();
+
     }
 
 
@@ -137,22 +143,5 @@ public class DeviceEmulator {
     void stop() {
         registrationManager.removeRegistration();
         emulatorServer.stop();
-    }
-
-
-    private class DelayedReadOnlyCoapResource extends ReadOnlyCoapResource {
-
-        private final int delay;
-
-        public DelayedReadOnlyCoapResource(String resp, int delay) {
-            super(resp, null, 0);
-            this.delay = delay;
-        }
-
-        @Override
-        public void get(CoapExchange ex) {
-            ex.sendDelayedAck();
-            scheduledExecutor.schedule(() -> super.get(ex), delay, TimeUnit.SECONDS);
-        }
     }
 }

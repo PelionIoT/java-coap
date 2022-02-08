@@ -18,15 +18,16 @@ package com.mbed.coap.server;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
 import static com.mbed.coap.utils.FutureHelpers.failedFuture;
+import static java.util.Objects.*;
 import static java.util.concurrent.CompletableFuture.*;
-import com.mbed.coap.CoapConstants;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapRequestEntityTooLarge;
 import com.mbed.coap.exception.ObservationNotEstablishedException;
 import com.mbed.coap.exception.ObservationTerminatedException;
-import com.mbed.coap.linkformat.LinkFormat;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
@@ -34,18 +35,11 @@ import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.internal.CoapExchangeImpl;
 import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.server.internal.CoapRequestHandler;
-import com.mbed.coap.server.internal.ResourceLinks;
-import com.mbed.coap.server.internal.UriMatcher;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.FutureCallbackAdapter;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
@@ -54,7 +48,7 @@ import org.slf4j.LoggerFactory;
 public class CoapServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServer.class);
     private boolean isRunning;
-    private final Map<UriMatcher, CoapHandler> handlers = new HashMap<>();
+    protected final CoapHandlerToServiceAdapter handler;
     private boolean enabledCriticalOptTest = true;
     protected ObservationHandler observationHandler;
     private ObservationIDGenerator observationIDGenerator = new SimpleObservationIDGenerator();
@@ -62,8 +56,11 @@ public class CoapServer {
 
     private final CoapMessaging coapMessaging;
 
-    public CoapServer(CoapMessaging coapMessaging) {
+    public CoapServer(CoapMessaging coapMessaging, Service<CoapRequest, CoapResponse> routeService) {
         this.coapMessaging = coapMessaging;
+        this.handler = new CoapHandlerToServiceAdapter(
+                new ObservationSenderFilter(this::sendNotification).then(requireNonNull(routeService))
+        );
     }
 
     public static CoapServerBuilder.CoapServerBuilderForUdp builder() {
@@ -120,28 +117,6 @@ public class CoapServer {
 
 
     /**
-     * Adds handler for incoming requests. URI context can be absolute or with postfix. Postfix can be a star sign (*)
-     * for example: /s/temp*, it means that all request under /s/temp/ will be directed to a given handler.
-     *
-     * @param uri URI of a resource
-     * @param coapHandler Handler object
-     */
-    public void addRequestHandler(String uri, CoapHandler coapHandler) {
-        handlers.put(new UriMatcher(uri), coapHandler);
-        LOGGER.debug("Handler added on {}", uri);
-    }
-
-    /**
-     * Removes request handler from server
-     *
-     * @param requestHandler request handler
-     */
-    public void removeRequestHandler(CoapHandler requestHandler) {
-        UriMatcher url = findKey(requestHandler);
-        handlers.remove(url);
-    }
-
-    /**
      * Returns socket address that this server is binding on
      *
      * @return socket address
@@ -150,14 +125,6 @@ public class CoapServer {
         return coapMessaging.getLocalSocketAddress();
     }
 
-    private UriMatcher findKey(CoapHandler requestHandler) {
-        for (Entry<UriMatcher, CoapHandler> entry : handlers.entrySet()) {
-            if (entry.getValue() == requestHandler) {
-                return entry.getKey();
-            }
-        }
-        return null;
-    }
 
     /**
      * Makes asynchronous CoAP request. Sends given packet to specified address..
@@ -189,9 +156,6 @@ public class CoapServer {
         }
         if (notifPacket.getToken().isEmpty()) {
             throw new IllegalArgumentException("Notification packet should have non-empty token");
-        }
-        if (notifPacket.getCode() != Code.C205_CONTENT) {
-            throw new IllegalArgumentException("Notification packet should have 205_CONTENT code");
         }
 
         return makeRequest(notifPacket, transContext);
@@ -255,57 +219,33 @@ public class CoapServer {
 
         @Override
         public void handleRequest(CoapPacket request, TransportContext transportContext) {
-            String uri = request.headers().getUriPath();
-            if (uri == null) {
-                uri = "/";
-            }
             CoapPacket errorResponse = null;
 
-            CoapHandler coapHandler = findHandler(uri);
-
-            if (coapHandler != null) {
-                try {
-                    if (enabledCriticalOptTest) {
-                        request.headers().criticalOptTest();
-                    }
-                    callRequestHandler(request, coapHandler, transportContext);
-                } catch (CoapRequestEntityTooLarge ex) {
-                    errorResponse = request.createResponse(ex.getCode());
-                    if (ex.getMaxSize() > 0) {
-                        errorResponse.headers().setSize1(ex.getMaxSize());
-                    }
-                    if (ex.getBlockOptionHint() != null) {
-                        errorResponse.headers().setBlock1Req(ex.getBlockOptionHint());
-                    }
-                    errorResponse.setPayload(ex.getMessage());
-                } catch (CoapCodeException ex) {
-                    errorResponse = request.createResponse(ex.getCode());
-                    errorResponse.setPayload(ex.getMessage());
-                } catch (Exception ex) {
-                    LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
-                    errorResponse = request.createResponse(Code.C500_INTERNAL_SERVER_ERROR);
+            try {
+                if (enabledCriticalOptTest) {
+                    request.headers().criticalOptTest();
                 }
-            } else {
-                errorResponse = request.createResponse(Code.C404_NOT_FOUND);
+                callRequestHandler(request, transportContext);
+            } catch (CoapRequestEntityTooLarge ex) {
+                errorResponse = request.createResponse(ex.getCode());
+                if (ex.getMaxSize() > 0) {
+                    errorResponse.headers().setSize1(ex.getMaxSize());
+                }
+                if (ex.getBlockOptionHint() != null) {
+                    errorResponse.headers().setBlock1Req(ex.getBlockOptionHint());
+                }
+                errorResponse.setPayload(ex.getMessage());
+            } catch (CoapCodeException ex) {
+                errorResponse = request.createResponse(ex.getCode());
+                errorResponse.setPayload(ex.getMessage());
+            } catch (Exception ex) {
+                LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
+                errorResponse = request.createResponse(Code.C500_INTERNAL_SERVER_ERROR);
             }
             if (errorResponse != null) {
                 sendResponse(request, errorResponse);
             }
         }
-    }
-
-    private CoapHandler findHandler(String uri) {
-
-        CoapHandler handler = handlers.get(new UriMatcher(uri));
-
-        if (handler == null) {
-            for (Entry<UriMatcher, CoapHandler> entry : handlers.entrySet()) {
-                if (entry.getKey().isMatching(uri)) {
-                    return entry.getValue();
-                }
-            }
-        }
-        return handler;
     }
 
     /**
@@ -321,9 +261,9 @@ public class CoapServer {
 
     //    protected abstract boolean findDuplicate(CoapPacket request, String message);
 
-    protected void callRequestHandler(CoapPacket request, CoapHandler coapHandler, TransportContext transportContext) throws CoapException {
+    protected void callRequestHandler(CoapPacket request, TransportContext transportContext) throws CoapException {
         CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, transportContext);
-        coapHandler.handle(exchange);
+        handler.handle(exchange);
     }
 
     protected void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext) {
@@ -334,59 +274,6 @@ public class CoapServer {
         sendResponse(request, response, TransportContext.NULL);
     }
 
-    //    protected void sendResponseAndUpdateDuplicateDetector(CoapPacket request, CoapPacket resp) {
-    //        sendResponseAndUpdateDuplicateDetector(request, resp, TransportContext.NULL);
-    //    }
-    //
-    //    protected void sendResponseAndUpdateDuplicateDetector(CoapPacket request, CoapPacket resp, TransportContext ctx) {
-    //        coapMessaging.sendPacket(resp, request.getRemoteAddress(), ctx);
-    //    }
-
-    /**
-     * Returns handler that can be used as /.well-known/core resource.
-     *
-     * @return CoapHandler instance
-     */
-    public CoapHandler getResourceLinkResource() {
-        return new ResourceLinks(this);
-    }
-
-    /**
-     * Returns list of links, assigned from attached resource handlers.
-     *
-     * @return list with LinkFormat
-     */
-    public List<LinkFormat> getResourceLinks() {
-        List<LinkFormat> linkFormats = new LinkedList<>();
-        //List<LinkFormat> linkFormats = new
-        for (Entry<UriMatcher, CoapHandler> entry : handlers.entrySet()) {
-            UriMatcher uri = entry.getKey();
-            if (uri.getUri().equals(CoapConstants.WELL_KNOWN_CORE)) {
-                continue;
-            }
-            CoapHandler handler = handlers.get(uri);
-
-            LinkFormat lf;
-            if (handler instanceof CoapResource) {
-                CoapResource coapRes;
-                coapRes = (CoapResource) handler;
-                lf = coapRes.getLink();
-                lf.setUri(uri.getUri());
-                //                lf.setContentType(coapRes.getType());
-                //                if (coapRes != null && coapRes instanceof CoapObservableResource) {
-                //                    lf.setObservable(true);
-                //                }
-                //                lf.put("title", coapRes.getName());
-            } else {
-                lf = new LinkFormat(uri.getUri());
-            }
-
-            //if (lf != null && ((resourceTypeFilter == null && lf.getResourceType() == null) || (Arrays.binarySearch(lf.getResourceType(), resourceTypeFilter) >= 0))) {
-            linkFormats.add(lf);
-            //}
-        }
-        return linkFormats;
-    }
 
     public void sendResponse(CoapExchange exchange) {
         CoapPacket resp = exchange.getResponse();

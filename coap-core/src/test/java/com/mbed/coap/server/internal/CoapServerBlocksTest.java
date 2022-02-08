@@ -16,22 +16,27 @@
  */
 package com.mbed.coap.server.internal;
 
-import static com.mbed.coap.utils.FutureHelpers.*;
+import static com.mbed.coap.packet.Opaque.*;
+import static com.mbed.coap.utils.FutureHelpers.failedFuture;
+import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapRequestId;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.server.PutOnlyMap;
+import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.ReadOnlyCoapResource;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Objects;
@@ -58,10 +63,22 @@ public class CoapServerBlocksTest {
     private CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
 
 
+    private Service<CoapRequest, CoapResponse> blockResource = null;
+
+    private final Service<CoapRequest, CoapResponse> route = RouterService.builder()
+            .get("/block", req -> blockResource.apply(req))
+            .put("/block", req -> blockResource.apply(req))
+            .build();
+
+    private final Service<CoapRequest, CoapResponse> alwaysFailService = request -> {
+        fail("Should not receive exchange");
+        return null;
+    };
+
     @BeforeEach
     public void setUp() {
         protoServer = new CoapUdpMessaging(coapTransport);
-        server = new CoapServerBlocks(protoServer, capabilities, 10000000) {
+        server = new CoapServerBlocks(protoServer, capabilities, 10000000, route) {
             @Override
             public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, Opaque token, TransportContext transportContext) {
                 return failedFuture(new IllegalArgumentException());
@@ -73,7 +90,7 @@ public class CoapServerBlocksTest {
             }
         };
 
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(CompletableFuture.completedFuture(null));
+        given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(null));
     }
 
     @Test
@@ -81,7 +98,7 @@ public class CoapServerBlocksTest {
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
-        server.addRequestHandler("/block", new ReadOnlyCoapResource("123456789012345|abcd"));
+        blockResource = newResource("123456789012345|abcd");
 
         //block 0
         receive(newCoapPacket(CoapPacketBuilder.LOCAL_5683).mid(1).get().uriPath("/block").block2Res(0, BlockSize.S_16, false));
@@ -97,14 +114,13 @@ public class CoapServerBlocksTest {
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
-        server.addRequestHandler("/block", exchange -> {
-            if (exchange.getRequestBodyString().equals("123456789012345|abcd")) {
-                exchange.setResponseCode(Code.C204_CHANGED);
-                exchange.sendResponse();
+        blockResource = request -> {
+            if (request.getPayload().equals(of("123456789012345|abcd"))) {
+                return completedFuture(CoapResponse.of(Code.C204_CHANGED));
             } else {
-                exchange.sendResetResponse();
+                return failedFuture(new CoapException(""));
             }
-        });
+        };
 
         //block 1
         receive(newCoapPacket(LOCAL_5683).mid(1).put().block1Req(0, BlockSize.S_16, true).size1(20).uriPath("/block").payload("123456789012345|"));
@@ -119,7 +135,7 @@ public class CoapServerBlocksTest {
     public void block1_request_shouldFailIfTooBigPayload() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(5000, true));
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
-        server = new CoapServerBlocks(protoServer, capabilities, 10000) {
+        server = new CoapServerBlocks(protoServer, capabilities, 10000, route) {
             @Override
             public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, Opaque token, TransportContext transportContext) {
                 return failedFuture(new IllegalArgumentException());
@@ -132,9 +148,7 @@ public class CoapServerBlocksTest {
         };
         server.start();
 
-        server.addRequestHandler("/block", exchange -> {
-            fail("Should not receive exchange");
-        });
+        blockResource = alwaysFailService;
 
 
         Opaque payloadBlock1 = generatePayload(0, 4096);
@@ -166,9 +180,7 @@ public class CoapServerBlocksTest {
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
-        server.addRequestHandler("/block", exchange -> {
-            fail("Should not receive exchange");
-        });
+        blockResource = alwaysFailService;
 
         //block 1
         receive(newCoapPacket(LOCAL_5683).mid(1).put().block1Req(0, BlockSize.S_16, true).size1(20).uriPath("/block").payload("123456789012345|"));
@@ -198,14 +210,13 @@ public class CoapServerBlocksTest {
 
         final Opaque fullPayload = payloadBlock1.concat(payloadBlock2).concat(payloadFinal);
 
-        server.addRequestHandler("/block", exchange -> {
-            if (Objects.equals(exchange.getRequestBody(), fullPayload)) {
-                exchange.setResponseCode(Code.C204_CHANGED);
-                exchange.sendResponse();
+        blockResource = request -> {
+            if (Objects.equals(request.getPayload(), fullPayload)) {
+                return completedFuture(CoapResponse.of(Code.C204_CHANGED));
             } else {
-                exchange.sendResetResponse();
+                return alwaysFailService.apply(request);
             }
-        });
+        };
 
         CoapPacket pkt = newCoapPacket(LOCAL_5683).mid(10).token(0x1234).put().block1Req(0, BlockSize.S_1024_BERT, true).uriPath("/block").build();
         pkt.setPayload(payloadBlock1);
@@ -231,9 +242,7 @@ public class CoapServerBlocksTest {
 
         Opaque payloadBlock1 = generatePayload(0, 4096);
 
-        server.addRequestHandler("/block", exchange -> {
-            fail("Unexpected request was received");
-        });
+        blockResource = alwaysFailService;
 
         CoapPacket pkt = newCoapPacket(LOCAL_5683).mid(10).token(0x1234).put().block1Req(0, BlockSize.S_1024_BERT, true).uriPath("/block").build();
         pkt.setPayload(payloadBlock1);
@@ -250,9 +259,7 @@ public class CoapServerBlocksTest {
 
         Opaque payloadBlock1 = generatePayload(0, 4096);
 
-        server.addRequestHandler("/block", exchange -> {
-            fail("Unexpected request was received");
-        });
+        blockResource = alwaysFailService;
 
         CoapPacket pkt = newCoapPacket(LOCAL_5683).mid(10).token(0x1234).put().block1Req(0, BlockSize.S_1024_BERT, true).uriPath("/block").build();
         pkt.setPayload(payloadBlock1);
@@ -275,9 +282,7 @@ public class CoapServerBlocksTest {
         Opaque payloadBlockFinalOs = generatePayload(6, 1024);
         Opaque payloadFinal = payloadBlockFinalOs.concat(Opaque.of("end_of_payload"));
 
-        server.addRequestHandler("/block", exchange -> {
-            fail("Unexpected request was received");
-        });
+        blockResource = alwaysFailService;
 
         CoapPacket pkt = newCoapPacket(LOCAL_5683).mid(10).token(0x1234).put().block1Req(0, BlockSize.S_1024_BERT, true).uriPath("/block").build();
         pkt.setPayload(payloadBlock1);
@@ -357,4 +362,9 @@ public class CoapServerBlocksTest {
                 duplicatedCoapMessageCallback,
                 scheduledExecutor);
     }
+
+    private Service<CoapRequest, CoapResponse> newResource(final String payload) {
+        return req -> completedFuture(CoapResponse.ok(payload));
+    }
+
 }

@@ -16,25 +16,28 @@
  */
 package com.mbed.coap.server.internal;
 
+import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.client.ObservationListener;
-import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.observe.SimpleObservableResource;
+import com.mbed.coap.observe.ObservableResourceService;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.CoapResource;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,9 +54,14 @@ public class CoapServerTransportContextTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        server = CoapServerBuilder.newBuilder().blockSize(BlockSize.S_16).transport(srvTransport).build();
-        server.addRequestHandler("/test", coapResourceTest);
-        server.addRequestHandler("/obs", new SimpleObservableResource("A", server));
+        server = CoapServerBuilder.newBuilder()
+                .route(RouterService.builder()
+                        .get("/test", coapResourceTest)
+                        .put("/test", coapResourceTest)
+                        .get("/obs", new ObservableResourceService(CoapResponse.ok("A")))
+                )
+                .blockSize(BlockSize.S_16).transport(srvTransport).build();
+
         server.start();
     }
 
@@ -71,7 +79,7 @@ public class CoapServerTransportContextTest {
         client.resource("/test").context(new TextTransportContext("client-sending")).sync().get();
         assertEquals("dupa", ((TextTransportContext) coapResourceTest.transportContext).getText());
         verify(cliTransport).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("client-sending")));
-        verify(srvTransport).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("get-response")));
+        // verify(srvTransport).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("get-response")));
 
         srvTransport.setTransportContext(new TextTransportContext("dupa2"));
         client.resource("/test").sync().get();
@@ -155,24 +163,22 @@ public class CoapServerTransportContextTest {
         }
     }
 
-    private static class CoapResourceTest extends CoapResource {
+    private static class CoapResourceTest implements Service<CoapRequest, CoapResponse> {
 
         TransportContext transportContext;
 
         @Override
-        public void get(CoapExchange exchange) throws CoapCodeException {
-            transportContext = exchange.getRequestTransportContext();
-            exchange.setResponseCode(Code.C205_CONTENT);
-            exchange.setResponseTransportContext(new TextTransportContext("get-response"));
-            exchange.sendResponse();
-        }
+        public CompletableFuture<CoapResponse> apply(CoapRequest req) {
+            switch (req.getMethod()) {
+                case GET:
+                    transportContext = req.getTransContext();
+                    return completedFuture(CoapResponse.of(Code.C205_CONTENT));
 
-        @Override
-        public void put(CoapExchange exchange) throws CoapCodeException {
-            transportContext = exchange.getRequestTransportContext();
-            exchange.setResponseCode(Code.C201_CREATED);
-            exchange.setResponseTransportContext(new TextTransportContext("put-response"));
-            exchange.sendResponse();
+                case PUT:
+                    transportContext = req.getTransContext();
+                    return completedFuture(CoapResponse.of(Code.C201_CREATED));
+            }
+            throw new IllegalStateException();
         }
 
     }

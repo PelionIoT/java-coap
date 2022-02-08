@@ -21,14 +21,16 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
-import com.mbed.coap.server.CoapHandler;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapTcpCSMStorage;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.FutureCallbackAdapter;
+import com.mbed.coap.utils.Service;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -48,8 +50,8 @@ public class CoapServerBlocks extends CoapServer {
     private final int maxIncomingBlockTransferSize;
     private final BlockWiseTransfer blockWiseTransfer;
 
-    public CoapServerBlocks(CoapMessaging coapMessaging, CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize) {
-        super(coapMessaging);
+    public CoapServerBlocks(CoapMessaging coapMessaging, CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize, Service<CoapRequest, CoapResponse> route) {
+        super(coapMessaging, route);
         this.coapMessaging = coapMessaging;
         this.capabilities = capabilities;
         this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
@@ -145,12 +147,12 @@ public class CoapServerBlocks extends CoapServer {
     }
 
     @Override
-    protected void callRequestHandler(CoapPacket request, CoapHandler coapHandler, TransportContext incomingTransContext) throws CoapException {
+    protected void callRequestHandler(CoapPacket request, TransportContext incomingTransContext) throws CoapException {
 
         BlockOption reqBlock = request.headers().getBlock1Req();
 
         if (reqBlock == null) {
-            super.callRequestHandler(request, coapHandler, incomingTransContext);
+            super.callRequestHandler(request, incomingTransContext);
             return;
         }
 
@@ -181,7 +183,7 @@ public class CoapServerBlocks extends CoapServer {
             request.setPayload(blockRequest.getCombinedPayload());
 
             CoapExchangeImplBlock exchange = new CoapExchangeImplBlock(request, this, incomingTransContext);
-            coapHandler.handle(exchange);
+            handler.handle(exchange);
 
             //remove from map
             removeBlockRequest(blockRequestId);

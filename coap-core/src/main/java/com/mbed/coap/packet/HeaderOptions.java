@@ -146,7 +146,7 @@ public class HeaderOptions extends BasicHeaderOptions {
      * @param observe the subsLifetime to set
      */
     public void setObserve(Integer observe) {
-        if (observe < 0 || observe > 0xFFFFFF) {
+        if (observe != null && (observe < 0 || observe > 0xFFFFFF)) {
             throw new IllegalArgumentException("Illegal observe argument: " + observe);
         }
         this.observe = observe;
@@ -200,6 +200,20 @@ public class HeaderOptions extends BasicHeaderOptions {
     public void putSignallingOptions(SignalingOptions signalingOptions) {
         this.signallingOption2 = signalingOptions.serializeOption2();
         this.signallingOption4 = signalingOptions.serializeOption4();
+    }
+
+    public HeaderOptions duplicate() {
+        HeaderOptions opts = new HeaderOptions();
+        super.duplicate(opts);
+
+        opts.observe = observe;
+        opts.block1Req = block1Req;
+        opts.block2Res = block2Res;
+        opts.size2Res = size2Res;
+        opts.signallingOption2 = signallingOption2;
+        opts.signallingOption4 = signallingOption4;
+
+        return opts;
     }
 
     @Override

@@ -16,17 +16,16 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.utils.FutureHelpers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
-import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.utils.CoapResource;
+import com.mbed.coap.server.RouterService;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +46,9 @@ public class CoapServerDuplicateErrorsTest {
     public void setUp() throws IOException {
         serverTransport = new MockCoapTransport();
         server = CoapServerBuilder.newBuilder().transport(serverTransport)
+                .route(RouterService.builder()
+                        .get("/failed", __ -> failedFuture(new NullPointerException("failed")))
+                )
                 .duplicatedCoapMessageCallback(
                         request -> {
                             if (latch != null) {
@@ -112,54 +114,26 @@ public class CoapServerDuplicateErrorsTest {
 
     @Test
     public void testFailedResourceCon_get() throws InterruptedException, CoapException, IOException {
-        server.addRequestHandler("/failed", new CoapResource() {
-            @Override
-            public void get(CoapExchange exchange) throws CoapCodeException {
-                throw new NullPointerException("failed");
-            }
-        });
-
         testIt(Method.GET, MessageType.Confirmable, 110, "/failed", Code.C500_INTERNAL_SERVER_ERROR, MessageType.Acknowledgement, true);
         testIt(Method.GET, MessageType.Confirmable, 114, "/failed", Code.C500_INTERNAL_SERVER_ERROR, MessageType.Acknowledgement, true);
     }
 
     @Test
     public void testFailedResourceNon_get() throws InterruptedException, CoapException, IOException {
-        server.addRequestHandler("/failed", new CoapResource() {
-            @Override
-            public void get(CoapExchange exchange) throws CoapCodeException {
-                throw new NullPointerException("failed");
-            }
-        });
-
         testIt(Method.GET, MessageType.NonConfirmable, 150, "/failed", Code.C500_INTERNAL_SERVER_ERROR, MessageType.NonConfirmable, false);
         testIt(Method.GET, MessageType.NonConfirmable, 154, "/failed", Code.C500_INTERNAL_SERVER_ERROR, MessageType.NonConfirmable, false);
     }
 
     @Test
     public void testNoMethodResourceCon_get() throws InterruptedException, CoapException, IOException {
-        server.addRequestHandler("/failed", new CoapResource() {
-            @Override
-            public void get(CoapExchange exchange) throws CoapCodeException {
-                throw new NullPointerException("failed");
-            }
-        });
-
-        testIt(Method.POST, MessageType.Confirmable, 110, "/failed", Code.C405_METHOD_NOT_ALLOWED, MessageType.Acknowledgement, true);
-        testIt(Method.PUT, MessageType.Confirmable, 114, "/failed", Code.C405_METHOD_NOT_ALLOWED, MessageType.Acknowledgement, true);
+        testIt(Method.POST, MessageType.Confirmable, 110, "/failed", Code.C404_NOT_FOUND, MessageType.Acknowledgement, true);
+        testIt(Method.PUT, MessageType.Confirmable, 114, "/failed", Code.C404_NOT_FOUND, MessageType.Acknowledgement, true);
     }
 
     @Test
     public void testNoMethodResourceNon_get() throws InterruptedException, CoapException, IOException {
-        server.addRequestHandler("/failed", new CoapResource() {
-            @Override
-            public void get(CoapExchange exchange) throws CoapCodeException {
-                throw new NullPointerException("failed");
-            }
-        });
-
-        testIt(Method.POST, MessageType.NonConfirmable, 150, "/failed", Code.C405_METHOD_NOT_ALLOWED, MessageType.NonConfirmable, false);
-        testIt(Method.PUT, MessageType.NonConfirmable, 154, "/failed", Code.C405_METHOD_NOT_ALLOWED, MessageType.NonConfirmable, false);
+        testIt(Method.POST, MessageType.NonConfirmable, 150, "/failed", Code.C404_NOT_FOUND, MessageType.NonConfirmable, false);
+        testIt(Method.PUT, MessageType.NonConfirmable, 154, "/failed", Code.C404_NOT_FOUND, MessageType.NonConfirmable, false);
     }
 
     private void testIt(Method reqMethod, MessageType reqType, int reqMsgId, String reqUri, Code expectedRespCode, MessageType expectedRespType, boolean reqAndRespMsgIdMatch) throws IOException, CoapException, InterruptedException {

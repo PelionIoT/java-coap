@@ -17,6 +17,8 @@ package com.mbed.coap.server;
 
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.server.internal.CoapServerBlocks;
 import com.mbed.coap.server.internal.CoapTcpCSM;
@@ -28,6 +30,7 @@ import com.mbed.coap.server.internal.DefaultDuplicateDetectorCache;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -52,6 +55,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     protected BlockSize blockSize;
     protected int maxMessageSize = 1152; //default
     protected CoapTcpCSMStorage csmStorage;
+    protected Service<CoapRequest, CoapResponse> route = RouterService.NOT_FOUND_SERVICE;
 
     protected abstract T me();
 
@@ -93,6 +97,15 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
         return me();
     }
 
+    public T route(Service<CoapRequest, CoapResponse> route) {
+        this.route = route;
+        return me();
+    }
+
+    public T route(RouterService.RouteBuilder routeBuilder) {
+        return route(routeBuilder.build());
+    }
+
 
     public CoapServer start() throws IOException {
         CoapServer coapServer = build();
@@ -101,7 +114,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     }
 
     public CoapServer build() {
-        CoapServer server = new CoapServerBlocks(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize);
+        CoapServer server = new CoapServerBlocks(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize, route);
         if (observationIdGenWasSet) {
             server.setObservationIDGenerator(observationIDGenerator);
         }
@@ -154,9 +167,9 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             transport(new DatagramSocketTransport(new InetSocketAddress(port)));
             return this;
         }
-        
-        public CoapServerBuilderForUdp transport(InetAddress address,int port) {
-            transport(new DatagramSocketTransport(new InetSocketAddress(address,port)));
+
+        public CoapServerBuilderForUdp transport(InetAddress address, int port) {
+            transport(new DatagramSocketTransport(new InetSocketAddress(address, port)));
             return this;
         }
 

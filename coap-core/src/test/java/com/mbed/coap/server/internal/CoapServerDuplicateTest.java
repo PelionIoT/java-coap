@@ -17,10 +17,12 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.CoapServerBuilder.*;
+import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
-import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
@@ -28,12 +30,13 @@ import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.ObservationHandler;
+import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.CoapResource;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,6 +53,19 @@ public class CoapServerDuplicateTest {
     CoapServer server;
     final AtomicInteger duplicated = new AtomicInteger(0);
     MockCoapTransport serverTransport;
+    private final CompletableFuture<CoapResponse> delayResource = new CompletableFuture<>();
+
+    private final Service<CoapRequest, CoapResponse> route = RouterService.builder()
+            .put("/test", req ->
+                    completedFuture(CoapResponse.ok("dupa"))
+            )
+            .get("/test-non", req ->
+                    completedFuture(CoapResponse.ok("dupa2"))
+            )
+            .get("/test-delay", req ->
+                    delayResource
+            )
+            .build();
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -60,32 +76,8 @@ public class CoapServerDuplicateTest {
                 .transport(serverTransport)
                 .duplicateMsgCacheSize(100)
                 .duplicatedCoapMessageCallback(request -> duplicated.incrementAndGet())
+                .route(route)
                 .build();
-
-
-        server.addRequestHandler("/test", new CoapResource() {
-
-            @Override
-            public void get(CoapExchange exchange) throws CoapCodeException {
-                throw new IllegalStateException();
-            }
-
-            @Override
-            public void put(CoapExchange exchange) throws CoapCodeException {
-                exchange.setResponseBody("dupa");
-                exchange.sendResponse();
-            }
-        });
-
-        server.addRequestHandler("/test-non", new CoapResource() {
-            @Override
-            public void get(CoapExchange exchange) throws CoapCodeException {
-                exchange.setResponseBody("dupa2");
-                exchange.getResponse().setMessageType(MessageType.NonConfirmable);
-                exchange.sendResponse();
-            }
-        });
-
 
         server.start();
     }
@@ -159,23 +151,6 @@ public class CoapServerDuplicateTest {
 
     @Test
     public void testDuplicateRequestNotProcessed() throws IOException, CoapException, InterruptedException {
-        final CountDownLatch delayResourceLatch = new CountDownLatch(1);
-        server.addRequestHandler("/test-delay", new CoapResource() {
-            @Override
-            public void get(CoapExchange exchange) throws CoapCodeException {
-                new Thread(() -> {
-                    try {
-                        delayResourceLatch.await();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    exchange.setResponseBody("dupa3");
-                    exchange.sendResponse();
-                }).start();
-            }
-        });
-
-
         CoapPacket req = new CoapPacket(Method.GET, MessageType.Confirmable, "/test-delay", REMOTE_ADDRESS);
         req.setMessageId(11);
 
@@ -192,7 +167,7 @@ public class CoapServerDuplicateTest {
 
         //let response be send
         System.out.println("let response be send");
-        delayResourceLatch.countDown();
+        delayResource.complete(CoapResponse.ok("dupa3"));
 
         resp = serverTransport.sentPackets.poll(10, TimeUnit.SECONDS);
         assertEquals("dupa3", resp.getPayloadString());

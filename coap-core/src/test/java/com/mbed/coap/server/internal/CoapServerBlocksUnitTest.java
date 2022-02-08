@@ -18,6 +18,7 @@ package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.packet.BlockSize.*;
 import static com.mbed.coap.utils.Bytes.*;
+import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -28,13 +29,12 @@ import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.CoapResource;
-import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,17 +42,28 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import protocolTests.utils.CoapPacketBuilder;
+
 public class CoapServerBlocksUnitTest {
 
     private CoapMessaging msg = mock(CoapMessaging.class);
     private CoapServerBlocks server;
     private CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
     private CoapRequestHandler requestHandler;
+    private final AtomicReference<Opaque> receivedPayload = new AtomicReference<>();
 
     @BeforeEach
     public void setUp() throws Exception {
         reset(msg);
-        server = new CoapServerBlocks(msg, capabilities, 100_000);
+        server = new CoapServerBlocks(msg, capabilities, 100_000,
+                RouterService.builder()
+                        .get("/change", __ -> completedFuture(CoapResponse.ok("")))
+                        .put("/change", req -> {
+                            receivedPayload.set(req.getPayload());
+                            return completedFuture(CoapResponse.of(Code.C204_CHANGED));
+                        })
+                        .get("/large", __ -> completedFuture(CoapResponse.ok(opaqueOfSize(2000))))
+                        .get("/xlarge", __ -> completedFuture(CoapResponse.ok(opaqueOfSize(10000))))
+                        .build());
         server.start();
 
         ArgumentCaptor<CoapRequestHandler> requestHandlerCaptor = ArgumentCaptor.forClass(CoapRequestHandler.class);
@@ -119,7 +130,7 @@ public class CoapServerBlocksUnitTest {
 
     @Test
     public void shouldFail_toReceive_tooLarge_blockingResponse() throws Exception {
-        server = new CoapServerBlocks(msg, capabilities, 2000);
+        server = new CoapServerBlocks(msg, capabilities, 2000, RouterService.NOT_FOUND_SERVICE);
         CoapPacket req = newCoapPacket(LOCAL_5683).get().uriPath("/test").build();
         CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
 
@@ -278,22 +289,6 @@ public class CoapServerBlocksUnitTest {
 
     @Test
     public void should_send_blocs_with_different_tokens() {
-        final AtomicReference<Opaque> receivedPayload = new AtomicReference<>();
-        server.addRequestHandler("/change", new CoapResource() {
-            @Override
-            public void get(CoapExchange exchange) {
-
-            }
-
-            @Override
-            public void put(CoapExchange exchange) {
-                receivedPayload.set(exchange.getRequestBody());
-                exchange.setResponseCode(Code.C204_CHANGED);
-                exchange.sendResponse();
-            }
-        });
-
-
         //BLOCK 1
         receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(opaqueOfSize(16)).block1Req(0, BlockSize.S_16, true));
         assertSent(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).token(1001).block1Req(0, BlockSize.S_16, true));
@@ -312,8 +307,6 @@ public class CoapServerBlocksUnitTest {
 
     @Test
     public void should_send_error_when_wrong_first_payload_and_block_size() throws Exception {
-        server.addRequestHandler("/change", new ReadOnlyCoapResource(""));
-
         //BLOCK 1
         receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(opaqueOfSize(17)).block1Req(0, BlockSize.S_16, true));
 
@@ -322,8 +315,6 @@ public class CoapServerBlocksUnitTest {
 
     @Test
     public void should_send_error_when_wrong_second_payload_and_block_size() throws Exception {
-        server.addRequestHandler("/change", new ReadOnlyCoapResource(""));
-
         //BLOCK 1
         receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(opaqueOfSize(16)).block1Req(0, BlockSize.S_16, true));
         assertSent(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).token(1001).block1Req(0, BlockSize.S_16, true));
@@ -374,7 +365,6 @@ public class CoapServerBlocksUnitTest {
     @Test
     public void shouldSendBlockingResponse_2k_with_BERT() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(1200, true));
-        server.addRequestHandler("/large", new ReadOnlyCoapResource(new String(new byte[2000])));
 
         //BLOCK 0
         receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/large"));
@@ -388,7 +378,6 @@ public class CoapServerBlocksUnitTest {
     @Test
     public void shouldSendBlockingResponse_2k_no_BERT_needed() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(4000, true));
-        server.addRequestHandler("/large", new ReadOnlyCoapResource(opaqueOfSize(2000).toUtf8String()));
 
         //when
         receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/large"));
@@ -400,7 +389,6 @@ public class CoapServerBlocksUnitTest {
     @Test
     public void shouldSendBlockingResponse_10k_with_BERT() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(6000, true));
-        server.addRequestHandler("/xlarge", new ReadOnlyCoapResource(opaqueOfSize(10000).toUtf8String()));
 
         //BLOCK 0
         receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/xlarge"));

@@ -16,21 +16,26 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.Opaque.*;
+import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
-import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.observe.SimpleObservableResource;
+import com.mbed.coap.observe.ObservableResourceService;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.utils.CoapResource;
+import com.mbed.coap.server.RouterService;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
@@ -44,7 +49,7 @@ import org.junit.jupiter.api.Test;
  */
 public class Block1TransferMaxSizeTest {
     private ChangeableResource changeableResource;
-    private SimpleObservableResource observableResource;
+    private ObservableResourceService observableResource;
 
     private static final String OBS_RESOURCE_INIT_VALUE = "0_2345678901234|";
 
@@ -59,17 +64,19 @@ public class Block1TransferMaxSizeTest {
     @BeforeEach
     public void setUp() throws IOException {
 
+        changeableResource = new ChangeableResource();
+        observableResource = new ObservableResourceService(CoapResponse.ok(OBS_RESOURCE_INIT_VALUE));
+
         server = CoapServerBuilder.newBuilder()
+                .route(RouterService.builder()
+                        .get(CHANGEABLE_RESOURCE_PATH, changeableResource)
+                        .put(CHANGEABLE_RESOURCE_PATH, changeableResource)
+                        .get(OBSERVABLE_RESOURCE_PATH, observableResource)
+                )
                 .maxIncomingBlockTransferSize(MAX_DATA)
                 .blockSize(BlockSize.S_16)
                 .transport(0)
                 .build();
-
-        changeableResource = new ChangeableResource();
-        observableResource = new SimpleObservableResource(OBS_RESOURCE_INIT_VALUE, server);
-
-        server.addRequestHandler(CHANGEABLE_RESOURCE_PATH, changeableResource);
-        server.addRequestHandler(OBSERVABLE_RESOURCE_PATH, observableResource);
 
         server.start();
         SERVER_PORT = server.getLocalSocketAddress().getPort();
@@ -91,7 +98,7 @@ public class Block1TransferMaxSizeTest {
     public void testBlock1WorksFineBelowLimit() throws CoapException, ExecutionException, InterruptedException {
         assertEquals(ChangeableResource.INIT_DATA, changeableResource.data);
 
-        String payload = "0_2345678901234|1_2345678901234|";
+        Opaque payload = of("0_2345678901234|1_2345678901234|");
         CoapPacket msg = client.resource(CHANGEABLE_RESOURCE_PATH).blockSize(BlockSize.S_16).payload(payload).sync().put();
 
         assertEquals(Code.C204_CHANGED, msg.getCode());
@@ -128,23 +135,21 @@ public class Block1TransferMaxSizeTest {
     }
 
 
-    private class ChangeableResource extends CoapResource {
+    private static class ChangeableResource implements Service<CoapRequest, CoapResponse> {
 
-        private static final String INIT_DATA = "init data";
-        private String data = INIT_DATA;
-
-        @Override
-        public void get(CoapExchange exchange) throws CoapCodeException {
-            exchange.setResponseBody(data);
-            exchange.setResponseCode(Code.C205_CONTENT);
-            exchange.sendResponse();
-        }
+        private static final Opaque INIT_DATA = of("init data");
+        private Opaque data = INIT_DATA;
 
         @Override
-        public void put(CoapExchange exchange) throws CoapCodeException {
-            data = exchange.getRequestBodyString();
-            exchange.setResponseCode(Code.C204_CHANGED);
-            exchange.sendResponse();
+        public CompletableFuture<CoapResponse> apply(CoapRequest req) {
+            switch (req.getMethod()) {
+                case GET:
+                    return completedFuture(CoapResponse.ok(data));
+                case PUT:
+                    data = req.getPayload();
+                    return completedFuture(CoapResponse.of(Code.C204_CHANGED));
+            }
+            throw new IllegalStateException();
         }
     }
 
@@ -165,7 +170,7 @@ public class Block1TransferMaxSizeTest {
         //notif 1
         System.out.println("\n-- NOTIF 1");
         expectedBody += "1_2345678901234|";
-        observableResource.setBody(expectedBody);
+        observableResource.putPayload(of(expectedBody));
         packet = obsListener.take();
         assertEquals(expectedBody, packet.getPayloadString());
 
@@ -176,7 +181,7 @@ public class Block1TransferMaxSizeTest {
         // first block received by observation code and consequent, with size check,
         // by block mechanism.
         expectedBody += "2_2345678901234|3_2345678901234|";
-        observableResource.setBody(expectedBody);
+        observableResource.putPayload(of(expectedBody));
         packet = obsListener.take(1, TimeUnit.SECONDS);
         assertNull(packet);
 

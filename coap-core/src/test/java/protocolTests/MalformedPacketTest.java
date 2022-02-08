@@ -16,14 +16,16 @@
  */
 package protocolTests;
 
+import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
-import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -42,9 +44,11 @@ public class MalformedPacketTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        server = CoapServer.builder().transport(0).build();
-        server.addRequestHandler("/test/1", new ReadOnlyCoapResource("Dziala"));
-        server.addRequestHandler("/.well-known/core", new ReadOnlyCoapResource(""));
+        server = CoapServer.builder().transport(0)
+                .route(RouterService.builder()
+                        .get("/test/1", __ -> completedFuture(CoapResponse.ok("Dziala")))
+                )
+                .build();
         server.start();
 
         serverPort = server.getLocalSocketAddress().getPort();

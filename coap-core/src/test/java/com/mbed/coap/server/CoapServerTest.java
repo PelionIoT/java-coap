@@ -17,6 +17,8 @@
 package com.mbed.coap.server;
 
 
+import static com.mbed.coap.utils.FutureHelpers.failedFuture;
+import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -25,20 +27,19 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
-import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.exception.CoapRequestEntityTooLarge;
 import com.mbed.coap.exception.ObservationNotEstablishedException;
 import com.mbed.coap.exception.ObservationTerminatedException;
-import com.mbed.coap.packet.BlockOption;
-import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.server.filter.MaxAllowedPayloadFilter;
 import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.ReadOnlyCoapResource;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -53,12 +54,24 @@ public class CoapServerTest {
 
     private CoapMessaging msg = mock(CoapMessaging.class);
     private CoapServer server;
+    private final Service<CoapRequest, CoapResponse> route = RouterService.builder()
+            .post("/some*", req ->
+                    completedFuture(CoapResponse.ok("OK"))
+            )
+            .post("/err", req ->
+                    failedFuture(new CoapException("error-007"))
+            )
+            .post("/err2", new MaxAllowedPayloadFilter(100, "too big").then(req ->
+                    failedFuture(new RuntimeException()))
+            )
+            .build();
+
 
     @BeforeEach
     public void setUp() throws Exception {
         reset(msg);
 
-        server = new CoapServer(msg).start();
+        server = new CoapServer(msg, route).start();
     }
 
     @Test
@@ -73,7 +86,7 @@ public class CoapServerTest {
 
     @Test
     public void shouldFailWhenAttemptToStopWhenNotRunning() throws Exception {
-        final CoapServer nonStartedServer = new CoapServer(msg);
+        final CoapServer nonStartedServer = new CoapServer(msg, RouterService.NOT_FOUND_SERVICE);
 
         assertThatThrownBy(nonStartedServer::stop).isInstanceOf(IllegalStateException.class);
     }
@@ -98,9 +111,6 @@ public class CoapServerTest {
 
     @Test
     public void shouldResponseWith404_to_unknownResource() throws Exception {
-        server.addRequestHandler("/some*", new ReadOnlyCoapResource("1"));
-        server.addRequestHandler("/3", new ReadOnlyCoapResource("3"));
-
         server.coapRequestHandler.handleRequest(
                 newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/non-existing-resource").build(), TransportContext.NULL
         );
@@ -111,11 +121,6 @@ public class CoapServerTest {
 
     @Test
     public void shouldResponse_to_resource_that_matches_pattern() throws Exception {
-        server.addRequestHandler("/some*", exchange -> {
-            exchange.setResponseBody("OK");
-            exchange.sendResponse();
-        });
-
         server.coapRequestHandler.handleRequest(
                 newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/some-1234").build(), TransportContext.NULL
         );
@@ -125,10 +130,6 @@ public class CoapServerTest {
 
     @Test
     public void sendError_when_exceptionWhileHandlingRequest() throws Exception {
-        server.addRequestHandler("/err", exchange -> {
-            throw new CoapException("error-007");
-        });
-
         server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err").build(), TransportContext.NULL);
 
         assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C500_INTERNAL_SERVER_ERROR));
@@ -136,37 +137,9 @@ public class CoapServerTest {
 
     @Test
     public void send413_when_RequestEntityTooLarge_whileHandlingRequest() {
-        server.addRequestHandler("/err", exchange -> {
-            throw new CoapRequestEntityTooLarge(100, "too big");
-        });
-
-        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err").build(), TransportContext.NULL);
+        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err2").payload("way too big, way too big, way too big, way too big, way too big, way too big, way too big, way too big, way too big").build(), TransportContext.NULL);
 
         assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).size1(100).ack(Code.C413_REQUEST_ENTITY_TOO_LARGE).payload("too big"));
-    }
-
-    @Test
-    public void send413_when_RequestEntityTooLarge_with_block_whileHandlingRequest() {
-        server.addRequestHandler("/err", exchange -> {
-            throw new CoapRequestEntityTooLarge(new BlockOption(0, BlockSize.S_64, true), "too big");
-        });
-
-        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err").build(), TransportContext.NULL);
-
-        assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).block1Req(0, BlockSize.S_64, true).ack(Code.C413_REQUEST_ENTITY_TOO_LARGE).payload("too big"));
-    }
-
-
-    @Test
-    public void sendError_when_CoapCodeException_whileHandlingRequest() throws Exception {
-        server.addRequestHandler("/err", exchange -> {
-            throw new CoapCodeException(Code.C503_SERVICE_UNAVAILABLE, new IOException());
-        });
-
-        CoapPacket req = newCoapPacket(LOCAL_1_5683).mid(1).con().put().uriPath("/err").build();
-        server.coapRequestHandler.handleRequest(req, TransportContext.NULL);
-
-        assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C503_SERVICE_UNAVAILABLE).payload("503 SERVICE UNAVAILABLE"));
     }
 
     @Test
@@ -181,19 +154,6 @@ public class CoapServerTest {
         //ack response
         assertSendResponse(newCoapPacket(LOCAL_5683).emptyAck(2));
     }
-
-    //    ?????
-    //    @Test
-    //    public void receiveObservationCancellation_withCode_noObsHeader() throws Exception {
-    //        ObservationHandler observationHandler = initServerWithObservationHandler();
-    //
-    //        server.coapRequestHandler.handleObservation(newCoapPacket(LOCAL_5683).con(Code.C404_NOT_FOUND).token(33).payload("A").mid(3).build(), TransportContext.NULL);
-    //        verify(observationHandler, never()).callException(any());
-    //
-    //        //ack response
-    //        assertSendResponse(newCoapPacket(LOCAL_5683).reset().mid(3));
-    //    }
-
 
     @Test
     public void shouldSendObservationRequest() {
@@ -272,11 +232,6 @@ public class CoapServerTest {
         //token is missing
         assertThatThrownBy(() ->
                 server.sendNotification(newCoapPacket(LOCAL_5683).obs(2).ack(Code.C205_CONTENT).build(), TransportContext.NULL)
-        ).isInstanceOf(IllegalArgumentException.class);
-
-        //wrong content type
-        assertThatThrownBy(() ->
-                server.sendNotification(newCoapPacket(LOCAL_5683).token(321).obs(2).ack(Code.C400_BAD_REQUEST).build(), TransportContext.NULL)
         ).isInstanceOf(IllegalArgumentException.class);
     }
 

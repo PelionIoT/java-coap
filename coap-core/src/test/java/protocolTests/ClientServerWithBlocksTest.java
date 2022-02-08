@@ -16,29 +16,31 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.Opaque.*;
+import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapBlockException;
-import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.CoapResource;
-import com.mbed.coap.utils.ReadOnlyCoapResource;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -53,23 +55,30 @@ import org.junit.jupiter.api.Test;
 public class ClientServerWithBlocksTest {
 
     //static String bigResource = "1111111111111112222222222222333333333333333444444444444445555555555555555555556666666666666666666667777777777777777777788888888888888888888899999999999999999999999000000000000000000000000000111111111111111111111111112222222222222222222223333333333333333333333344444444444444444444444455555555555555555555555566666666666666666666666777777777777777777777777777788888888888888888888999999999999999999999";
-    static String BIG_RESOURCE = "The use of web services on the Internet has become ubiquitous in most applications, and depends on the fundamental Representational State Transfer (REST) architecture of the web. The Constrained RESTful Environments (CoRE) working group aims at realizing the REST architecture in a suitable form for the most constrained nodes (e.g. 8-bit microcontrollers with limited RAM and ROM) and networks (e.g. 6LoWPAN).";
-    private String dynamicResource = BIG_RESOURCE;
+    static Opaque BIG_RESOURCE = of("The use of web services on the Internet has become ubiquitous in most applications, and depends on the fundamental Representational State Transfer (REST) architecture of the web. The Constrained RESTful Environments (CoRE) working group aims at realizing the REST architecture in a suitable form for the most constrained nodes (e.g. 8-bit microcontrollers with limited RAM and ROM) and networks (e.g. 6LoWPAN).");
+    private Opaque dynamicResource = BIG_RESOURCE;
     private ChangeableBigResource changeableBigResource;
     private int SERVER_PORT = 5683;
+    private final Opaque BODY = of("The use of web services on the Internet has become ubiquitous.");
 
     CoapServer server = null;
 
     @BeforeEach
     public void setUp() throws IOException {
 
-        server = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683)).blockSize(BlockSize.S_32).maxMessageSize(64).build();
-        server.addRequestHandler("/bigResource", new StaticBigResource());
-        server.addRequestHandler("/dynamic", new DynamicBigResource());
-        server.addRequestHandler("/ultra-dynamic", new UltraDynamicBigResource());
-
         changeableBigResource = new ChangeableBigResource();
-        server.addRequestHandler("/chang-res", changeableBigResource);
+        server = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683)).blockSize(BlockSize.S_32).maxMessageSize(64)
+                .route(RouterService.builder()
+                        .get("/bigResource", __ -> completedFuture(CoapResponse.ok(BIG_RESOURCE)))
+                        .get("/", __ -> completedFuture(CoapResponse.ok(BIG_RESOURCE)))
+                        .get("/small", __ -> completedFuture(CoapResponse.ok(BODY)))
+                        .get("/dynamic", new DynamicBigResource())
+                        .get("/ultra-dynamic", new UltraDynamicBigResource())
+                        .get("/chang-res", changeableBigResource)
+                        .post("/chang-res", changeableBigResource)
+                        .put("/chang-res", changeableBigResource)
+                )
+                .build();
 
         server.start();
     }
@@ -84,8 +93,7 @@ public class ClientServerWithBlocksTest {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_32).build();
 
         CoapPacket msg = client.resource("/bigResource").sync().get();
-        assertEquals(BIG_RESOURCE.length(), msg.getPayloadString().length());
-        assertEquals(BIG_RESOURCE, msg.getPayloadString());
+        assertEquals(BIG_RESOURCE, msg.getPayload());
         assertEquals(Code.C205_CONTENT, msg.getCode());
 
         client.close();
@@ -97,8 +105,7 @@ public class ClientServerWithBlocksTest {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_32).build();
 
         CoapPacket msg = client.resource("/bigResource").sync().get();
-        assertEquals(BIG_RESOURCE.length(), msg.getPayloadString().length());
-        assertEquals(BIG_RESOURCE, msg.getPayloadString());
+        assertEquals(BIG_RESOURCE, msg.getPayload());
         client.close();
     }
 
@@ -107,8 +114,7 @@ public class ClientServerWithBlocksTest {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_128).build();
 
         CoapPacket msg = client.resource("/dynamic").sync().get();
-        assertEquals(dynamicResource.length(), msg.getPayloadString().length());
-        assertEquals(dynamicResource, msg.getPayloadString());
+        assertEquals(dynamicResource, msg.getPayload());
 
         client.close();
     }
@@ -123,19 +129,18 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void blockRequest() throws IOException, CoapException {
-        String body = BIG_RESOURCE + "d";
+        Opaque body = BIG_RESOURCE.concat(of("d"));
 
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_128).build();
 
         CoapPacket resp = client.resource("/chang-res").payload(body, MediaTypes.CT_TEXT_PLAIN).sync().put();
 
         assertEquals(Code.C204_CHANGED, resp.getCode());
-        assertEquals(body.length(), changeableBigResource.body.length());
         assertEquals(body, changeableBigResource.body);
 
         CoapPacket msg = client.resource("/chang-res").sync().get();
 
-        assertEquals(body, msg.getPayloadString());
+        assertEquals(body, msg.getPayload());
     }
 
     @Test
@@ -144,13 +149,13 @@ public class ClientServerWithBlocksTest {
         changeableBigResource.body = BIG_RESOURCE;
         CoapPacket resp = client.resource("/chang-res").host("test-host").sync().get();
 
-        assertNotNull(changeableBigResource.lastRequest.headers().getUriHost());
-        assertEquals("test-host", changeableBigResource.lastRequest.headers().getUriHost());
+        assertNotNull(changeableBigResource.lastRequest.options().getUriHost());
+        assertEquals("test-host", changeableBigResource.lastRequest.options().getUriHost());
     }
 
     @Test
     public void blockRequest256_to_32_switch() throws IOException, CoapException {
-        String body = BIG_RESOURCE + "d";
+        Opaque body = BIG_RESOURCE.concat(of("d"));
 
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_256).build();
 
@@ -158,12 +163,11 @@ public class ClientServerWithBlocksTest {
 
         assertEquals(Code.C204_CHANGED, resp.getCode(), resp.getPayloadString());
         assertEquals(32, resp.headers().getBlock1Req().getSize());
-        assertEquals(body.length(), changeableBigResource.body.length());
         assertEquals(body, changeableBigResource.body);
 
         CoapPacket msg = client.resource("/chang-res").sync().get();
 
-        assertEquals(body, msg.getPayloadString());
+        assertEquals(body, msg.getPayload());
     }
 
     @Test
@@ -189,9 +193,6 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void sizeTest() throws Exception {
-        final String BODY = "The use of web services on the Internet has become ubiquitous.";
-        server.addRequestHandler("/small", new ReadOnlyCoapResource(BODY));
-
         CoapServer cnn = CoapServerBuilder.newBuilder().blockSize(BlockSize.S_256).transport(InMemoryCoapTransport.create()).build().start();
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, "/small", new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT));
         request.headers().setBlock2Res(new BlockOption(0, BlockSize.S_256, true));
@@ -200,25 +201,23 @@ public class ClientServerWithBlocksTest {
         CompletableFuture<CoapPacket> resp = cnn.makeRequest(request);
 
         assertEquals(Code.C205_CONTENT, resp.join().getCode());
-        assertEquals(BODY.length(), resp.join().getPayloadString().length());
-        assertEquals(BODY, resp.join().getPayloadString());
-        assertEquals((Integer) BODY.length(), resp.join().headers().getSize2Res());
+        assertEquals(BODY, resp.join().getPayload());
+        assertEquals((Integer) BODY.size(), resp.join().headers().getSize2Res());
     }
 
     @Test
     public void blockRequest64() throws IOException, CoapException {
-        String body = BIG_RESOURCE + "d";
+        Opaque body = BIG_RESOURCE.concat(of("d"));
 
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_64).build();
         CoapPacket resp = client.resource("/chang-res").payload(body, MediaTypes.CT_TEXT_PLAIN).sync().put();
 
         assertEquals(Code.C204_CHANGED, resp.getCode());
-        assertEquals(body.length(), changeableBigResource.body.length());
         assertEquals(body, changeableBigResource.body);
 
         CoapPacket msg = client.resource("/chang-res").sync().get();
 
-        assertEquals(body, msg.getPayloadString());
+        assertEquals(body, msg.getPayload());
     }
 
     @Test
@@ -240,11 +239,9 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void blockRequestWithEmptyUrlHeader() throws IOException, CoapException {
-        server.addRequestHandler("/", new ReadOnlyCoapResource(BIG_RESOURCE));
-
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_32).build();
 
-        assertEquals(BIG_RESOURCE, client.resource("").sync().get().getPayloadString());
+        assertEquals(BIG_RESOURCE, client.resource("").sync().get().getPayload());
 
         client.close();
     }
@@ -264,83 +261,65 @@ public class ClientServerWithBlocksTest {
         client.close();
     }
 
-    private class DynamicBigResource extends CoapResource {
+    private class DynamicBigResource implements Service<CoapRequest, CoapResponse> {
 
         private boolean changed = false;
 
         @Override
-        public void get(CoapExchange exchange) throws CoapCodeException {
-            exchange.setResponseBody(dynamicResource);
-            exchange.getResponseHeaders().setEtag(Opaque.variableUInt(dynamicResource.hashCode()));
-            exchange.setResponseCode(Code.C205_CONTENT);
+        public CompletableFuture<CoapResponse> apply(CoapRequest req) {
+            final CoapResponse resp = new CoapResponse(Code.C205_CONTENT, dynamicResource, opts ->
+                    opts.setEtag(Opaque.variableUInt(dynamicResource.hashCode()))
+            );
 
             if (!changed) {
-                dynamicResource += "-CH";
+                dynamicResource = dynamicResource.concat(of("-CH"));
                 changed = true;
             }
-            exchange.sendResponse();
+            return completedFuture(resp);
         }
 
     }
 
-    private static class UltraDynamicBigResource extends CoapResource {
+    private static class UltraDynamicBigResource implements Service<CoapRequest, CoapResponse> {
 
-        private String dynRes = BIG_RESOURCE;
+        private Opaque dynRes = BIG_RESOURCE;
 
         @Override
-        public void get(CoapExchange exchange) throws CoapCodeException {
-            dynRes += " C";
-            exchange.setResponseBody(dynRes);
-            exchange.getResponseHeaders().setEtag(Opaque.variableUInt(dynRes.hashCode()));
-            exchange.setResponseCode(Code.C205_CONTENT);
-            exchange.sendResponse();
+        public CompletableFuture<CoapResponse> apply(CoapRequest req) {
+            dynRes = dynRes.concat(of(" C"));
+            final CoapResponse resp = new CoapResponse(Code.C205_CONTENT, dynRes, opts ->
+                    opts.setEtag(Opaque.variableUInt(dynRes.hashCode()))
+            );
+            return completedFuture(resp);
         }
     }
 
-    private static class StaticBigResource extends CoapResource {
+    private static class ChangeableBigResource implements Service<CoapRequest, CoapResponse> {
+
+        Opaque body = EMPTY;
+        CoapRequest lastRequest = null;
 
         @Override
-        public void get(CoapExchange exchange) throws CoapCodeException {
-            exchange.setResponseBody(BIG_RESOURCE);
-            exchange.setResponseCode(Code.C205_CONTENT);
-            exchange.sendResponse();
-        }
-    }
-
-    private static class ChangeableBigResource extends CoapResource {
-
-        String body = "";
-        CoapPacket lastRequest = null;
-
-        @Override
-        public void get(CoapExchange exchange) throws CoapCodeException {
-            if (exchange.getRequestBody() != null && exchange.getRequestBody().size() > 0) {
-                //body = exchange.getRequestBody()
-                exchange.setResponseBody(exchange.getRequestBody());
-            } else {
-                exchange.setResponseBody(body);
+        public CompletableFuture<CoapResponse> apply(CoapRequest req) {
+            lastRequest = req;
+            switch (req.getMethod()) {
+                case GET:
+                    if (req.getPayload().size() > 0) {
+                        //body = exchange.getRequestBody()
+                        return completedFuture(CoapResponse.ok(req.getPayload()));
+                    } else {
+                        return completedFuture(CoapResponse.ok(body));
+                    }
+                case PUT:
+                    body = req.getPayload();
+                    return completedFuture(CoapResponse.of(Code.C204_CHANGED));
+                case POST:
+                    if (req.options().getBlock2Res() == null) {
+                        body = req.getPayload();
+                    }
+                    return completedFuture(CoapResponse.of(Code.C204_CHANGED, body));
             }
-            exchange.setResponseCode(Code.C205_CONTENT);
-            lastRequest = exchange.getRequest();
-            exchange.sendResponse();
-        }
-
-        @Override
-        public void put(CoapExchange exchange) throws CoapCodeException {
-            body = exchange.getRequestBodyString();
-            exchange.setResponseCode(Code.C204_CHANGED);
-            exchange.sendResponse();
-        }
-
-        @Override
-        public void post(CoapExchange exchange) throws CoapCodeException {
-            if (exchange.getRequestHeaders().getBlock2Res() == null) {
-                body = exchange.getRequestBodyString();
-            }
-            exchange.setResponseCode(Code.C204_CHANGED);
-            exchange.setResponseBody(body);
-            lastRequest = exchange.getRequest();
-            exchange.sendResponse();
+            throw new IllegalStateException();
         }
 
     }
