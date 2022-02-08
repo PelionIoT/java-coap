@@ -19,6 +19,8 @@ package com.mbed.coap.linkformat;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.packet.DataConvertingUtility;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -607,6 +609,20 @@ public class LinkFormatTest {
         assertEquals('b', pToken.charAt(1));
         assertEquals(5, pToken.length());
         assertEquals("cd", pToken.subSequence(2, 4));
+    }
+
+    @Test
+    void generateString() {
+        ArrayList<LinkFormat> links = new ArrayList<>();
+        links.add(new LinkFormat("/1"));
+        links.add(new LinkFormat("/2"));
+
+        String linksStr = LinkFormatBuilder.toString(links);
+
+        assertEquals("</1>,</2>", linksStr);
+
+        // empty
+        assertEquals("", LinkFormatBuilder.toString(Collections.emptyList()));
     }
 
     @Test

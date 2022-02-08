@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.observe;
+package com.mbed.coap.utils;
 
-import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
-/**
- * NULL implementation for interface NotificationDeliveryListener.
- *
- * @author szymon
- */
-class NotificationDeliveryListenerNULL implements NotificationDeliveryListener {
+@FunctionalInterface
+public interface Service<REQ, RES> extends Function<REQ, CompletableFuture<RES>> {
 
-    @Override
-    public void onSuccess(InetSocketAddress destinationAddress) {
-        //do nothing
-    }
-
-    @Override
-    public void onFail(InetSocketAddress destinationAddress) {
-        //do nothing
-    }
-
-    @Override
-    public void onNoObservers() {
-        //do nothing
-    }
 }

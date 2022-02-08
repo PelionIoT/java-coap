@@ -17,6 +17,7 @@
 package com.mbed.coap.packet;
 
 import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.transport.TransportContext;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -254,6 +255,28 @@ public class CoapPacket {
         }
 
         return null;
+    }
+
+    public CoapPacket createResponseFrom(CoapResponse coapResponse) {
+        CoapPacket response = new CoapPacket(this.getRemoteAddress());
+        response.setCode(coapResponse.getCode());
+        response.setToken(getToken());
+        response.setPayload(coapResponse.getPayload());
+        response.setHeaderOptions(coapResponse.options().duplicate());
+
+        if (messageType == MessageType.NonConfirmable) {
+            response.setMessageType(MessageType.NonConfirmable);
+        } else if (messageType == MessageType.Confirmable) {
+            response.setMessageId(this.messageId);
+            response.setMessageType(MessageType.Acknowledgement);
+        } else if (messageType == null && method != null) {
+            response.setMessageId(this.messageId);
+        }
+        return response;
+    }
+
+    public CoapRequest toCoapRequest(TransportContext transContext) {
+        return new CoapRequest(method, token, options, payload, remoteAddress, transContext);
     }
 
     /**

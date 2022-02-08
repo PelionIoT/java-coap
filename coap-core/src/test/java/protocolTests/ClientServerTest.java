@@ -16,6 +16,8 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.Opaque.*;
+import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
@@ -25,17 +27,20 @@ import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.ReadOnlyCoapResource;
+import com.mbed.coap.utils.Service;
 import io.github.artsok.RepeatedIfExceptionsTest;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -47,6 +52,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -60,13 +66,24 @@ public class ClientServerTest {
     private CoapServer server = null;
     private int SERVER_PORT;
     private InetSocketAddress serverAddress;
+    private final Service<CoapRequest, CoapResponse> route = RouterService.builder()
+            .get("/test/1", __ -> completedFuture(CoapResponse.ok("Dziala")))
+            .get("/resource*", __ -> completedFuture(CoapResponse.ok("Prefix dziala")))
+            .get("/", __ -> completedFuture(CoapResponse.ok("Shortest path")))
+            .get("/slow", __ -> CompletableFuture.supplyAsync(() -> {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            //ignore
+                        }
+                return CoapResponse.ok(EMPTY);
+                    }
+            ))
+            .build();
 
     @BeforeEach
     public void setUp() throws IOException {
-        server = CoapServer.builder().transport(0).build();
-        server.addRequestHandler("/test/1", new ReadOnlyCoapResource("Dziala"));
-        server.addRequestHandler("/resource*", new ReadOnlyCoapResource("Prefix dziala"));
-        server.addRequestHandler("/", new ReadOnlyCoapResource("Shortest path"));
+        server = CoapServer.builder().transport(0).route(route).build();
         server.useCriticalOptionTest(false);
         server.start();
         SERVER_PORT = server.getLocalSocketAddress().getPort();
@@ -183,8 +200,11 @@ public class ClientServerTest {
     public void simpleIPv6Request() throws CoapException, IOException {
         InetAddress adr = InetAddress.getByName("::1");
 
-        CoapServer ipv6Server = CoapServerBuilder.newBuilder().transport(0).build();
-        ipv6Server.addRequestHandler("/resource", new ReadOnlyCoapResource("1234qwerty"));
+        CoapServer ipv6Server = CoapServerBuilder.newBuilder().transport(0)
+                .route(RouterService.builder()
+                        .get("/resource", __ -> completedFuture(CoapResponse.ok("1234qwerty")))
+                )
+                .build();
         ipv6Server.start();
 
         try (CoapClient client = CoapClientBuilder.newBuilder(new InetSocketAddress(adr, ipv6Server.getLocalSocketAddress().getPort())).build()) {
@@ -219,9 +239,13 @@ public class ClientServerTest {
 
     @Test
     public void requestWithPacketLost() throws CoapException, IOException {
-        CoapServer serverNode = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683)).build();
-        final ReadOnlyCoapResource res = new ReadOnlyCoapResource("Not dropped");
-        serverNode.addRequestHandler("/dropping", res);
+        AtomicReference<String> resValue = new AtomicReference<>("Not dropped");
+
+        CoapServer serverNode = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683))
+                .route(RouterService.builder()
+                        .get("/dropping", __ -> completedFuture(CoapResponse.ok(of(resValue.get()))))
+                )
+                .build();
         serverNode.start();
 
         try (CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683))
@@ -233,7 +257,7 @@ public class ClientServerTest {
                         //will drop only first packet
                         if (!hasDropped) {
                             hasDropped = true;
-                            res.setResourceBody("dropped");
+                            resValue.set("dropped");
                             System.out.println("dropped");
                         } else {
                             super.sendPacket0(coapPacket, adr, tranContext);
@@ -260,8 +284,11 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequest5() throws IOException, CoapException {
-        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(61601)).build();
-        srv.addRequestHandler("/temp", new ReadOnlyCoapResource("23 C"));
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(61601))
+                .route(RouterService.builder()
+                        .get("/temp", __ -> completedFuture(CoapResponse.ok("23 C")))
+                )
+                .build();
         srv.start();
 
         try (CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(61601)).transport(InMemoryCoapTransport.create(0)).build()) {
@@ -272,12 +299,15 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequestWithUnknownCriticalOptionHeader() throws IOException, CoapException {
-        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(61601)).build();
-        srv.addRequestHandler("/temp", new ReadOnlyCoapResource("23 C"));
+        CoapServer srv = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(61601))
+                .route(RouterService.builder()
+                        .get("/temp", __ -> completedFuture(CoapResponse.ok("23 C")))
+                )
+                .build();
         srv.start();
 
         try (CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(61601)).transport(new InMemoryCoapTransport()).build()) {
-            assertEquals(Code.C402_BAD_OPTION, client.resource("/temp").header(123, Opaque.of("dupa")).sync().get().getCode());
+            assertEquals(Code.C402_BAD_OPTION, client.resource("/temp").header(123, of("dupa")).sync().get().getCode());
         }
         srv.stop();
     }
@@ -303,8 +333,12 @@ public class ClientServerTest {
 
     @Test
     public void testRequestWithPacketDelay() throws Exception {
-        CoapServer serverNode = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683)).build();
-        serverNode.addRequestHandler("/test/1", new ReadOnlyCoapResource("Dziala"));
+        CoapServer serverNode = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683))
+                .route(RouterService.builder()
+                        .get("/test/1", __ -> completedFuture(CoapResponse.ok("Dziala")))
+                        .build()
+                )
+                .build();
         serverNode.start();
 
         ExecutorService executorService = Executors.newCachedThreadPool();
@@ -334,8 +368,10 @@ public class ClientServerTest {
     public void testRequestWithPacketDropping() throws IOException, CoapException {
         CoapServer srv = CoapServerBuilder.newBuilder()
                 .transport(new DroppingPacketsTransportWrapper(CoapConstants.DEFAULT_PORT, (byte) 100))
+                .route(RouterService.builder()
+                        .get("/test", __ -> completedFuture(CoapResponse.ok("TEST")))
+                        .build())
                 .build();
-        srv.addRequestHandler("/test", new ReadOnlyCoapResource("TEST"));
         srv.start();
 
         CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(CoapConstants.DEFAULT_PORT))
@@ -349,29 +385,20 @@ public class ClientServerTest {
     @Test
     public void testMakeRequestWithNullAddress() throws CoapException {
         assertThrows(NullPointerException.class, () ->
-            server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null))
+                server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null))
         );
     }
 
     @Test
     public void testMakeRequestNullRequest() throws CoapException {
         assertThrows(NullPointerException.class, () ->
-            server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null))
+                server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null))
         );
     }
 
 
     @Test
     public void should_invoke_callback_exceptionally_when_server_stops() throws Exception {
-        server.addRequestHandler("/slow", new ReadOnlyCoapResource(() -> {
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                //ignore
-            }
-            return "";
-        }));
-
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
@@ -383,15 +410,6 @@ public class ClientServerTest {
 
     @Test
     public void should_invoke_callback_exceptionally_when_server_stops_and_non_request() throws Exception {
-        server.addRequestHandler("/slow", new ReadOnlyCoapResource(() -> {
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                //ignore
-            }
-            return "";
-        }));
-
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 

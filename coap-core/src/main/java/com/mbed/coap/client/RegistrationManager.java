@@ -16,17 +16,16 @@
  */
 package com.mbed.coap.client;
 
-import com.mbed.coap.linkformat.LinkFormatBuilder;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.server.CoapServer;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,13 +37,13 @@ public class RegistrationManager {
     private final URI registrationUri;
     private final CoapClient client;
     private final ScheduledExecutorService scheduledExecutor;
-    private final Supplier<String> registrationLinks;
+    private final String registrationLinks;
     private final String epName;
     private volatile Optional<String> registrationLocation = Optional.empty();
     private volatile Duration lastRetryDelay = Duration.ZERO;
 
     @SuppressWarnings("PMD.ConstructorCallsOverridableMethod")
-    public RegistrationManager(CoapServer server, URI registrationUri, ScheduledExecutorService scheduledExecutor,
+    public RegistrationManager(CoapServer server, URI registrationUri, String registrationLinks, ScheduledExecutorService scheduledExecutor,
             Duration minRetryDelay, Duration maxRetryDelay) {
 
         if (minRetryDelay.compareTo(maxRetryDelay) > 0) {
@@ -55,7 +54,7 @@ public class RegistrationManager {
         this.client = new CoapClient(new InetSocketAddress(registrationUri.getHost(), registrationUri.getPort()), server);
         this.scheduledExecutor = scheduledExecutor;
         this.registrationUri = registrationUri;
-        this.registrationLinks = () -> LinkFormatBuilder.toString(server.getResourceLinks());
+        this.registrationLinks = Objects.requireNonNull(registrationLinks);
         this.minRetryDelay = minRetryDelay;
         this.maxRetryDelay = maxRetryDelay;
 
@@ -73,14 +72,14 @@ public class RegistrationManager {
                 .orElseThrow(() -> new IllegalArgumentException("Missing 'ep' parameter"));
     }
 
-    public RegistrationManager(CoapServer server, URI registrationUri, ScheduledExecutorService scheduledExecutor) {
-        this(server, registrationUri, scheduledExecutor, Duration.ofSeconds(10), Duration.ofMinutes(5));
+    public RegistrationManager(CoapServer server, URI registrationUri, String registrationLinks, ScheduledExecutorService scheduledExecutor) {
+        this(server, registrationUri, registrationLinks, scheduledExecutor, Duration.ofSeconds(10), Duration.ofMinutes(5));
     }
 
     public void register() {
         client.resource(registrationUri.getPath())
                 .query(registrationUri.getQuery())
-                .payload(registrationLinks.get(), MediaTypes.CT_APPLICATION_LINK__FORMAT)
+                .payload(registrationLinks, MediaTypes.CT_APPLICATION_LINK__FORMAT)
                 .post()
                 .thenAccept(resp -> {
                     if (resp.getCode().equals(Code.C201_CREATED)) {

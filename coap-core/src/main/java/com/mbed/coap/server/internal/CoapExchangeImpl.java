@@ -40,16 +40,11 @@ import org.slf4j.LoggerFactory;
 public class CoapExchangeImpl implements CoapExchange {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapExchangeImpl.class.getName());
-    private CoapServer coapServer;
-    private TransportContext requestTransportContext;
-    private TransportContext responseTransportContext = TransportContext.NULL;
+    private final CoapServer coapServer;
+    private final TransportContext requestTransportContext;
+    private final TransportContext responseTransportContext = TransportContext.NULL;
     protected CoapPacket request;
     protected CoapPacket response;
-    private boolean isDelayedResponse;
-
-    public CoapExchangeImpl(CoapPacket request, CoapServer coapServer) {
-        this(request, coapServer, null);
-    }
 
     public CoapExchangeImpl(CoapPacket request, CoapServer coapServer, TransportContext transportContext) {
         this.request = request;
@@ -79,11 +74,6 @@ public class CoapExchangeImpl implements CoapExchange {
     }
 
     @Override
-    public void setResponseTransportContext(TransportContext responseTransportContext) {
-        this.responseTransportContext = responseTransportContext;
-    }
-
-    @Override
     public void setResponse(CoapPacket message) {
         if (this.response != null && response.getMessageId() != -1) {
             message.setMessageId(this.response.getMessageId());
@@ -98,44 +88,18 @@ public class CoapExchangeImpl implements CoapExchange {
         response = request.createResponse();
         response.setMessageType(MessageType.Reset);
         response.setCode(null);
-        this.getCoapServer().sendResponse(this);
+        coapServer.sendResponse(this);
         response = null;
     }
 
     @Override
     public void sendResponse() {
-        if (!isDelayedResponse) {
-            if (request.getMessageType() == MessageType.NonConfirmable && request.getMethod() == null) {
-                LOGGER.trace("Send response ignored for NON response");
-            } else {
-                send();
-            }
-            response = null;
+        if (request.getMessageType() == MessageType.NonConfirmable && request.getMethod() == null) {
+            LOGGER.trace("Send response ignored for NON response");
         } else {
-            this.getCoapServer().makeRequest(response);
+            send();
         }
-    }
-
-    @Override
-    public void sendDelayedAck() {
-        if (request.getMessageType() == MessageType.NonConfirmable) {
-            return;
-        }
-        CoapPacket emptyAck = new CoapPacket(null);
-        emptyAck.setCode(null);
-        emptyAck.setMethod(null);
-        emptyAck.setMessageType(MessageType.Acknowledgement);
-        emptyAck.setMessageId(getRequest().getMessageId());
-
-        CoapPacket tmpResp = this.getResponse();
-        this.setResponse(emptyAck);
-
-        //this.send();
-        this.getCoapServer().sendResponse(this);
-
-        this.setResponse(tmpResp);
-        tmpResp.setMessageType(MessageType.Confirmable);
-        isDelayedResponse = true;
+        response = null;
     }
 
 
@@ -148,10 +112,6 @@ public class CoapExchangeImpl implements CoapExchange {
         return "CoapExchange [" + "request=" + request + ", response=" + response + ']';
     }
 
-    @Override
-    public CoapServer getCoapServer() {
-        return coapServer;
-    }
 
     @Override
     public CompletableFuture<CoapPacket> retrieveNotificationBlocks(final String uriPath) throws CoapException {
@@ -163,7 +123,7 @@ public class CoapExchangeImpl implements CoapExchange {
         fullNotifRequest.headers().setBlock2Res(new BlockOption(1, request.headers().getBlock2Res().getBlockSize(), false));
         final Opaque etag = request.headers().getEtag();
 
-        return getCoapServer()
+        return coapServer
                 .makeRequest(fullNotifRequest)
                 .thenCompose(coapPacket -> {
                             if (coapPacket.getCode() == Code.C205_CONTENT) {

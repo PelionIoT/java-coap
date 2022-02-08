@@ -14,24 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server.internal;
+package com.mbed.coap.packet;
 
-import com.mbed.coap.server.CoapRequestId;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon
- */
-public class CoapTransactionIdTest {
+class CoapRequestTest {
 
     @Test
-    public void equalsAndHashTest() throws Exception {
-        EqualsVerifier.forClass(CoapTransactionId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
-
-        EqualsVerifier.forClass(DelayedTransactionId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
-
-        EqualsVerifier.forClass(CoapRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+    public void equalsAndHashTest() {
+        EqualsVerifier.forClass(CoapRequest.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
     }
 }

@@ -62,11 +62,12 @@ public class RegistrationManagerTest {
     public void register_andScheduleUpdateBeforeExpiration() throws Exception {
         trnsport.when(newCoapPacket(1).post().uriPath("/rd").uriQuery("ep=stub-device-01&lt=7200").contFormat(CT_APPLICATION_LINK__FORMAT))
                 .then(newCoapPacket(1).ack(Code.C201_CREATED).locPath("/stub/0001").maxAge(3600));
-        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=7200"), scheduledExecutor);
+        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=7200"), "", scheduledExecutor);
 
         //when
         reg.register();
 
+        Thread.sleep(1000);
         //then
         assertTrue(reg.isRegistered());
         verifyScheduledInSec(3600L - 30);
@@ -76,7 +77,7 @@ public class RegistrationManagerTest {
     public void register_shortLifetime() throws Exception {
         trnsport.when(newCoapPacket(1).post().uriPath("/rd").uriQuery("ep=stub-device-01&lt=59").contFormat(CT_APPLICATION_LINK__FORMAT))
                 .then(newCoapPacket(1).ack(Code.C201_CREATED).locPath("/stub/0001").maxAge(59));
-        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=59"), scheduledExecutor);
+        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=59"), "", scheduledExecutor);
 
         //when
         reg.register();
@@ -90,7 +91,7 @@ public class RegistrationManagerTest {
     public void register_failFromServer() throws Exception {
         trnsport.when(newCoapPacket(1).post().uriPath("/rd").uriQuery("ep=stub-device-01&lt=7200").contFormat(CT_APPLICATION_LINK__FORMAT))
                 .then(newCoapPacket(1).ack(Code.C400_BAD_REQUEST));
-        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=7200"), scheduledExecutor);
+        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=7200"), "", scheduledExecutor);
 
         //when
         reg.register();
@@ -104,7 +105,7 @@ public class RegistrationManagerTest {
     public void register_fail_connection() throws Exception {
         trnsport.when(newCoapPacket(1).post().uriPath("/rd").uriQuery("ep=stub-device-01&lt=7200").contFormat(CT_APPLICATION_LINK__FORMAT))
                 .thenThrow(new IOException());
-        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=7200"), scheduledExecutor);
+        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=7200"), "", scheduledExecutor);
 
         //when
         reg.register();
@@ -189,7 +190,7 @@ public class RegistrationManagerTest {
 
     @Test
     public void nextRetryDelay() throws Exception {
-        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), scheduledExecutor,
+        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), "", scheduledExecutor,
                 /* min */ ofMinutes(2), /* max */ ofMinutes(10));
 
         assertEquals(ofMinutes(2), reg.nextDelay(ofMinutes(0)));
@@ -204,7 +205,7 @@ public class RegistrationManagerTest {
     @Test
     public void failWithWrongRegistrationDuration() throws Exception {
         assertThrows(IllegalArgumentException.class, () ->
-                new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), scheduledExecutor,
+                new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), "", scheduledExecutor,
                         ofMinutes(3), ofMinutes(2))
         );
     }
@@ -228,7 +229,7 @@ public class RegistrationManagerTest {
     private RegistrationManager registered() {
         trnsport.when(newCoapPacket(1).post().uriPath("/rd").uriQuery("ep=stub-device-01&lt=100").contFormat(CT_APPLICATION_LINK__FORMAT))
                 .then(newCoapPacket(1).ack(Code.C201_CREATED).locPath("/stub/0001").maxAge(100));
-        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), scheduledExecutor);
+        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), "", scheduledExecutor);
 
         reg.register();
         assertTrue(reg.isRegistered());
@@ -241,7 +242,7 @@ public class RegistrationManagerTest {
 
         trnsport.when(newCoapPacket(0).post().uriPath("/rd").uriQuery("ep=stub-device-01&lt=100").contFormat(CT_APPLICATION_LINK__FORMAT))
                 .then(newCoapPacket(0).ack(Code.C201_CREATED).locPath("/stub/0001").maxAge(100));
-        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), scheduledExecutor);
+        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), "", scheduledExecutor);
 
         reg.register();
         assertTrue(reg.isRegistered());
@@ -251,7 +252,7 @@ public class RegistrationManagerTest {
 
     private Runnable verifyScheduledInSec(long delay) {
         ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(scheduledExecutor).schedule(captor.capture(), eq(delay), eq(TimeUnit.SECONDS));
+        verify(scheduledExecutor, timeout(100)).schedule(captor.capture(), eq(delay), eq(TimeUnit.SECONDS));
 
         return captor.getValue();
     }

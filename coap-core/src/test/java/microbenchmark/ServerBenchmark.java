@@ -16,19 +16,21 @@
  */
 package microbenchmark;
 
+import static java.util.concurrent.CompletableFuture.*;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -63,8 +65,11 @@ public class ServerBenchmark {
         buffer.position(coapReq.toByteArray().length);
 
         trans = new SynchTransportStub();
-        server = CoapServerBuilder.newBuilder().transport(trans).build();
-        server.addRequestHandler("/path1/sub2/sub3", new ReadOnlyCoapResource("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"));
+        server = CoapServerBuilder.newBuilder().transport(trans)
+                .route(RouterService.builder()
+                        .get("/path1/sub2/sub3", __ -> completedFuture(CoapResponse.ok("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")))
+                )
+                .build();
         server.start();
         System.out.println("MSG SIZE: " + reqData.length);
     }

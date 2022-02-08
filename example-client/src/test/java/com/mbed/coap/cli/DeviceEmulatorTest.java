@@ -16,25 +16,23 @@
  */
 package com.mbed.coap.cli;
 
+import static com.mbed.coap.packet.CoapResponse.*;
+import static java.util.concurrent.CompletableFuture.*;
+import static org.awaitility.Awaitility.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 import com.mbed.coap.cli.providers.PlainTextProvider;
-import com.mbed.coap.exception.CoapCodeException;
-import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.server.CoapExchange;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
-import com.mbed.coap.utils.CoapResource;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 /**
  * Created by szymon
@@ -42,37 +40,26 @@ import org.mockito.Mockito;
 public class DeviceEmulatorTest {
 
     CoapServer stubServer;
-    Consumer<String> registered = Mockito.mock(Consumer.class);
-
 
     @BeforeEach
     public void setUp() throws Exception {
 
         DatagramSocketTransport transport = new DatagramSocketTransport(0);
-        stubServer = CoapServerBuilder.newCoapServer(transport);
-
-        stubServer.addRequestHandler("/rd", new CoapResource() {
-            @Override
-            public void get(CoapExchange exchange) throws CoapCodeException {
-                throw new CoapCodeException(Code.C405_METHOD_NOT_ALLOWED);
-            }
-
-            @Override
-            public void post(CoapExchange exchange) throws CoapCodeException {
-                String epName;
-                try {
-                    epName = exchange.getRequest().headers().getUriQueryMap().get("ep");
-                } catch (ParseException e) {
-                    throw new CoapCodeException(Code.C400_BAD_REQUEST);
-                }
-
-                CoapPacket resp = exchange.getResponse();
-                resp.setCode(Code.C201_CREATED);
-                resp.headers().setLocationPath("/rd/" + epName);
-                exchange.sendResponse();
-                registered.accept(epName);
-            }
-        });
+        stubServer = CoapServerBuilder
+                .newBuilder()
+                .route(RouterService.builder()
+                        .post("/rd", req -> {
+                            String epName;
+                            try {
+                                epName = req.options().getUriQueryMap().get("ep");
+                            } catch (ParseException e) {
+                                return completedFuture(badRequest());
+                            }
+                            return completedFuture(new CoapResponse(Code.C201_CREATED, Opaque.EMPTY, o -> o.setLocationPath("/rd/" + epName)));
+                        })
+                )
+                .transport(transport)
+                .build();
 
         stubServer.start();
     }
@@ -90,7 +77,8 @@ public class DeviceEmulatorTest {
         deviceEmulator.start(new PlainTextProvider(), String.format("coap://localhost:%d/rd?ep=dev123&lt=60", port), null);
 
 
-        verify(registered, timeout(10000)).accept(eq("dev123"));
-        assertTrue(deviceEmulator.getRegistrationManager().isRegistered());
+        await().untilAsserted(() -> {
+            assertTrue(deviceEmulator.getRegistrationManager().isRegistered());
+        });
     }
 }

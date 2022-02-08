@@ -14,24 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server.internal;
+package com.mbed.coap.packet;
 
-import com.mbed.coap.server.CoapRequestId;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import nl.jqno.equalsverifier.EqualsVerifier;
-import nl.jqno.equalsverifier.Warning;
+import nl.jqno.equalsverifier.Func;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon
- */
-public class CoapTransactionIdTest {
+class CoapResponseTest {
 
     @Test
-    public void equalsAndHashTest() throws Exception {
-        EqualsVerifier.forClass(CoapTransactionId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
-
-        EqualsVerifier.forClass(DelayedTransactionId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
-
-        EqualsVerifier.forClass(CoapRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+    public void equalsAndHashTest() {
+        EqualsVerifier.forClass(CoapResponse.class)
+                .withGenericPrefabValues(Supplier.class, (Func.Func1<CompletableFuture<CoapResponse>, Supplier>) o -> () -> o)
+                .withGenericPrefabValues(CompletableFuture.class, (Func.Func1<CoapResponse, CompletableFuture>) coapResponse -> new CompletableFuture<>())
+                .withPrefabValues(CoapResponse.class, CoapResponse.badRequest(), CoapResponse.ok(""))
+                .usingGetClass()
+                .verify();
     }
+
 }

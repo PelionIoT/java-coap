@@ -712,6 +712,24 @@ public class BasicHeaderOptions {
 
     }
 
+    public void duplicate(BasicHeaderOptions opts) {
+        opts.contentFormat = contentFormat;
+        opts.maxAge = maxAge;
+        opts.etag = etag;
+        opts.uriHost = uriHost;
+        opts.locationPath = locationPath;
+        opts.locationQuery = locationQuery;
+        opts.uriPath = uriPath;
+        opts.uriQuery = uriQuery;
+        opts.accept = accept;
+        opts.ifMatch = ifMatch;
+        opts.ifNonMatch = ifNonMatch;
+        opts.proxyUri = proxyUri;
+        opts.proxyScheme = proxyScheme;
+        opts.uriPort = uriPort;
+        opts.size1 = size1;
+    }
+
     @Override
     public int hashCode() {
         int hash = 7;

@@ -114,48 +114,66 @@ To initialize a server, you must at minimum define the port number. You must set
     server.start();
 
 To stop a server, use the `stop()` method.
-	
+
     server.stop();
 
+#### Handling incoming requests with Services and Filters
 
-#### Adding request handlers
+Incoming requests are handled by implementing `Service<CoapRequest, CoapResponse>` interface. It is a simple function: 
 
-You can add handlers before or while the server is running. There can be several URI paths assigned to the same handler. 
-You can also remove a handler at any time.
+```
+(CoapRequest) -> CompletableFuture<CoapResponse>
+```
 
-    CoapHandler handler = new ReadOnlyCoapResource("24");
-    server.addRequestHandler("/temperature", handler);
-    
-    server.removeRequestHandler(handler);
+Intercepting is achieved by implementing `Filter` interface, which is again a simple function:
 
+```
+(CoapRequest, Service<CoapRequest, CoapResponse>) -> CompletableFuture<CoapResponse>
+```
 
+That interface has helper functions to compose with another `Filter` and `Service`.
 
-#### Creating CoAP resources
+It is following server as a function idea, that is a very simple, flexible and testable way to model data processing.
+It is best describe in this white paper: [Your Server as a Function](https://monkey.org/~marius/funsrv.pdf), and has a great implementation in [Finagle](https://twitter.github.io/finagle).
 
-To create a CoAP resource, you must implement a `CoapHandler`. There is one abstract helper class `CoapResource` that can be extended. At minimum, implement the `get()` method. 
+#### Routing service
 
-The following example overrides `get()` and `put()` and creates a simple CoAP resource:
+Routing can be build with `RouterService.builder()` that creates a `Service` which routes incoming request into specific function based on uri path and method. For example:
 
-    public class SimpleCoapResource extends CoapResource {
-        private String body="Hello World";
-        
-        @Override
-        public void get(CoapExchange ex) throws CoapCodeException {
-            ex.setResponseBody("Hello World");
-            ex.setResponseCode(Code.C205_CONTENT);
-            ex.sendResponse();
-        }
-        
-        @Override
-        public void put(CoapExchange ex) throws CoapCodeException {
-          body = ex.getRequestBodyString();        
-            ex.setResponseCode(Code.C204_CHANGED);
-            ex.sendResponse();
-        }
-    }
+```java
+    Service<CoapRequest, CoapResponse> route = RouterService.builder()
+        .get("/hello",req ->
+            completedFuture(CoapResponse.of("Hello World", MediaTypes.CT_TEXT_PLAIN))
+        )
+        .build();
+``` 
+
+Note that each resource function is also with a `Service` type and can be decorated/transformed with `Filter`
+
+#### Decorating services with filters
+
+Every `Service` implementation can be decorated with `Filter`. It can be used to implement any kind of authorisation, authentication, validation, rate limitations etc.
+
+For example, if we want to limit allowed payload size, it could be done:
+
+```
+  MaxAllowedEntityFilter filter = new MaxAllowedEntityFilter(100, "too big")
+  
+  Service<CoapRequest, CoapResponse> filteredRoute = filter.then(route)
+```
+
+Another example, is to use auto generated `etag` for responses and validate it in requests:
+
+```
+  EtagGeneratorFilter filter2 = new EtagGeneratorFilter()
+  EtagValidatorFilter filter3 = new EtagValidatorFilter()
+  
+  Service<CoapRequest, CoapResponse> filteredRoute = filter3.andThen(filter2).then(route)
+```
+
+All request handling filters are under package [..coap.server.filter](coap-core/src/main/java/com/mbed/coap/server/filter).
 
 ### Creating a client
-
 
 To make a CoAP request, use the class `CoapClient`. It uses fluent API. The following is a simple example on the usage:
 

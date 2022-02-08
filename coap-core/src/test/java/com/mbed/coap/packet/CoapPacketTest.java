@@ -22,6 +22,7 @@ import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.linkformat.LinkFormat;
 import com.mbed.coap.linkformat.LinkFormatBuilder;
+import com.mbed.coap.transport.TransportContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -377,5 +378,17 @@ public class CoapPacketTest extends CoapPacketTestBase {
         byte[] addr = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
         CoapPacket coapPacket = new CoapPacket(new InetSocketAddress(Inet6Address.getByAddress(null, addr, 1), 6666));
         assertEquals("102:304:506:708:90a:b0c:d0e:f10:6666", coapPacket.getRemoteAddrString());
+    }
+
+    @Test
+    void toCoapRequest() {
+        InetSocketAddress addr = new InetSocketAddress("localhost", 5683);
+
+        CoapPacket coap = new CoapPacket(Method.PUT, MessageType.Confirmable, "/test", addr);
+        assertEquals(CoapRequest.put(addr, "/test"), coap.toCoapRequest(TransportContext.NULL));
+
+        coap.setToken(Opaque.ofBytes(123));
+        coap.setPayload(Opaque.of("dupa"));
+        assertEquals(CoapRequest.put(addr, "/test").token(123).payload("dupa"), coap.toCoapRequest(TransportContext.NULL));
     }
 }
