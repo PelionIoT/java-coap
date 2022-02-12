@@ -211,7 +211,6 @@ public class ClientServerTest {
         datagramSocket.receive(recPacket);
 
         //send duplicate
-        Thread.sleep(20);
         datagramSocket.send(packet);
         datagramSocket.receive(recPacket2);
         datagramSocket.close();

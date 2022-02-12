@@ -1,4 +1,5 @@
 /**
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +16,7 @@
  */
 package protocolTests;
 
+import static org.awaitility.Awaitility.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -124,10 +126,12 @@ public class ObservationTest {
         OBS_RESOURCE_1.setConfirmNotification(true);
 
         //refresh observation
-        int obsNum = OBS_RESOURCE_1.getObservationsAmount();
-        client.resource(RES_OBS_PATH1).observe(obsListener);
+        await().untilAsserted(() ->
+                assertEquals(1, OBS_RESOURCE_1.getObservationsAmount())
+        );
+        client.resource(RES_OBS_PATH1).observe(obsListener).get();
 
-        assertEquals(obsNum, OBS_RESOURCE_1.getObservationsAmount());
+        assertEquals(1, OBS_RESOURCE_1.getObservationsAmount());
         client.close();
     }
 
@@ -182,15 +186,11 @@ public class ObservationTest {
         client.resource(RES_OBS_PATH1).sync().observe(obsListener);
         client.close();
 
-        final int obsNum = OBS_RESOURCE_1.getObservationsAmount();
         OBS_RESOURCE_1.setBody("duupabb"); //make notification
 
-        //active waiting
-        for (int timeout = 10000; timeout > 0 && obsNum == OBS_RESOURCE_1.getObservationsAmount(); timeout -= 100) {
-            Thread.sleep(100);
-        }
-
-        assertTrue("Observation did not terminate", obsNum > OBS_RESOURCE_1.getObservationsAmount());
+        await().untilAsserted(() ->
+                assertEquals("Observation did not terminate", 0, OBS_RESOURCE_1.getObservationsAmount())
+        );
         System.out.println("\n-- END");
     }
 
@@ -203,14 +203,15 @@ public class ObservationTest {
         SyncObservationListener obsListener = new SyncObservationListener();
         client.resource(RES_OBS_PATH1).sync().observe(obsListener);
 
-        int obsNum = OBS_RESOURCE_1.getObservationsAmount();
         //notify
         OBS_RESOURCE_1.setBody("keho");
 
         //terminate observation by doing get
         client.resource(RES_OBS_PATH1).sync().get();
 
-        assertFalse("Observation terminated", obsNum > OBS_RESOURCE_1.getObservationsAmount());
+        await().untilAsserted(() ->
+                assertEquals("Observation terminated", 1, OBS_RESOURCE_1.getObservationsAmount())
+        );
 
         client.close();
 
@@ -232,8 +233,9 @@ public class ObservationTest {
         doThrow(new ObservationTerminatedException(null, null)).when(obsListener).onObservation(any(CoapPacket.class));
         OBS_RESOURCE_1.setBody("keho");
 
-        Thread.sleep(100);
-        assertTrue("Observation not terminated", obsNum > OBS_RESOURCE_1.getObservationsAmount());
+        await().untilAsserted(() ->
+                assertTrue("Observation not terminated", obsNum > OBS_RESOURCE_1.getObservationsAmount())
+        );
 
         client.close();
         System.out.println("\n-- END");

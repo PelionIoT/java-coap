@@ -14,4 +14,5 @@ dependencies {
     testImplementation 'junit:junit:4.13.1'
     testImplementation 'org.assertj:assertj-core:3.12.2'
     testImplementation 'nl.jqno.equalsverifier:equalsverifier:3.8'
+    testImplementation 'org.awaitility:awaitility:4.1.1'
 }

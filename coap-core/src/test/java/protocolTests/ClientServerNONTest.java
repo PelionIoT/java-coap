@@ -15,6 +15,7 @@
  */
 package protocolTests;
 
+import static org.awaitility.Awaitility.*;
 import static org.junit.Assert.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
@@ -76,9 +77,9 @@ public class ClientServerNONTest {
     public void testLateResponse() throws IOException, CoapException, InterruptedException {
         CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryCoapTransport.create()).build();
 
-        Thread.sleep(10);
-        assertEquals("test-content", client.resource("/seperate").token(nextToken()).sync().get().getPayloadString());
-
+        await().untilAsserted(() ->
+                assertEquals("test-content", client.resource("/seperate").token(nextToken()).sync().get().getPayloadString())
+        );
         client.close();
     }
 
@@ -96,7 +97,6 @@ public class ClientServerNONTest {
         CoapClient client = CoapClientBuilder.newBuilder(serverAddr).transport(InMemoryCoapTransport.create()).build();
 
         assertEquals("test-content", client.resource("/seperate").non().sync().get().getPayloadString());
-        Thread.sleep(40);
 
         client.close();
     }

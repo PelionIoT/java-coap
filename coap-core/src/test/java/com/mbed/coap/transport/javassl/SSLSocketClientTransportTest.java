@@ -15,14 +15,13 @@
  */
 package com.mbed.coap.transport.javassl;
 
+import static org.awaitility.Awaitility.*;
 import static org.junit.Assert.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.CoapServer;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
-import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLContext;
 import org.junit.Test;
 
@@ -82,17 +81,10 @@ public class SSLSocketClientTransportTest {
 
 
         //eventually, reconnected
-        CompletableFuture<CoapPacket> ping = client.ping();
-        while (ping.isCompletedExceptionally() || !ping.isDone()) {
-            Thread.sleep(100);
-            ping = client.ping();
-
-            while (!ping.isDone()) {
-                Thread.sleep(5);
-            }
-        }
-
-        assertNotNull(ping.get());
+        await().ignoreExceptions().untilAsserted(() -> {
+                    assertNotNull(client.ping().get());
+                }
+        );
 
         client.close();
         srv.stop();
