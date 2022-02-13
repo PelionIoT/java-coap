@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,53 +44,53 @@ public class SignalingOptions {
         return signalingOptions;
     }
 
-    SignalingOptions parse(int type, byte[] data, Code code) {
+    SignalingOptions parse(int type, Opaque data, Code code) {
         if (code == Code.C701_CSM && type == MAX_MESSAGE_SIZE) {
-            setMaxMessageSize(DataConvertingUtility.readVariableULong(data));
+            setMaxMessageSize(data.toLong());
         } else if (code == Code.C701_CSM && type == BLOCK_WISE_TRANSFER) {
             setBlockWiseTransfer(true);
         } else if ((code == Code.C702_PING || code == Code.C703_PONG) && type == CUSTODY) {
             setCustody(true);
         } else if (code == Code.C704_RELEASE && type == ALTERNATIVE_ADDRESS) {
-            if (data.length < 1 || data.length > 255) {
-                throw new IllegalArgumentException("Illegal Alternative-Address size: " + data.length);
+            if (data.size() < 1 || data.size() > 255) {
+                throw new IllegalArgumentException("Illegal Alternative-Address size: " + data.size());
             }
 
-            alternativeAddress = DataConvertingUtility.decodeToString(data);
+            alternativeAddress = data.toUtf8String();
 
         } else if (code == Code.C704_RELEASE && type == HOLD_OFF) {
-            setHoldOff(DataConvertingUtility.readVariableULong(data).intValue());
+            setHoldOff(data.toInt());
         } else if (code == Code.C705_ABORT && type == BAD_CSM_OPTION) {
-            setBadCsmOption(DataConvertingUtility.readVariableULong(data).intValue());
+            setBadCsmOption(data.toInt());
         }
         return this;
     }
 
-    byte[] serializeOption2() {
+    Opaque serializeOption2() {
 
         if (maxMessageSize != null) {
-            return DataConvertingUtility.convertVariableUInt(maxMessageSize.longValue());
+            return Opaque.variableUInt(maxMessageSize);
         }
         if (custody != null && custody) {
-            return new byte[]{};
+            return Opaque.EMPTY;
         }
 
         if (alternativeAddress != null) {
-            return alternativeAddress.getBytes();
+            return Opaque.of(alternativeAddress);
         }
         if (badCsmOption != null) {
-            return DataConvertingUtility.convertVariableUInt(badCsmOption.longValue());
+            return Opaque.variableUInt(badCsmOption.longValue());
         }
         return null;
     }
 
-    byte[] serializeOption4() {
+    Opaque serializeOption4() {
         if (blockWiseTransfer != null && blockWiseTransfer) {
-            return new byte[]{};
+            return Opaque.EMPTY;
         }
 
         if (holdOff != null) {
-            return DataConvertingUtility.convertVariableUInt(holdOff.longValue());
+            return Opaque.variableUInt(holdOff.longValue());
         }
         return null;
     }

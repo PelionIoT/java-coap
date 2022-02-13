@@ -24,14 +24,13 @@ import com.mbed.coap.client.ObservationListener;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.ObservationTerminatedException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Base64;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -148,21 +147,14 @@ public class SimpleObservableResourceTest {
     @Test
     public void setBodyInBase64WithNull() throws CoapException {
         assertThrows(NullPointerException.class, () ->
-                obsResource.setBody(new byte[0], null)
+                obsResource.setBody(Opaque.EMPTY, null)
         );
     }
 
     @Test
     public void testSetBodyAndGetBody() throws CoapException {
         obsResource.setBody("test");
-        assertEquals("test", obsResource.getBody());
-    }
-
-    @Test
-    public void testSetBodyInBytesAndGetBodyBytes() throws CoapException {
-        obsResource.setBody(Base64.getDecoder().decode("dGVyY2Vz"));
-        assertEquals("terces", obsResource.getBody());
-        assert (Arrays.equals(Base64.getDecoder().decode("dGVyY2Vz"), (obsResource.getBodyBytes())));
+        assertEquals(Opaque.of("test"), obsResource.getBody());
     }
 
     @Test

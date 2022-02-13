@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,7 @@
  */
 package com.mbed.coap.observe;
 
-import com.mbed.coap.utils.HexArray;
+import com.mbed.coap.packet.Opaque;
 import java.net.InetSocketAddress;
 
 /**
@@ -23,21 +24,21 @@ import java.net.InetSocketAddress;
  */
 public final class ObservationRelation {
 
-    private final byte[] token;
+    private final Opaque token;
     private final InetSocketAddress observerAdr;
     private int observeSeq;
     private boolean isDelivering;
     private final boolean isConfirmable;
     private boolean isAutoRemovable = true;
 
-    public ObservationRelation(byte[] token, InetSocketAddress observer, int observeSeq, boolean isConfirmable) {
+    public ObservationRelation(Opaque token, InetSocketAddress observer, int observeSeq, boolean isConfirmable) {
         this.token = token;
         this.observerAdr = observer;
         this.observeSeq = observeSeq;
         this.isConfirmable = isConfirmable;
     }
 
-    byte[] getToken() {
+    Opaque getToken() {
         return token;
     }
 
@@ -76,7 +77,7 @@ public final class ObservationRelation {
 
     @Override
     public String toString() {
-        return "#" + HexArray.toHex(token) + " " + observerAdr.toString();
+        return "#" + token + " " + observerAdr.toString();
     }
 
 }

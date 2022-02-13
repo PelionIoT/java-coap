@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +17,7 @@
 package com.mbed.coap;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * CoAP constants that are defined in RFC 7252 document
@@ -26,7 +28,7 @@ public final class CoapConstants {
 
     public static final int DEFAULT_PORT = 5683;
     public static final String WELL_KNOWN_CORE = "/.well-known/core";
-    public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+    public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
     public static final long ACK_TIMEOUT = 2000;
     public static final float ACK_RANDOM_FACTOR = 1.5f;
     public static final Short MAX_RETRANSMIT = 4;

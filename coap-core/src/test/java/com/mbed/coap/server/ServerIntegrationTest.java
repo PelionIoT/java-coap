@@ -174,8 +174,8 @@ public class ServerIntegrationTest {
 
         assertEquals(MessageType.Reset, pingResp.getMessageType());
         assertNull(pingResp.getCode());
-        assertEquals(0, pingResp.getPayload().length);
-        assertEquals(0, pingResp.getToken().length);
+        assertEquals(0, pingResp.getPayload().size());
+        assertTrue(pingResp.getToken().isEmpty());
     }
 
     private static class TestResource extends CoapResource {

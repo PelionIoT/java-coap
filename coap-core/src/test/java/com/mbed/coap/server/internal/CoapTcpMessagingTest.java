@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.utils.Bytes.*;
 import static com.mbed.coap.utils.FutureHelpers.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,7 +41,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import protocolTests.utils.CoapPacketBuilder;
-
 
 public class CoapTcpMessagingTest {
 
@@ -215,7 +215,7 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void shouldThrowExceptionWhenTooLargePayload() {
-        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_5683).get().payload(new byte[1200]));
+        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_5683).get().payload(opaqueOfSize(1200)));
 
         assertTrue(resp.isCompletedExceptionally());
         assertThatThrownBy(resp::get).hasCauseExactlyInstanceOf(CoapException.class);

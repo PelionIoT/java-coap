@@ -25,6 +25,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import org.junit.jupiter.api.AfterEach;
@@ -47,9 +48,9 @@ public class ParsingBenchmark {
 
         packet = new CoapPacket(Method.GET, MessageType.Confirmable, "/path-pppppppppppppppppp1/path-dddddddddd-2/dfdshffsdkjfhsdks3/444444444444444444444444444444444444444/55555555555555555555555555555555555555555555555", null);
         packet.setMessageId(1234);
-        packet.setToken(new byte[]{1, 2, 3, 4, 5});
+        packet.setToken(Opaque.variableUInt(0x0102030405L));
         packet.headers().setMaxAge(4321L);
-        packet.headers().setEtag(new byte[]{89, 10, 31, 7, 1});
+        packet.headers().setEtag(new Opaque(new byte[]{89, 10, 31, 7, 1}));
         packet.headers().setObserve(9876);
         packet.headers().setBlock1Req(new BlockOption(13, BlockSize.S_16, true));
         packet.headers().setContentFormat(MediaTypes.CT_APPLICATION_XML);

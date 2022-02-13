@@ -28,6 +28,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transmission.CoapTimeout;
@@ -101,7 +102,7 @@ public class ClientServerTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.headers().put(74, new byte[]{1, 2, 3});
+        request.headers().put(74, Opaque.variableUInt(0x010203L));
 
         CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
         assertEquals("Dziala", callback.get().getPayloadString());
@@ -118,7 +119,7 @@ public class ClientServerTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.headers().put(71, new byte[]{1, 2, 3});
+        request.headers().put(71, Opaque.variableUInt(0x010203L));
 
         CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
         assertEquals(Code.C402_BAD_OPTION, callback.get().getCode());
@@ -135,7 +136,7 @@ public class ClientServerTest {
         request.setMethod(Method.GET);
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
-        request.headers().put((byte) 71, new byte[]{1, 2, 3});
+        request.headers().put((byte) 71, Opaque.variableUInt(0x010203L));
 
         CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
         assertEquals("Dziala", callback.get().getPayloadString());
@@ -276,7 +277,7 @@ public class ClientServerTest {
         srv.start();
 
         try (CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(61601)).transport(new InMemoryCoapTransport()).build()) {
-            assertEquals(Code.C402_BAD_OPTION, client.resource("/temp").header(123, "dupa".getBytes()).sync().get().getCode());
+            assertEquals(Code.C402_BAD_OPTION, client.resource("/temp").header(123, Opaque.of("dupa")).sync().get().getCode());
         }
         srv.stop();
     }

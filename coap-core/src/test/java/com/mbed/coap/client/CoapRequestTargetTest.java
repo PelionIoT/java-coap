@@ -23,6 +23,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import java.net.InetSocketAddress;
 import org.junit.jupiter.api.Test;
 
@@ -39,27 +40,27 @@ public class CoapRequestTargetTest {
 
         req.accept((short) 1);
         req.blockSize(BlockSize.S_16);
-        req.etag(new byte[]{10, 8, 6});
+        req.etag(Opaque.variableUInt(0x100806L));
         req.host("arm.com");
-        req.ifMatch(new byte[]{9, 7, 5});
+        req.ifMatch(Opaque.variableUInt(0x090705));
         req.ifNotMatch(false);
         req.maxAge(789456L);
         req.non();
-        req.payload("perse".getBytes(), MediaTypes.CT_TEXT_PLAIN);
+        req.payload(Opaque.of("perse"), MediaTypes.CT_TEXT_PLAIN);
         req.query("p=1");
         req.query("b", "2");
         req.token(45463L);
 
         CoapPacket packet = new CoapPacket(Method.GET, MessageType.NonConfirmable, "/0/1/2", destination);
         packet.headers().setAccept((short) 1);
-        packet.headers().setEtag(new byte[]{10, 8, 6});
+        packet.headers().setEtag(Opaque.variableUInt(0x100806L));
         packet.headers().setUriHost("arm.com");
-        packet.headers().setIfMatch(new byte[][]{new byte[]{9, 7, 5}});
+        packet.headers().setIfMatch(new Opaque[]{Opaque.variableUInt(0x090705)});
         packet.headers().setIfNonMatch(Boolean.FALSE);
         packet.headers().setMaxAge(789456L);
         packet.headers().setUriQuery("p=1&b=2");
         packet.headers().setContentFormat(MediaTypes.CT_TEXT_PLAIN);
-        packet.setToken(new byte[]{(byte) 0xB1, (byte) 0x97});
+        packet.setToken(Opaque.decodeHex("b197"));
         packet.setPayload("perse");
 
         assertEquals(packet, req.getRequestPacket());
@@ -77,7 +78,7 @@ public class CoapRequestTargetTest {
     public void test2() throws Exception {
         CoapRequestTarget req = new CoapRequestTarget("/0/1/2", mockClient);
 
-        req.payload("abc".getBytes());
+        req.payload(Opaque.of("abc"));
         req.contentFormat(MediaTypes.CT_APPLICATION_XML);
 
         CoapPacket packet = new CoapPacket(Method.GET, MessageType.Confirmable, "/0/1/2", destination);

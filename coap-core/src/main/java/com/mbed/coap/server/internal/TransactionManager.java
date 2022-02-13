@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +101,7 @@ public class TransactionManager {
 
     public Optional<CoapTransaction> findMatchAndRemoveForSeparateResponse(CoapPacket req) {
         if ((req.getMessageType() == MessageType.Confirmable || req.getMessageType() == MessageType.NonConfirmable)
-                && req.getCode() != null && req.getToken().length > 0) {
+                && req.getCode() != null && req.getToken().nonEmpty()) {
 
             AtomicReference<Optional<CoapTransaction>> transactionFound = new AtomicReference<>(Optional.empty());
 

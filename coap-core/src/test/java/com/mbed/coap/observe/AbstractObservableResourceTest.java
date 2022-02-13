@@ -17,6 +17,7 @@
 package com.mbed.coap.observe;
 
 import static org.mockito.Mockito.*;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.net.InetSocketAddress;
@@ -42,11 +43,11 @@ public class AbstractObservableResourceTest {
     public void shouldCallOnFail_whenNotificationNotSend() throws Exception {
         AbstractObservableResource obsResource = new SimpleObservableResource("test", mockServer);
 
-        ObservationRelation observationRelation = new ObservationRelation("12".getBytes(), ADDRESS, 1, true);
+        ObservationRelation observationRelation = new ObservationRelation(Opaque.of("12"), ADDRESS, 1, true);
         observationRelation.setIsDelivering(true);
         obsResource.addObservationRelation(observationRelation, "/test");
 
-        obsResource.notifyChange("d".getBytes(), null, null, null, listener);
+        obsResource.notifyChange(Opaque.of("d"), null, null, null, listener);
         verify(listener).onFail(eq(ADDRESS));
     }
 

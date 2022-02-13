@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +16,18 @@
  */
 package com.mbed.coap.server.internal;
 
-import com.mbed.coap.utils.HexArray;
+import com.mbed.coap.packet.Opaque;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author szymon
  */
 public class DelayedTransactionId {
-    private final byte[] token;
+    private final Opaque token;
     private final InetSocketAddress source;
 
-    public DelayedTransactionId(byte[] token, InetSocketAddress source) {
+    public DelayedTransactionId(Opaque token, InetSocketAddress source) {
         this.token = token;
         this.source = source;
     }
@@ -44,7 +45,7 @@ public class DelayedTransactionId {
             return false;
         }
         final DelayedTransactionId other = (DelayedTransactionId) obj;
-        if (!Arrays.equals(this.token, other.token)) {
+        if (!Objects.equals(this.token, other.token)) {
             return false;
         }
         if (this.source != other.source && (this.source == null || !this.source.equals(other.source))) {
@@ -56,14 +57,14 @@ public class DelayedTransactionId {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 41 * hash + Arrays.hashCode(this.token);
+        hash = 41 * hash + Objects.hashCode(this.token);
         hash = 41 * hash + (this.source != null ? this.source.hashCode() : 0);
         return hash;
     }
 
     @Override
     public String toString() {
-        return HexArray.toHex(token) + "#" + source.toString();
+        return token + "#" + source.toString();
     }
 
 }

@@ -101,7 +101,7 @@ public class CoapTcpMessaging extends CoapMessaging {
     @Override
     public void makeRequest(CoapPacket packet, Callback<CoapPacket> callback, TransportContext transContext) {
 
-        int payloadLen = packet.getPayload().length;
+        int payloadLen = packet.getPayload().size();
         int maxMessageSize = csmStorage.getOrDefault(packet.getRemoteAddress()).getMaxMessageSizeInt();
 
         if (payloadLen > maxMessageSize) {

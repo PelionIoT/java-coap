@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapMessageFormatException;
 import com.mbed.coap.exception.CoapUnknownOptionException;
-import com.mbed.coap.utils.HexArray;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -64,7 +63,7 @@ public class HeaderOptionTest {
 
         //larger delta
         hdr = new BasicHeaderOptions();
-        hdr.put(300, "test".getBytes(), null);
+        hdr.put(300, Opaque.of("test"), null);
 
         baos = new ByteArrayOutputStream();
         hdr.serialize(baos);
@@ -79,14 +78,14 @@ public class HeaderOptionTest {
         hdr.setUriPath("/test/uri/path");
         //hdr.setToken(HeaderOptions.convertVariableUInt(123456));
         hdr.setContentFormat((short) 1);
-        hdr.setEtag(DataConvertingUtility.convertVariableUInt(56789));
+        hdr.setEtag(Opaque.variableUInt((56789)));
         hdr.setLocationPath("/location/path");
         hdr.setProxyUri("/proxy/uri");
         hdr.setProxyScheme("coap");
         hdr.setUriHost("uri-host");
         hdr.setUriPort(5683);
         hdr.setUriQuery("par1=dupa&par2=dupa2");
-        hdr.put(36, DataConvertingUtility.convertVariableUInt(1357));
+        hdr.put(36, Opaque.variableUInt((1357)));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         hdr.serialize(baos);
@@ -110,7 +109,6 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
 
         HeaderOptions hdr2 = new HeaderOptions();
-        System.out.println(HexArray.toHex(baos.toByteArray()));
         hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()), null);
 
         System.out.println(hdr);
@@ -152,7 +150,6 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
 
         HeaderOptions hdr2 = new HeaderOptions();
-        System.out.println(HexArray.toHex(baos.toByteArray()));
         hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()), null);
 
         System.out.println(hdr);
@@ -180,8 +177,8 @@ public class HeaderOptionTest {
     @Test
     public void testWithLargeOptionNumbers() throws IOException, CoapException {
         BasicHeaderOptions hdr = new BasicHeaderOptions();
-        hdr.put(1000, DataConvertingUtility.convertVariableUInt(123456));
-        hdr.put(12000, DataConvertingUtility.convertVariableUInt(98));
+        hdr.put(1000, Opaque.variableUInt(123456));
+        hdr.put(12000, Opaque.variableUInt(98));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         hdr.serialize(baos);
@@ -193,31 +190,31 @@ public class HeaderOptionTest {
 
     @Test
     public void largeOptionValues() throws IOException, CoapException {
-        String OPT_VAL1 = "123456789 1234567890"; //20
-        String OPT_VAL2 = "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
+        Opaque OPT_VAL1 = Opaque.of("123456789 1234567890"); //20
+        Opaque OPT_VAL2 = Opaque.of("123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
                 + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
-                + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "; //300
-        String OPT_VAL3 = "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
-                + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
-                + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
+                + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "); //300
+        Opaque OPT_VAL3 = Opaque.of("123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
                 + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
                 + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
-                + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "; //600 
-        String OPT_VAL4 = "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
                 + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
                 + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
+                + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "); //600
+        Opaque OPT_VAL4 = Opaque.of("123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
                 + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
                 + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
                 + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
                 + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
                 + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
-                + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "; //900 
+                + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
+                + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
+                + "123456789 1234567890123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "); //900
 
         BasicHeaderOptions hdr = new BasicHeaderOptions();
-        hdr.put(101, OPT_VAL1.getBytes());
-        hdr.put(102, OPT_VAL2.getBytes());
-        hdr.put(103, OPT_VAL3.getBytes());
-        hdr.put(104, OPT_VAL4.getBytes());
+        hdr.put(101, OPT_VAL1);
+        hdr.put(102, OPT_VAL2);
+        hdr.put(103, OPT_VAL3);
+        hdr.put(104, OPT_VAL4);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         hdr.serialize(baos);
@@ -228,10 +225,10 @@ public class HeaderOptionTest {
         System.out.println(hdr2);
         assertEquals(hdr, hdr2);
 
-        assertEquals(OPT_VAL1, new String(hdr2.getCustomOption(101)));
-        assertEquals(OPT_VAL2, new String(hdr2.getCustomOption(102)));
-        assertEquals(OPT_VAL3, new String(hdr2.getCustomOption(103)));
-        assertEquals(OPT_VAL4, new String(hdr2.getCustomOption(104)));
+        assertEquals(OPT_VAL1, hdr2.getCustomOption(101));
+        assertEquals(OPT_VAL2, hdr2.getCustomOption(102));
+        assertEquals(OPT_VAL3, hdr2.getCustomOption(103));
+        assertEquals(OPT_VAL4, hdr2.getCustomOption(104));
         assertNull(hdr2.getCustomOption(999));
     }
 
@@ -366,18 +363,6 @@ public class HeaderOptionTest {
     }
 
     @Test
-    public void testVariableConverter() {
-        assertEquals(1, DataConvertingUtility.convertVariableUInt(1).length);
-        assertEquals(1, DataConvertingUtility.convertVariableUInt(255).length);
-        assertEquals(2, DataConvertingUtility.convertVariableUInt(256).length);
-        assertEquals(2, DataConvertingUtility.convertVariableUInt(257).length);
-        assertEquals(2, DataConvertingUtility.convertVariableUInt(65535).length);
-        assertEquals(3, DataConvertingUtility.convertVariableUInt(65536).length);
-        assertArrayEquals(new byte[]{(byte) 0xFF}, DataConvertingUtility.convertVariableUInt(255));
-        assertArrayEquals(new byte[]{0x01, 0x00}, DataConvertingUtility.convertVariableUInt(256));
-    }
-
-    @Test
     public void malformedHeaderWithIllegalDelta() throws IOException, CoapMessageFormatException {
         BasicHeaderOptions hdr = new BasicHeaderOptions();
         assertThrows(CoapMessageFormatException.class, () ->
@@ -412,10 +397,10 @@ public class HeaderOptionTest {
         BasicHeaderOptions h = new BasicHeaderOptions();
         h.criticalOptTest();
 
-        h.put(1000, "foo".getBytes());
+        h.put(1000, Opaque.of("foo"));
         h.criticalOptTest();
 
-        h.put(1001, "foo".getBytes());
+        h.put(1001, Opaque.of("foo"));
         assertThatThrownBy(h::criticalOptTest).isExactlyInstanceOf(CoapUnknownOptionException.class);
     }
 
@@ -448,10 +433,10 @@ public class HeaderOptionTest {
         h.setMaxAge(0x1FFFFFFFFL);
         assertEquals(0xFFFFFFFFL, h.getMaxAgeValue());
 
-        assertThatThrownBy(() -> h.setEtag("123456789".getBytes())).isExactlyInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> h.setEtag(Opaque.of("123456789"))).isExactlyInstanceOf(IllegalArgumentException.class);
 
-        assertThatThrownBy(() -> h.setEtag(new byte[][]{"123456789".getBytes()})).isExactlyInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> h.setEtag(new byte[][]{"".getBytes()})).isExactlyInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> h.setEtag(new Opaque[]{Opaque.of("123456789")})).isExactlyInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> h.setEtag(new Opaque[]{Opaque.EMPTY})).isExactlyInstanceOf(IllegalArgumentException.class);
 
         assertThatThrownBy(() -> h.setLocationPath(".")).isExactlyInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> h.setLocationPath("..")).isExactlyInstanceOf(IllegalArgumentException.class);
@@ -468,7 +453,7 @@ public class HeaderOptionTest {
     @Test
     public void failWhenTooLargeToSerialize() throws Exception {
         HeaderOptions h = new HeaderOptions();
-        h.put(100, new byte[65805]);
+        h.put(100, new Opaque(new byte[65805]));
         assertThrows(IllegalArgumentException.class, () ->
                 h.serialize(Mockito.mock(OutputStream.class))
         );
@@ -478,7 +463,7 @@ public class HeaderOptionTest {
     public void failWhenTooLargeDeltaToSerialize() throws Exception {
         HeaderOptions h = new HeaderOptions();
         h.setIfNonMatch(false);
-        h.put(65805, new byte[1]);
+        h.put(65805, new Opaque(new byte[1]));
         assertThrows(IllegalArgumentException.class, () ->
                 h.serialize(Mockito.mock(OutputStream.class))
         );
@@ -487,10 +472,10 @@ public class HeaderOptionTest {
     @Test
     public void failToDeserializeWithMalformedData() throws Exception {
 
-        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(HexArray.fromHex("f2")), null))
+        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(new byte[]{(byte) 0xf2}), null))
                 .isExactlyInstanceOf(CoapMessageFormatException.class);
 
-        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(HexArray.fromHex("3f")), null))
+        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(new byte[]{0x3f}), null))
                 .isExactlyInstanceOf(CoapMessageFormatException.class);
 
     }

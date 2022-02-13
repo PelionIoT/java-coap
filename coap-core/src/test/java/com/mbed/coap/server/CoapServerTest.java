@@ -34,6 +34,7 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
@@ -196,7 +197,7 @@ public class CoapServerTest {
 
     @Test
     public void shouldSendObservationRequest() {
-        server.observe("/test", LOCAL_5683, "aa".getBytes(), TransportContext.NULL);
+        server.observe("/test", LOCAL_5683, Opaque.of("aa"), TransportContext.NULL);
 
         verify(msg).makeRequest(argThat(cp -> cp.headers().getUriPath().equals("/test") && cp.headers().getObserve() != null), any(), eq(TransportContext.NULL));
     }
@@ -211,7 +212,7 @@ public class CoapServerTest {
     @Test
     public void shouldRespondToObservationRequest() throws ExecutionException, InterruptedException {
         CoapPacket resp = newCoapPacket().ack(Code.C205_CONTENT).obs(0).build();
-        CompletableFuture<CoapPacket> obsResp = server.observe("/test", LOCAL_5683, "aa".getBytes(), TransportContext.NULL);
+        CompletableFuture<CoapPacket> obsResp = server.observe("/test", LOCAL_5683, Opaque.of("aa"), TransportContext.NULL);
 
         verifyMakeRequest_andThen().call(resp);
 
@@ -220,7 +221,7 @@ public class CoapServerTest {
 
     @Test
     public void shouldRespondToObservationRequest_notObserved() {
-        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, "aa".getBytes(), TransportContext.NULL);
+        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, Opaque.of("aa"), TransportContext.NULL);
 
         verifyMakeRequest_andThen().call(newCoapPacket().ack(Code.C205_CONTENT).build());
 
@@ -232,7 +233,7 @@ public class CoapServerTest {
 
     @Test
     public void shouldRespondToObservationRequest_errorResponse() {
-        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, "aa".getBytes(), TransportContext.NULL);
+        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, Opaque.of("aa"), TransportContext.NULL);
 
         verifyMakeRequest_andThen().call(newCoapPacket().ack(Code.C404_NOT_FOUND).build());
 
@@ -243,7 +244,7 @@ public class CoapServerTest {
 
     @Test
     public void shouldRespondToObservationRequest_exception() {
-        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, "aa".getBytes(), TransportContext.NULL);
+        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, Opaque.of("aa"), TransportContext.NULL);
 
         verifyMakeRequest_andThen().callException(new IOException());
 

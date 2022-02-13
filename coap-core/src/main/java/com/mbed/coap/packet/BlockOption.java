@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,21 +35,21 @@ public final class BlockOption implements Serializable {
         this.more = more;
     }
 
-    public BlockOption(byte[] raw) {
-        int bl = DataConvertingUtility.readVariableULong(raw).intValue();
+    public BlockOption(Opaque raw) {
+        int bl = raw.toInt();
         blockNr = bl >> 4;
         more = (bl & 0x8) != 0;
         byte szx = (byte) (bl & 0x07);
         blockSize = BlockSize.fromRawSzx(szx);
     }
 
-    public byte[] toBytes() {
+    public Opaque toBytes() {
         int block = blockNr << 4;
         if (more) {
             block |= 1 << 3;
         }
         block |= blockSize.toRawSzx();
-        return DataConvertingUtility.convertVariableUInt(block);
+        return Opaque.variableUInt(block);
     }
 
     /**

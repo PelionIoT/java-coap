@@ -22,6 +22,7 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
@@ -54,7 +55,7 @@ public class ServerNotifBenchmark {
 
         CoapPacket coapReq = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, null);
         coapReq.setMessageId(1234);
-        coapReq.setToken(new byte[]{1, 2, 3, 4, 5});
+        coapReq.setToken(Opaque.variableUInt(0x0102030405L));
         coapReq.headers().setMaxAge(4321L);
         coapReq.headers().setObserve(6328);
         reqData = coapReq.toByteArray();
@@ -98,7 +99,7 @@ public class ServerNotifBenchmark {
     private static class ObservationHandlerNull implements ObservationHandler {
 
         @Override
-        public boolean hasObservation(byte[] token) {
+        public boolean hasObservation(Opaque token) {
             return true;
         }
 

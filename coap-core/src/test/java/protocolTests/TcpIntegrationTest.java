@@ -128,7 +128,7 @@ public class TcpIntegrationTest {
         await().untilAsserted(() -> {
             CompletableFuture<CoapPacket> resp = client.resource("/test").get();
 
-            assertEquals(1300, resp.get().getPayload().length);
+            assertEquals(1300, resp.get().getPayload().size());
             //verify that blocks was used
             assertNotNull(resp.get().headers().getBlock2Res());
         });
@@ -146,7 +146,7 @@ public class TcpIntegrationTest {
 
         CompletableFuture<CoapPacket> resp = client.resource("/test").get();
 
-        assertEquals(1300, resp.get().getPayload().length);
+        assertEquals(1300, resp.get().getPayload().size());
         //block was not used
         assertNull(resp.get().headers().getBlock2Res());
     }

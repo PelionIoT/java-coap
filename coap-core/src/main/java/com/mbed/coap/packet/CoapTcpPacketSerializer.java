@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +74,7 @@ public final class CoapTcpPacketSerializer {
         pkt.setHeaderOptions(options);
 
         if (leftPayloadLen > 0) {
-            pkt.setPayload(readN(is, leftPayloadLen, orBlock));
+            pkt.setPayload(Opaque.of(readN(is, leftPayloadLen, orBlock)));
         }
         return pkt;
     }
@@ -89,7 +90,7 @@ public final class CoapTcpPacketSerializer {
 
         int codeOrMethod = read8(is, orBlock);
 
-        byte[] token = readToken(is, tokenLength, orBlock);
+        Opaque token = readToken(is, tokenLength, orBlock);
 
         CoapPacket coapPacket = new CoapPacket(remoteAddress);
 
@@ -123,15 +124,15 @@ public final class CoapTcpPacketSerializer {
         }
     }
 
-    private static byte[] readToken(StrictInputStream is, int tokenLength, boolean orBlock) throws IOException, CoapException {
+    private static Opaque readToken(StrictInputStream is, int tokenLength, boolean orBlock) throws IOException, CoapException {
         if (tokenLength == 0) {
-            return null;
+            return Opaque.EMPTY;
         }
         if (tokenLength < 0 || tokenLength > 8) {
             throw new CoapMessageFormatException("Token length invalid, should be in range 0..8");
         }
 
-        return readN(is, tokenLength, orBlock);
+        return new Opaque(readN(is, tokenLength, orBlock));
     }
 
 
@@ -221,7 +222,7 @@ public final class CoapTcpPacketSerializer {
         coapPacket.headers().serialize(headerOptionsStream);
 
         // token length
-        int tokenLen = coapPacket.getToken().length;
+        int tokenLen = coapPacket.getToken().size();
 
         if (tokenLen > 8) {
             throw new CoapException("Token length should not exceed 8 bytes");
@@ -229,7 +230,7 @@ public final class CoapTcpPacketSerializer {
 
         // packet length or extended length code
         int optionsLength = headerOptionsStream.size();
-        int payloadLen = coapPacket.getPayload().length;
+        int payloadLen = coapPacket.getPayload().size();
         int payloadMarkerLen = payloadLen > 0 ? 1 : 0;
 
         int packetLength = optionsLength + payloadMarkerLen + payloadLen;
@@ -246,15 +247,15 @@ public final class CoapTcpPacketSerializer {
         CoapPacket.writeCode(os, coapPacket);
 
         //TKL Bytes
-        os.write(coapPacket.getToken());
+        coapPacket.getToken().writeTo(os);
 
         //Options
         os.write(headerOptionsStream.toByteArray());
 
         //Payload
-        if (coapPacket.getPayload() != null && coapPacket.getPayload().length > 0) {
+        if (coapPacket.getPayload() != null && coapPacket.getPayload().size() > 0) {
             os.write(CoapPacket.PAYLOAD_MARKER);
-            os.write(coapPacket.getPayload());
+            coapPacket.getPayload().writeTo(os);
         }
 
     }

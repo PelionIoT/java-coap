@@ -22,6 +22,7 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapHandler;
 import com.mbed.coap.server.CoapServer;
@@ -119,8 +120,8 @@ public class CoapServerBlocks extends CoapServer {
 
         int blTo = blFrom + maxMessageSize;
 
-        if (blTo + 1 >= resp.getPayload().length) {
-            blTo = resp.getPayload().length;
+        if (blTo + 1 >= resp.getPayload().size()) {
+            blTo = resp.getPayload().size();
             block2Res = new BlockOption(block2Res.getNr(), block2Res.getBlockSize(), false);
         } else {
             block2Res = new BlockOption(block2Res.getNr(), block2Res.getBlockSize(), true);
@@ -132,16 +133,9 @@ public class CoapServerBlocks extends CoapServer {
         // reply with payload size only in first block
         // see https://tools.ietf.org/html/draft-ietf-core-block-18#section-4 , Implementation notes
         if (exchange.getRequest().headers().getSize2Res() != null && block2Res.getNr() == 0) {
-            resp.headers().setSize2Res(resp.getPayload().length);
+            resp.headers().setSize2Res(resp.getPayload().size());
         }
-        byte[] blockPayload = new byte[newLength];
-        if (newLength > 0) {
-            try {
-                System.arraycopy(resp.getPayload(), blFrom, blockPayload, 0, newLength);
-            } catch (Exception ex) {
-                LOGGER.error(ex.getMessage(), ex);
-            }
-        }
+        Opaque blockPayload = resp.getPayload().slice(blFrom, newLength);
         resp.headers().setBlock2Res(block2Res);
         resp.setPayload(blockPayload);
     }

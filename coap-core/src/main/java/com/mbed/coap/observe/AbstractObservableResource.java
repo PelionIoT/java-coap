@@ -20,17 +20,17 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.CoapResource;
-import com.mbed.coap.utils.HexArray;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,7 +105,7 @@ public abstract class AbstractObservableResource extends CoapResource {
             return true;
         }
 
-        if (request.getToken() == null) {
+        if (request.getToken().isEmpty()) {
             LOGGER.warn("Observation registration without token, ignoring " + request);
             exchange.sendResetResponse();
             return false;
@@ -128,8 +128,8 @@ public abstract class AbstractObservableResource extends CoapResource {
         //check for existing relations
         for (ObservationRelation rel : obsRelations.values()) {
             if (rel.getAddress().equals(subs.getAddress())) {
-                if (Arrays.equals(rel.getToken(), subs.getToken())) {
-                    LOGGER.warn("Adding different observation from same ip [" + rel.getAddress() + "] on " + uriPath + ", token: 0x" + HexArray.toHex(rel.getToken()));
+                if (Objects.equals(rel.getToken(), subs.getToken())) {
+                    LOGGER.warn("Adding different observation from same ip [" + rel.getAddress() + "] on " + uriPath + ", token: 0x" + rel.getToken());
                 } else {
                     if (LOGGER.isTraceEnabled()) {
                         LOGGER.trace("Updating observation from ip [" + rel.getAddress() + "] on " + uriPath);
@@ -174,11 +174,11 @@ public abstract class AbstractObservableResource extends CoapResource {
         }
     }
 
-    protected final void notifyChange(byte[] payload, Short contentType) throws CoapException {
+    protected final void notifyChange(Opaque payload, Short contentType) throws CoapException {
         notifyChange(payload, contentType, null, null, DELIVERY_LISTENER_NULL);
     }
 
-    protected final void notifyChange(byte[] payload, Short contentType, byte[] etag) throws CoapException {
+    protected final void notifyChange(Opaque payload, Short contentType, Opaque etag) throws CoapException {
         notifyChange(payload, contentType, etag, null, DELIVERY_LISTENER_NULL);
     }
 
@@ -192,7 +192,7 @@ public abstract class AbstractObservableResource extends CoapResource {
      * @param deliveryListener notification delivery listener
      * @throws CoapException coap exception
      */
-    protected final void notifyChange(byte[] payload, Short contentType, byte[] etag, Long maxAge, NotificationDeliveryListener deliveryListener) throws CoapException {
+    protected final void notifyChange(Opaque payload, Short contentType, Opaque etag, Long maxAge, NotificationDeliveryListener deliveryListener) throws CoapException {
         if (deliveryListener == null) {
             throw new NullPointerException();
         }
@@ -241,7 +241,7 @@ public abstract class AbstractObservableResource extends CoapResource {
         }
     }
 
-    private CoapPacket createNotifPacket(ObservationRelation sub, byte[] payload, Short contentType, byte[] etag, Long maxAge) {
+    private CoapPacket createNotifPacket(ObservationRelation sub, Opaque payload, Short contentType, Opaque etag, Long maxAge) {
         CoapPacket coapNotif = new CoapPacket(sub.getAddress());
         coapNotif.setCode(Code.C205_CONTENT);
         coapNotif.headers().setObserve(sub.getNextObserveSeq());

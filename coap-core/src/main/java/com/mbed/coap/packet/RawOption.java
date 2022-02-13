@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,45 +16,55 @@
  */
 package com.mbed.coap.packet;
 
-import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * @author szymon
  */
-final class RawOption implements Comparable<RawOption>, Serializable {
+final class RawOption implements Comparable<RawOption> {
 
     final int optNumber;
-    final byte[][] optValues;
+    final Opaque[] optValues;
 
-    static RawOption fromString(int num, String[] stringVal) {
-        return new RawOption(num, DataConvertingUtility.stringArrayToBytes(stringVal));
+    static RawOption fromString(int num, String[] strArray) {
+        Opaque[] bt;
+        int skip = 0;
+        if (strArray.length > 0 && strArray[0].length() == 0) {
+            bt = new Opaque[strArray.length - 1];
+            skip = 1;
+        } else {
+            bt = new Opaque[strArray.length];
+        }
+        for (int i = 0; i < bt.length; i++) {
+            bt[i] = Opaque.of(strArray[i + skip]);
+        }
+        return new RawOption(num, bt);
     }
 
     static RawOption fromUint(int num, long uintVal) {
-        return new RawOption(num, new byte[][]{DataConvertingUtility.convertVariableUInt(uintVal)});
+        return new RawOption(num, new Opaque[]{Opaque.variableUInt(uintVal)});
     }
 
     static RawOption fromString(int num, String stringVal) {
-        return new RawOption(num, new byte[][]{DataConvertingUtility.encodeString(stringVal)});
+        return new RawOption(num, new Opaque[]{Opaque.of(stringVal)});
     }
 
     static RawOption fromEmpty(int num) {
-        return new RawOption(num, new byte[][]{{}});
+        return new RawOption(num, new Opaque[]{Opaque.EMPTY});
     }
 
-    RawOption(int optNumber, byte[][] optValues) {
+    RawOption(int optNumber, Opaque[] optValues) {
         this.optNumber = optNumber;
         this.optValues = optValues;
     }
 
-    RawOption(int optNumber, byte[] singleOptValue) {
+    RawOption(int optNumber, Opaque singleOptValue) {
         this.optNumber = optNumber;
-        this.optValues = new byte[1][];
+        this.optValues = new Opaque[1];
         this.optValues[0] = singleOptValue;
     }
 
-    byte[] getFirstValue() {
+    Opaque getFirstValue() {
         return (optValues.length > 0) ? optValues[0] : null;
     }
 
@@ -82,7 +93,7 @@ final class RawOption implements Comparable<RawOption>, Serializable {
         if (this.optNumber != other.optNumber) {
             return false;
         }
-        if (!Arrays.deepEquals(this.optValues, other.optValues)) {
+        if (!Arrays.equals(this.optValues, other.optValues)) {
             return false;
         }
         return true;

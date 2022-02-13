@@ -17,6 +17,7 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.BlockWiseTransfer.*;
+import static com.mbed.coap.utils.Bytes.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.BlockOption;
@@ -24,7 +25,6 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import org.junit.jupiter.api.Test;
-
 
 /**
  * Created by szymon
@@ -36,7 +36,7 @@ public class BlockWiseTransferTest {
     @Test
     public void should_set_first_block_header_for_request() {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(512, true));
-        CoapPacket coap = newCoapPacket(LOCAL_5683).payload(new byte[2000]).post().build();
+        CoapPacket coap = newCoapPacket(LOCAL_5683).payload(opaqueOfSize(2000)).post().build();
 
         assertEquals(1, bwt.updateWithFirstBlock(coap));
 
@@ -44,13 +44,13 @@ public class BlockWiseTransferTest {
         assertEquals(new BlockOption(0, BlockSize.S_512, true), coap.headers().getBlock1Req());
         assertNull(coap.headers().getSize2Res());
         assertNull(coap.headers().getBlock2Res());
-        assertEquals(512, coap.getPayload().length);
+        assertEquals(512, coap.getPayload().size());
     }
 
     @Test
     public void should_set_first_block_header_for_request_bert() {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(3300, true));
-        CoapPacket coap = newCoapPacket(LOCAL_5683).payload(new byte[5000]).post().build();
+        CoapPacket coap = newCoapPacket(LOCAL_5683).payload(opaqueOfSize(5000)).post().build();
 
         assertEquals(2, bwt.updateWithFirstBlock(coap));
 
@@ -58,13 +58,13 @@ public class BlockWiseTransferTest {
         assertEquals(new BlockOption(0, BlockSize.S_1024_BERT, true), coap.headers().getBlock1Req());
         assertNull(coap.headers().getSize2Res());
         assertNull(coap.headers().getBlock2Res());
-        assertEquals(2048, coap.getPayload().length);
+        assertEquals(2048, coap.getPayload().size());
     }
 
     @Test
     public void should_set_first_block_header_for_observation() {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(512, true));
-        CoapPacket coap = newCoapPacket(LOCAL_5683).payload(new byte[2000]).ack(Code.C205_CONTENT).build();
+        CoapPacket coap = newCoapPacket(LOCAL_5683).payload(opaqueOfSize(2000)).ack(Code.C205_CONTENT).build();
 
         assertEquals(1, bwt.updateWithFirstBlock(coap));
 
@@ -72,29 +72,29 @@ public class BlockWiseTransferTest {
         assertEquals(new BlockOption(0, BlockSize.S_512, true), coap.headers().getBlock2Res());
         assertNull(coap.headers().getSize1());
         assertNull(coap.headers().getBlock1Req());
-        assertEquals(512, coap.getPayload().length);
+        assertEquals(512, coap.getPayload().size());
     }
 
 
     @Test
     public void should_validate_packet_with_block() {
-        assertTrue(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(new byte[100]).post().build(),
+        assertTrue(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(100)).post().build(),
                 new BlockOption(1, BlockSize.S_512, false)));
 
-        assertTrue(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(new byte[1024]).post().build(),
+        assertTrue(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(1024)).post().build(),
                 new BlockOption(2, BlockSize.S_1024_BERT, true)));
 
-        assertTrue(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(new byte[512]).post().build(),
+        assertTrue(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(512)).post().build(),
                 new BlockOption(3, BlockSize.S_512, true)));
 
         //fail
-        assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(new byte[1023]).post().build(),
+        assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(1023)).post().build(),
                 new BlockOption(2, BlockSize.S_1024_BERT, true)));
 
-        assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(new byte[0]).post().build(),
+        assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(0)).post().build(),
                 new BlockOption(2, BlockSize.S_1024_BERT, true)));
 
-        assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(new byte[511]).post().build(),
+        assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(511)).post().build(),
                 new BlockOption(3, BlockSize.S_512, true)));
     }
 }

@@ -29,12 +29,9 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Token;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import nl.jqno.equalsverifier.EqualsVerifier;
-import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -228,12 +225,6 @@ public class CoapClientTest {
         cliReceive(newCoapPacket(LOCAL_5683).mid(100).payload("EXT-ABC").ack(Code.C205_CONTENT));
         assertEquals("EXT-ABC", resp.get().getPayloadString());
     }
-
-    @Test
-    public void equalsAndHashTest() throws Exception {
-        EqualsVerifier.forClass(Token.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
-    }
-
 
     private void assertSent(CoapPacketBuilder coapPacketBuilder) throws CoapException, IOException {
         assertSent(coapPacketBuilder.build());

@@ -14,22 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.utils;
 
 import com.mbed.coap.packet.Opaque;
+import java.util.Arrays;
+import java.util.Random;
 
-/**
- * Interface for generating observation IDs.
- */
-public interface ObservationIDGenerator {
+public class Bytes {
 
-    /**
-     * Returns next observation id.
-     *
-     * @param uri URI path
-     * @return observation id
-     */
-    Opaque nextObservationID(String uri);
+    public static Opaque opaqueOfSize(int newSize) {
+        return new Opaque(new byte[newSize]);
+    }
 
+    public static Opaque opaqueOfRandom(int size) {
+        byte[] randomData = new byte[size];
+        new Random().nextBytes(randomData);
+        return new Opaque(randomData);
+    }
 
+    public static Opaque opaqueOfSize(int val, int size) {
+        byte[] result = new byte[size];
+        Arrays.fill(result, (byte) val);
+        return Opaque.of(result);
+    }
 }

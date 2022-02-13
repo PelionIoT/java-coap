@@ -17,7 +17,6 @@
 package com.mbed.coap.packet;
 
 import static com.mbed.coap.packet.DataConvertingUtility.*;
-import static com.mbed.coap.utils.HexArray.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.text.ParseException;
@@ -31,23 +30,6 @@ import org.junit.jupiter.api.Test;
  * Created by szymon
  */
 public class DataConvertingUtilityTest {
-
-    @Test
-    public void readVariableULongTest() throws Exception {
-
-        assertEquals(1, readVariableULong(new byte[]{1}).longValue());
-        assertEquals(0xf1, readVariableULong(new byte[]{(byte) 0xf1}).longValue());
-        assertTrue(readVariableULong(new byte[]{(byte) 0xf1}) > 0);
-
-        assertEquals(0x0101, readVariableULong(new byte[]{1, 1}).longValue());
-        assertEquals(0x010101, readVariableULong(new byte[]{1, 1, 1}).longValue());
-        assertEquals(0x01010101, readVariableULong(new byte[]{1, 1, 1, 1}).longValue());
-
-        assertEquals(0xff0101, readVariableULong(new byte[]{((byte) 0xff), 1, 1}).longValue());
-
-        assertNull(readVariableULong(null));
-
-    }
 
     @Test
     public void testParseUriQuery() throws ParseException {
@@ -98,20 +80,6 @@ public class DataConvertingUtilityTest {
         assertNull(parseUriQueryMult(""));
 
         assertThatThrownBy(() -> parseUriQueryMult("p=aa&par133")).isExactlyInstanceOf(ParseException.class);
-    }
-
-    @Test
-    public void testConvertVariableUInt() {
-        assertArrayEquals(fromHex("00"), convertVariableUInt(0x00));
-        assertArrayEquals(fromHex("02"), convertVariableUInt(0x02));
-        assertArrayEquals(fromHex("ff"), convertVariableUInt(0xFF));
-        assertArrayEquals(fromHex("0100"), convertVariableUInt(0x0100));
-        assertArrayEquals(fromHex("0203"), convertVariableUInt(0x0203));
-        assertArrayEquals(fromHex("ffff"), convertVariableUInt(0xFFFF));
-        assertArrayEquals(fromHex("010000"), convertVariableUInt(0x010000));
-        assertArrayEquals(fromHex("020304"), convertVariableUInt(0x020304));
-        assertArrayEquals(fromHex("02030405"), convertVariableUInt(0x02030405));
-
     }
 
 }

@@ -17,6 +17,7 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.CoapTcpCSM.*;
+import static com.mbed.coap.utils.Bytes.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.packet.BlockSize;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -79,19 +80,19 @@ public class CoapTcpCSMTest {
     public void should_determine_to_use_block_transfer() {
         CoapTcpCSM csm = new CoapTcpCSM(512, false);
         assertFalse(csm.useBlockTransfer(null));
-        assertFalse(csm.useBlockTransfer(new byte[10]));
+        assertFalse(csm.useBlockTransfer(opaqueOfSize(10)));
 
         //BLOCK
         csm = new CoapTcpCSM(512, true);
         assertFalse(csm.useBlockTransfer(null));
-        assertFalse(csm.useBlockTransfer(new byte[10]));
-        assertTrue(csm.useBlockTransfer(new byte[513]));
+        assertFalse(csm.useBlockTransfer(opaqueOfSize(10)));
+        assertTrue(csm.useBlockTransfer(opaqueOfSize(513)));
 
         //BERT
         csm = new CoapTcpCSM(3000, true);
         assertFalse(csm.useBlockTransfer(null));
-        assertFalse(csm.useBlockTransfer(new byte[10]));
-        assertTrue(csm.useBlockTransfer(new byte[3000]));
+        assertFalse(csm.useBlockTransfer(opaqueOfSize(10)));
+        assertTrue(csm.useBlockTransfer(opaqueOfSize(3000)));
     }
 
 

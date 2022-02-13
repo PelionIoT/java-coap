@@ -25,12 +25,11 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.transport.TransportContext;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,32 +161,23 @@ public class CoapExchangeImpl implements CoapExchange {
         //get all blocks
         CoapPacket fullNotifRequest = new CoapPacket(Method.GET, MessageType.Confirmable, uriPath, getRemoteAddress());
         fullNotifRequest.headers().setBlock2Res(new BlockOption(1, request.headers().getBlock2Res().getBlockSize(), false));
-        final byte[] etag = request.headers().getEtag();
+        final Opaque etag = request.headers().getEtag();
 
         return getCoapServer()
                 .makeRequest(fullNotifRequest)
                 .thenCompose(coapPacket -> {
-                    if (coapPacket.getCode() == Code.C205_CONTENT) {
-
-                        try (ByteArrayOutputStream bytesOut = new ByteArrayOutputStream(request.getPayload().length + coapPacket.getPayload().length)) {
-                            bytesOut.write(request.getPayload(), 0, request.getPayload().length);
-                            bytesOut.write(coapPacket.getPayload(), 0, coapPacket.getPayload().length);
-                            coapPacket.setPayload(bytesOut.toByteArray());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-
-                                if (Arrays.equals(etag, coapPacket.headers().getEtag())) {
+                            if (coapPacket.getCode() == Code.C205_CONTENT) {
+                                coapPacket.setPayload(request.getPayload().concat(coapPacket.getPayload()));
+                                if (Objects.equals(etag, coapPacket.headers().getEtag())) {
                                     return completedFuture(coapPacket);
                                 } else {
                                     return failedFuture(new CoapException("Could not retrieve full observation message, etag does not mach [" + getRemoteAddress() + uriPath + "]"));
                                 }
                             }
-                    return failedFuture(new CoapCodeException(coapPacket.getCode(), "Unexpected response when retrieving full observation message [" + getRemoteAddress() + uriPath + "]"));
+                            return failedFuture(new CoapCodeException(coapPacket.getCode(), "Unexpected response when retrieving full observation message [" + getRemoteAddress() + uriPath + "]"));
                         }
                 );
 
     }
-
 
 }

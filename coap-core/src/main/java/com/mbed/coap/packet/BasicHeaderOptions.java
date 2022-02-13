@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +19,9 @@ package com.mbed.coap.packet;
 import static com.mbed.coap.packet.PacketUtils.*;
 import com.mbed.coap.exception.CoapMessageFormatException;
 import com.mbed.coap.exception.CoapUnknownOptionException;
-import com.mbed.coap.utils.HexArray;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,7 +37,7 @@ import java.util.Optional;
  * @author szymon
  */
 @SuppressWarnings({"PMD.NPathComplexity", "PMD.CyclomaticComplexity"})
-public class BasicHeaderOptions implements Serializable {
+public class BasicHeaderOptions {
 
     public static final byte IF_MATCH = 1; //multiple
     public static final byte URI_HOST = 3;
@@ -61,14 +60,14 @@ public class BasicHeaderOptions implements Serializable {
     //
     private Short contentFormat;
     private Long maxAge;
-    private byte[][] etag; //opaque
+    private Opaque[] etag;
     private String uriHost;
     private String locationPath;
     private String locationQuery;
     private String uriPath;
     private String uriQuery;
     private Integer accept;
-    private byte[][] ifMatch;
+    private Opaque[] ifMatch;
     private Boolean ifNonMatch;
     private String proxyUri;
     private String proxyScheme;
@@ -76,19 +75,19 @@ public class BasicHeaderOptions implements Serializable {
     private Integer size1;
     private Map<Integer, RawOption> unrecognizedOptions;
 
-    protected boolean parseOption(int type, byte[] data, Code code) {
+    protected boolean parseOption(int type, Opaque data, Code code) {
         switch (type) {
             case CONTENT_FORMAT:
-                setContentFormat(DataConvertingUtility.readVariableULong(data).shortValue());
+                setContentFormat(((short) data.toLong()));
                 break;
             case MAX_AGE:
-                setMaxAge(DataConvertingUtility.readVariableULong(data));
+                setMaxAge(data.toLong());
                 break;
             case ETAG:
                 etag = DataConvertingUtility.extendOption(etag, data);
                 break;
             case URI_HOST:
-                setUriHost(DataConvertingUtility.decodeToString(data));
+                setUriHost(data.toUtf8String());
                 break;
             case LOCATION_PATH:
                 locationPath = DataConvertingUtility.extendOption(locationPath, data, "/", true);
@@ -103,13 +102,13 @@ public class BasicHeaderOptions implements Serializable {
                 uriQuery = DataConvertingUtility.extendOption(uriQuery, data, "&", false);
                 break;
             case PROXY_URI:
-                proxyUri = DataConvertingUtility.decodeToString(data);
+                proxyUri = data.toUtf8String();
                 break;
             case PROXY_SCHEME:
-                proxyScheme = DataConvertingUtility.decodeToString(data);
+                proxyScheme = data.toUtf8String();
                 break;
             case ACCEPT:
-                accept = DataConvertingUtility.readVariableULong(data).intValue();
+                accept = data.toInt();
                 break;
             case IF_MATCH:
                 ifMatch = DataConvertingUtility.extendOption(ifMatch, data);
@@ -118,10 +117,10 @@ public class BasicHeaderOptions implements Serializable {
                 ifNonMatch = Boolean.TRUE;
                 break;
             case URI_PORT:
-                uriPort = DataConvertingUtility.readVariableULong(data).intValue();
+                uriPort = data.toInt();
                 break;
             case SIZE1:
-                size1 = DataConvertingUtility.readVariableULong(data).intValue();
+                size1 = data.toInt();
                 break;
             default:
                 return false;
@@ -135,7 +134,7 @@ public class BasicHeaderOptions implements Serializable {
      * @param optNumber option number
      * @return byte array value or null if does not exist
      */
-    public byte[] getCustomOption(Integer optNumber) {
+    public Opaque getCustomOption(Integer optNumber) {
         if (!unrecognizedOptions.containsKey(optNumber)) {
             return null;
         }
@@ -178,7 +177,7 @@ public class BasicHeaderOptions implements Serializable {
      * @param data option value as byte array
      * @return true if header type is a known, false for unknown header option
      */
-    public final boolean put(int optionNumber, byte[] data, Code code) {
+    public final boolean put(int optionNumber, Opaque data, Code code) {
         if (parseOption(optionNumber, data, code)) {
             return true;
         }
@@ -190,7 +189,7 @@ public class BasicHeaderOptions implements Serializable {
         return true;
     }
 
-    public final boolean put(int optionNumber, byte[] data) {
+    public final boolean put(int optionNumber, Opaque data) {
         return put(optionNumber, data, null);
     }
 
@@ -292,7 +291,7 @@ public class BasicHeaderOptions implements Serializable {
             sb.append(" Loc:?").append(locationQuery);
         }
         if (etag != null && etag.length > 0) {
-            sb.append(" ETag:").append(HexArray.toHex(etag[0]));
+            sb.append(" ETag:").append(etag[0]);
         }
         if (maxAge != null) {
             sb.append(" MaxAge:").append(maxAge).append('s');
@@ -306,7 +305,7 @@ public class BasicHeaderOptions implements Serializable {
         if (unrecognizedOptions != null) {
             for (RawOption rOpt : unrecognizedOptions.values()) {
                 if (rOpt.optValues.length > 0) {
-                    sb.append(" H").append(rOpt.optNumber).append(":0x").append(HexArray.toHexShort(rOpt.optValues[0], 10));
+                    sb.append(" H").append(rOpt.optNumber).append(":0x").append(rOpt.optValues[0]);
                 }
             }
         }
@@ -318,7 +317,7 @@ public class BasicHeaderOptions implements Serializable {
             sb.append(proxyUri);
         }
         if (ifMatch != null && ifMatch.length > 0) {
-            sb.append(" ifMatch:").append(HexArray.toHex(ifMatch[0]));
+            sb.append(" ifMatch:").append(ifMatch[0]);
         }
         if (ifNonMatch != null && ifNonMatch) {
             sb.append(" ifNonMatch");
@@ -389,32 +388,32 @@ public class BasicHeaderOptions implements Serializable {
     /**
      * @return first etag from array or null of array is empty
      */
-    public final byte[] getEtag() {
+    public final Opaque getEtag() {
         return etag == null ? null : etag[0];
     }
 
     /**
      * @param etag the etag to set
      */
-    public final void setEtag(byte[] etag) {
-        if (etag == null || etag.length == 0) {
+    public final void setEtag(Opaque etag) {
+        if (etag == null || etag.isEmpty()) {
             this.etag = null;
             return;
         }
-        if (etag.length > 8) {
+        if (etag.size() > 8) {
             throw new IllegalArgumentException("Wrong ETAG option value, should be in range 1-8");
         }
-        this.etag = new byte[][]{etag};
+        this.etag = new Opaque[]{etag};
     }
 
-    public byte[][] getEtagArray() {
+    public Opaque[] getEtagArray() {
         return etag;
     }
 
-    public void setEtag(byte[][] etag) {
+    public void setEtag(Opaque[] etag) {
         //test etag
         for (int i = 0; i < etag.length; i++) {
-            if (etag[i].length == 0 || etag[i].length > 8) {
+            if (etag[i].size() == 0 || etag[i].size() > 8) {
                 throw new IllegalArgumentException("Wrong ETAG option value, should be in range 1-8");
             }
         }
@@ -516,11 +515,11 @@ public class BasicHeaderOptions implements Serializable {
         return accept;
     }
 
-    public byte[][] getIfMatch() {
+    public Opaque[] getIfMatch() {
         return ifMatch;
     }
 
-    public void setIfMatch(byte[][] ifMatch) {
+    public void setIfMatch(Opaque[] ifMatch) {
         this.ifMatch = ifMatch;
     }
 
@@ -585,18 +584,18 @@ public class BasicHeaderOptions implements Serializable {
 
         int lastOptNumber = 0;
         for (RawOption opt : list) {
-            for (byte[] optValue : opt.optValues) {
+            for (Opaque optValue : opt.optValues) {
                 int delta = opt.optNumber - lastOptNumber;
                 lastOptNumber = opt.optNumber;
                 if (delta > 0xFFFF + 269) {
                     throw new IllegalArgumentException("Delta with size: " + delta + " is not supported [option number: " + opt.optNumber + "]");
                 }
-                int len = optValue.length;
+                int len = optValue.size();
                 if (len > 0xFFFF + 269) {
                     throw new IllegalArgumentException("Header size: " + len + " is not supported [option number: " + opt.optNumber + "]");
                 }
                 writeOptionHeader(delta, len, os);
-                os.write(optValue);
+                optValue.writeTo(os);
             }
         }
     }
@@ -702,7 +701,7 @@ public class BasicHeaderOptions implements Serializable {
                 availableInternal -= 2;
             }
             headerOptNum += delta;
-            byte[] headerOptData = readN(is, len, orBlock);
+            Opaque headerOptData = new Opaque(readN(is, len, orBlock));
             availableInternal -= len;
             put(headerOptNum, headerOptData, code);
         }

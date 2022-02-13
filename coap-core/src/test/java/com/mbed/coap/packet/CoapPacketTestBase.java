@@ -42,11 +42,11 @@ abstract class CoapPacketTestBase {
 
         assertEquals(cp1.headers().getIfNonMatch(), cp2.headers().getIfNonMatch());
         assertEquals(cp1.headers().getContentFormat(), cp2.headers().getContentFormat());
-        assertArrayEquals(cp1.headers().getEtag(), cp2.headers().getEtag());
+        assertEquals(cp1.headers().getEtag(), cp2.headers().getEtag());
         assertEquals(cp1.headers().getMaxAge(), cp2.headers().getMaxAge());
         assertEquals(cp1.headers().getObserve(), cp2.headers().getObserve());
         assertEquals(cp1.headers().getProxyUri(), cp2.headers().getProxyUri());
-        assertArrayEquals(cp1.getToken(), cp2.getToken());
+        assertEquals(cp1.getToken(), cp2.getToken());
         assertEquals(cp1.headers().getUriPort(), cp2.headers().getUriPort());
 
         assertEquals(cp1.getPayloadString(), cp2.getPayloadString());

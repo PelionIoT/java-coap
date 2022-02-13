@@ -30,6 +30,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.internal.CoapExchangeImpl;
 import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.server.internal.CoapRequestHandler;
@@ -186,7 +187,7 @@ public class CoapServer {
         if (notifPacket.headers().getObserve() == null) {
             throw new IllegalArgumentException("Notification packet should have observation header set");
         }
-        if (notifPacket.getToken() == null || notifPacket.getToken().length == 0) {
+        if (notifPacket.getToken().isEmpty()) {
             throw new IllegalArgumentException("Notification packet should have non-empty token");
         }
         if (notifPacket.getCode() != Code.C205_CONTENT) {
@@ -409,7 +410,7 @@ public class CoapServer {
      * @param token observation identification (token)
      * @return response
      */
-    public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, byte[] token, TransportContext transportContext) {
+    public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, Opaque token, TransportContext transportContext) {
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, uri, destination);
         request.setToken(token);
         request.headers().setObserve(0);
@@ -420,7 +421,7 @@ public class CoapServer {
         if (request.headers().getObserve() == null) {
             request.headers().setObserve(0);
         }
-        if (request.getToken() == CoapPacket.DEFAULT_TOKEN) {
+        if (request.getToken().isEmpty()) {
             request.setToken(observationIDGenerator.nextObservationID(request.headers().getUriPath()));
         }
 

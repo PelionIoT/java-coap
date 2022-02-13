@@ -22,9 +22,9 @@ import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.ObservationHandler;
@@ -206,7 +206,7 @@ public class CoapServerDuplicateTest {
         final AtomicBoolean notificationArrived = new AtomicBoolean(false);
         server.setObservationHandler(new ObservationHandler() {
             @Override
-            public boolean hasObservation(byte[] token) {
+            public boolean hasObservation(Opaque token) {
                 return true;
             }
 
@@ -224,7 +224,7 @@ public class CoapServerDuplicateTest {
 
         CoapPacket notif = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, REMOTE_ADDRESS);
         notif.setMessageId(12);
-        notif.setToken(DataConvertingUtility.convertVariableUInt(1234));
+        notif.setToken(Opaque.variableUInt(1234));
         notif.headers().setObserve(2);
         notif.setPayload("dupa2");
 

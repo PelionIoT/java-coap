@@ -22,6 +22,7 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.BlockingCoapTransport;
@@ -60,7 +61,7 @@ public abstract class ServerBenchmarkBase {
 
         CoapPacket coapReq = new CoapPacket(Method.GET, MessageType.Confirmable, "/path1/sub2/sub3", null);
         coapReq.setMessageId(1234);
-        coapReq.setToken(new byte[]{1, 2, 3, 4, 5});
+        coapReq.setToken(Opaque.variableUInt(0x0102030405L));
         coapReq.headers().setMaxAge(4321L);
         reqData = coapReq.toByteArray();
 

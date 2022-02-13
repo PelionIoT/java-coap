@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +16,10 @@
  */
 package com.mbed.coap.observe;
 
-import static com.mbed.coap.CoapConstants.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 
@@ -27,16 +28,16 @@ import com.mbed.coap.server.CoapServer;
  */
 public class SimpleObservableResource extends AbstractObservableResource {
 
-    private byte[] body;
+    private Opaque body;
 
     public SimpleObservableResource(String body, CoapServer coapServer) {
         super(coapServer);
-        this.body = body.getBytes(DEFAULT_CHARSET);
+        this.body = Opaque.of(body);
     }
 
     public SimpleObservableResource(String body, CoapServer coapServer, boolean includeObservableFlag) {
         super(coapServer, includeObservableFlag);
-        this.body = body.getBytes(DEFAULT_CHARSET);
+        this.body = Opaque.of(body);
     }
 
     @Override
@@ -53,8 +54,8 @@ public class SimpleObservableResource extends AbstractObservableResource {
      * @throws CoapException coap exception
      */
     public void setBody(String body) throws CoapException {
-        this.body = body.getBytes(DEFAULT_CHARSET);
-        notifyChange(body.getBytes(DEFAULT_CHARSET), null);
+        this.body = Opaque.of(body);
+        notifyChange(this.body, null);
     }
 
     /**
@@ -63,27 +64,23 @@ public class SimpleObservableResource extends AbstractObservableResource {
      * @param body new payload in bytes
      * @throws CoapException coap exception
      */
-    public void setBody(byte[] body) throws CoapException {
+    public void setBody(Opaque body) throws CoapException {
         this.body = body;
 
         notifyChange(body, null);
     }
 
     public void setBody(String body, NotificationDeliveryListener deliveryListener) throws CoapException {
-        this.body = body.getBytes(DEFAULT_CHARSET);
-        notifyChange(body.getBytes(DEFAULT_CHARSET), null, null, null, deliveryListener);
+        this.body = Opaque.of(body);
+        notifyChange(this.body, null, null, null, deliveryListener);
     }
 
-    public void setBody(byte[] body, NotificationDeliveryListener deliveryListener) throws CoapException {
+    public void setBody(Opaque body, NotificationDeliveryListener deliveryListener) throws CoapException {
         this.body = body;
         notifyChange(body, null, null, null, deliveryListener);
     }
 
-    public String getBody() {
-        return new String(body, DEFAULT_CHARSET);
-    }
-
-    public byte[] getBodyBytes() {
+    public Opaque getBody() {
         return body;
     }
 

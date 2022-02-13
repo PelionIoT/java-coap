@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@ import com.mbed.coap.linkformat.LinkFormat;
 import com.mbed.coap.linkformat.LinkFormatBuilder;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.utils.CoapResource;
@@ -67,7 +69,7 @@ public class ResourceLinks extends CoapResource {
         String resources = LinkFormatBuilder.toString(links);
         ex.setResponseCode(Code.C205_CONTENT);
         ex.getResponseHeaders().setContentFormat(MediaTypes.CT_APPLICATION_LINK__FORMAT);
-        ex.setResponseBody(resources.getBytes());
+        ex.setResponseBody(Opaque.of(resources));
         ex.sendResponse();
     }
 }

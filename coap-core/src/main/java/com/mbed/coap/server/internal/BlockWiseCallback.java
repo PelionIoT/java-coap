@@ -23,10 +23,10 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.utils.Callback;
+import com.mbed.coap.packet.Opaque;
 import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,7 @@ class BlockWiseCallback implements Callback<CoapPacket> {
     private final Callback<CoapPacket> reqCallback;
     private CoapPacket response;
     final CoapPacket request;
-    private final byte[] requestPayload;
+    private final Opaque requestPayload;
     private int resourceChanged;
     private final int numberOfBertBlocks;
     private final CoapTcpCSM csm;
@@ -61,8 +61,8 @@ class BlockWiseCallback implements Callback<CoapPacket> {
         } else {
             LOGGER.trace("makeRequest no block: {}", request);
             int maxPayloadSize = csm.getMaxOutboundPayloadSize();
-            if (requestPayload.length > maxPayloadSize) {
-                throw new CoapException("Block transfers are not enabled for " + request.getRemoteAddress() + " and payload size " + requestPayload.length + " > max payload size " + maxPayloadSize);
+            if (requestPayload.size() > maxPayloadSize) {
+                throw new CoapException("Block transfers are not enabled for " + request.getRemoteAddress() + " and payload size " + requestPayload.size() + " > max payload size " + maxPayloadSize);
             }
             numberOfBertBlocks = 0;
         }
@@ -121,7 +121,7 @@ class BlockWiseCallback implements Callback<CoapPacket> {
             // see: https://tools.ietf.org/html/rfc7959#section-2.5
             responseBlock = new BlockOption(responseBlock.getNr() + 1, responseBlock.getBlockSize(), origReqBlock.hasMore());
         } else {
-            responseBlock = BlockWiseCallback.nextBertBlock(responseBlock, requestPayload.length, numberOfBertBlocks, maxBlockPayload);
+            responseBlock = BlockWiseCallback.nextBertBlock(responseBlock, requestPayload.size(), numberOfBertBlocks, maxBlockPayload);
         }
 
         request.headers().setBlock1Req(responseBlock);
@@ -130,7 +130,7 @@ class BlockWiseCallback implements Callback<CoapPacket> {
         request.headers().setSize1(null);
         ByteArrayOutputStream blockPayload = new ByteArrayOutputStream(maxBlockPayload);
         BlockWiseTransfer.createBlockPart(responseBlock, requestPayload, blockPayload, maxBlockPayload);
-        request.setPayload(blockPayload.toByteArray());
+        request.setPayload(Opaque.of(blockPayload.toByteArray()));
         LOGGER.trace("BlockWiseCallback.call() next block b1: {}", request);
         makeRequest();
         return true;
@@ -149,7 +149,7 @@ class BlockWiseCallback implements Callback<CoapPacket> {
         if (response == null) {
             response = blResponse;
         } else {
-            this.response.setPayload(DataConvertingUtility.combine(response.getPayload(), blResponse.getPayload()));
+            this.response.setPayload(response.getPayload().concat(blResponse.getPayload()));
             this.response.headers().setBlock2Res(blResponse.headers().getBlock2Res());
             this.response.setCode(blResponse.getCode());
         }
@@ -158,8 +158,8 @@ class BlockWiseCallback implements Callback<CoapPacket> {
             return;
         }
 
-        if (response.getPayload().length > maxIncomingBlockTransferSize) {
-            throw new CoapBlockTooLargeEntityException("Received too large entity for request, max allowed " + maxIncomingBlockTransferSize + ", received " + response.getPayload().length);
+        if (response.getPayload().size() > maxIncomingBlockTransferSize) {
+            throw new CoapBlockTooLargeEntityException("Received too large entity for request, max allowed " + maxIncomingBlockTransferSize + ", received " + response.getPayload().size());
         }
 
         BlockOption respBlockOption = blResponse.headers().getBlock2Res();
@@ -171,7 +171,7 @@ class BlockWiseCallback implements Callback<CoapPacket> {
             //isCompleted = false;
             //CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, requestUri, destination);
 
-            int receivedBlocksCount = blResponse.getPayload().length / respBlockOption.getBlockSize().getSize();
+            int receivedBlocksCount = blResponse.getPayload().size() / respBlockOption.getBlockSize().getSize();
 
             request.headers().setBlock2Res(new BlockOption(respBlockOption.getNr() + receivedBlocksCount, respBlockOption.getBlockSize(), false));
             request.headers().setBlock1Req(null);
@@ -189,15 +189,15 @@ class BlockWiseCallback implements Callback<CoapPacket> {
         }
 
         if (!BlockWiseTransfer.isBlockPacketValid(blResponse, responseBlock)) {
-            throw new CoapBlockException("Intermediate block size mismatch with block option " + responseBlock.toString() + " and payload size " + blResponse.getPayload().length);
+            throw new CoapBlockException("Intermediate block size mismatch with block option " + responseBlock.toString() + " and payload size " + blResponse.getPayload().size());
         }
         if (!BlockWiseTransfer.isLastBlockPacketValid(blResponse, responseBlock)) {
-            throw new CoapBlockException("Last block size mismatch with block option " + responseBlock + " and payload size " + blResponse.getPayload().length);
+            throw new CoapBlockException("Last block size mismatch with block option " + responseBlock + " and payload size " + blResponse.getPayload().size());
         }
     }
 
     private boolean hasResourceChanged(CoapPacket blResponse) {
-        return !Arrays.equals(response.headers().getEtag(), blResponse.headers().getEtag());
+        return !Objects.equals(response.headers().getEtag(), blResponse.headers().getEtag());
     }
 
     private void restartBlockTransfer(CoapPacket blResponse) {
@@ -220,7 +220,7 @@ class BlockWiseCallback implements Callback<CoapPacket> {
 
         ByteArrayOutputStream blockPayload = new ByteArrayOutputStream(block1Req.getSize());
         BlockWiseTransfer.createBlockPart(block1Req, requestPayload, blockPayload, block1Req.getSize());
-        request.setPayload(blockPayload.toByteArray());
+        request.setPayload(Opaque.of(blockPayload.toByteArray()));
 
         makeRequest();
     }

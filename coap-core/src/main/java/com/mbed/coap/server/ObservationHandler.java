@@ -16,6 +16,8 @@
  */
 package com.mbed.coap.server;
 
+import com.mbed.coap.packet.Opaque;
+
 /**
  * @author szymon
  */
@@ -27,7 +29,7 @@ public interface ObservationHandler {
      * @param token observation token
      * @return true if observation is established
      */
-    boolean hasObservation(byte[] token);
+    boolean hasObservation(Opaque token);
 
     void call(CoapExchange t);
 

@@ -24,9 +24,9 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.ObservationHandler;
-import com.mbed.coap.utils.Token;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -38,13 +38,13 @@ import org.slf4j.LoggerFactory;
 class ObservationHandlerImpl implements ObservationHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ObservationHandlerImpl.class.getName());
-    private final Map<Token, ObservationListenerContainer> observationMap = new HashMap<>();
+    private final Map<Opaque, ObservationListenerContainer> observationMap = new HashMap<>();
 
     @Override
     public void callException(Exception ex) {
         if (ex instanceof ObservationTerminatedException) {
             ObservationTerminatedException termEx = (ObservationTerminatedException) ex;
-            ObservationListenerContainer obsListContainer = observationMap.get(new Token(termEx.getNotification().getToken()));
+            ObservationListenerContainer obsListContainer = observationMap.get(termEx.getNotification().getToken());
             if (obsListContainer != null) {
                 try {
                     obsListContainer.observationListener.onTermination(termEx.getNotification());
@@ -60,14 +60,14 @@ class ObservationHandlerImpl implements ObservationHandler {
 
     @Override
     public void call(CoapExchange t) {
-        final ObservationListenerContainer obsListContainer = observationMap.get(new Token(t.getRequest().getToken()));
+        final ObservationListenerContainer obsListContainer = observationMap.get(t.getRequest().getToken());
         if (obsListContainer != null) {
             try {
                 // TODO: BERT support + should be moved to CoapServerBlocks
                 BlockOption requestBlock2Res = t.getRequest().headers().getBlock2Res();
                 if (requestBlock2Res != null && requestBlock2Res.getNr() == 0 && requestBlock2Res.hasMore()) {
-                    if (requestBlock2Res.hasMore() && requestBlock2Res.getSize() != t.getRequestBody().length) {
-                        LOGGER.warn("Block size does not match payload size " + requestBlock2Res.getSize() + "!=" + t.getRequestBody().length);
+                    if (requestBlock2Res.hasMore() && requestBlock2Res.getSize() != t.getRequestBody().size()) {
+                        LOGGER.warn("Block size does not match payload size " + requestBlock2Res.getSize() + "!=" + t.getRequestBody().size());
                         t.setResponse(resetResponse(t));
                         t.sendResponse();
                         return;
@@ -109,13 +109,13 @@ class ObservationHandlerImpl implements ObservationHandler {
         return resetResponse;
     }
 
-    void putObservationListener(ObservationListener observationListener, byte[] token, String uriPath) {
-        observationMap.put(new Token(token), new ObservationListenerContainer(uriPath, observationListener));
+    void putObservationListener(ObservationListener observationListener, Opaque token, String uriPath) {
+        observationMap.put(token, new ObservationListenerContainer(uriPath, observationListener));
     }
 
     @Override
-    public boolean hasObservation(byte[] token) {
-        return observationMap.containsKey(new Token(token));
+    public boolean hasObservation(Opaque token) {
+        return observationMap.containsKey(token);
     }
 
     private static class ObservationListenerContainer {

@@ -275,7 +275,7 @@ public class CoapUdpMessaging extends CoapMessaging {
                             coapCallback.callException(((Exception) maybeError));
                         }
                     });
-            if (packet.getToken().length == 0) {
+            if (packet.getToken().isEmpty()) {
                 LOGGER.warn("Sent NON request without token: {}", packet);
             }
         }

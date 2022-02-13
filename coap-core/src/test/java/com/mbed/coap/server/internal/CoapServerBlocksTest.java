@@ -24,6 +24,7 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapRequestId;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.server.MessageIdSupplier;
@@ -31,10 +32,9 @@ import com.mbed.coap.server.PutOnlyMap;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -63,7 +63,7 @@ public class CoapServerBlocksTest {
         protoServer = new CoapUdpMessaging(coapTransport);
         server = new CoapServerBlocks(protoServer, capabilities, 10000000) {
             @Override
-            public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, byte[] token, TransportContext transportContext) {
+            public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, Opaque token, TransportContext transportContext) {
                 return failedFuture(new IllegalArgumentException());
             }
 
@@ -121,7 +121,7 @@ public class CoapServerBlocksTest {
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server = new CoapServerBlocks(protoServer, capabilities, 10000) {
             @Override
-            public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, byte[] token, TransportContext transportContext) {
+            public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, Opaque token, TransportContext transportContext) {
                 return failedFuture(new IllegalArgumentException());
             }
 
@@ -137,14 +137,9 @@ public class CoapServerBlocksTest {
         });
 
 
-        byte[] payloadBlock1 = generatePayload(0, 4096).toByteArray();
-        byte[] payloadBlock2 = generatePayload(4, 4096).toByteArray();
-        byte[] payloadBlock3 = generatePayload(8, 4096).toByteArray();
-
-        final ByteArrayOutputStream fullPayload = new ByteArrayOutputStream(payloadBlock1.length + payloadBlock2.length + payloadBlock3.length);
-        fullPayload.write(payloadBlock1);
-        fullPayload.write(payloadBlock2);
-        fullPayload.write(payloadBlock3);
+        Opaque payloadBlock1 = generatePayload(0, 4096);
+        Opaque payloadBlock2 = generatePayload(4, 4096);
+        Opaque payloadBlock3 = generatePayload(8, 4096);
 
         CoapPacket pkt = newCoapPacket(LOCAL_5683).mid(10).token(0x1234).put().block1Req(0, BlockSize.S_1024_BERT, true).uriPath("/block").build();
         pkt.setPayload(payloadBlock1);
@@ -196,19 +191,15 @@ public class CoapServerBlocksTest {
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
-        byte[] payloadBlock1 = generatePayload(0, 4096).toByteArray();
-        byte[] payloadBlock2 = generatePayload(4, 2048).toByteArray();
-        ByteArrayOutputStream payloadBlockFinalOs = generatePayload(6, 1024);
-        payloadBlockFinalOs.write("end_of_payload".getBytes());
-        byte[] payloadFinal = payloadBlockFinalOs.toByteArray();
+        Opaque payloadBlock1 = generatePayload(0, 4096);
+        Opaque payloadBlock2 = generatePayload(4, 2048);
+        Opaque payloadBlockFinalOs = generatePayload(6, 1024);
+        Opaque payloadFinal = payloadBlockFinalOs.concat(Opaque.of("end_of_payload"));
 
-        final ByteArrayOutputStream fullPayload = new ByteArrayOutputStream(payloadBlock1.length + payloadBlock2.length + payloadFinal.length);
-        fullPayload.write(payloadBlock1);
-        fullPayload.write(payloadBlock2);
-        fullPayload.write(payloadFinal);
+        final Opaque fullPayload = payloadBlock1.concat(payloadBlock2).concat(payloadFinal);
 
         server.addRequestHandler("/block", exchange -> {
-            if (Arrays.equals(exchange.getRequestBody(), fullPayload.toByteArray())) {
+            if (Objects.equals(exchange.getRequestBody(), fullPayload)) {
                 exchange.setResponseCode(Code.C204_CHANGED);
                 exchange.sendResponse();
             } else {
@@ -238,7 +229,7 @@ public class CoapServerBlocksTest {
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
-        byte[] payloadBlock1 = generatePayload(0, 4096).toByteArray();
+        Opaque payloadBlock1 = generatePayload(0, 4096);
 
         server.addRequestHandler("/block", exchange -> {
             fail("Unexpected request was received");
@@ -257,7 +248,7 @@ public class CoapServerBlocksTest {
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
-        byte[] payloadBlock1 = generatePayload(0, 4096).toByteArray();
+        Opaque payloadBlock1 = generatePayload(0, 4096);
 
         server.addRequestHandler("/block", exchange -> {
             fail("Unexpected request was received");
@@ -276,15 +267,13 @@ public class CoapServerBlocksTest {
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
-        byte[] payloadBlock1 = generatePayload(0, 4096).toByteArray();
+        Opaque payloadBlock1 = generatePayload(0, 4096);
 
-        ByteArrayOutputStream payloadBlock2BrokenOs = generatePayload(4, 2048);
-        payloadBlock2BrokenOs.write("wrong pl interm block".getBytes());
-        byte[] payloadBlock2Broken = payloadBlock2BrokenOs.toByteArray();
+        Opaque payloadBlock2BrokenOs = generatePayload(4, 2048);
+        Opaque payloadBlock2Broken = payloadBlock2BrokenOs.concat(Opaque.of("wrong pl interm block"));
 
-        ByteArrayOutputStream payloadBlockFinalOs = generatePayload(6, 1024);
-        payloadBlockFinalOs.write("end_of_payload".getBytes());
-        byte[] payloadFinal = payloadBlockFinalOs.toByteArray();
+        Opaque payloadBlockFinalOs = generatePayload(6, 1024);
+        Opaque payloadFinal = payloadBlockFinalOs.concat(Opaque.of("end_of_payload"));
 
         server.addRequestHandler("/block", exchange -> {
             fail("Unexpected request was received");
@@ -330,18 +319,17 @@ public class CoapServerBlocksTest {
         verify(coapTransport).sendPacket(eq(coapPacketBuilder.build()), any(), any());
     }
 
-    private ByteArrayOutputStream generatePayload(int startBlockNumber, int size16bRound) throws Exception {
+    private Opaque generatePayload(int startBlockNumber, int size16bRound) throws Exception {
         if (size16bRound % 16 != 0) {
             throw new Exception("Size should be 16 bytes blocks");
         }
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(size16bRound + 32);
-
         int blocks = size16bRound / 16;
 
+        Opaque newPayload = Opaque.EMPTY;
         for (int i = 0; i < blocks; i++) {
-            bos.write(String.format("%03d_456789ABCDE|", i + startBlockNumber).getBytes());
+            newPayload = newPayload.concat(Opaque.of(String.format("%03d_456789ABCDE|", i + startBlockNumber)));
         }
-        return bos;
+        return newPayload;
     }
 
     private void protoServerInit(int duplicationListSize,

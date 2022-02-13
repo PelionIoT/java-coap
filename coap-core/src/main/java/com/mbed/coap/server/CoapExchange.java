@@ -19,9 +19,9 @@ package com.mbed.coap.server;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.HeaderOptions;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.TransportContext;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -62,7 +62,7 @@ public interface CoapExchange {
         return getRequest().headers();
     }
 
-    default byte[] getRequestBody() {
+    default Opaque getRequestBody() {
         return getRequest().getPayload();
     }
 
@@ -93,7 +93,7 @@ public interface CoapExchange {
         return getResponse().headers();
     }
 
-    default void setResponseBody(byte[] payload) {
+    default void setResponseBody(Opaque payload) {
         getResponse().setPayload(payload);
     }
 
@@ -106,7 +106,7 @@ public interface CoapExchange {
         getResponse().headers().setContentFormat(contentType);
     }
 
-    default void setResponseToken(byte[] token) {
+    default void setResponseToken(Opaque token) {
         getResponse().setToken(token);
     }
 
@@ -116,7 +116,7 @@ public interface CoapExchange {
      * @param body response body
      */
     default void setResponseBody(String body) {
-        setResponseBody(DataConvertingUtility.encodeString(body));
+        setResponseBody(Opaque.of(body));
     }
 
     /**

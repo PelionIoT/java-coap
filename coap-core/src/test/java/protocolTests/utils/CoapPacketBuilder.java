@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +20,9 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.packet.SignalingOptions;
 import java.net.InetSocketAddress;
 
@@ -125,7 +126,7 @@ public class CoapPacketBuilder {
         return this;
     }
 
-    public CoapPacketBuilder payload(byte[] payload) {
+    public CoapPacketBuilder payload(Opaque payload) {
         coapPacket.setPayload(payload);
         return this;
     }
@@ -136,7 +137,7 @@ public class CoapPacketBuilder {
     }
 
     public CoapPacketBuilder token(long token) {
-        coapPacket.setToken(DataConvertingUtility.convertVariableUInt(token));
+        coapPacket.setToken(Opaque.variableUInt(token));
         return this;
     }
 
@@ -161,7 +162,7 @@ public class CoapPacketBuilder {
     }
 
     public CoapPacketBuilder etag(int etag) {
-        coapPacket.headers().setEtag(DataConvertingUtility.convertVariableUInt(etag));
+        coapPacket.headers().setEtag(Opaque.variableUInt((etag)));
         return this;
     }
 
@@ -203,7 +204,7 @@ public class CoapPacketBuilder {
     }
 
     public CoapPacket reset(int messageId) {
-        coapPacket.setToken(null);
+        coapPacket.setToken(Opaque.EMPTY);
         return mid(messageId).reset().build();
     }
 

@@ -93,7 +93,7 @@ public class SignalingOptionsTest {
     public void testPutCSMOption() throws IOException, CoapException {
         SignalingOptions options = new SignalingOptions();
 
-        options.parse(2, ByteBuffer.allocate(4).putInt(2).array(), Code.C701_CSM);
+        options.parse(2, new Opaque(ByteBuffer.allocate(4).putInt(2).array()), Code.C701_CSM);
 
         assertEquals(2, options.getMaxMessageSize().intValue());
         assertEquals(null, options.getBlockWiseTransfer());
@@ -116,7 +116,7 @@ public class SignalingOptionsTest {
 
         //Try putting non csm specific option
         assertThrows(IllegalStateException.class, () ->
-                        options.parse(4, ByteBuffer.allocate(1).put((byte) 5).array(), Code.C704_RELEASE),
+                        options.parse(4, new Opaque(ByteBuffer.allocate(1).put((byte) 5).array()), Code.C704_RELEASE),
                 "Other than 7.04 specific signaling option already set"
         );
     }
@@ -155,7 +155,7 @@ public class SignalingOptionsTest {
     public void testPutReleaseOption() throws IOException, CoapException {
         SignalingOptions options = new SignalingOptions();
 
-        options.parse(2, "127.0.0.1:5555".getBytes(), Code.C704_RELEASE);
+        options.parse(2, Opaque.of("127.0.0.1:5555"), Code.C704_RELEASE);
         System.out.println(options);
 
         assertEquals(null, options.getMaxMessageSize());
@@ -176,7 +176,7 @@ public class SignalingOptionsTest {
         //        assertEquals(null, options.getHoldOff());
         //        assertEquals(null, options.getBadCsmOption());
 
-        options.parse(4, ByteBuffer.allocate(1).put((byte) 5).array(), Code.C704_RELEASE);
+        options.parse(4, new Opaque(ByteBuffer.allocate(1).put((byte) 5).array()), Code.C704_RELEASE);
 
         assertEquals("127.0.0.1:5555", options.getAlternativeAddress());
         assertEquals(null, options.getMaxMessageSize());
@@ -201,7 +201,7 @@ public class SignalingOptionsTest {
     public void testPutAbortOption() throws IOException, CoapException {
         SignalingOptions options = new SignalingOptions();
 
-        options.parse(2, ByteBuffer.allocate(1).put((byte) 7).array(), Code.C705_ABORT);
+        options.parse(2, new Opaque(ByteBuffer.allocate(1).put((byte) 7).array()), Code.C705_ABORT);
 
         assertEquals(null, options.getMaxMessageSize());
         assertEquals(null, options.getBlockWiseTransfer());

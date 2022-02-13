@@ -25,8 +25,8 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
@@ -52,8 +52,8 @@ public class ClientServerNONTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        DelayedTransactionId dti1 = new DelayedTransactionId(new byte[]{13, 14}, new InetSocketAddress(5683));
-        DelayedTransactionId dti2 = new DelayedTransactionId(new byte[]{13, 14}, new InetSocketAddress(5683));
+        DelayedTransactionId dti1 = new DelayedTransactionId(Opaque.variableUInt(1314), new InetSocketAddress(5683));
+        DelayedTransactionId dti2 = new DelayedTransactionId(Opaque.variableUInt(1314), new InetSocketAddress(5683));
         dti1.equals(dti2);
 
         assertEquals(dti1.hashCode(), dti2.hashCode());
@@ -168,7 +168,7 @@ public class ClientServerNONTest {
         CoapServer client = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create()).build().start();
 
         CoapPacket badReq = new CoapPacket(Code.C404_NOT_FOUND, MessageType.NonConfirmable, serverAddr);
-        badReq.setToken("1".getBytes());
+        badReq.setToken(Opaque.of("1"));
 
         CoapPacket resp1 = client.makeRequest(badReq).get();
         System.out.println(resp1);
@@ -221,7 +221,7 @@ public class ClientServerNONTest {
      *
      * @return random token
      */
-    private static byte[] nextToken() {
-        return DataConvertingUtility.convertVariableUInt((new Random().nextInt(0xFFFFF)));
+    private static Opaque nextToken() {
+        return Opaque.variableUInt((new Random().nextInt(0xFFFFF)));
     }
 }

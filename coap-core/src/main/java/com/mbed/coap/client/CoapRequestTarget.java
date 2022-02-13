@@ -20,9 +20,9 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.TransportContext;
 import java.util.concurrent.CompletableFuture;
 
@@ -50,11 +50,11 @@ public class CoapRequestTarget {
      * @param contentFormat content-format
      * @return this instance
      */
-    public CoapRequestTarget payload(byte[] payload, short contentFormat) {
+    public CoapRequestTarget payload(Opaque payload, short contentFormat) {
         return payload(payload, (int) contentFormat);
     }
 
-    public CoapRequestTarget payload(byte[] payload, int contentFormat) {
+    public CoapRequestTarget payload(Opaque payload, int contentFormat) {
         requestPacket.setPayload(payload);
         requestPacket.headers().setContentFormat((short) contentFormat);
         return this;
@@ -71,12 +71,12 @@ public class CoapRequestTarget {
         return this;
     }
 
-    public CoapRequestTarget payload(byte[] payload) {
+    public CoapRequestTarget payload(Opaque payload) {
         requestPacket.setPayload(payload);
         return this;
     }
 
-    public CoapRequestTarget token(byte[] token) {
+    public CoapRequestTarget token(Opaque token) {
         requestPacket.setToken(token);
         return this;
     }
@@ -87,7 +87,7 @@ public class CoapRequestTarget {
     }
 
     public CoapRequestTarget token(long token) {
-        requestPacket.setToken(DataConvertingUtility.convertVariableUInt(token));
+        requestPacket.setToken(Opaque.variableUInt(token));
         return this;
     }
 
@@ -116,13 +116,13 @@ public class CoapRequestTarget {
         return this;
     }
 
-    public CoapRequestTarget etag(byte[] etag) {
+    public CoapRequestTarget etag(Opaque etag) {
         requestPacket.headers().setEtag(etag);
         return this;
     }
 
-    public CoapRequestTarget ifMatch(byte[] etag) {
-        requestPacket.headers().setIfMatch(new byte[][]{etag});
+    public CoapRequestTarget ifMatch(Opaque etag) {
+        requestPacket.headers().setIfMatch(new Opaque[]{etag});
         return this;
     }
 
@@ -150,7 +150,7 @@ public class CoapRequestTarget {
         return this;
     }
 
-    public CoapRequestTarget header(int num, byte[] data) {
+    public CoapRequestTarget header(int num, Opaque data) {
         requestPacket.headers().put(num, data);
         return this;
     }

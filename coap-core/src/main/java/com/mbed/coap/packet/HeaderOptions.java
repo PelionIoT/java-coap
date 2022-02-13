@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +16,8 @@
  */
 package com.mbed.coap.packet;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Implements CoAP additional header options from
@@ -38,14 +39,14 @@ public class HeaderOptions extends BasicHeaderOptions {
     private BlockOption block1Req;
     private BlockOption block2Res;
     private Integer size2Res;
-    private byte[] signallingOption2;
-    private byte[] signallingOption4;
+    private Opaque signallingOption2;
+    private Opaque signallingOption4;
 
     @Override
-    public boolean parseOption(int type, byte[] data, Code code) {
+    public boolean parseOption(int type, Opaque data, Code code) {
         switch (type) {
             case OBSERVE:
-                setObserve(DataConvertingUtility.readVariableULong(data).intValue());
+                setObserve(data.toInt());
                 break;
             case BLOCK_2_RES:
                 setBlock2Res(new BlockOption(data));
@@ -54,7 +55,7 @@ public class HeaderOptions extends BasicHeaderOptions {
                 setBlock1Req(new BlockOption(data));
                 break;
             case SIZE_2_RES:
-                setSize2Res(DataConvertingUtility.readVariableULong(data).intValue());
+                setSize2Res(data.toInt());
                 break;
             case SIGN_OPTION_2:
                 signallingOption2 = data;
@@ -85,10 +86,10 @@ public class HeaderOptions extends BasicHeaderOptions {
             }
         }
         if (block1Req != null) {
-            l.add(new RawOption(BLOCK_1_REQ, new byte[][]{getBlock1Req().toBytes()}));
+            l.add(new RawOption(BLOCK_1_REQ, new Opaque[]{getBlock1Req().toBytes()}));
         }
         if (block2Res != null) {
-            l.add(new RawOption(BLOCK_2_RES, new byte[][]{getBlock2Res().toBytes()}));
+            l.add(new RawOption(BLOCK_2_RES, new Opaque[]{getBlock2Res().toBytes()}));
         }
         if (size2Res != null) {
             l.add(RawOption.fromUint(SIZE_2_RES, size2Res.longValue()));
@@ -227,10 +228,10 @@ public class HeaderOptions extends BasicHeaderOptions {
         if (size2Res != null ? !size2Res.equals(that.size2Res) : that.size2Res != null) {
             return false;
         }
-        if (!Arrays.equals(signallingOption2, that.signallingOption2)) {
+        if (!Objects.equals(signallingOption2, that.signallingOption2)) {
             return false;
         }
-        return Arrays.equals(signallingOption4, that.signallingOption4);
+        return Objects.equals(signallingOption4, that.signallingOption4);
     }
 
     @Override
@@ -240,8 +241,8 @@ public class HeaderOptions extends BasicHeaderOptions {
         result = 31 * result + (block1Req != null ? block1Req.hashCode() : 0);
         result = 31 * result + (block2Res != null ? block2Res.hashCode() : 0);
         result = 31 * result + (size2Res != null ? size2Res.hashCode() : 0);
-        result = 31 * result + Arrays.hashCode(signallingOption2);
-        result = 31 * result + Arrays.hashCode(signallingOption4);
+        result = 31 * result + Objects.hashCode(signallingOption2);
+        result = 31 * result + Objects.hashCode(signallingOption4);
         return result;
     }
 }

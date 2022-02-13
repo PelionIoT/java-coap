@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +17,12 @@
 package com.mbed.coap.packet;
 
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.utils.HexArray;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -32,19 +30,18 @@ import java.util.Objects;
  *
  * @author szymon
  */
-public class CoapPacket implements Serializable {
+public class CoapPacket {
 
     static final int PAYLOAD_MARKER = 0xFF;
-    public static final byte[] DEFAULT_TOKEN = new byte[]{};
     private byte version = 1;
     private MessageType messageType = MessageType.Confirmable;
     private int messageId;
     private Code code;
     private Method method;
-    private byte[] payload = new byte[0];
+    private Opaque payload = Opaque.EMPTY;
     private final InetSocketAddress remoteAddress;
     private HeaderOptions options = new HeaderOptions();
-    private byte[] token = DEFAULT_TOKEN; //opaque
+    private Opaque token = Opaque.EMPTY;
 
     /**
      * CoAP packet constructor.
@@ -180,8 +177,7 @@ public class CoapPacket implements Serializable {
             messageId = messageId | inputStream.read();
 
             //token
-            token = new byte[tokenLen];
-            inputStream.read(token);
+            token = Opaque.read(inputStream, tokenLen);
 
             //read headers
             options = new HeaderOptions();
@@ -190,8 +186,7 @@ public class CoapPacket implements Serializable {
             //read payload
             if (hasPayloadMarker) {
                 int plLen = inputStream.available();
-                this.payload = new byte[plLen];
-                inputStream.read(payload);
+                this.payload = Opaque.read(inputStream, plLen);
             }
 
         } catch (IOException | IllegalArgumentException ex) {
@@ -333,7 +328,7 @@ public class CoapPacket implements Serializable {
      *
      * @return payload
      */
-    public byte[] getPayload() {
+    public Opaque getPayload() {
         return payload;
     }
 
@@ -343,8 +338,8 @@ public class CoapPacket implements Serializable {
      * @return payload as String or null if payload is empty
      */
     public String getPayloadString() {
-        if (payload.length > 0) {
-            return DataConvertingUtility.decodeToString(payload);
+        if (payload.nonEmpty()) {
+            return payload.toUtf8String();
         }
         return null;
     }
@@ -355,7 +350,7 @@ public class CoapPacket implements Serializable {
      * @param payload payload
      */
     public void setPayload(String payload) {
-        setPayload(DataConvertingUtility.encodeString(payload));
+        setPayload(Opaque.of(payload));
     }
 
     /**
@@ -363,22 +358,20 @@ public class CoapPacket implements Serializable {
      *
      * @param payload payload
      */
-    public void setPayload(byte[] payload) {
+    public void setPayload(Opaque payload) {
+        Objects.requireNonNull(payload);
         this.payload = payload;
     }
 
-    public void setToken(byte[] token) {
-        if (token != null && token.length > 8) {
+    public void setToken(Opaque token) {
+        Objects.requireNonNull(token);
+        if (token.size() > 8) {
             throw new IllegalArgumentException("Wrong TOKEN value, size should be within range 0-8");
         }
-        if (token == null || token.length == 0) {
-            this.token = DEFAULT_TOKEN;
-        } else {
-            this.token = token;
-        }
+        this.token = token;
     }
 
-    public byte[] getToken() {
+    public Opaque getToken() {
         return token;
     }
 
@@ -394,7 +387,7 @@ public class CoapPacket implements Serializable {
 
             tempByte = (0x3 & version) << 6;            //Version
             tempByte |= (0x3 & messageType.ordinal()) << 4;  //Transaction Message Type
-            tempByte |= token.length & 0xF;                  //Token length
+            tempByte |= token.size() & 0xF;                  //Token length
 
             outputStream.write(tempByte);
             writeCode(outputStream, this);
@@ -403,15 +396,15 @@ public class CoapPacket implements Serializable {
             outputStream.write(0xFF & messageId);
 
             //token
-            outputStream.write(token);
+            token.writeTo(outputStream);
 
             // options
             options.serialize(outputStream);
 
             //payload
-            if (payload != null && payload.length > 0) {
+            if (payload.nonEmpty()) {
                 outputStream.write(PAYLOAD_MARKER);
-                outputStream.write(payload);
+                payload.writeTo(outputStream);
             }
         } catch (IOException exception) {
             throw new IllegalStateException(exception.getMessage(), exception);
@@ -509,8 +502,8 @@ public class CoapPacket implements Serializable {
 
         sb.append(" MID:").append(this.messageId);
 
-        if (this.token.length > 0) {
-            sb.append(" Token:0x").append(HexArray.toHex(this.token));
+        if (this.token.nonEmpty()) {
+            sb.append(" Token:0x").append(this.token);
         }
 
         options.toString(sb, code);
@@ -522,9 +515,9 @@ public class CoapPacket implements Serializable {
 
     @SuppressWarnings("PMD.AvoidDuplicateLiterals")
     private void payloadToString(boolean printFullPayload, boolean printPayloadOnlyAsHex, boolean doNotPrintPayload, StringBuilder sb) {
-        if (payload != null && payload.length > 0) {
+        if (payload.nonEmpty()) {
             if (doNotPrintPayload) {
-                sb.append(" pl(").append(payload.length).append(')');
+                sb.append(" pl(").append(payload.size()).append(')');
             } else {
                 payloadToString(printFullPayload, sb, printPayloadOnlyAsHex);
             }
@@ -537,13 +530,13 @@ public class CoapPacket implements Serializable {
             if (decodedPayload.length() < 46 || printFullPayload) {
                 sb.append(" pl:'").append(decodedPayload).append('\'');
             } else {
-                sb.append(" pl(").append(payload.length).append("):'").append(decodedPayload.substring(0, 44)).append("..'");
+                sb.append(" pl(").append(payload.size()).append("):'").append(decodedPayload.substring(0, 44)).append("..'");
             }
         } else {
             if (!printFullPayload) {
-                sb.append(" pl(").append(payload.length).append("):0x").append(HexArray.toHexShort(payload, 22));
+                sb.append(" pl(").append(payload.size()).append("):0x").append(payload.toHex(22));
             } else {
-                sb.append(" pl(").append(payload.length).append("):0x").append(HexArray.toHex(payload));
+                sb.append(" pl(").append(payload.size()).append("):0x").append(payload.toHex());
             }
         }
     }
@@ -567,10 +560,10 @@ public class CoapPacket implements Serializable {
         hash = 41 * hash + this.messageId;
         hash = 41 * hash + Objects.hashCode(this.code);
         hash = 41 * hash + Objects.hashCode(this.method);
-        hash = 41 * hash + Arrays.hashCode(this.payload);
+        hash = 41 * hash + Objects.hashCode(this.payload);
         hash = 41 * hash + Objects.hashCode(this.remoteAddress);
         hash = 41 * hash + Objects.hashCode(this.options);
-        hash = 41 * hash + Arrays.hashCode(this.token);
+        hash = 41 * hash + Objects.hashCode(this.token);
         return hash;
     }
 
@@ -598,7 +591,7 @@ public class CoapPacket implements Serializable {
         if (this.method != other.method) {
             return false;
         }
-        if (!Arrays.equals(this.payload, other.payload)) {
+        if (!Objects.equals(this.payload, other.payload)) {
             return false;
         }
         if (!Objects.equals(this.remoteAddress, other.remoteAddress)) {
@@ -607,7 +600,7 @@ public class CoapPacket implements Serializable {
         if (!Objects.equals(this.options, other.options)) {
             return false;
         }
-        if (!Arrays.equals(this.token, other.token)) {
+        if (!Objects.equals(this.token, other.token)) {
             return false;
         }
         return true;

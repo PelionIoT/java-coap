@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,7 @@
  */
 package com.mbed.coap.server;
 
-import com.mbed.coap.packet.DataConvertingUtility;
+import com.mbed.coap.packet.Opaque;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -35,7 +36,7 @@ public class SimpleObservationIDGenerator implements ObservationIDGenerator {
     }
 
     @Override
-    public synchronized byte[] nextObservationID(String uri) {
-        return DataConvertingUtility.convertVariableUInt(token.incrementAndGet());
+    public synchronized Opaque nextObservationID(String uri) {
+        return Opaque.variableUInt(token.incrementAndGet());
     }
 }

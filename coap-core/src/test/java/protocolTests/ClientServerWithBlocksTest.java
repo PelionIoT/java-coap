@@ -27,10 +27,10 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
@@ -42,7 +42,6 @@ import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -173,8 +172,8 @@ public class ClientServerWithBlocksTest {
             @Override
             public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
                 //emulate network that cuts data it larger that 40 bytes
-                if (coapPacket.getPayload().length > 40) {
-                    coapPacket.setPayload(Arrays.copyOf(coapPacket.getPayload(), 40));
+                if (coapPacket.getPayload().size() > 40) {
+                    coapPacket.setPayload(coapPacket.getPayload().slice(0, 40));
                 }
                 super.sendPacket0(coapPacket, adr, tranContext);
             }
@@ -260,7 +259,7 @@ public class ClientServerWithBlocksTest {
         System.out.println(resp.getPayloadString());
 
         assertEquals(Code.C204_CHANGED, resp.getCode());
-        assertEquals(body.length(), resp.getPayload().length);
+        assertEquals(body.length(), resp.getPayload().size());
         assertEquals(body, resp.getPayloadString());
         client.close();
     }
@@ -272,7 +271,7 @@ public class ClientServerWithBlocksTest {
         @Override
         public void get(CoapExchange exchange) throws CoapCodeException {
             exchange.setResponseBody(dynamicResource);
-            exchange.getResponseHeaders().setEtag(DataConvertingUtility.intToByteArray(dynamicResource.hashCode()));
+            exchange.getResponseHeaders().setEtag(Opaque.variableUInt(dynamicResource.hashCode()));
             exchange.setResponseCode(Code.C205_CONTENT);
 
             if (!changed) {
@@ -292,7 +291,7 @@ public class ClientServerWithBlocksTest {
         public void get(CoapExchange exchange) throws CoapCodeException {
             dynRes += " C";
             exchange.setResponseBody(dynRes);
-            exchange.getResponseHeaders().setEtag(DataConvertingUtility.intToByteArray(dynRes.hashCode()));
+            exchange.getResponseHeaders().setEtag(Opaque.variableUInt(dynRes.hashCode()));
             exchange.setResponseCode(Code.C205_CONTENT);
             exchange.sendResponse();
         }
@@ -315,7 +314,7 @@ public class ClientServerWithBlocksTest {
 
         @Override
         public void get(CoapExchange exchange) throws CoapCodeException {
-            if (exchange.getRequestBody() != null && exchange.getRequestBody().length > 0) {
+            if (exchange.getRequestBody() != null && exchange.getRequestBody().size() > 0) {
                 //body = exchange.getRequestBody()
                 exchange.setResponseBody(exchange.getRequestBody());
             } else {

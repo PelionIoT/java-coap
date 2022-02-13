@@ -18,6 +18,7 @@ package com.mbed.coap.client;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import java.io.Closeable;
 import java.net.InetSocketAddress;
@@ -74,7 +75,7 @@ public class CoapClient implements Closeable {
         return destination;
     }
 
-    void putObservationListener(ObservationListener observationListener, byte[] token, String uriPath) {
+    void putObservationListener(ObservationListener observationListener, Opaque token, String uriPath) {
         if (observationHandler == null) {
             observationHandler = new ObservationHandlerImpl();
             coapServer.setObservationHandler(observationHandler);

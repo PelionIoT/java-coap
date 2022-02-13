@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +23,7 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.Opaque;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import org.slf4j.Logger;
@@ -62,7 +64,7 @@ class BlockWiseIncomingTransaction {
         try {
             // Don't append in case of resends.
             if (payload.size() == assumedCollectedPayloadSize) {
-                payload.write(request.getPayload());
+                request.getPayload().writeTo(payload);
             }
         } catch (IOException e) {
             // should never happen
@@ -70,12 +72,12 @@ class BlockWiseIncomingTransaction {
         }
     }
 
-    byte[] getCombinedPayload() {
-        return payload.toByteArray();
+    Opaque getCombinedPayload() {
+        return Opaque.of(payload.toByteArray());
     }
 
     private void validateAlreadyReceivedPayloadSize(CoapPacket request) throws CoapRequestEntityTooLarge {
-        int requestPayloadLength = request.getPayload().length;
+        int requestPayloadLength = request.getPayload().size();
 
         if (isTooBigPayloadSize(requestPayloadLength + payload.size())) {
             LOGGER.warn("Assembled block-transfer payload is too large: " + request.toString());
@@ -100,7 +102,7 @@ class BlockWiseIncomingTransaction {
 
         if (!BlockWiseTransfer.isBlockPacketValid(request, reqBlock)) {
             LOGGER.warn("Intermediate block size does not match payload size {}", request);
-            if (request.getPayload().length > 0 && request.getPayload().length < reqBlock.getSize() && !reqBlock.isBert()) {
+            if (request.getPayload().size() > 0 && request.getPayload().size() < reqBlock.getSize() && !reqBlock.isBert()) {
                 throw new CoapRequestEntityTooLarge(new BlockOption(0, agreedBlockSize, true), "");
             }
             throw new CoapCodeException(Code.C400_BAD_REQUEST, "block size mismatch");
