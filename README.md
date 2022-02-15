@@ -33,11 +33,11 @@ Requirements
 
 ### Runtime:
 
-* JRE 8 or 11
+* JRE 8, 11, 17
 
 ### Development:
 
-* JDK 8 or 11
+* JDK 8
 * gradle
 
 Using the Library
