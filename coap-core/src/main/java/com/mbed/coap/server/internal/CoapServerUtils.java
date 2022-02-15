@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +16,6 @@
  */
 package com.mbed.coap.server.internal;
 
-import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.RequestCallback;
-
 /**
  * Created by olesmi01 on 14.08.2017.
  * Minor utilities for Protocol CoAP servers
@@ -30,33 +27,4 @@ public class CoapServerUtils {
         }
     }
 
-    static RequestCallback wrapCallback(Callback<CoapPacket> callback) {
-        if (callback == null) {
-            throw new NullPointerException();
-        }
-        if (callback instanceof RequestCallback) {
-            return ((RequestCallback) callback);
-        }
-
-        return new InternalRequestCallback(callback);
-    }
-
-    static class InternalRequestCallback implements RequestCallback {
-        private final Callback<CoapPacket> callback;
-
-        InternalRequestCallback(Callback<CoapPacket> callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        public void call(CoapPacket packet) {
-            callback.call(packet);
-        }
-
-        @Override
-        public void callException(Exception ex) {
-            callback.callException(ex);
-        }
-
-    }
 }

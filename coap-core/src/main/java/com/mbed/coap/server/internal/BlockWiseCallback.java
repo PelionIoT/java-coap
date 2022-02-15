@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +24,18 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.DataConvertingUtility;
-import com.mbed.coap.utils.RequestCallback;
+import com.mbed.coap.utils.Callback;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-class BlockWiseCallback implements RequestCallback {
+class BlockWiseCallback implements Callback<CoapPacket> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BlockWiseCallback.class);
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;
 
-    private final RequestCallback reqCallback;
+    private final Callback<CoapPacket> reqCallback;
     private CoapPacket response;
     final CoapPacket request;
     private final byte[] requestPayload;
@@ -42,7 +46,7 @@ class BlockWiseCallback implements RequestCallback {
     private final Consumer<BlockWiseCallback> makeRequestFunc;
 
 
-    BlockWiseCallback(Consumer<BlockWiseCallback> makeRequestFunc, CoapTcpCSM csm, CoapPacket request, RequestCallback reqCallback, int maxIncomingBlockTransferSize) throws CoapException {
+    BlockWiseCallback(Consumer<BlockWiseCallback> makeRequestFunc, CoapTcpCSM csm, CoapPacket request, Callback<CoapPacket> reqCallback, int maxIncomingBlockTransferSize) throws CoapException {
         this.reqCallback = reqCallback;
         this.request = request;
         this.requestPayload = request.getPayload();

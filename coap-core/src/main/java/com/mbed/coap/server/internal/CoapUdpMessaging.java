@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +17,6 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
-
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.CoapPacket;
@@ -31,7 +31,6 @@ import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
@@ -250,13 +249,12 @@ public class CoapUdpMessaging extends CoapMessaging {
         if (packet == null || packet.getRemoteAddress() == null) {
             throw new NullPointerException();
         }
-        RequestCallback requestCallback = wrapCallback(coapCallback);
 
         //assign new MID
         packet.setMessageId(getNextMID());
 
         if (packet.getMustAcknowledge()) {
-            CoapTransaction trans = new CoapTransaction(requestCallback, packet, this, transContext, transactionPriority, this::removeCoapTransId);
+            CoapTransaction trans = new CoapTransaction(coapCallback, packet, this, transContext, transactionPriority, this::removeCoapTransId);
             try {
                 if (transMgr.addTransactionAndGetReadyToSend(trans, forceAddToQueue)) {
                     LOGGER.trace("Sending transaction: {}", trans);
@@ -270,12 +268,12 @@ public class CoapUdpMessaging extends CoapMessaging {
         } else {
             //send NON message without waiting for piggy-backed response
             DelayedTransactionId delayedTransactionId = new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress());
-            delayedTransMagr.add(delayedTransactionId, new CoapTransaction(requestCallback, packet, this, transContext, transactionPriority, this::removeCoapTransId));
+            delayedTransMagr.add(delayedTransactionId, new CoapTransaction(coapCallback, packet, this, transContext, transactionPriority, this::removeCoapTransId));
             this.send(packet, packet.getRemoteAddress(), transContext)
                     .whenComplete((wasSent, maybeError) -> {
                         if (maybeError != null) {
                             delayedTransMagr.remove(delayedTransactionId);
-                            requestCallback.callException(((Exception) maybeError));
+                            coapCallback.callException(((Exception) maybeError));
                         }
                     });
             if (packet.getToken().length == 0) {

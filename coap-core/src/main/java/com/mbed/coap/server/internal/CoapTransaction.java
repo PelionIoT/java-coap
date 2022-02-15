@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +19,6 @@ package com.mbed.coap.server.internal;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.RequestCallback;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 public class CoapTransaction {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapTransaction.class.getName());
 
-    protected RequestCallback callback;
+    protected Callback<CoapPacket> callback;
     private long timeout = -1;
     protected byte retrAttempts;
     protected CoapPacket coapRequest;
@@ -41,11 +41,11 @@ public class CoapTransaction {
     private final Consumer<CoapTransactionId> sendErrConsumer;
     private boolean isActive;
 
-    public CoapTransaction(RequestCallback callback, CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Consumer<CoapTransactionId> sendErrConsumer) {
+    public CoapTransaction(Callback<CoapPacket> callback, CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Consumer<CoapTransactionId> sendErrConsumer) {
         this(callback, coapRequest, coapServer, transContext, Priority.NORMAL, sendErrConsumer);
     }
 
-    public CoapTransaction(RequestCallback callback, CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Priority transactionPriority, Consumer<CoapTransactionId> sendErrConsumer) {
+    public CoapTransaction(Callback<CoapPacket> callback, CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Priority transactionPriority, Consumer<CoapTransactionId> sendErrConsumer) {
         if (callback == null) {
             throw new NullPointerException();
         }

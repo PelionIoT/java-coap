@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +25,6 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
-
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapRequestEntityTooLarge;
@@ -38,7 +38,6 @@ import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
-import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -214,7 +213,7 @@ public class CoapServerTest {
     @Test
     public void shouldRespondToObservationRequest() {
         CoapPacket resp = newCoapPacket().ack(Code.C205_CONTENT).obs(0).build();
-        RequestCallback respCallback = mock(RequestCallback.class);
+        Callback<CoapPacket> respCallback = mock(Callback.class);
         server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
 
         verifyMakeRequest_andThen().call(resp);
@@ -308,8 +307,8 @@ public class CoapServerTest {
         return observationHandler;
     }
 
-    private RequestCallback verifyMakeRequest_andThen() {
-        ArgumentCaptor<RequestCallback> callback = ArgumentCaptor.forClass(RequestCallback.class);
+    private Callback<CoapPacket> verifyMakeRequest_andThen() {
+        ArgumentCaptor<Callback<CoapPacket>> callback = ArgumentCaptor.forClass(Callback.class);
         verify(msg).makeRequest(any(), callback.capture(), any());
         return callback.getValue();
     }

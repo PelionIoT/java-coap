@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +17,6 @@
 package com.mbed.coap.server;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
-
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
@@ -37,7 +37,6 @@ import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.FutureCallbackAdapter;
-import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -452,7 +451,7 @@ public class CoapServer {
         if (request.getToken() == CoapPacket.DEFAULT_TOKEN) {
             request.setToken(observationIDGenerator.nextObservationID(request.headers().getUriPath()));
         }
-        makeRequest(request, new RequestCallback() {
+        makeRequest(request, new Callback<CoapPacket>() {
 
             @Override
             public void callException(Exception ex) {

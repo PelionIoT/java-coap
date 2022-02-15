@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +21,12 @@ import static com.mbed.coap.packet.Code.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
-
 import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
-import com.mbed.coap.utils.RequestCallback;
+import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.utils.Callback;
 import java.io.IOException;
 import java.util.function.Consumer;
 import org.junit.Test;
@@ -34,7 +35,7 @@ import protocolTests.utils.CoapPacketBuilder;
 public class BlockWiseCallbackTest {
 
     private final Consumer<BlockWiseCallback> makeRequestFunc = mock(Consumer.class);
-    private final RequestCallback callback = mock(RequestCallback.class);
+    private final Callback<CoapPacket> callback = mock(Callback.class);
     private BlockWiseCallback bwc;
 
     @Test

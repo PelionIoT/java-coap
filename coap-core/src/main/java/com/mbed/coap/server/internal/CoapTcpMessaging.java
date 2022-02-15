@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +16,6 @@
  */
 package com.mbed.coap.server.internal;
 
-import static com.mbed.coap.server.internal.CoapServerUtils.*;
-
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
@@ -26,7 +25,6 @@ import com.mbed.coap.server.CoapTcpCSMStorage;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Set;
@@ -41,7 +39,7 @@ import org.slf4j.LoggerFactory;
 public class CoapTcpMessaging extends CoapMessaging {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapTcpMessaging.class);
 
-    private final ConcurrentMap<DelayedTransactionId, RequestCallback> transactions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<DelayedTransactionId, Callback<CoapPacket>> transactions = new ConcurrentHashMap<>();
     private final CoapTcpCSMStorage csmStorage;
     private final CoapTcpCSM ownCapability;
 
@@ -113,10 +111,8 @@ public class CoapTcpMessaging extends CoapMessaging {
             return;
         }
 
-        RequestCallback requestCallback = wrapCallback(callback);
-
         DelayedTransactionId transId = new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress());
-        transactions.put(transId, requestCallback);
+        transactions.put(transId, callback);
 
 
         sendPacket(packet, packet.getRemoteAddress(), transContext)
@@ -140,7 +136,7 @@ public class CoapTcpMessaging extends CoapMessaging {
     @Override
     protected boolean handleResponse(CoapPacket packet) {
         DelayedTransactionId transId = new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress());
-        RequestCallback callback = transactions.remove(transId);
+        Callback<CoapPacket> callback = transactions.remove(transId);
 
         if (callback != null) {
             callback.call(packet);
@@ -180,7 +176,7 @@ public class CoapTcpMessaging extends CoapMessaging {
     }
 
     private void removeTransactionExceptionally(DelayedTransactionId transId, Exception error) {
-        RequestCallback requestCallback = transactions.remove(transId);
+        Callback<CoapPacket> requestCallback = transactions.remove(transId);
         if (requestCallback != null) {
             requestCallback.callException(error);
         }

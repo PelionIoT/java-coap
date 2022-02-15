@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +19,7 @@ package com.mbed.coap.server.internal;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
-
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.exception.TooManyRequestsForEndpointException;
@@ -37,7 +36,6 @@ import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.FutureCallbackAdapter;
-import com.mbed.coap.utils.RequestCallback;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -327,7 +325,7 @@ public class CoapUdpMessagingTest {
     public void network_fail_when_sending_NON_request() throws Exception {
         initServer();
 
-        RequestCallback callback = mock(RequestCallback.class);
+        Callback<CoapPacket> callback = mock(Callback.class);
         given(coapTransport.sendPacket(any(), any(), any())).willReturn(exceptionFuture());
 
         udpMessaging.makeRequest(newCoapPacket(LOCAL_1_5683).non().token(12).get().uriPath("/test").build(), callback, TransportContext.NULL);
