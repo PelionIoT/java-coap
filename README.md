@@ -1,6 +1,7 @@
 CoAP's library for JVM
 ======================
 
+[![GitHub version](https://badge.fury.io/gh/open-coap%2Fjava-coap.svg)](https://badge.fury.io/gh/open-coap%2Fjava-coap)
 [![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)](LICENSE)
 ![Status:Production](https://img.shields.io/badge/Project%20status-Production-brightgreen.svg)
 [![codecov](https://codecov.io/gh/open-coap/java-coap/branch/master/graph/badge.svg?token=8XE69RTQIZ)](https://codecov.io/gh/open-coap/java-coap)
