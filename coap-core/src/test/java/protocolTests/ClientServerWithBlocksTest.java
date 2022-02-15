@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@
 package protocolTests;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapBlockException;
@@ -43,9 +44,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author szymon
@@ -60,7 +61,7 @@ public class ClientServerWithBlocksTest {
 
     CoapServer server = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
 
         server = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683)).blockSize(BlockSize.S_32).maxMessageSize(64).build();
@@ -74,7 +75,7 @@ public class ClientServerWithBlocksTest {
         server.start();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         server.stop();
     }
@@ -156,7 +157,7 @@ public class ClientServerWithBlocksTest {
 
         CoapPacket resp = client.resource("/chang-res").payload(body, MediaTypes.CT_TEXT_PLAIN).sync().put();
 
-        assertEquals(resp.getPayloadString(), Code.C204_CHANGED, resp.getCode());
+        assertEquals(Code.C204_CHANGED, resp.getCode(), resp.getPayloadString());
         assertEquals(32, resp.headers().getBlock1Req().getSize());
         assertEquals(body.length(), changeableBigResource.body.length());
         assertEquals(body, changeableBigResource.body);
@@ -183,7 +184,7 @@ public class ClientServerWithBlocksTest {
 
         CoapPacket resp = client.resource("/chang-res").payload(BIG_RESOURCE).sync().put();
 
-        assertEquals(resp.getPayloadString(), Code.C204_CHANGED, resp.getCode());
+        assertEquals(Code.C204_CHANGED, resp.getCode(), resp.getPayloadString());
         assertEquals(32, resp.headers().getBlock1Req().getSize());
     }
 
@@ -232,7 +233,7 @@ public class ClientServerWithBlocksTest {
         request.headers().setBlock1Req(new BlockOption(1, BlockSize.S_128, true));
         CoapPacket resp = cnn.makeRequest(request).join();
 
-        assertEquals(resp.getPayloadString(), Code.C408_REQUEST_ENTITY_INCOMPLETE, resp.getCode());
+        assertEquals(Code.C408_REQUEST_ENTITY_INCOMPLETE, resp.getCode(), resp.getPayloadString());
         assertTrue(resp.getPayloadString().startsWith("no prev blocks"));
         assertFalse(changeableBigResource.body.equals(body));
     }

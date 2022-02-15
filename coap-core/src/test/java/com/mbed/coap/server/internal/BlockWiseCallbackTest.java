@@ -18,7 +18,7 @@ package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.packet.BlockSize.*;
 import static com.mbed.coap.packet.Code.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapBlockException;
@@ -29,7 +29,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.utils.Callback;
 import java.io.IOException;
 import java.util.function.Consumer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import protocolTests.utils.CoapPacketBuilder;
 
 public class BlockWiseCallbackTest {
@@ -322,10 +322,12 @@ public class BlockWiseCallbackTest {
 
     }
 
-    @Test(expected = CoapException.class)
+    @Test
     public void should_fail_when_too_large_payload() throws CoapException {
-        new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(2000, false),
-                coap().payload(new byte[2010]).put().build(), callback, 10_000);
+        assertThrows(CoapException.class, () ->
+                new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(2000, false),
+                        coap().payload(new byte[2010]).put().build(), callback, 10_000)
+        );
     }
 
     private CoapPacketBuilder coap() {

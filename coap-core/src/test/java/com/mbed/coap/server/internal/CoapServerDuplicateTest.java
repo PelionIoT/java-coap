@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.CoapServerBuilder.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
@@ -36,9 +37,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author szymon
@@ -50,7 +51,7 @@ public class CoapServerDuplicateTest {
     final AtomicInteger duplicated = new AtomicInteger(0);
     MockCoapTransport serverTransport;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         duplicated.set(0);
         serverTransport = new MockCoapTransport();
@@ -89,7 +90,7 @@ public class CoapServerDuplicateTest {
         server.start();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         server.stop();
     }
@@ -110,9 +111,9 @@ public class CoapServerDuplicateTest {
 
         assertEquals("dupa", resp2.getPayloadString());
         assertTrue(duplicated.get() == 1);
-        assertEquals("MsgID should be same", resp1.getMessageId(), resp2.getMessageId());
+        assertEquals(resp1.getMessageId(), resp2.getMessageId(), "MsgID should be same");
         assertEquals(resp1, resp2);
-        assertEquals("MsgID should be equal to request MID", resp1.getMessageId(), req.getMessageId());
+        assertEquals(resp1.getMessageId(), req.getMessageId(), "MsgID should be equal to request MID");
     }
 
     @Test()
@@ -127,7 +128,7 @@ public class CoapServerDuplicateTest {
 
             serverTransport.receive(req);
             resp1 = serverTransport.sentPackets.poll(10, TimeUnit.SECONDS);
-            assertNotEquals("response message ID for NON response should not be 0 more than once", resp1.getMessageId(), 0);
+            assertNotEquals(resp1.getMessageId(), 0, "response message ID for NON response should not be 0 more than once");
         }
         //        System.out.println(resp1);
         assertEquals("dupa2", resp1.getPayloadString());
@@ -138,10 +139,10 @@ public class CoapServerDuplicateTest {
 
         assertEquals("dupa2", resp2.getPayloadString());
         assertTrue(duplicated.get() == 1);
-        assertEquals("MsgID should be same", resp1.getMessageId(), resp2.getMessageId());
+        assertEquals(resp1.getMessageId(), resp2.getMessageId(), "MsgID should be same");
         assertEquals(resp1, resp2);
         // can fail with probability 1/0xFFFF
-        assertNotEquals("Request and response MID should be different", resp1.getMessageId(), req.getMessageId());
+        assertNotEquals(resp1.getMessageId(), req.getMessageId(), "Request and response MID should be different");
     }
 
     @Test
@@ -196,7 +197,7 @@ public class CoapServerDuplicateTest {
         resp = serverTransport.sentPackets.poll(10, TimeUnit.SECONDS);
         assertEquals("dupa3", resp.getPayloadString());
         //assertNull(coapServer.verifyPUT("/test"));
-        assertTrue("unexpected messages", serverTransport.sentPackets.isEmpty());
+        assertTrue(serverTransport.sentPackets.isEmpty(), "unexpected messages");
         assertTrue(duplicated.get() == 1);
     }
 
@@ -239,7 +240,7 @@ public class CoapServerDuplicateTest {
         serverTransport.receive(notif);
         resp = serverTransport.sentPackets.poll(10, TimeUnit.SECONDS);
         assertEquals(MessageType.Acknowledgement, resp.getMessageType());
-        assertFalse("received notification from retransmission", notificationArrived.get());
+        assertFalse(notificationArrived.get(), "received notification from retransmission");
         assertTrue(duplicated.get() == 1);
     }
 }

@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +16,9 @@
  */
 package com.mbed.lwm2m;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.Objects;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author nordav01
@@ -32,7 +33,7 @@ public class LWM2MIDTest {
         assertTrue(Objects.equals(new LWM2MID("alma"), new LWM2MID("alma")));
         assertFalse(Objects.equals(new LWM2MID("alma"), new LWM2MID("korte")));
     }
-    
+
     @Test
     public void testCompareTo() throws Exception {
         assertEquals(0, new LWM2MID(null).compareTo(new LWM2MID(null)));
@@ -41,17 +42,19 @@ public class LWM2MIDTest {
         assertEquals(-10, new LWM2MID("alma").compareTo(new LWM2MID("korte")));
         assertEquals(10, new LWM2MID("korte").compareTo(new LWM2MID("alma")));
     }
-    
-    @Test(expected=NullPointerException.class)
+
+    @Test
     public void testCompareToNull() throws Exception {
-        new LWM2MID(null).compareTo(null);
+        assertThrows(NullPointerException.class, () ->
+                new LWM2MID(null).compareTo(null)
+        );
     }
-    
+
     @Test
     public void testHashCode() throws Exception {
-        assertEquals (Objects.hashCode(-1), new LWM2MID(null).hashCode());
-        assertEquals (Objects.hashCode(42), new LWM2MID("42").hashCode());
-        assertEquals (Objects.hashCode(new LWM2MID("alma").intValue()), new LWM2MID("alma").hashCode());
+        assertEquals(Objects.hashCode(-1), new LWM2MID(null).hashCode());
+        assertEquals(Objects.hashCode(42), new LWM2MID("42").hashCode());
+        assertEquals(Objects.hashCode(new LWM2MID("alma").intValue()), new LWM2MID("alma").hashCode());
     }
 
 }

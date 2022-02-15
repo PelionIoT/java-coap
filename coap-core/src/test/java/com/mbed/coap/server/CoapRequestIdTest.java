@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +17,44 @@
 package com.mbed.coap.server;
 
 import java.net.InetSocketAddress;
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
-public class CoapRequestIdTest extends TestCase  {
+public class CoapRequestIdTest {
 
     CoapRequestId requestId = new CoapRequestId(5000, new InetSocketAddress("127.0.0.1", 20000));
     CoapRequestId requestId2 = new CoapRequestId(5000, new InetSocketAddress("127.0.0.1", 20000));
     CoapRequestId requestId3 = new CoapRequestId(5002, new InetSocketAddress("127.0.0.1", 20000));
     CoapRequestId requestId4 = new CoapRequestId(5000, new InetSocketAddress("192.168.0.1", 20000));
 
+    @Test
     public void testGetCreatedTimestampMillis() {
-        assert(Math.abs(System.currentTimeMillis() - requestId.getCreatedTimestampMillis()) < 1000);
+        assert (Math.abs(System.currentTimeMillis() - requestId.getCreatedTimestampMillis()) < 1000);
     }
 
+    @Test
     public void testGetMid() {
-        assert(requestId.getMid() == 5000);
+        assert (requestId.getMid() == 5000);
     }
 
+    @Test
     public void testGetSourceAddress() {
-        assert(requestId.getSourceAddress().equals(new InetSocketAddress("127.0.0.1", 20000)));
+        assert (requestId.getSourceAddress().equals(new InetSocketAddress("127.0.0.1", 20000)));
     }
 
+    @Test
     public void testTestEquals() {
-        assert(requestId.equals(requestId));
-        assert(requestId.equals(requestId2));
-        assert(!requestId.equals(requestId3));
-        assert(!requestId.equals(requestId4));
+        assert (requestId.equals(requestId));
+        assert (requestId.equals(requestId2));
+        assert (!requestId.equals(requestId3));
+        assert (!requestId.equals(requestId4));
     }
 
 
+    @Test
     public void testTestHashCode() {
-        assert(requestId.hashCode() == requestId.hashCode());
-        assert(requestId.hashCode() == requestId2.hashCode());
-        assert(requestId.hashCode() != requestId3.hashCode());
-        assert(requestId.hashCode() != requestId4.hashCode());
+        assert (requestId.hashCode() == requestId.hashCode());
+        assert (requestId.hashCode() == requestId2.hashCode());
+        assert (requestId.hashCode() != requestId3.hashCode());
+        assert (requestId.hashCode() != requestId4.hashCode());
     }
 }

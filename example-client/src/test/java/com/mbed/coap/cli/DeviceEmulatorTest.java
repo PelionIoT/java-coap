@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,7 @@
  */
 package com.mbed.coap.cli;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.cli.providers.PlainTextProvider;
@@ -30,9 +31,9 @@ import com.mbed.coap.utils.CoapResource;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.function.Consumer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
@@ -44,7 +45,7 @@ public class DeviceEmulatorTest {
     Consumer<String> registered = Mockito.mock(Consumer.class);
 
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         DatagramSocketTransport transport = new DatagramSocketTransport(0);
@@ -76,7 +77,7 @@ public class DeviceEmulatorTest {
         stubServer.start();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         stubServer.stop();
     }

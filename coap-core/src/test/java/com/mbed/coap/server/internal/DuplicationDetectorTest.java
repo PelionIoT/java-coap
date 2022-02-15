@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,7 @@
  */
 package com.mbed.coap.server.internal;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.CoapPacket;
@@ -24,7 +25,7 @@ import com.mbed.coap.server.CoapRequestId;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DuplicationDetectorTest {
 
@@ -51,8 +52,8 @@ public class DuplicationDetectorTest {
             Thread.sleep(detectionTimeoutMillis + cleanupInterval + 10);
             CoapPacket secondIsDuplicated = detector.isMessageRepeated(packet);
 
-            assertNull("insertion to empty duplicate check list fails", firstIsDuplicated);
-            assertNull("second insertion after timeout with same id fails", secondIsDuplicated);
+            assertNull(firstIsDuplicated, "insertion to empty duplicate check list fails");
+            assertNull(secondIsDuplicated, "second insertion after timeout with same id fails");
         } finally {
             cache.stop();
         }
@@ -81,8 +82,8 @@ public class DuplicationDetectorTest {
             Thread.sleep(cleanupInterval + 1);
             CoapPacket secondIsDuplicated = instance.isMessageRepeated(packet);
 
-            assertNull("insertion to empty duplicate check list fails", firstIsDuplicated);
-            assertNotNull("second insertion within timeout with same id succeeds", secondIsDuplicated);
+            assertNull(firstIsDuplicated, "insertion to empty duplicate check list fails");
+            assertNotNull(secondIsDuplicated, "second insertion within timeout with same id succeeds");
         } finally {
             cache.stop();
         }

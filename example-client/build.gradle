@@ -20,11 +20,16 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.2.7'
 
     testImplementation 'org.mockito:mockito-core:2.28.2'
-    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
 application {
     mainClassName = 'com.mbed.coap.cli.CoapCli'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 task(runDeviceEmulator, dependsOn: 'classes', type: JavaExec) {

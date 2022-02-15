@@ -1,6 +1,6 @@
-/**
+/*
  * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package protocolTests;
 
 import static org.awaitility.Awaitility.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.client.CoapClient;
@@ -40,9 +40,9 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author szymon
@@ -54,7 +54,7 @@ public class ObservationTest {
     private InetSocketAddress SERVER_ADDRESS;
     private SimpleObservableResource OBS_RESOURCE_1;
 
-    @Before
+    @BeforeEach
     public void setUpClass() throws Exception {
         server = CoapServerBuilder.newBuilder().transport(0)
                 .timeout(new SingleTimeout(500)).blockSize(BlockSize.S_128).build();
@@ -67,19 +67,18 @@ public class ObservationTest {
         SERVER_ADDRESS = new InetSocketAddress("127.0.0.1", server.getLocalSocketAddress().getPort());
     }
 
-    @After
+    @AfterEach
     public void tearDownClass() throws Exception {
         server.stop();
     }
 
-    @Test(expected = ObservationNotEstablishedException.class)
+    @Test
     public void observationAttemptOnNonObsResource() throws IOException, CoapException {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
-        try {
-            client.resource("/path1").sync().observe(null);
-        } finally {
-            client.close();
-        }
+        assertThrows(ObservationNotEstablishedException.class, () ->
+                client.resource("/path1").sync().observe(null)
+        );
+        client.close();
     }
 
     @Test
@@ -153,26 +152,30 @@ public class ObservationTest {
         assertEquals(MessageType.Confirmable, terminObserv.getMessageType());
         assertEquals(Code.C404_NOT_FOUND, terminObserv.getCode());
         assertTrue(terminObserv.headers().getObserve() >= 0);
-        assertEquals("Number of observation did not change", 0, OBS_RESOURCE_1.getObservationsAmount());
+        assertEquals(0, OBS_RESOURCE_1.getObservationsAmount(), "Number of observation did not change");
 
         client.close();
         System.out.println("-- END");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void terminateObservationByServerWithOkCode() throws Exception {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
 
-        OBS_RESOURCE_1.terminateObservations(Code.C204_CHANGED);
+        assertThrows(IllegalArgumentException.class, () ->
+                OBS_RESOURCE_1.terminateObservations(Code.C204_CHANGED)
+        );
 
         System.out.println("-- END");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void terminateObservationByServerWithoutErrorCode() throws Exception {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
 
-        OBS_RESOURCE_1.terminateObservations(null);
+        assertThrows(IllegalArgumentException.class, () ->
+                OBS_RESOURCE_1.terminateObservations(null)
+        );
 
         System.out.println("-- END");
     }
@@ -189,7 +192,7 @@ public class ObservationTest {
         OBS_RESOURCE_1.setBody("duupabb"); //make notification
 
         await().untilAsserted(() ->
-                assertEquals("Observation did not terminate", 0, OBS_RESOURCE_1.getObservationsAmount())
+                assertEquals(0, OBS_RESOURCE_1.getObservationsAmount(), "Observation did not terminate")
         );
         System.out.println("\n-- END");
     }
@@ -210,7 +213,7 @@ public class ObservationTest {
         client.resource(RES_OBS_PATH1).sync().get();
 
         await().untilAsserted(() ->
-                assertEquals("Observation terminated", 1, OBS_RESOURCE_1.getObservationsAmount())
+                assertEquals(1, OBS_RESOURCE_1.getObservationsAmount(), "Observation terminated")
         );
 
         client.close();
@@ -234,7 +237,7 @@ public class ObservationTest {
         OBS_RESOURCE_1.setBody("keho");
 
         await().untilAsserted(() ->
-                assertTrue("Observation not terminated", obsNum > OBS_RESOURCE_1.getObservationsAmount())
+                assertTrue(obsNum > OBS_RESOURCE_1.getObservationsAmount(), "Observation not terminated")
         );
 
         client.close();

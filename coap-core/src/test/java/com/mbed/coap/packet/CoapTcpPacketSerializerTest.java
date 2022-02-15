@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@
 package com.mbed.coap.packet;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.exception.CoapException;
@@ -30,7 +31,7 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import protocolTests.utils.CoapPacketBuilder;
 
@@ -105,29 +106,35 @@ public class CoapTcpPacketSerializerTest extends CoapPacketTestBase {
         assertSimplePacketSerializationAndDeserilization(token, payload);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void bothMethodAndCodeUsed() throws CoapException, IOException {
         CoapPacket cp = new CoapPacket(Method.DELETE, null, "", null);
         cp.setCode(Code.C202_DELETED);
 
-        CoapTcpPacketSerializer.serialize(cp);
+        assertThrows(IllegalStateException.class, () ->
+                CoapTcpPacketSerializer.serialize(cp)
+        );
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void inputStremException() throws CoapException, IOException {
         InputStream is = Mockito.mock(InputStream.class);
         when(is.read()).thenThrow(new IOException());
 
-        CoapTcpPacketSerializer.deserialize(null, is);
+        assertThrows(IOException.class, () ->
+                CoapTcpPacketSerializer.deserialize(null, is)
+        );
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void outputStremException() throws CoapException, IOException {
         OutputStream os = Mockito.mock(OutputStream.class);
         doThrow(new IOException()).when(os).write(any());
 
         CoapPacket cp = new CoapPacket(null, null, "", null);
-        CoapTcpPacketSerializer.writeTo(os, cp);
+        assertThrows(IOException.class, () ->
+                CoapTcpPacketSerializer.writeTo(os, cp)
+        );
     }
 
     @Test
@@ -204,13 +211,15 @@ public class CoapTcpPacketSerializerTest extends CoapPacketTestBase {
         assertTrue(cp2.isPresent());
     }
 
-    @Test(expected = EOFException.class)
+    @Test
     public void should_throw_if_not_enough_data_to_deserialize() throws CoapException, IOException {
         CoapPacket cp = CoapPacketBuilder.newCoapPacket().token(1234L).code(Code.C204_CHANGED).uriPath("/test").payload("some test payload").build();
 
         byte[] rawCp = CoapTcpPacketSerializer.serialize(cp);
 
-        CoapTcpPacketSerializer.deserialize(null, new ByteArrayInputStream(rawCp, 0, rawCp.length - 2));
+        assertThrows(EOFException.class, () ->
+                CoapTcpPacketSerializer.deserialize(null, new ByteArrayInputStream(rawCp, 0, rawCp.length - 2))
+        );
     }
 
 

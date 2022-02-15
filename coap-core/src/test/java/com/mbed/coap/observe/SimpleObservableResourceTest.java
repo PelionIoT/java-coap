@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,7 @@
  */
 package com.mbed.coap.observe;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.client.CoapClient;
@@ -32,9 +33,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Base64;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import protocolTests.ObservationTest;
 
 /**
@@ -46,7 +47,7 @@ public class SimpleObservableResourceTest {
     private CoapServer server;
     private CoapClient client;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         server = CoapServerBuilder.newBuilder().transport(new InMemoryCoapTransport(5683))
                 .timeout(new SingleTimeout(500)).build();
@@ -61,7 +62,7 @@ public class SimpleObservableResourceTest {
                 .timeout(1000).build();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         server.stop();
     }
@@ -138,14 +139,18 @@ public class SimpleObservableResourceTest {
         verify(delivListener, never()).onNoObservers();
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setBodyWithNull() throws CoapException {
-        obsResource.setBody("", null);
+        assertThrows(NullPointerException.class, () ->
+                obsResource.setBody("", null)
+        );
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setBodyInBase64WithNull() throws CoapException {
-        obsResource.setBody(new byte [0], null);
+        assertThrows(NullPointerException.class, () ->
+                obsResource.setBody(new byte[0], null)
+        );
     }
 
     @Test

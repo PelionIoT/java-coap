@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +16,9 @@
  */
 package com.mbed.lwm2m.tlv;
 
+import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.lwm2m.LWM2MID;
 import com.mbed.lwm2m.LWM2MObjectInstance;
 import com.mbed.lwm2m.LWM2MResource;
@@ -24,7 +26,7 @@ import com.mbed.lwm2m.LWM2MResourceInstance;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TLVSerializerTest {
 
@@ -33,13 +35,13 @@ public class TLVSerializerTest {
         LWM2MResource manufacturer = new LWM2MResource(LWM2MID.from(0), "ARM");
         byte[] manufacturerTLV = TLVSerializer.serialize(manufacturer);
 
-        assertThat(manufacturerTLV.length, equalTo(5) );
-        assertArrayEquals( new byte[] {
-                (byte) 0b11_0_00_011,
-                (byte) 0,
-                'A', 'R', 'M',
+        assertThat(manufacturerTLV.length, equalTo(5));
+        assertArrayEquals(new byte[]{
+                        (byte) 0b11_0_00_011,
+                        (byte) 0,
+                        'A', 'R', 'M',
                 },
-        manufacturerTLV);
+                manufacturerTLV);
     }
 
     @Test
@@ -47,12 +49,12 @@ public class TLVSerializerTest {
         LWM2MResource model = new LWM2MResource(LWM2MID.from(1), "nanoservice 2");
         byte[] modelTLV = TLVSerializer.serialize(model);
 
-        assertThat(modelTLV.length, equalTo(16) );
-        assertArrayEquals( new byte[] {
-                (byte) 0b11_0_01_000,
-                (byte) 1,
-                (byte) 13,
-                'n', 'a', 'n', 'o', 's', 'e', 'r', 'v', 'i', 'c', 'e', ' ', '2',
+        assertThat(modelTLV.length, equalTo(16));
+        assertArrayEquals(new byte[]{
+                        (byte) 0b11_0_01_000,
+                        (byte) 1,
+                        (byte) 13,
+                        'n', 'a', 'n', 'o', 's', 'e', 'r', 'v', 'i', 'c', 'e', ' ', '2',
                 },
                 modelTLV);
     }
@@ -63,12 +65,12 @@ public class TLVSerializerTest {
         LWM2MResource model = new LWM2MResource(LWM2MID.from(1), name);
         byte[] modelTLV = TLVSerializer.serialize(model);
 
-        assertThat(modelTLV.length, equalTo(260) );
-        assertArrayEquals( new byte[] {
-                (byte) 0b11_0_10_000,
-                (byte) 1,
-                (byte) 0x01,
-                (byte) 0x00,
+        assertThat(modelTLV.length, equalTo(260));
+        assertArrayEquals(new byte[]{
+                        (byte) 0b11_0_10_000,
+                        (byte) 1,
+                        (byte) 0x01,
+                        (byte) 0x00,
                 },
                 Arrays.copyOf(modelTLV, 4));
     }
@@ -79,13 +81,13 @@ public class TLVSerializerTest {
         LWM2MResource model = new LWM2MResource(LWM2MID.from(1), name);
         byte[] modelTLV = TLVSerializer.serialize(model);
 
-        assertThat(modelTLV.length, equalTo(65541) );
-        assertArrayEquals( new byte[] {
-                (byte) 0b11_0_11_000,
-                (byte) 1,
-                (byte) 0x01,
-                (byte) 0x00,
-                (byte) 0x00,
+        assertThat(modelTLV.length, equalTo(65541));
+        assertArrayEquals(new byte[]{
+                        (byte) 0b11_0_11_000,
+                        (byte) 1,
+                        (byte) 0x01,
+                        (byte) 0x00,
+                        (byte) 0x00,
                 },
                 Arrays.copyOf(modelTLV, 5));
     }
@@ -95,14 +97,14 @@ public class TLVSerializerTest {
         LWM2MResource manufacturer = new LWM2MResource(LWM2MID.from(256), "ARM");
         byte[] manufacturerTLV = TLVSerializer.serialize(manufacturer);
 
-        assertThat(manufacturerTLV.length, equalTo(6) );
-        assertArrayEquals( new byte[] {
-                (byte) 0b11_1_00_011,
-                (byte) 1,
-                (byte) 0,
-                'A', 'R', 'M',
+        assertThat(manufacturerTLV.length, equalTo(6));
+        assertArrayEquals(new byte[]{
+                        (byte) 0b11_1_00_011,
+                        (byte) 1,
+                        (byte) 0,
+                        'A', 'R', 'M',
                 },
-        manufacturerTLV);
+                manufacturerTLV);
     }
 
     @Test
@@ -111,15 +113,15 @@ public class TLVSerializerTest {
         LWM2MResource model = new LWM2MResource(LWM2MID.from(1), "nanoservice 2");
 
         byte[] tlv = TLVSerializer.serializeResources(Arrays.asList(manufacturer, model));
-        assertEquals (21, tlv.length);
-        assertArrayEquals( new byte[] {
-                (byte) 0b11_0_00_011,
-                (byte) 0,
-                'A', 'R', 'M',
-                (byte) 0b11_0_01_000,
-                (byte) 1,
-                (byte) 13,
-                'n', 'a', 'n', 'o', 's', 'e', 'r', 'v', 'i', 'c', 'e', ' ', '2'
+        assertEquals(21, tlv.length);
+        assertArrayEquals(new byte[]{
+                        (byte) 0b11_0_00_011,
+                        (byte) 0,
+                        'A', 'R', 'M',
+                        (byte) 0b11_0_01_000,
+                        (byte) 1,
+                        (byte) 13,
+                        'n', 'a', 'n', 'o', 's', 'e', 'r', 'v', 'i', 'c', 'e', ' ', '2'
                 },
                 tlv);
     }
@@ -132,15 +134,15 @@ public class TLVSerializerTest {
 
         byte[] powerTLV = TLVSerializer.serialize(power);
         assertEquals(8, powerTLV.length);
-        assertArrayEquals( new byte[] {
-                (byte) 0b10_0_00_110,
-                (byte) 6,
-                (byte) 0b01_0_00_001,
-                (byte) 0,
-                (byte) 0x01,
-                (byte) 0b01_0_00_001,
-                (byte) 1,
-                (byte) 0x05,
+        assertArrayEquals(new byte[]{
+                        (byte) 0b10_0_00_110,
+                        (byte) 6,
+                        (byte) 0b01_0_00_001,
+                        (byte) 0,
+                        (byte) 0x01,
+                        (byte) 0b01_0_00_001,
+                        (byte) 1,
+                        (byte) 0x05,
                 },
                 powerTLV);
     }
@@ -151,23 +153,23 @@ public class TLVSerializerTest {
 
         // GET /2
         LWM2MObjectInstance aco0 = new LWM2MObjectInstance(LWM2MID.$0, Arrays.asList(
-            new LWM2MResource(LWM2MID.from(0), 0x03),                       // resource: Object ID
-            new LWM2MResource(LWM2MID.from(1), 0x01),                       // resource: Object Instance ID
-            new LWM2MResource(LWM2MID.from(2), Arrays.asList(               // multiple resource: ACL
-                new LWM2MResourceInstance(LWM2MID.from(1), 0b11_10_0000),   // resource instance: ACL [1]
-                new LWM2MResourceInstance(LWM2MID.from(2), 0b10_00_0000))   // resource instance: ACL [1]
-            ),
-            new LWM2MResource(LWM2MID.from(3), 0x01)                        // resource: Access Control Owner
+                new LWM2MResource(LWM2MID.from(0), 0x03),                       // resource: Object ID
+                new LWM2MResource(LWM2MID.from(1), 0x01),                       // resource: Object Instance ID
+                new LWM2MResource(LWM2MID.from(2), Arrays.asList(               // multiple resource: ACL
+                        new LWM2MResourceInstance(LWM2MID.from(1), 0b11_10_0000),   // resource instance: ACL [1]
+                        new LWM2MResourceInstance(LWM2MID.from(2), 0b10_00_0000))   // resource instance: ACL [1]
+                ),
+                new LWM2MResource(LWM2MID.from(3), 0x01)                        // resource: Access Control Owner
         ));
         LWM2MObjectInstance aco1 = new LWM2MObjectInstance(LWM2MID.$1, Arrays.asList(
                 new LWM2MResource(LWM2MID.from(0), 0x04),
                 new LWM2MResource(LWM2MID.from(1), 0x02),
                 new LWM2MResource(LWM2MID.from(2), Arrays.asList(
-                    new LWM2MResourceInstance(LWM2MID.from(1), 0b10_00_0000),
-                    new LWM2MResourceInstance(LWM2MID.from(2), 0b10_00_0000))
+                        new LWM2MResourceInstance(LWM2MID.from(1), 0b10_00_0000),
+                        new LWM2MResourceInstance(LWM2MID.from(2), 0b10_00_0000))
                 ),
                 new LWM2MResource(LWM2MID.from(3), 0x01)
-            ));
+        ));
 
         byte[] acoTLV = TLVSerializer.serialize(aco0, aco1);
         assertEquals(40, acoTLV.length);
@@ -183,15 +185,15 @@ public class TLVSerializerTest {
 
         byte[] tlv = TLVSerializer.serialize(security);
         List<LWM2MObjectInstance> decoded = TLVDeserializer.deserialiseObjectInstances(tlv);
-        assertThat (decoded, hasSize(1));
+        assertThat(decoded, hasSize(1));
         List<LWM2MResource> resources = decoded.get(0).getResources();
-        assertThat (resources, hasSize(4));
-        assertThat (resources.get(0).getId().intValue(), equalTo(2));
-        assertThat (resources.get(1).getId().intValue(), equalTo(4));
-        assertThat (resources.get(2).getId().intValue(), equalTo(5));
-        assertThat (resources.get(3).getId().intValue(), equalTo(0));
-        assertThat (resources.get(1).getValue().length, equalTo(302) );
-        assertThat (resources.get(2).getValue().length, equalTo(138) );
+        assertThat(resources, hasSize(4));
+        assertThat(resources.get(0).getId().intValue(), equalTo(2));
+        assertThat(resources.get(1).getId().intValue(), equalTo(4));
+        assertThat(resources.get(2).getId().intValue(), equalTo(5));
+        assertThat(resources.get(3).getId().intValue(), equalTo(0));
+        assertThat(resources.get(1).getValue().length, equalTo(302));
+        assertThat(resources.get(2).getValue().length, equalTo(138));
     }
 
 }

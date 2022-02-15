@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +17,14 @@
 package com.mbed.coap.server;
 
 import static com.mbed.coap.server.CoapServerBuilder.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.server.internal.DefaultDuplicateDetectorCache;
 import java.net.InetAddress;
 import java.util.concurrent.ScheduledExecutorService;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by szymon
@@ -48,46 +49,62 @@ public class CoapServerBuilderTest {
         assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getCoapMessaging()).getScheduledExecutor());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldFail_when_illegal_duplicateMsgCacheSize() throws Exception {
-        newBuilder().duplicateMsgCacheSize(0);
+        assertThrows(IllegalArgumentException.class, () ->
+                newBuilder().duplicateMsgCacheSize(0)
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldFail_when_illegal_duplicateMsgCleanIntervalInMillis() throws Exception {
-        newBuilder().duplicateMsgCleanIntervalInMillis(0);
+        assertThrows(IllegalArgumentException.class, () ->
+                newBuilder().duplicateMsgCleanIntervalInMillis(0)
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldFail_when_illegal_duplicateMsgWarningMessageIntervalInMillis() throws Exception {
-        newBuilder().duplicateMsgWarningMessageIntervalInMillis(0);
+        assertThrows(IllegalArgumentException.class, () ->
+                newBuilder().duplicateMsgWarningMessageIntervalInMillis(0)
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldFail_when_illegal_duplicateMsgDetectionTimeInMillis() throws Exception {
-        newBuilder().duplicateMsgDetectionTimeInMillis(0);
+        assertThrows(IllegalArgumentException.class, () ->
+                newBuilder().duplicateMsgDetectionTimeInMillis(0)
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void usingCustomCacheWithoutTransport() throws Exception {
         ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
         DefaultDuplicateDetectorCache<CoapRequestId, CoapPacket> cache =
                 new DefaultDuplicateDetectorCache<>("testCache", 100, 120_1000, 10_000, 10_000, scheduledExecutorService);
-        newBuilder().duplicateMessageDetectorCache(cache).build();
+        assertThrows(IllegalArgumentException.class, () ->
+                newBuilder().duplicateMessageDetectorCache(cache).build()
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldFail_when_missingTransport() throws Exception {
-        newBuilder().build();
+        assertThrows(IllegalArgumentException.class, () ->
+                newBuilder().build()
+        );
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void shouldFail_whenMissingDuplicateCallback() throws Exception {
-        newBuilder().duplicatedCoapMessageCallback(null);
+        assertThrows(NullPointerException.class, () ->
+                newBuilder().duplicatedCoapMessageCallback(null)
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldFail_whenIllegalTimeoutValue() throws Exception {
-        newBuilder().delayedTimeout(-1L);
+        assertThrows(IllegalArgumentException.class, () ->
+                newBuilder().delayedTimeout(-1L)
+        );
     }
 }

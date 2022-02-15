@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +17,13 @@
 package protocolTests;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
@@ -44,10 +46,10 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author szymon
@@ -58,7 +60,7 @@ public class ClientServerTest {
     private int SERVER_PORT;
     private InetSocketAddress serverAddress;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         server = CoapServer.builder().transport(0).build();
         server.addRequestHandler("/test/1", new ReadOnlyCoapResource("Dziala"));
@@ -70,7 +72,7 @@ public class ClientServerTest {
         serverAddress = new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         server.stop();
     }
@@ -180,7 +182,7 @@ public class ClientServerTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void simpleIPv6Request() throws CoapException, IOException {
         InetAddress adr = InetAddress.getByName("::1");
 
@@ -283,17 +285,23 @@ public class ClientServerTest {
         srv.stop();
     }
 
-    @Test(expected = java.lang.IllegalStateException.class)
+    @Test
     public void stopNonRunningServer() {
         CoapServer srv = CoapServerBuilder.newBuilder().transport(0).build();
-        srv.stop();
+        assertThrows(IllegalStateException.class, () ->
+                srv.stop()
+        );
+
     }
 
-    @Test(expected = java.lang.IllegalStateException.class)
+    @Test
     public void startRunningServer() throws IOException {
         CoapServer srv = CoapServerBuilder.newBuilder().transport(0).build();
         srv.start();
-        srv.start();
+        assertThrows(IllegalStateException.class, () ->
+                srv.start()
+        );
+
     }
 
     @Test
@@ -326,7 +334,7 @@ public class ClientServerTest {
         cnn.stop();
     }
 
-    @Test(expected = com.mbed.coap.exception.CoapTimeoutException.class)
+    @Test
     public void testRequestWithPacketDropping() throws IOException, CoapException {
         CoapServer srv = CoapServerBuilder.newBuilder()
                 .transport(new DroppingPacketsTransportWrapper(CoapConstants.DEFAULT_PORT, (byte) 100))
@@ -337,22 +345,30 @@ public class ClientServerTest {
         CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(CoapConstants.DEFAULT_PORT))
                 .transport(InMemoryCoapTransport.create()).timeout(new SingleTimeout(100)).build();
 
-        assertNotNull(cnn.resource("/test").sync().get());
+        assertThrows(CoapTimeoutException.class, () ->
+                cnn.resource("/test").sync().get()
+        );
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testMakeRequestWithNullCallback() throws CoapException {
-        server.makeRequest(new CoapPacket(null), (Callback<CoapPacket>) null);
+        assertThrows(NullPointerException.class, () ->
+                server.makeRequest(new CoapPacket(null), (Callback<CoapPacket>) null)
+        );
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testMakeRequestWithNullAddress() throws CoapException {
-        server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null), new FutureCallbackAdapter<CoapPacket>());
+        assertThrows(NullPointerException.class, () ->
+                server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null), new FutureCallbackAdapter<CoapPacket>())
+        );
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testMakeRequestNullRequest() throws CoapException {
-        server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null), new FutureCallbackAdapter<CoapPacket>());
+        assertThrows(NullPointerException.class, () ->
+                server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null), new FutureCallbackAdapter<CoapPacket>())
+        );
     }
 
 

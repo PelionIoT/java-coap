@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +16,11 @@
  */
 package com.mbed.coap.utils;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author szymon
@@ -63,10 +64,12 @@ public class FutureCallbackAdapterTest {
         }
     }
 
-    @Test(expected = java.util.concurrent.TimeoutException.class)
+    @Test
     public void timeoutTest() throws Exception {
 
         FutureCallbackAdapter<String> f = new FutureCallbackAdapter<>();
-        f.get(10, TimeUnit.MILLISECONDS);
+        assertThrows(java.util.concurrent.TimeoutException.class, () ->
+                f.get(10, TimeUnit.MILLISECONDS)
+        );
     }
 }

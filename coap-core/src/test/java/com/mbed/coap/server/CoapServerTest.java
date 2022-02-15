@@ -18,7 +18,7 @@ package com.mbed.coap.server;
 
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.eq;
@@ -43,8 +43,8 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import protocolTests.utils.CoapPacketBuilder;
 
@@ -53,7 +53,7 @@ public class CoapServerTest {
     private CoapMessaging msg = mock(CoapMessaging.class);
     private CoapServer server;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         reset(msg);
 

@@ -17,7 +17,7 @@
 package com.mbed.coap.server.internal;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
@@ -39,8 +39,8 @@ import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import protocolTests.utils.CoapPacketBuilder;
 
 /**
@@ -56,7 +56,7 @@ public class CoapUdpMessagingTest {
     private ScheduledExecutorService scheduledExecutor = mock(ScheduledExecutorService.class);
 
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         reset(requestHandler);
 

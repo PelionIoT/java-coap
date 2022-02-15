@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +20,8 @@ import static org.mockito.Mockito.*;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.net.InetSocketAddress;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by szymon.
@@ -31,7 +32,7 @@ public class AbstractObservableResourceTest {
     private NotificationDeliveryListener listener;
     private static final InetSocketAddress ADDRESS = InMemoryCoapTransport.createAddress(5683);
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mockServer = mock(CoapServer.class);
         listener = mock(NotificationDeliveryListener.class);

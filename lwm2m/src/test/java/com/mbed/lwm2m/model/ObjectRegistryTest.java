@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +17,12 @@
 package com.mbed.lwm2m.model;
 
 import static com.mbed.lwm2m.model.Type.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author nordav01
@@ -31,7 +32,7 @@ public class ObjectRegistryTest {
     private static final String LWM2M_TEST_OBJECTS_JSON = "lwm2m-test-objects.json";
     private ObjectRegistry registry;
 
-    @Before
+    @BeforeEach
     public void before() {
         registry = ObjectRegistry.createObjectRegistry();
     }
@@ -48,9 +49,11 @@ public class ObjectRegistryTest {
         assertEquals(EXECUTABLE, type);
     }
 
-    @Test(expected = InvalidResourceURIException.class)
+    @Test
     public void getTypeOfResourceWithObjectURI() throws Exception {
-        registry.getOmaResourceType("/3");
+        assertThrows(InvalidResourceURIException.class, () ->
+                registry.getOmaResourceType("/3")
+        );
     }
 
     @Test
@@ -63,14 +66,18 @@ public class ObjectRegistryTest {
         assertNull(registry.getOmaResourceType("/.unknown//0"));
     }
 
-    @Test(expected = InvalidResourceURIException.class)
+    @Test
     public void getTypeOfInvalidResourceURI() throws Exception {
-        registry.getOmaResourceType("invalid");
+        assertThrows(InvalidResourceURIException.class, () ->
+                registry.getOmaResourceType("invalid")
+        );
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void getTypeOfNullResourceURI() throws Exception {
-        registry.getOmaResourceType(null);
+        assertThrows(NullPointerException.class, () ->
+                registry.getOmaResourceType(null)
+        );
     }
 
     @Test

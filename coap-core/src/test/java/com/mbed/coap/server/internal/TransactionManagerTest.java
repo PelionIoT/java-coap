@@ -16,7 +16,7 @@
  */
 package com.mbed.coap.server.internal;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.TooManyRequestsForEndpointException;
@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.function.Consumer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by szymon.
@@ -40,7 +40,7 @@ public class TransactionManagerTest {
     private static final InetSocketAddress REMOTE_ADR2 = InMemoryCoapTransport.createAddress(5685);
     private TransactionManager transMgr;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         transMgr = new TransactionManager();
     }
@@ -237,7 +237,7 @@ public class TransactionManagerTest {
         assertEquals(transMgr.getNumberOfTransactions(), 0);
     }
 
-    @Test(expected = TooManyRequestsForEndpointException.class)
+    @Test
     public void test_endpointQueueOverflow() throws Exception {
         transMgr.setMaximumEndpointQueueSize(2);
 
@@ -253,17 +253,23 @@ public class TransactionManagerTest {
         assertFalse(transMgr.addTransactionAndGetReadyToSend(ep2Trans2));
 
         // should throw TooManyRequestsForEndpointException
-        transMgr.addTransactionAndGetReadyToSend(ep2Trans3);
+        assertThrows(TooManyRequestsForEndpointException.class, () ->
+                transMgr.addTransactionAndGetReadyToSend(ep2Trans3)
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_tooSmallQueueValue() {
-        transMgr.setMaximumEndpointQueueSize(0);
+        assertThrows(IllegalArgumentException.class, () ->
+                transMgr.setMaximumEndpointQueueSize(0)
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_tooBigQueueValue() {
-        transMgr.setMaximumEndpointQueueSize(65537);
+        assertThrows(IllegalArgumentException.class, () ->
+                transMgr.setMaximumEndpointQueueSize(65537)
+        );
     }
 
     @Test
@@ -419,9 +425,11 @@ public class TransactionManagerTest {
         assertEmpty(transMgr.unlockOrRemoveAndGetNext(trans1.getTransactionId()));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void failWhenCallbackIsNull() throws Exception {
-        new CoapTransaction(null, mock(CoapPacket.class), mock(CoapUdpMessaging.class), TransportContext.NULL, mock(Consumer.class));
+        assertThrows(NullPointerException.class, () ->
+                new CoapTransaction(null, mock(CoapPacket.class), mock(CoapUdpMessaging.class), TransportContext.NULL, mock(Consumer.class))
+        );
     }
 
     @Test

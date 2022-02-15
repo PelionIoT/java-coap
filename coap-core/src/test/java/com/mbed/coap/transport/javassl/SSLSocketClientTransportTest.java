@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +17,14 @@
 package com.mbed.coap.transport.javassl;
 
 import static org.awaitility.Awaitility.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.server.CoapServer;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import javax.net.ssl.SSLContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SSLSocketClientTransportTest {
 

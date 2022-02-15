@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +18,8 @@ package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.packet.BlockSize.*;
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapBlockException;
@@ -36,8 +36,8 @@ import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import protocolTests.utils.CoapPacketBuilder;
 
@@ -48,7 +48,7 @@ public class CoapServerBlocksUnitTest {
     private CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
     private CoapRequestHandler requestHandler;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         reset(msg);
         server = new CoapServerBlocks(msg, capabilities, 100_000);

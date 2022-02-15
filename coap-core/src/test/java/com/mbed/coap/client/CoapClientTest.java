@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@
 package com.mbed.coap.client;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -38,8 +39,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import protocolTests.utils.CoapPacketBuilder;
 
@@ -53,7 +54,7 @@ public class CoapClientTest {
     private final MessageIdSupplier midSupplier = () -> mid++;
     private CoapClient client;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         client = CoapClientBuilder.newBuilder().transport(coapTransport).target(LOCAL_5683).scheduledExec(scheduledExecutor).midSupplier(midSupplier).build();
     }
@@ -156,25 +157,33 @@ public class CoapClientTest {
     }
 
 
-    @Test(expected = IllegalStateException.class)
+    @Test()
     public void failToCreate_whenNotStartedServer() throws Exception {
-        new CoapClient(LOCAL_5683, CoapServerBuilder.newBuilder().transport(coapTransport).build());
+        assertThrows(IllegalStateException.class, () ->
+                new CoapClient(LOCAL_5683, CoapServerBuilder.newBuilder().transport(coapTransport).build())
+        );
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test()
     public void failToMakeRequest_whenServerNotRunning() throws Exception {
         client.coapServer.stop();
-        client.resource("/123");
+        assertThrows(IllegalStateException.class, () ->
+                client.resource("/123")
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test()
     public void failToMakeRequest_whenIllegalCharacterInPath() throws Exception {
-        client.resource("fs?fs");
+        assertThrows(IllegalArgumentException.class, () ->
+                client.resource("fs?fs")
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test()
     public void failToMakeRequest_whenIllegalCharacterInPath2() throws Exception {
-        client.resource("fs&fs");
+        assertThrows(IllegalArgumentException.class, () ->
+                client.resource("fs&fs")
+        );
     }
 
     @Test

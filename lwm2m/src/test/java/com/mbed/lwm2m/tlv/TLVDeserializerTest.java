@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +16,9 @@
  */
 package com.mbed.lwm2m.tlv;
 
+import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.lwm2m.LWM2MID;
 import com.mbed.lwm2m.LWM2MObjectInstance;
 import com.mbed.lwm2m.LWM2MResource;
@@ -25,18 +27,18 @@ import com.mbed.lwm2m.utils.HexArray;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TLVDeserializerTest {
 
     @Test
     public void testIsObjectInstanceOrResource() throws Exception {
         byte[] tlvR = new byte[]{
-            (byte) 0b11_0_00_011,
-            (byte) 0,};
+                (byte) 0b11_0_00_011,
+                (byte) 0,};
         byte[] tlvO = new byte[]{
-            (byte) 0b00_0_01_000,
-            (byte) 0,};
+                (byte) 0b00_0_01_000,
+                (byte) 0,};
 
         assertFalse(TLVDeserializer.isObjectInstance(tlvR));
         assertFalse(TLVDeserializer.isMultipleResource(tlvR));
@@ -60,23 +62,25 @@ public class TLVDeserializerTest {
         assertFalse(resources.get(0).hasNestedInstances());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void deserializeResourceTLVasObjectInstance() throws Exception {
-        TLVDeserializer.deserialiseObjectInstances(createResourceTLV());
+        assertThrows(IllegalArgumentException.class, () ->
+                TLVDeserializer.deserialiseObjectInstances(createResourceTLV())
+        );
     }
 
     private static byte[] createResourceTLV() {
         return new byte[]{
-            (byte) 0b11_0_00_011,
-            (byte) 0,
-            'A', 'R', 'M',};
+                (byte) 0b11_0_00_011,
+                (byte) 0,
+                'A', 'R', 'M',};
     }
 
     @Test
     public void deserializeResourceWithZeroLength() throws Exception {
         byte[] tlv = new byte[]{
                 (byte) 0b11_0_00_000,
-                (byte) 0 };
+                (byte) 0};
 
         List<LWM2MResource> resources = TLVDeserializer.deserializeResources(tlv);
         assertThat(resources, hasSize(1));
@@ -84,22 +88,24 @@ public class TLVDeserializerTest {
         assertThat(resources.get(0).getStringValue(), equalTo(""));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void deserializeResourceWhereLengthFieldIsLess() throws Exception {
         byte[] tlv = new byte[]{
-            (byte) 0b11_0_00_010,
-            (byte) 0,
-            'A', 'R', 'M'};
+                (byte) 0b11_0_00_010,
+                (byte) 0,
+                'A', 'R', 'M'};
 
-        TLVDeserializer.deserializeResources(tlv);
+        assertThrows(IllegalArgumentException.class, () ->
+                TLVDeserializer.deserializeResources(tlv)
+        );
     }
 
     @Test
     public void deserializeResourceWhereLengthFieldIsGreater() throws Exception {
         byte[] tlv = new byte[]{
-            (byte) 0b11_0_00_011,
-            (byte) 0,
-            'A', 'R'};
+                (byte) 0b11_0_00_011,
+                (byte) 0,
+                'A', 'R'};
 
         List<LWM2MResource> resources = TLVDeserializer.deserializeResources(tlv);
         assertThat(resources, hasSize(1));
@@ -111,14 +117,14 @@ public class TLVDeserializerTest {
     @Test
     public void deserializeMultipleResourceTLV() {
         byte[] tlv = new byte[]{
-            (byte) 0b10_0_00_110,
-            (byte) 6,
-            (byte) 0b01_0_00_001,
-            (byte) 0,
-            (byte) 0x01,
-            (byte) 0b01_0_00_001,
-            (byte) 1,
-            (byte) 0x05,};
+                (byte) 0b10_0_00_110,
+                (byte) 6,
+                (byte) 0b01_0_00_001,
+                (byte) 0,
+                (byte) 0x01,
+                (byte) 0b01_0_00_001,
+                (byte) 1,
+                (byte) 0x05,};
 
         assertTrue(TLVDeserializer.isMultipleResource(tlv));
         List<LWM2MResource> resources = TLVDeserializer.deserializeResources(tlv);
@@ -143,14 +149,18 @@ public class TLVDeserializerTest {
         assertThat(objects.get(1).getResources(), hasSize(3));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void serializeObjectInstanceAsResource() throws Exception {
-        TLVDeserializer.deserializeResources(createObjectInstanceTLV());
+        assertThrows(IllegalArgumentException.class, () ->
+                TLVDeserializer.deserializeResources(createObjectInstanceTLV())
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void deserializeRandomObjectInstance() throws Exception {
-        TLVDeserializer.deserialiseObjectInstances("342fd78b".getBytes());
+        assertThrows(IllegalArgumentException.class, () ->
+                TLVDeserializer.deserialiseObjectInstances("342fd78b".getBytes())
+        );
     }
 
     @Test
@@ -185,16 +195,16 @@ public class TLVDeserializerTest {
         LWM2MObjectInstance aco1 = new LWM2MObjectInstance(Arrays.asList(
                 new LWM2MResource(LWM2MID.from(0), 0x3),
                 new LWM2MResource(LWM2MID.from(2), Arrays.asList(
-                                new LWM2MResourceInstance(LWM2MID.from(1), 0b11_10_0000),
-                                new LWM2MResourceInstance(LWM2MID.from(2), 0b10_00_0000))
+                        new LWM2MResourceInstance(LWM2MID.from(1), 0b11_10_0000),
+                        new LWM2MResourceInstance(LWM2MID.from(2), 0b10_00_0000))
                 ),
                 new LWM2MResource(LWM2MID.from(3), 0x01)
         ));
         LWM2MObjectInstance aco2 = new LWM2MObjectInstance(Arrays.asList(
                 new LWM2MResource(LWM2MID.from(0), 0x4),
                 new LWM2MResource(LWM2MID.from(2), Arrays.asList(
-                                new LWM2MResourceInstance(LWM2MID.from(1), 0b10_00_0000),
-                                new LWM2MResourceInstance(LWM2MID.from(2), 0b11_10_0000))
+                        new LWM2MResourceInstance(LWM2MID.from(1), 0b10_00_0000),
+                        new LWM2MResourceInstance(LWM2MID.from(2), 0b11_10_0000))
                 ),
                 new LWM2MResource(LWM2MID.from(3), 0x02)
         ));

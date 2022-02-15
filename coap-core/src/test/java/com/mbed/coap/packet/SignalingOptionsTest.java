@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +16,13 @@
  */
 package com.mbed.coap.packet;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.exception.CoapException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 
 public class SignalingOptionsTest {
@@ -90,9 +89,6 @@ public class SignalingOptionsTest {
         assertEquals(6, opt2.getBadCsmOption().intValue());
     }
 
-    @Rule
-    public ExpectedException expectedEx = ExpectedException.none();
-
     @Test
     public void testPutCSMOption() throws IOException, CoapException {
         SignalingOptions options = new SignalingOptions();
@@ -119,9 +115,10 @@ public class SignalingOptionsTest {
         assertEquals(" MaxMsgSz:2 Blocks", options.toString());
 
         //Try putting non csm specific option
-        expectedEx.expect(IllegalStateException.class);
-        expectedEx.expectMessage("Other than 7.04 specific signaling option already set");
-        options.parse(4, ByteBuffer.allocate(1).put((byte) 5).array(), Code.C704_RELEASE);
+        assertThrows(IllegalStateException.class, () ->
+                        options.parse(4, ByteBuffer.allocate(1).put((byte) 5).array(), Code.C704_RELEASE),
+                "Other than 7.04 specific signaling option already set"
+        );
     }
 
     @Test
@@ -221,18 +218,20 @@ public class SignalingOptionsTest {
     public void testTooBigMaxMessageSize() throws IOException, CoapException {
         SignalingOptions options = new SignalingOptions();
 
-        expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("Illegal Max-Message-Size argument: ");
-        options.setMaxMessageSize(0x100000000L);
+        assertThrows(IllegalArgumentException.class, () ->
+                        options.setMaxMessageSize(0x100000000L),
+                "Illegal Max-Message-Size argument: "
+        );
     }
 
     @Test
     public void testNegativeMaxMessageSize() throws IOException, CoapException {
         SignalingOptions options = new SignalingOptions();
 
-        expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("Illegal Max-Message-Size argument: -1");
-        options.setMaxMessageSize(-1L);
+        assertThrows(IllegalArgumentException.class, () ->
+                        options.setMaxMessageSize(-1L),
+                "Illegal Max-Message-Size argument: -1"
+        );
     }
 
     @Test
@@ -253,18 +252,20 @@ public class SignalingOptionsTest {
     public void testTooBigHoldOff() throws IOException, CoapException {
         SignalingOptions options = new SignalingOptions();
 
-        expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("Illegal Hold-Off argument: ");
-        options.setHoldOff(0x1FFF);
+        assertThrows(IllegalArgumentException.class, () ->
+                        options.setHoldOff(0x1FFF),
+                "Illegal Hold-Off argument: "
+        );
     }
 
     @Test
     public void testNegativeHoldOff() throws IOException, CoapException {
         SignalingOptions options = new SignalingOptions();
 
-        expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("Illegal Hold-Off argument: -5");
-        options.setHoldOff(-5);
+        assertThrows(IllegalArgumentException.class, () ->
+                        options.setHoldOff(-5),
+                "Illegal Hold-Off argument: -5"
+        );
     }
 
     @Test
@@ -272,9 +273,10 @@ public class SignalingOptionsTest {
         SignalingOptions options = new SignalingOptions();
         options.setHoldOff(2);
 
-        expectedEx.expect(IllegalStateException.class);
-        expectedEx.expectMessage("Other than 7.01 specific signaling option already set");
-        options.setMaxMessageSize(5);
+        assertThrows(IllegalStateException.class, () ->
+                        options.setMaxMessageSize(5),
+                "Other than 7.01 specific signaling option already set"
+        );
     }
 
     @Test
@@ -282,9 +284,10 @@ public class SignalingOptionsTest {
         SignalingOptions options = new SignalingOptions();
         options.setHoldOff(2);
 
-        expectedEx.expect(IllegalStateException.class);
-        expectedEx.expectMessage("Other than 7.01 specific signaling option already set");
-        options.setBlockWiseTransfer(true);
+        assertThrows(IllegalStateException.class, () ->
+                        options.setBlockWiseTransfer(true),
+                "Other than 7.01 specific signaling option already set"
+        );
     }
 
     @Test
@@ -292,9 +295,10 @@ public class SignalingOptionsTest {
         SignalingOptions options = new SignalingOptions();
         options.setHoldOff(2);
 
-        expectedEx.expect(IllegalStateException.class);
-        expectedEx.expectMessage("Other than 7.02 or 7.03 specific signaling option already set");
-        options.setCustody(true);
+        assertThrows(IllegalStateException.class, () ->
+                        options.setCustody(true),
+                "Other than 7.02 or 7.03 specific signaling option already set"
+        );
     }
 
     @Test
@@ -302,9 +306,11 @@ public class SignalingOptionsTest {
         SignalingOptions options = new SignalingOptions();
         options.setCustody(true);
 
-        expectedEx.expect(IllegalStateException.class);
-        expectedEx.expectMessage("Other than 7.04 specific signaling option already set");
-        options.setAlternativeAddress(null);
+        assertThrows(IllegalStateException.class, () ->
+                        options.setAlternativeAddress(null),
+                "Other than 7.04 specific signaling option already set"
+        );
+
     }
 
     @Test
@@ -312,9 +318,10 @@ public class SignalingOptionsTest {
         SignalingOptions options = new SignalingOptions();
         options.setCustody(true);
 
-        expectedEx.expect(IllegalStateException.class);
-        expectedEx.expectMessage("Other than 7.04 specific signaling option already set");
-        options.setHoldOff(2);
+        assertThrows(IllegalStateException.class, () ->
+                        options.setHoldOff(2),
+                "Other than 7.04 specific signaling option already set"
+        );
     }
 
     @Test
@@ -322,9 +329,10 @@ public class SignalingOptionsTest {
         SignalingOptions options = new SignalingOptions();
         options.setCustody(true);
 
-        expectedEx.expect(IllegalStateException.class);
-        expectedEx.expectMessage("Other than 7.05 specific signaling option already set");
-        options.setBadCsmOption(2);
+        assertThrows(IllegalStateException.class, () ->
+                        options.setBadCsmOption(2),
+                "Other than 7.05 specific signaling option already set"
+        );
     }
 
     @Test

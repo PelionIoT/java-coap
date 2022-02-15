@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,7 @@
  */
 package protocolTests;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
@@ -27,9 +28,9 @@ import com.mbed.coap.server.MessageIdSupplierImpl;
 import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import protocolTests.utils.TransportConnectorMock;
 
 /**
@@ -40,7 +41,7 @@ public class SeparateResponseTest {
     private TransportConnectorMock transport;
     private CoapClient client;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
@@ -51,7 +52,7 @@ public class SeparateResponseTest {
         client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         client.close();
     }

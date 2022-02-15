@@ -17,14 +17,14 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.TransactionManagerTest.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.server.internal.CoapTransaction.Priority;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.utils.Callback;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by szymon

@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +17,10 @@
 package com.mbed.coap.server.internal;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.eq;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.BDDMockito.never;
-import static org.mockito.BDDMockito.reset;
-import static org.mockito.BDDMockito.verify;
-import static org.mockito.Mockito.mock;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
@@ -38,9 +35,9 @@ import java.net.InetSocketAddress;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import protocolTests.utils.CoapPacketBuilder;
 
 
@@ -51,7 +48,7 @@ public class CoapTcpMessagingTest {
     CoapTcpMessaging tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage, false, 501);
     CoapRequestHandler coapRequestHandler = mock(CoapRequestHandler.class);
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         reset(coapRequestHandler);
 
@@ -59,7 +56,7 @@ public class CoapTcpMessagingTest {
         given(coapTransport.sendPacket(any(), any(), any())).willReturn(CompletableFuture.completedFuture(true));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         tcpMessaging.stop();
     }

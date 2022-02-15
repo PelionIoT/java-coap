@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +18,7 @@ package com.mbed.coap.packet;
 
 import static com.mbed.coap.packet.BasicHeaderOptions.*;
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
-
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapMessageFormatException;
 import com.mbed.coap.exception.CoapUnknownOptionException;
@@ -30,7 +30,7 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
@@ -340,10 +340,12 @@ public class HeaderOptionTest {
         assertTrue(hdr3.equals(hdr4));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIllegalLocationPath() {
         BasicHeaderOptions hdr = new BasicHeaderOptions();
-        hdr.setLocationPath(".");
+        assertThrows(IllegalArgumentException.class, () ->
+                hdr.setLocationPath(".")
+        );
     }
 
     @Test
@@ -375,22 +377,24 @@ public class HeaderOptionTest {
         assertArrayEquals(new byte[]{0x01, 0x00}, DataConvertingUtility.convertVariableUInt(256));
     }
 
-    @Test(expected = CoapMessageFormatException.class)
+    @Test
     public void malformedHeaderWithIllegalDelta() throws IOException, CoapMessageFormatException {
         BasicHeaderOptions hdr = new BasicHeaderOptions();
-        hdr.deserialize(new ByteArrayInputStream(new byte[]{(byte) 0xF3}), null);
+        assertThrows(CoapMessageFormatException.class, () ->
+                hdr.deserialize(new ByteArrayInputStream(new byte[]{(byte) 0xF3}), null)
+        );
     }
 
     @Test
     public void split() {
-        assertEquals(new String[]{"", "3", "", ""}, DataConvertingUtility.split("/3//", '/'));
-        assertEquals(new String[]{"", "3", "", "7"}, DataConvertingUtility.split("/3//7", '/'));
-        assertEquals(new String[]{"", "3", "20", "7"}, DataConvertingUtility.split("/3/20/7", '/'));
+        assertArrayEquals(new String[]{"", "3", "", ""}, DataConvertingUtility.split("/3//", '/'));
+        assertArrayEquals(new String[]{"", "3", "", "7"}, DataConvertingUtility.split("/3//7", '/'));
+        assertArrayEquals(new String[]{"", "3", "20", "7"}, DataConvertingUtility.split("/3/20/7", '/'));
 
-        assertEquals("/1/2/3".split("/"), DataConvertingUtility.split("/1/2/3", '/'));
-        assertEquals("/1//3".split("/"), DataConvertingUtility.split("/1//3", '/'));
-        assertEquals("/1/432fsdfs/3fds".split("/"), DataConvertingUtility.split("/1/432fsdfs/3fds", '/'));
-        assertEquals("boo:and:foo".split("x"), DataConvertingUtility.split("boo:and:foo", 'x'));
+        assertArrayEquals("/1/2/3".split("/"), DataConvertingUtility.split("/1/2/3", '/'));
+        assertArrayEquals("/1//3".split("/"), DataConvertingUtility.split("/1//3", '/'));
+        assertArrayEquals("/1/432fsdfs/3fds".split("/"), DataConvertingUtility.split("/1/432fsdfs/3fds", '/'));
+        assertArrayEquals("boo:and:foo".split("x"), DataConvertingUtility.split("boo:and:foo", 'x'));
 
     }
 
@@ -461,19 +465,23 @@ public class HeaderOptionTest {
         assertNull(h.getUriQuery());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void failWhenTooLargeToSerialize() throws Exception {
         HeaderOptions h = new HeaderOptions();
         h.put(100, new byte[65805]);
-        h.serialize(Mockito.mock(OutputStream.class));
+        assertThrows(IllegalArgumentException.class, () ->
+                h.serialize(Mockito.mock(OutputStream.class))
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void failWhenTooLargeDeltaToSerialize() throws Exception {
         HeaderOptions h = new HeaderOptions();
         h.setIfNonMatch(false);
         h.put(65805, new byte[1]);
-        h.serialize(Mockito.mock(OutputStream.class));
+        assertThrows(IllegalArgumentException.class, () ->
+                h.serialize(Mockito.mock(OutputStream.class))
+        );
     }
 
     @Test

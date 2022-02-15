@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@
 package protocolTests;
 
 import static org.awaitility.Awaitility.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapCodeException;
@@ -37,9 +38,9 @@ import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Random;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author szymon
@@ -49,7 +50,7 @@ public class ClientServerNONTest {
     private CoapServer server = null;
     private InetSocketAddress serverAddr = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         DelayedTransactionId dti1 = new DelayedTransactionId(new byte[]{13, 14}, new InetSocketAddress(5683));
         DelayedTransactionId dti2 = new DelayedTransactionId(new byte[]{13, 14}, new InetSocketAddress(5683));
@@ -68,7 +69,7 @@ public class ClientServerNONTest {
         serverAddr = InMemoryCoapTransport.createAddress(server.getLocalSocketAddress().getPort());
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         server.stop();
     }

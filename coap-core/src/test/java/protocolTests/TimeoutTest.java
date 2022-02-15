@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,7 @@
  */
 package protocolTests;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
@@ -33,26 +34,29 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author szymon
  */
 public class TimeoutTest {
 
-    @Test(expected = CoapTimeoutException.class)
+    @Test()
     public void testTimeout() throws IOException, CoapException {
         CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(0))
                 .transport(InMemoryCoapTransport.create())
                 .timeout(new SingleTimeout(100))
                 .build();
 
-        client.resource("/non/existing").sync().get();
+        assertThrows(CoapTimeoutException.class, () ->
+                client.resource("/non/existing").sync().get()
+        );
+
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void timeoutTestIgn() throws Exception {
         CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616).build();
         cnn.start();
@@ -68,7 +72,7 @@ public class TimeoutTest {
         } catch (CompletionException ex) {
             //expected
         }
-        assertEquals("Wrong number of transactions", 0, ((CoapUdpMessaging) cnn.getCoapMessaging()).getNumberOfTransactions());
+        assertEquals(0, ((CoapUdpMessaging) cnn.getCoapMessaging()).getNumberOfTransactions(), "Wrong number of transactions");
         cnn.stop();
 
     }
@@ -93,7 +97,7 @@ public class TimeoutTest {
         } catch (ExecutionException ex) {
             assertTrue(ex.getCause() instanceof CoapException);
         }
-        assertEquals("Wrong number of transactions", 0, ((CoapUdpMessaging) cnn.getCoapMessaging()).getNumberOfTransactions());
+        assertEquals(0, ((CoapUdpMessaging) cnn.getCoapMessaging()).getNumberOfTransactions(), "Wrong number of transactions");
         cnn.stop();
 
     }

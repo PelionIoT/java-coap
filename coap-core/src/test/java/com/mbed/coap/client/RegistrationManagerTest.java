@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@ package com.mbed.coap.client;
 
 import static com.mbed.coap.packet.MediaTypes.*;
 import static java.time.Duration.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.Code;
@@ -28,9 +29,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import protocolTests.utils.TransportConnectorMock;
@@ -43,7 +44,7 @@ public class RegistrationManagerTest {
     private TransportConnectorMock trnsport;
     private ScheduledExecutorService scheduledExecutor = Mockito.mock(ScheduledExecutorService.class);
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         trnsport = new TransportConnectorMock();
 
@@ -53,7 +54,7 @@ public class RegistrationManagerTest {
                 .build().start();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
     }
 
@@ -200,10 +201,12 @@ public class RegistrationManagerTest {
         assertEquals(ofMinutes(10), reg.nextDelay(ofMinutes(11)));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void failWithWrongRegistrationDuration() throws Exception {
-        new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), scheduledExecutor,
-                ofMinutes(3), ofMinutes(2));
+        assertThrows(IllegalArgumentException.class, () ->
+                new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), scheduledExecutor,
+                        ofMinutes(3), ofMinutes(2))
+        );
     }
 
     @Test

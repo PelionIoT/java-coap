@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +16,16 @@
  */
 package com.mbed.coap.utils;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.InMemoryCoapTransport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by szymon
@@ -34,13 +35,13 @@ public class ReadOnlyCoapResourceTest {
     private CoapServer srv;
     private CoapClient cli;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         srv = CoapServerBuilder.newCoapServer(new InMemoryCoapTransport(5683)).start();
         cli = CoapClientBuilder.clientFor(InMemoryCoapTransport.createAddress(5683), CoapServerBuilder.newCoapServer(new InMemoryCoapTransport()).start());
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         srv.stop();
     }

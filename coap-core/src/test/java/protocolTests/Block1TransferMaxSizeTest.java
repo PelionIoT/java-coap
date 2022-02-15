@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,7 @@
  */
 package protocolTests;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapCodeException;
@@ -32,9 +33,9 @@ import com.mbed.coap.utils.CoapResource;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 
 /**
@@ -55,7 +56,7 @@ public class Block1TransferMaxSizeTest {
     private CoapServer server = null;
     private CoapClient client = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
 
         server = CoapServerBuilder.newBuilder()
@@ -80,7 +81,7 @@ public class Block1TransferMaxSizeTest {
                 .build();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         client.close();
         server.stop();
