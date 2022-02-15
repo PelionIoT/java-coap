@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +23,6 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.HexArray;
 import java.net.InetSocketAddress;
@@ -163,7 +163,7 @@ public abstract class AbstractObservableResource extends CoapResource {
                     coapNotif.setToken(sub.getToken());
                     coapNotif.setMessageType(sub.getIsConfirmable() ? MessageType.Confirmable : MessageType.NonConfirmable);
 
-                    this.coapServer.makeRequest(coapNotif, Callback.ignore());
+                    this.coapServer.makeRequest(coapNotif);
 
                     //remove subscriber
                     iter.remove();
@@ -220,15 +220,20 @@ public abstract class AbstractObservableResource extends CoapResource {
     }
 
     private void sendNotification(boolean isConfirmable, ObservationRelation sub, CoapPacket coapNotif,
-            NotificationDeliveryListener deliveryListener) throws CoapException {
+            NotificationDeliveryListener deliveryListener) {
 
         if (isConfirmable || (sub.getObserveSeq() % FORCE_CON_FREQ) == 0) {
             coapNotif.setMessageType(MessageType.Confirmable);
             sub.setIsDelivering(true);
-            this.coapServer.sendNotification(coapNotif, new NotificationAckCallback(sub, deliveryListener, this), TransportContext.NULL);
+
+            NotificationAckCallback notificationAckCallback = new NotificationAckCallback(sub, deliveryListener, this);
+            this.coapServer
+                    .sendNotification(coapNotif, TransportContext.NULL)
+                    .whenComplete(notificationAckCallback);
+
         } else {
             coapNotif.setMessageType(MessageType.NonConfirmable);
-            this.coapServer.sendNotification(coapNotif, Callback.ignore(), TransportContext.NULL);
+            this.coapServer.sendNotification(coapNotif, TransportContext.NULL);
         }
 
         if (LOGGER.isTraceEnabled()) {

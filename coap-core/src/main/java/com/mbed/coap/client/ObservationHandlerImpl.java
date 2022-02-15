@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +16,7 @@
  */
 package com.mbed.coap.client;
 
+import static com.mbed.coap.utils.FutureHelpers.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.ObservationTerminatedException;
@@ -24,7 +26,6 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.ObservationHandler;
-import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.Token;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,21 +73,16 @@ class ObservationHandlerImpl implements ObservationHandler {
                         return;
                     }
                     t.sendResponse();
-                    t.retrieveNotificationBlocks(obsListContainer.uriPath, new Callback<CoapPacket>() {
-                        @Override
-                        public void callException(Exception ex) {
-                            LOGGER.warn(ex.getMessage());
-                        }
 
-                        @Override
-                        public void call(CoapPacket coapPacket) {
-                            try {
-                                obsListContainer.observationListener.onObservation(coapPacket);
-                            } catch (CoapException e) {
-                                LOGGER.error(e.getMessage(), e);
-                            }
-                        }
-                    });
+                    t.retrieveNotificationBlocks(obsListContainer.uriPath)
+                            .thenAccept(coapPacket -> {
+                                try {
+                                    obsListContainer.observationListener.onObservation(coapPacket);
+                                } catch (CoapException e) {
+                                    LOGGER.error(e.getMessage(), e);
+                                }
+                            })
+                            .exceptionally(log(LOGGER));
                 } else {
                     obsListContainer.observationListener.onObservation(t.getRequest());
                     t.sendResponse();

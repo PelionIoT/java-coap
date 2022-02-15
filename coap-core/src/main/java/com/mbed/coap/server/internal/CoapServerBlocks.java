@@ -27,9 +27,10 @@ import com.mbed.coap.server.CoapHandler;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapTcpCSMStorage;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
+import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,10 +56,8 @@ public class CoapServerBlocks extends CoapServer {
     }
 
     @Override
-    public void makeRequest(CoapPacket request, Callback<CoapPacket> outerCallback, TransportContext outgoingTransContext) {
-        if (outerCallback == null) {
-            throw new NullPointerException("Callback must not be null");
-        }
+    public CompletableFuture<CoapPacket> makeRequest(CoapPacket request, TransportContext outgoingTransContext) {
+        FutureCallbackAdapter<CoapPacket> outerCallback = new FutureCallbackAdapter<>();
 
         try {
             BlockWiseCallback blockCallback = new BlockWiseCallback(
@@ -74,15 +73,16 @@ public class CoapServerBlocks extends CoapServer {
         } catch (CoapException e) {
             outerCallback.callException(e);
         }
+        return outerCallback;
     }
 
     @Override
-    public void sendNotification(CoapPacket notifPacket, Callback<CoapPacket> callback, TransportContext transContext) {
+    public CompletableFuture<CoapPacket> sendNotification(CoapPacket notifPacket, TransportContext transContext) {
         if (useBlockTransfer(notifPacket, notifPacket.getRemoteAddress())) {
             //request that needs to use blocks
             blockWiseTransfer.updateWithFirstBlock(notifPacket);
         }
-        super.sendNotification(notifPacket, callback, transContext);
+        return super.sendNotification(notifPacket, transContext);
     }
 
     private boolean useBlockTransfer(CoapPacket notifPacket, InetSocketAddress remoteAddress) {

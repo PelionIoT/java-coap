@@ -276,14 +276,6 @@ public class CoapServerBlocksUnitTest {
     }
 
     @Test
-    public void shouldThrowExceptionWhenCallBackIsNull() {
-        final CoapPacket req = newCoapPacket(LOCAL_5683).put().uriPath("/options").payload(new byte[8192 + 8192 + 5683]).build();
-        assertThatThrownBy(() ->
-                server.makeRequest(req, null, TransportContext.NULL)
-        ).isInstanceOf(NullPointerException.class).hasMessage("Callback must not be null");
-    }
-
-    @Test
     public void should_send_blocs_with_different_tokens() {
         final AtomicReference<byte[]> receivedPayload = new AtomicReference<>();
         server.addRequestHandler("/change", new CoapResource() {

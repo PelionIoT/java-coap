@@ -17,6 +17,8 @@
 package com.mbed.coap.server;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
+import static com.mbed.coap.utils.FutureHelpers.failedFuture;
+import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
@@ -34,7 +36,6 @@ import com.mbed.coap.server.internal.CoapRequestHandler;
 import com.mbed.coap.server.internal.ResourceLinks;
 import com.mbed.coap.server.internal.UriMatcher;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.CoapResource;
 import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
@@ -174,45 +175,14 @@ public class CoapServer {
      * @param transContext transport context that will be passed to transport connector
      * @return CompletableFuture with response promise
      */
-    public final CompletableFuture<CoapPacket> makeRequest(CoapPacket requestPacket, final TransportContext transContext) {
+    public CompletableFuture<CoapPacket> makeRequest(CoapPacket requestPacket, final TransportContext transContext) {
         FutureCallbackAdapter<CoapPacket> completableFuture = new FutureCallbackAdapter<>();
-        makeRequest(requestPacket, completableFuture, transContext);
+        coapMessaging.makeRequest(requestPacket, completableFuture, transContext);
 
         return completableFuture;
     }
 
-    /**
-     * Makes CoAP request. Sends given packet to specified address. Reply is called through asynchronous Callback
-     * interface.
-     * <p>
-     * <i>Asynchronous method</i>
-     * </p>
-     * NOTE: If exception is thrown then callback will never be invoked.
-     *
-     * @param packet request packet
-     * @param callback handles response
-     */
-    public final void makeRequest(CoapPacket packet, Callback<CoapPacket> callback) {
-        makeRequest(packet, callback, TransportContext.NULL);
-    }
-
-    /**
-     * Makes CoAP request. Sends given packet to specified address. Reply is called through asynchronous Callback
-     * interface.
-     * <p>
-     * <i>Asynchronous method</i>
-     * </p>
-     * NOTE: If exception is thrown then callback will never be invoked.
-     *
-     * @param packet request packet
-     * @param callback handles response
-     * @param transContext transport context that will be passed to transport connector
-     */
-    public void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext) {
-        coapMessaging.makeRequest(packet, callback, transContext);
-    }
-
-    public void sendNotification(final CoapPacket notifPacket, final Callback<CoapPacket> callback, final TransportContext transContext) {
+    public CompletableFuture<CoapPacket> sendNotification(final CoapPacket notifPacket, final TransportContext transContext) {
         if (notifPacket.headers().getObserve() == null) {
             throw new IllegalArgumentException("Notification packet should have observation header set");
         }
@@ -223,11 +193,14 @@ public class CoapServer {
             throw new IllegalArgumentException("Notification packet should have 205_CONTENT code");
         }
 
-        makeRequest(notifPacket, callback, transContext);
+        return makeRequest(notifPacket, transContext);
     }
 
-    public void ping(InetSocketAddress destination, final Callback<CoapPacket> callback) {
-        coapMessaging.ping(destination, callback);
+    public CompletableFuture<CoapPacket> ping(InetSocketAddress destination) {
+        FutureCallbackAdapter<CoapPacket> callbackAdapter = new FutureCallbackAdapter<>();
+
+        coapMessaging.ping(destination, callbackAdapter);
+        return callbackAdapter;
     }
 
     /**
@@ -433,41 +406,32 @@ public class CoapServer {
      *
      * @param uri resource path for observation
      * @param destination destination address
-     * @param respCallback handles observation response
      * @param token observation identification (token)
-     * @return observation identification
+     * @return response
      */
-    public byte[] observe(String uri, InetSocketAddress destination, final Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) {
+    public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, byte[] token, TransportContext transportContext) {
         CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, uri, destination);
         request.setToken(token);
         request.headers().setObserve(0);
-        return observe(request, respCallback, transportContext);
+        return observe(request, transportContext);
     }
 
-    public byte[] observe(CoapPacket request, final Callback<CoapPacket> respCallback, TransportContext transportContext) {
+    public CompletableFuture<CoapPacket> observe(CoapPacket request, TransportContext transportContext) {
         if (request.headers().getObserve() == null) {
             request.headers().setObserve(0);
         }
         if (request.getToken() == CoapPacket.DEFAULT_TOKEN) {
             request.setToken(observationIDGenerator.nextObservationID(request.headers().getUriPath()));
         }
-        makeRequest(request, new Callback<CoapPacket>() {
 
-            @Override
-            public void callException(Exception ex) {
-                respCallback.callException(ex);
-            }
-
-            @Override
-            public void call(CoapPacket resp) {
-                if (resp.getCode() != Code.C205_CONTENT || resp.headers().getObserve() == null) {
-                    respCallback.callException(new ObservationNotEstablishedException(resp));
-                    return;
-                }
-                respCallback.call(resp);
-            }
-        }, transportContext);
-        return request.getToken();
+        return makeRequest(request, transportContext)
+                .thenCompose(resp -> {
+                    if (resp.getCode() != Code.C205_CONTENT || resp.headers().getObserve() == null) {
+                        return failedFuture(new ObservationNotEstablishedException(resp));
+                    } else {
+                        return completedFuture(resp);
+                    }
+                });
     }
 
     /**

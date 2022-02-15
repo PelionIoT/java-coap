@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +23,8 @@ import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.HeaderOptions;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author szymon
@@ -163,9 +164,8 @@ public interface CoapExchange {
      * Retrieves full notification payload. Applies only when handling notification with block2.
      *
      * @param uriPath uri-path
-     * @param callback callback
      * @throws CoapException coap exception
      */
-    void retrieveNotificationBlocks(final String uriPath, final Callback<CoapPacket> callback) throws CoapException;
+    CompletableFuture<CoapPacket> retrieveNotificationBlocks(final String uriPath) throws CoapException;
 
 }

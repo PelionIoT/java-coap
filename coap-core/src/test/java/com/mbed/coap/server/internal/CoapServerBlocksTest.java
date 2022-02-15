@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.utils.FutureHelpers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
@@ -29,7 +30,6 @@ import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.server.PutOnlyMap;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -63,13 +63,13 @@ public class CoapServerBlocksTest {
         protoServer = new CoapUdpMessaging(coapTransport);
         server = new CoapServerBlocks(protoServer, capabilities, 10000000) {
             @Override
-            public byte[] observe(String uri, InetSocketAddress destination, Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) {
-                return new byte[0];
+            public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, byte[] token, TransportContext transportContext) {
+                return failedFuture(new IllegalArgumentException());
             }
 
             @Override
-            public byte[] observe(CoapPacket request, Callback<CoapPacket> respCallback, TransportContext transportContext) {
-                return new byte[0];
+            public CompletableFuture<CoapPacket> observe(CoapPacket request, TransportContext transportContext) {
+                return failedFuture(new IllegalArgumentException());
             }
         };
 
@@ -121,13 +121,13 @@ public class CoapServerBlocksTest {
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
         server = new CoapServerBlocks(protoServer, capabilities, 10000) {
             @Override
-            public byte[] observe(String uri, InetSocketAddress destination, Callback<CoapPacket> respCallback, byte[] token, TransportContext transportContext) {
-                return new byte[0];
+            public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, byte[] token, TransportContext transportContext) {
+                return failedFuture(new IllegalArgumentException());
             }
 
             @Override
-            public byte[] observe(CoapPacket request, Callback<CoapPacket> respCallback, TransportContext transportContext) {
-                return new byte[0];
+            public CompletableFuture<CoapPacket> observe(CoapPacket request, TransportContext transportContext) {
+                return failedFuture(new IllegalArgumentException());
             }
         };
         server.start();

@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.utils.FutureHelpers.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
@@ -350,7 +351,7 @@ public class CoapUdpMessagingTest {
         initServer();
         mid = 1000;
 
-        udpMessaging.makeRequest(newCoapPacket(LOCAL_5683).mid(0).get().uriPath("/test").build(), Callback.ignore(), TransportContext.NULL);
+        udpMessaging.makeRequest(newCoapPacket(LOCAL_5683).mid(0).get().uriPath("/test").build(), new FutureCallbackAdapter<>(), TransportContext.NULL);
 
         assertSent(newCoapPacket(LOCAL_5683).mid(1000).get().uriPath("/test"));
     }
@@ -401,9 +402,7 @@ public class CoapUdpMessagingTest {
     }
 
     private CompletableFuture<Boolean> exceptionFuture() {
-        CompletableFuture completableFuture = new CompletableFuture();
-        completableFuture.completeExceptionally(new IOException("no connection"));
-        return completableFuture;
+        return failedFuture(new IOException("no connection"));
     }
 
     private void initServer() throws IOException {

@@ -196,65 +196,66 @@ public class CoapServerTest {
 
     @Test
     public void shouldSendObservationRequest() {
-        Callback<CoapPacket> callback = mock(Callback.class);
-        server.observe("/test", LOCAL_5683, callback, "aa".getBytes(), TransportContext.NULL);
+        server.observe("/test", LOCAL_5683, "aa".getBytes(), TransportContext.NULL);
 
         verify(msg).makeRequest(argThat(cp -> cp.headers().getUriPath().equals("/test") && cp.headers().getObserve() != null), any(), eq(TransportContext.NULL));
     }
 
     @Test
     public void shouldSendObservationRequest_andAddObservationHeader() {
-        Callback<CoapPacket> callback = mock(Callback.class);
-        server.observe(newCoapPacket(LOCAL_5683).get().uriPath("/test").build(), callback, TransportContext.NULL);
+        server.observe(newCoapPacket(LOCAL_5683).get().uriPath("/test").build(), TransportContext.NULL);
 
         verify(msg).makeRequest(argThat(cp -> cp.headers().getUriPath().equals("/test") && cp.headers().getObserve() != null), any(), eq(TransportContext.NULL));
     }
 
     @Test
-    public void shouldRespondToObservationRequest() {
+    public void shouldRespondToObservationRequest() throws ExecutionException, InterruptedException {
         CoapPacket resp = newCoapPacket().ack(Code.C205_CONTENT).obs(0).build();
-        Callback<CoapPacket> respCallback = mock(Callback.class);
-        server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
+        CompletableFuture<CoapPacket> obsResp = server.observe("/test", LOCAL_5683, "aa".getBytes(), TransportContext.NULL);
 
         verifyMakeRequest_andThen().call(resp);
 
-        verify(respCallback).call(eq(resp));
+        assertEquals(resp, obsResp.get());
     }
 
     @Test
     public void shouldRespondToObservationRequest_notObserved() {
-        Callback<CoapPacket> respCallback = mock(Callback.class);
-        server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
+        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, "aa".getBytes(), TransportContext.NULL);
 
         verifyMakeRequest_andThen().call(newCoapPacket().ack(Code.C205_CONTENT).build());
 
-        verify(respCallback).callException(isA(ObservationNotEstablishedException.class));
+        assertTrue(
+                assertThrows(ExecutionException.class, resp::get).getCause() instanceof ObservationNotEstablishedException
+        );
+
     }
 
     @Test
     public void shouldRespondToObservationRequest_errorResponse() {
-        Callback<CoapPacket> respCallback = mock(Callback.class);
-        server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
+        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, "aa".getBytes(), TransportContext.NULL);
 
         verifyMakeRequest_andThen().call(newCoapPacket().ack(Code.C404_NOT_FOUND).build());
 
-        verify(respCallback).callException(isA(ObservationNotEstablishedException.class));
+        assertTrue(
+                assertThrows(ExecutionException.class, resp::get).getCause() instanceof ObservationNotEstablishedException
+        );
     }
 
     @Test
     public void shouldRespondToObservationRequest_exception() {
-        Callback<CoapPacket> respCallback = mock(Callback.class);
-        server.observe("/test", LOCAL_5683, respCallback, "aa".getBytes(), TransportContext.NULL);
+        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, "aa".getBytes(), TransportContext.NULL);
 
         verifyMakeRequest_andThen().callException(new IOException());
 
-        verify(respCallback).callException(isA(IOException.class));
+        assertTrue(
+                assertThrows(ExecutionException.class, resp::get).getCause() instanceof IOException
+        );
     }
 
     @Test()
     public void shouldSendNotification() {
         CoapPacket notif = newCoapPacket(LOCAL_5683).obs(12).token(11).ack(Code.C205_CONTENT).build();
-        server.sendNotification(notif, mock(Callback.class), TransportContext.NULL);
+        server.sendNotification(notif, TransportContext.NULL);
 
         verify(msg).makeRequest(eq(notif), any(), any());
     }
@@ -264,17 +265,17 @@ public class CoapServerTest {
 
         //observation is missing
         assertThatThrownBy(() ->
-                server.sendNotification(newCoapPacket(LOCAL_5683).token(11).ack(Code.C205_CONTENT).build(), mock(Callback.class), TransportContext.NULL)
+                server.sendNotification(newCoapPacket(LOCAL_5683).token(11).ack(Code.C205_CONTENT).build(), TransportContext.NULL)
         ).isInstanceOf(IllegalArgumentException.class);
 
         //token is missing
         assertThatThrownBy(() ->
-                server.sendNotification(newCoapPacket(LOCAL_5683).obs(2).ack(Code.C205_CONTENT).build(), mock(Callback.class), TransportContext.NULL)
+                server.sendNotification(newCoapPacket(LOCAL_5683).obs(2).ack(Code.C205_CONTENT).build(), TransportContext.NULL)
         ).isInstanceOf(IllegalArgumentException.class);
 
         //wrong content type
         assertThatThrownBy(() ->
-                server.sendNotification(newCoapPacket(LOCAL_5683).token(321).obs(2).ack(Code.C400_BAD_REQUEST).build(), mock(Callback.class), TransportContext.NULL)
+                server.sendNotification(newCoapPacket(LOCAL_5683).token(321).obs(2).ack(Code.C400_BAD_REQUEST).build(), TransportContext.NULL)
         ).isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -298,13 +299,6 @@ public class CoapServerTest {
 
     private void assertSendResponse(CoapPacket resp) {
         verify(msg).sendResponse(any(), eq(resp), any());
-    }
-
-    private ObservationHandler initServerWithObservationHandler() {
-        ObservationHandler observationHandler = mock(ObservationHandler.class);
-        when(observationHandler.hasObservation(any())).thenReturn(true);
-        server.setObservationHandler(observationHandler);
-        return observationHandler;
     }
 
     private Callback<CoapPacket> verifyMakeRequest_andThen() {

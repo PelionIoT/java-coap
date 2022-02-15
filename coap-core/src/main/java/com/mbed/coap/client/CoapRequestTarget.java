@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +24,6 @@ import com.mbed.coap.packet.DataConvertingUtility;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -197,31 +196,15 @@ public class CoapRequestTarget {
         return request();
     }
 
-    public void get(Callback<CoapPacket> callback) {
-        updatePacketWithBlock2();
-        request(callback);
-    }
-
     public CompletableFuture<CoapPacket> post() {
         updatePacketWithBlock1();
         requestPacket.setMethod(Method.POST);
         return request();
     }
 
-    public void post(Callback<CoapPacket> callback) {
-        updatePacketWithBlock1();
-        requestPacket.setMethod(Method.POST);
-        request(callback);
-    }
-
     public CompletableFuture<CoapPacket> delete() {
         requestPacket.setMethod(Method.DELETE);
         return request();
-    }
-
-    public void delete(Callback<CoapPacket> callback) {
-        requestPacket.setMethod(Method.DELETE);
-        request(callback);
     }
 
     public CompletableFuture<CoapPacket> put() {
@@ -230,18 +213,15 @@ public class CoapRequestTarget {
         return request();
     }
 
-    public void put(Callback<CoapPacket> callback) {
-        updatePacketWithBlock1();
-        requestPacket.setMethod(Method.PUT);
-        request(callback);
-    }
-
     public CompletableFuture<CoapPacket> observe(ObservationListener observationListener) throws CoapException {
         requestPacket.headers().setObserve(0);
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-        coapClient.putObservationListener(observationListener, coapClient.coapServer.observe(requestPacket, callback, transContext), requestPacket.headers().getUriPath());
+        CompletableFuture<CoapPacket> observe = coapClient.coapServer.observe(requestPacket, transContext);
 
-        return callback;
+        observe.thenAccept(resp ->
+                coapClient.putObservationListener(observationListener, resp.getToken(), requestPacket.headers().getUriPath())
+        );
+
+        return observe;
     }
 
     CoapPacket getRequestPacket() {
@@ -250,10 +230,6 @@ public class CoapRequestTarget {
 
     private CompletableFuture<CoapPacket> request() {
         return coapClient.coapServer.makeRequest(requestPacket, transContext);
-    }
-
-    private void request(Callback<CoapPacket> callback) {
-        coapClient.coapServer.makeRequest(requestPacket, callback, transContext);
     }
 
     public SyncRequestTarget sync() {

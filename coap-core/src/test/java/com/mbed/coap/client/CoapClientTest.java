@@ -29,8 +29,6 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.FutureCallbackAdapter;
 import com.mbed.coap.utils.Token;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -74,34 +72,6 @@ public class CoapClientTest {
 
         cliReceive(newCoapPacket(LOCAL_5683).emptyAck(100));
         assertNotNull(resp.get());
-    }
-
-    @Test
-    public void pingRequest2() throws Exception {
-        FutureCallbackAdapter<CoapPacket> resp = new FutureCallbackAdapter<>();
-        client.ping(resp);
-
-        cliReceive(newCoapPacket(LOCAL_5683).emptyAck(100));
-        assertNotNull(resp.get());
-    }
-
-    @Test
-    public void methods_inRequest() throws Exception {
-        client.resource("/test").get(Callback.IGNORE);
-        assertSent(newCoapPacket(LOCAL_5683).mid(100).uriPath("/test").get());
-        cliReceive(newCoapPacket(LOCAL_5683).emptyAck(100));
-
-        client.resource("/test").put(Callback.IGNORE);
-        assertSent(newCoapPacket(LOCAL_5683).mid(101).uriPath("/test").put());
-        cliReceive(newCoapPacket(LOCAL_5683).emptyAck(101));
-
-        client.resource("/test").delete(Callback.IGNORE);
-        assertSent(newCoapPacket(LOCAL_5683).mid(102).uriPath("/test").delete());
-        cliReceive(newCoapPacket(LOCAL_5683).emptyAck(102));
-
-        client.resource("/test").post(Callback.IGNORE);
-        assertSent(newCoapPacket(LOCAL_5683).mid(103).uriPath("/test").post());
-        cliReceive(newCoapPacket(LOCAL_5683).emptyAck(103));
     }
 
     @Test

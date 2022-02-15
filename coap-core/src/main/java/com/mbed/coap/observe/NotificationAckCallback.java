@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +19,14 @@ package com.mbed.coap.observe;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
-import com.mbed.coap.utils.Callback;
+import java.util.function.BiConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author szymon
  */
-class NotificationAckCallback implements Callback<CoapPacket> {
+class NotificationAckCallback implements BiConsumer<CoapPacket, Throwable> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationAckCallback.class.getName());
     private final ObservationRelation sub;
@@ -44,7 +45,15 @@ class NotificationAckCallback implements Callback<CoapPacket> {
     }
 
     @Override
-    public void call(CoapPacket resp) {
+    public void accept(CoapPacket coapPacket, Throwable exception) {
+        if (exception != null) {
+            callException(exception);
+        } else {
+            call(coapPacket);
+        }
+    }
+
+    private void call(CoapPacket resp) {
         this.sub.setIsDelivering(false);
         if (resp.getMessageType() == MessageType.Acknowledgement) {
             //OK
@@ -65,15 +74,12 @@ class NotificationAckCallback implements Callback<CoapPacket> {
         }
     }
 
-    @Override
-    public void callException(Exception ex) {
+    private void callException(Throwable e) {
         observableResource.removeSubscriber(sub);
-        try {
-            throw ex;
-        } catch (CoapTimeoutException e) {
+        if (e instanceof CoapTimeoutException) {
             //timeout
             LOGGER.warn("Notification response timeout: " + sub.getAddress().toString());
-        } catch (Exception e) {
+        } else {
             LOGGER.warn("Notification response unexpected exception: " + e.getMessage(), e);
         }
         deliveryListener.onFail(sub.getAddress());

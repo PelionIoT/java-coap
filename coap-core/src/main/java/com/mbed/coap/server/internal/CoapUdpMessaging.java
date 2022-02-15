@@ -22,7 +22,6 @@ import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapRequestId;
-import com.mbed.coap.server.CoapTransactionCallback;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.server.PutOnlyMap;
@@ -428,10 +427,6 @@ public class CoapUdpMessaging extends CoapMessaging {
                         removeCoapTransId(trans.getTransactionId());
                         LOGGER.trace("resendTimeouts: CoAP transaction final timeout [{}]", trans);
                         trans.getCallback().callException(new CoapTimeoutException(trans));
-                    } else {
-                        if (trans.getCallback() instanceof CoapTransactionCallback) {
-                            ((CoapTransactionCallback) trans.getCallback()).messageResent();
-                        }
                     }
                 }
             }

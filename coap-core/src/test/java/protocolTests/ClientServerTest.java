@@ -34,8 +34,6 @@ import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.FutureCallbackAdapter;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -43,6 +41,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -87,8 +86,7 @@ public class ClientServerTest {
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-        cnn.makeRequest(request, callback);
+        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
     }
@@ -104,8 +102,7 @@ public class ClientServerTest {
         request.setMessageId(1647);
         request.headers().put(74, new byte[]{1, 2, 3});
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-        cnn.makeRequest(request, callback);
+        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
     }
@@ -122,8 +119,7 @@ public class ClientServerTest {
         request.setMessageId(1647);
         request.headers().put(71, new byte[]{1, 2, 3});
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-        cnn.makeRequest(request, callback);
+        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
         assertEquals(Code.C402_BAD_OPTION, callback.get().getCode());
         cnn.stop();
     }
@@ -140,8 +136,7 @@ public class ClientServerTest {
         request.setMessageId(1647);
         request.headers().put((byte) 71, new byte[]{1, 2, 3});
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-        cnn.makeRequest(request, callback);
+        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
     }
@@ -328,8 +323,7 @@ public class ClientServerTest {
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-        cnn.makeRequest(request, callback);
+        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
     }
@@ -351,23 +345,16 @@ public class ClientServerTest {
     }
 
     @Test
-    public void testMakeRequestWithNullCallback() throws CoapException {
-        assertThrows(NullPointerException.class, () ->
-                server.makeRequest(new CoapPacket(null), (Callback<CoapPacket>) null)
-        );
-    }
-
-    @Test
     public void testMakeRequestWithNullAddress() throws CoapException {
         assertThrows(NullPointerException.class, () ->
-                server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null), new FutureCallbackAdapter<CoapPacket>())
+            server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null))
         );
     }
 
     @Test
     public void testMakeRequestNullRequest() throws CoapException {
         assertThrows(NullPointerException.class, () ->
-                server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null), new FutureCallbackAdapter<CoapPacket>())
+            server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null))
         );
     }
 
@@ -386,8 +373,7 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-        cnn.makeRequest(newCoapPacket(serverAddress).mid(11).con().get().uriPath("/slow").build(), callback);
+        CompletableFuture<CoapPacket> callback = cnn.makeRequest(newCoapPacket(serverAddress).mid(11).con().get().uriPath("/slow").build());
         cnn.stop();
 
         assertThatThrownBy(callback::get).hasCauseInstanceOf(IOException.class);
@@ -407,8 +393,7 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-        cnn.makeRequest(newCoapPacket(serverAddress).mid(11).non().get().token(12).uriPath("/slow").build(), callback);
+        CompletableFuture<CoapPacket> callback = cnn.makeRequest(newCoapPacket(serverAddress).mid(11).non().get().token(12).uriPath("/slow").build());
         cnn.stop();
 
         assertThatThrownBy(callback::get).hasCauseInstanceOf(IOException.class);

@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +17,9 @@
 package com.mbed.coap.client;
 
 import com.mbed.coap.linkformat.LinkFormatBuilder;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.utils.Callback;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.time.Duration;
@@ -44,41 +43,7 @@ public class RegistrationManager {
     private volatile Optional<String> registrationLocation = Optional.empty();
     private volatile Duration lastRetryDelay = Duration.ZERO;
 
-    private final Callback<CoapPacket> registrationCallback = new Callback<CoapPacket>() {
-        @Override
-        public void call(CoapPacket resp) {
-            if (resp.getCode().equals(Code.C201_CREATED)) {
-                registrationSuccess(resp.headers().getLocationPath(), resp.headers().getMaxAgeValue());
-            } else {
-                registrationFailed(String.format("%s '%s'", resp.getCode().codeToString(), resp.getPayloadString() != null ? resp.getPayloadString() : ""));
-            }
-        }
-
-        @Override
-        public void callException(Exception ex) {
-            LOGGER.error(ex.getMessage(), ex);
-            registrationFailed(ex.getMessage());
-        }
-    };
-
-    private final Callback<CoapPacket> updateCallback = new Callback<CoapPacket>() {
-        @Override
-        public void call(CoapPacket resp) {
-            if (resp.getCode().equals(Code.C201_CREATED) || resp.getCode().equals(Code.C204_CHANGED)) {
-                LOGGER.info("[EP:{}] Updated, lifetime: {}s", epName, resp.headers().getMaxAgeValue());
-                scheduleUpdate(resp.headers().getMaxAgeValue());
-            } else {
-                updateFailed(resp.getCode().codeToString() + " " + (resp.getPayloadString() != null ? resp.getPayloadString() : ""));
-            }
-        }
-
-        @Override
-        public void callException(Exception e) {
-            LOGGER.error(e.getMessage(), e);
-            updateFailed(e.getMessage());
-        }
-    };
-
+    @SuppressWarnings("PMD.ConstructorCallsOverridableMethod")
     public RegistrationManager(CoapServer server, URI registrationUri, ScheduledExecutorService scheduledExecutor,
             Duration minRetryDelay, Duration maxRetryDelay) {
 
@@ -116,7 +81,19 @@ public class RegistrationManager {
         client.resource(registrationUri.getPath())
                 .query(registrationUri.getQuery())
                 .payload(registrationLinks.get(), MediaTypes.CT_APPLICATION_LINK__FORMAT)
-                .post(registrationCallback);
+                .post()
+                .thenAccept(resp -> {
+                    if (resp.getCode().equals(Code.C201_CREATED)) {
+                        registrationSuccess(resp.headers().getLocationPath(), resp.headers().getMaxAgeValue());
+                    } else {
+                        registrationFailed(String.format("%s '%s'", resp.getCode().codeToString(), resp.getPayloadString() != null ? resp.getPayloadString() : ""));
+                    }
+                })
+                .exceptionally(ex -> {
+                    LOGGER.error(ex.getMessage(), ex);
+                    registrationFailed(ex.getMessage());
+                    return null;
+                });
     }
 
     private void registrationSuccess(String locationPath, long maxAge) {
@@ -131,7 +108,21 @@ public class RegistrationManager {
     }
 
     private void updateRegistration() {
-        client.resource(registrationLocation.get()).post(updateCallback);
+        client.resource(registrationLocation.get()).post()
+                .thenAccept(resp -> {
+                    if (resp.getCode().equals(Code.C201_CREATED) || resp.getCode().equals(Code.C204_CHANGED)) {
+                        LOGGER.info("[EP:{}] Updated, lifetime: {}s", epName, resp.headers().getMaxAgeValue());
+                        scheduleUpdate(resp.headers().getMaxAgeValue());
+                    } else {
+                        updateFailed(resp.getCode().codeToString() + " " + (resp.getPayloadString() != null ? resp.getPayloadString() : ""));
+                    }
+                })
+                .exceptionally(ex -> {
+                    LOGGER.error(ex.getMessage(), ex);
+                    updateFailed(ex.getMessage());
+                    return null;
+                });
+
     }
 
     private void updateFailed(String errMessage) {

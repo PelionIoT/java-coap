@@ -16,6 +16,7 @@
  */
 package protocolTests;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
@@ -28,12 +29,11 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
-import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -66,12 +66,8 @@ public class TimeoutTest {
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
 
-        try {
-            cnn.makeRequest(request).join();
-            fail("Exception was expected");
-        } catch (CompletionException ex) {
-            //expected
-        }
+        assertThatThrownBy(() -> cnn.makeRequest(request).join())
+                .isExactlyInstanceOf(CompletionException.class);
         assertEquals(0, ((CoapUdpMessaging) cnn.getCoapMessaging()).getNumberOfTransactions(), "Wrong number of transactions");
         cnn.stop();
 
@@ -87,16 +83,11 @@ public class TimeoutTest {
         request.headers().setUriPath("/test/1");
         request.setMessageId(1647);
 
-        FutureCallbackAdapter<CoapPacket> callback = new FutureCallbackAdapter<>();
-        cnn.makeRequest(request, callback);
+        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
 
         //assertEquals("Wrong number of transactions", 1, cnn.getNumberOfTransactions());
-        try {
-            callback.get();
-            fail("Exception was expected");
-        } catch (ExecutionException ex) {
-            assertTrue(ex.getCause() instanceof CoapException);
-        }
+        assertThatThrownBy(callback::get)
+                .hasCauseExactlyInstanceOf(CoapTimeoutException.class);
         assertEquals(0, ((CoapUdpMessaging) cnn.getCoapMessaging()).getNumberOfTransactions(), "Wrong number of transactions");
         cnn.stop();
 

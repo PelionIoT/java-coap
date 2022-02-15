@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
- * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.utils;
 
-/**
- * @author szymon
- */
-public interface ObservationHandler {
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import org.slf4j.Logger;
 
-    /**
-     * Returns true observation relation is established.
-     *
-     * @param token observation token
-     * @return true if observation is established
-     */
-    boolean hasObservation(byte[] token);
+public class FutureHelpers {
 
-    void call(CoapExchange t);
+    // Remove when migrated to java 11+
+    public static <T> CompletableFuture<T> failedFuture(Exception ex) {
+        Objects.requireNonNull(ex);
+        CompletableFuture<T> future = new CompletableFuture<>();
+        future.completeExceptionally(ex);
+        return future;
+    }
 
-    void callException(Exception ex);
+    public static Function<Throwable, Void> log(Logger logger) {
+        return ex -> {
+            logger.warn(ex.getMessage());
+            return null;
+        };
+    }
+
 }

@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.utils.FutureHelpers.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -89,7 +90,7 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void should_fail_to_make_request_when_transport_fails() throws Exception {
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(new IOException()));
+        given(coapTransport.sendPacket(any(), any(), any())).willReturn(failedFuture(new IOException()));
 
         CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
 
@@ -233,12 +234,6 @@ public class CoapTcpMessagingTest {
     }
 
     //=======================================================================
-
-    private static CompletableFuture<Boolean> completedFuture(IOException exception) {
-        CompletableFuture f = new CompletableFuture();
-        f.completeExceptionally(exception);
-        return f;
-    }
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {
         tcpMessaging.handle(coapPacketBuilder.build(), TransportContext.NULL);
