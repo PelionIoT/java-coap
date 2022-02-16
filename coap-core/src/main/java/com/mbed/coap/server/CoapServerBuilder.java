@@ -46,8 +46,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     private static final long DELAYED_TRANSACTION_TIMEOUT_MS = 120000; //2 minutes
 
     protected CoapTransport coapTransport;
-    private ObservationIDGenerator observationIDGenerator;
-    private boolean observationIdGenWasSet;
 
     protected int maxIncomingBlockTransferSize = 10_000_000; //default to 10 MB
     protected BlockSize blockSize;
@@ -84,12 +82,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
         return me();
     }
 
-    public final T observerIdGenerator(ObservationIDGenerator obsIdGenerator) {
-        this.observationIDGenerator = obsIdGenerator;
-        this.observationIdGenWasSet = true;
-        return me();
-    }
-
     public T csmStorage(CoapTcpCSMStorage csmStorage) {
         this.csmStorage = csmStorage;
         return me();
@@ -112,11 +104,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     }
 
     public CoapServer build() {
-        CoapServer server = new CoapServerBlocks(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize, route);
-        if (observationIdGenWasSet) {
-            server.setObservationIDGenerator(observationIDGenerator);
-        }
-        return server;
+        return new CoapServerBlocks(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize, route);
     }
 
     protected abstract CoapMessaging buildCoapMessaging();

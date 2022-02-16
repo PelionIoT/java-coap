@@ -23,10 +23,8 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.server.ObservationHandler;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
@@ -65,7 +63,6 @@ public class ServerNotifBenchmark {
         trans = new ServerBenchmarkBase.FloodTransportStub(MAX, executor);
         server = CoapServerBuilder.newBuilder().transport(trans).duplicateMsgCacheSize(10000).build();
         server.start();
-        server.setObservationHandler(new ObservationHandlerNull());
         System.out.println("MSG SIZE: " + reqData.length);
         Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
         //Thread.sleep(4000);
@@ -94,21 +91,4 @@ public class ServerNotifBenchmark {
         endTime = System.currentTimeMillis();
     }
 
-    private static class ObservationHandlerNull implements ObservationHandler {
-
-        @Override
-        public boolean hasObservation(Opaque token) {
-            return true;
-        }
-
-        @Override
-        public void callException(Exception ex) {
-            ex.printStackTrace();
-        }
-
-        @Override
-        public void call(CoapExchange t) {
-            t.sendResponse();
-        }
-    }
 }

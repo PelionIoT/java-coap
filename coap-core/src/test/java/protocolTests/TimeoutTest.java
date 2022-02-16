@@ -16,25 +16,22 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.CoapRequest.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
-import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 
@@ -48,26 +45,8 @@ public class TimeoutTest {
                 .build();
 
         assertThrows(CoapTimeoutException.class, () ->
-                client.resource("/non/existing").sync().get()
+                client.sendSync(get("/non/existing"))
         );
-
-    }
-
-    @Test
-    @Disabled
-    public void timeoutTestIgn() throws Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().transport(61616).build();
-        cnn.start();
-
-        CoapPacket request = new CoapPacket(new InetSocketAddress(InetAddress.getLocalHost(), 60666));
-        request.setMethod(Method.GET);
-        request.headers().setUriPath("/test/1");
-        request.setMessageId(1647);
-
-        assertThatThrownBy(() -> cnn.makeRequest(request).join())
-                .isExactlyInstanceOf(CompletionException.class);
-        assertEquals(0, ((CoapUdpMessaging) cnn.getCoapMessaging()).getNumberOfTransactions(), "Wrong number of transactions");
-        cnn.stop();
 
     }
 
@@ -76,12 +55,9 @@ public class TimeoutTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create()).timeout(new SingleTimeout(100)).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(InMemoryCoapTransport.createAddress(0));
-        request.setMethod(Method.GET);
-        request.headers().setUriPath("/test/1");
-        request.setMessageId(1647);
+        CoapRequest request = get(InMemoryCoapTransport.createAddress(0), "/test/1");
 
-        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
+        CompletableFuture<CoapResponse> callback = cnn.clientService().apply(request);
 
         //assertEquals("Wrong number of transactions", 1, cnn.getNumberOfTransactions());
         assertThatThrownBy(callback::get)

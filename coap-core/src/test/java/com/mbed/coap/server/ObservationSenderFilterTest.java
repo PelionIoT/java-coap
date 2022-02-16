@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,10 +27,10 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.utils.FutureQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -157,34 +157,4 @@ public class ObservationSenderFilterTest {
     }
 
 
-    private static class FutureQueue<T> implements Supplier<CompletableFuture<T>> {
-        private CompletableFuture<T> promise = null;
-
-        @Override
-        public CompletableFuture<T> get() {
-            if (promise != null) {
-                throw new IllegalStateException();
-            }
-            promise = new CompletableFuture<>();
-            return promise;
-        }
-
-        public boolean cancel() {
-            if (promise != null) {
-                CompletableFuture<T> tmpPromise = this.promise;
-                this.promise = null;
-                return tmpPromise.cancel(false);
-            }
-            return false;
-        }
-
-        public boolean put(T obj) {
-            if (promise != null) {
-                CompletableFuture<T> tmpPromise = this.promise;
-                this.promise = null;
-                return tmpPromise.complete(obj);
-            }
-            return false;
-        }
-    }
 }

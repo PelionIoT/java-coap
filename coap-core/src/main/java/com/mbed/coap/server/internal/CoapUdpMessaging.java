@@ -183,13 +183,6 @@ public class CoapUdpMessaging extends CoapMessaging {
         }
     }
 
-
-    @Override
-    public CompletableFuture<CoapPacket> ping(InetSocketAddress destination) {
-        CoapPacket pingRequest = new CoapPacket(null, MessageType.Confirmable, destination);
-        return makeRequest(pingRequest, TransportContext.NULL);
-    }
-
     @Override
     public CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext) {
         boolean forceAddToQueue = false;

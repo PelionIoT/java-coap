@@ -16,7 +16,8 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.Opaque.*;
+import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.Opaque.of;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
@@ -24,7 +25,6 @@ import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
@@ -72,16 +72,16 @@ public class BlockTransferOnDemandTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown() throws IOException {
         client.close();
         server.stop();
     }
 
     @Test
     public void onDemandTest() throws ExecutionException, InterruptedException, CoapException {
-        CoapPacket resp = client.resource("/man").blockSize(BlockSize.S_16).sync().get();
+        CoapResponse resp = client.sendSync(get("/man").blockSize(BlockSize.S_16));
         assertEquals("16B-of-data-here-plus-some", resp.getPayloadString());
-        assertEquals(1, resp.headers().getBlock2Res().getNr());
+        assertEquals(1, resp.options().getBlock2Res().getNr());
     }
 
     private class ManualBlockTransferCoapResource implements Service<CoapRequest, CoapResponse> {

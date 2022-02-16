@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.transport.javassl;
 
+import static com.mbed.coap.packet.CoapRequest.*;
 import static org.awaitility.Awaitility.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
@@ -49,7 +50,7 @@ public class SSLSocketClientTransportTest {
         );
 
         //        assertNotNull(client.ping().get());
-        assertNotNull(client.resource("/test").get().get());
+        assertNotNull(client.sendSync(get("/test")));
 
 
         client.close();

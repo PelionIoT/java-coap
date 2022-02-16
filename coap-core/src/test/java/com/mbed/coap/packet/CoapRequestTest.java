@@ -16,11 +16,83 @@
  */
 package com.mbed.coap.packet;
 
+import static com.mbed.coap.packet.CoapRequest.*;
+import static org.junit.jupiter.api.Assertions.*;
+import com.mbed.coap.transport.TransportContext;
+import java.net.InetSocketAddress;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
 
 class CoapRequestTest {
+    private InetSocketAddress destination = new InetSocketAddress("localhost", 5683);
+
+    @Test
+    public void buildWithAllPossibleFields() {
+        CoapRequest buildRequest = CoapRequest.get("/0/1/2")
+                .address(destination)
+                .accept((short) 1)
+                .blockSize(BlockSize.S_16)
+                .etag(Opaque.ofBytes(10, 8, 6))
+                .host("some.com")
+                .ifMatch(Opaque.ofBytes(9, 7, 5))
+                .maxAge(789456L)
+                .payload("perse", MediaTypes.CT_TEXT_PLAIN)
+                .query("p=1")
+                .query("b", "2")
+                .token(45463L);
+
+        CoapRequest expected = new CoapRequest(Method.GET, Opaque.ofBytes(0xB1, 0x97), new HeaderOptions(), Opaque.of("perse"), destination, TransportContext.NULL);
+        expected.options().setUriPath("/0/1/2");
+        expected.options().setAccept((short) 1);
+        expected.options().setEtag(Opaque.ofBytes(10, 8, 6));
+        expected.options().setUriHost("some.com");
+        expected.options().setIfMatch(new Opaque[]{Opaque.ofBytes(9, 7, 5)});
+        expected.options().setMaxAge(789456L);
+        expected.options().setUriQuery("p=1&b=2");
+        expected.options().setContentFormat(MediaTypes.CT_TEXT_PLAIN);
+        expected.options().setBlock2Res(new BlockOption(0, BlockSize.S_16, false));
+
+        assertEquals(expected, buildRequest);
+    }
+
+
+    @Test
+    public void malformedUriQuery() {
+        CoapRequest req = CoapRequest.put("/0/1/2");
+        failQueryWithNonValidChars(req, "", "2");
+        failQueryWithNonValidChars(req, "&", "2");
+        failQueryWithNonValidChars(req, "=", "54");
+        failQueryWithNonValidChars(req, "f", "");
+        failQueryWithNonValidChars(req, "f", "&");
+        failQueryWithNonValidChars(req, "f", "=");
+    }
+
+    private static void failQueryWithNonValidChars(CoapRequest req, String name, String val) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> req.query(name, val));
+
+        assertEquals("Non valid characters provided in query", e.getMessage());
+    }
+
+    @Test
+    void shouldCreatePing() {
+        CoapRequest ping = ping(destination, TransportContext.NULL);
+
+        assertTrue(ping.isPing());
+        assertThrows(NullPointerException.class, () -> ping.payload("a").isPing());
+        assertThrows(NullPointerException.class, () -> ping.token(1).isPing());
+
+        assertFalse(new CoapRequest(Method.GET, Opaque.EMPTY, new HeaderOptions(), Opaque.EMPTY, destination, TransportContext.NULL).isPing());
+    }
+
+    @Test
+    void testToString() {
+        assertEquals("CoapRequest[PUT URI:/test,Token:03ff, pl(4):64757061]", CoapRequest.put("/test").token(1023).payload("dupa").toString());
+        assertEquals("CoapRequest[POST URI:/test, pl(4):64757061]", CoapRequest.post("/test").payload("dupa").toString());
+        assertEquals("CoapRequest[DELETE URI:/test,Token:03ff]", CoapRequest.delete("/test").token(1023).toString());
+        assertEquals("CoapRequest[GET URI:/test]", CoapRequest.get("/test").toString());
+        assertEquals("CoapRequest[PING]", CoapRequest.ping(destination, TransportContext.NULL).toString());
+    }
 
     @Test
     public void equalsAndHashTest() {

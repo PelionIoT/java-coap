@@ -16,12 +16,12 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.packet.CoapRequest.*;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
-import com.mbed.coap.client.ObservationListener;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.observe.ObservableResourceService;
 import com.mbed.coap.packet.BlockSize;
@@ -73,13 +73,13 @@ public class CoapServerTransportContextTest {
         CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683)).transport(cliTransport).build();
 
         srvTransport.setTransportContext(new TextTransportContext("dupa"));
-        client.resource("/test").context(new TextTransportContext("client-sending")).sync().get();
+        client.sendSync(get("/test").context(new TextTransportContext("client-sending")));
         assertEquals("dupa", ((TextTransportContext) coapResourceTest.transportContext).getText());
         verify(cliTransport).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("client-sending")));
         // verify(srvTransport).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("get-response")));
 
         srvTransport.setTransportContext(new TextTransportContext("dupa2"));
-        client.resource("/test").sync().get();
+        client.sendSync(get("/test"));
         assertEquals("dupa2", ((TextTransportContext) coapResourceTest.transportContext).getText());
 
         client.close();
@@ -91,8 +91,8 @@ public class CoapServerTransportContextTest {
         CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683)).transport(cliTransport).blockSize(BlockSize.S_16).build();
 
         srvTransport.setTransportContext(new TextTransportContext("dupa"));
-        CoapPacket resp = client.resource("/test").payload("fhdkfhsdkj fhsdjkhfkjsdh fjkhs dkjhfsdjkh")
-                .context(new TextTransportContext("client-block")).sync().put();
+        CoapResponse resp = client.sendSync(put("/test").payload("fhdkfhsdkj fhsdjkhfkjsdh fjkhs dkjhfsdjkh")
+                .context(new TextTransportContext("client-block")));
 
         assertEquals(Code.C201_CREATED, resp.getCode());
         assertEquals("dupa", ((TextTransportContext) coapResourceTest.transportContext).getText());
@@ -101,22 +101,6 @@ public class CoapServerTransportContextTest {
         verify(cliTransport, times(3)).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("client-block")));
 
         client.close();
-    }
-
-    @Test
-    public void shouldObserveWithTransportContext() throws Exception {
-        InMemoryCoapTransport cliTransport = spy(new InMemoryCoapTransport());
-        CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683)).transport(cliTransport).build();
-
-        srvTransport.setTransportContext(new TextTransportContext("dupa"));
-        CoapPacket resp = client.resource("/obs").context(new TextTransportContext("client-block")).sync().observe(mock(ObservationListener.class));
-
-        assertEquals(Code.C205_CONTENT, resp.getCode());
-
-        verify(cliTransport).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("client-block")));
-
-        client.close();
-
     }
 
     private static class TextTransportContext implements TransportContext {

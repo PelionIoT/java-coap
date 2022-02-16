@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.client;
 
+import static com.mbed.coap.packet.CoapRequest.*;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.server.CoapServer;
@@ -51,7 +52,7 @@ public class RegistrationManager {
         }
 
         this.epName = epNameFrom(registrationUri);
-        this.client = new CoapClient(new InetSocketAddress(registrationUri.getHost(), registrationUri.getPort()), server);
+        this.client = new CoapClient(new InetSocketAddress(registrationUri.getHost(), registrationUri.getPort()), server.clientService(), server::stop);
         this.scheduledExecutor = scheduledExecutor;
         this.registrationUri = registrationUri;
         this.registrationLinks = Objects.requireNonNull(registrationLinks);
@@ -77,15 +78,15 @@ public class RegistrationManager {
     }
 
     public void register() {
-        client.resource(registrationUri.getPath())
-                .query(registrationUri.getQuery())
-                .payload(registrationLinks, MediaTypes.CT_APPLICATION_LINK__FORMAT)
-                .post()
+        client.send(post(registrationUri.getPath())
+                        .query(registrationUri.getQuery())
+                        .payload(registrationLinks, MediaTypes.CT_APPLICATION_LINK__FORMAT)
+                )
                 .thenAccept(resp -> {
                     if (resp.getCode().equals(Code.C201_CREATED)) {
-                        registrationSuccess(resp.headers().getLocationPath(), resp.headers().getMaxAgeValue());
+                        registrationSuccess(resp.options().getLocationPath(), resp.options().getMaxAgeValue());
                     } else {
-                        registrationFailed(String.format("%s '%s'", resp.getCode().codeToString(), resp.getPayloadString() != null ? resp.getPayloadString() : ""));
+                        registrationFailed(String.format("%s '%s'", resp.getCode().codeToString(), resp.getPayload().toUtf8String()));
                     }
                 })
                 .exceptionally(ex -> {
@@ -107,13 +108,13 @@ public class RegistrationManager {
     }
 
     private void updateRegistration() {
-        client.resource(registrationLocation.get()).post()
+        client.send(post(registrationLocation.get()))
                 .thenAccept(resp -> {
                     if (resp.getCode().equals(Code.C201_CREATED) || resp.getCode().equals(Code.C204_CHANGED)) {
-                        LOGGER.info("[EP:{}] Updated, lifetime: {}s", epName, resp.headers().getMaxAgeValue());
-                        scheduleUpdate(resp.headers().getMaxAgeValue());
+                        LOGGER.info("[EP:{}] Updated, lifetime: {}s", epName, resp.options().getMaxAgeValue());
+                        scheduleUpdate(resp.options().getMaxAgeValue());
                     } else {
-                        updateFailed(resp.getCode().codeToString() + " " + (resp.getPayloadString() != null ? resp.getPayloadString() : ""));
+                        updateFailed(resp.getCode().codeToString() + " " + resp.getPayload().toUtf8String());
                     }
                 })
                 .exceptionally(ex -> {
@@ -140,7 +141,7 @@ public class RegistrationManager {
 
     public void removeRegistration() {
         registrationLocation.ifPresent(loc -> {
-            client.resource(loc).delete();
+            client.send(delete(loc));
             registrationLocation = Optional.empty();
         });
 

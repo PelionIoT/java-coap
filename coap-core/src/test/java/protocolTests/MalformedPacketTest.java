@@ -16,6 +16,7 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.CoapRequest.*;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
@@ -79,7 +80,7 @@ public class MalformedPacketTest {
 
 
         //then, server should keep working
-        assertEquals("Dziala", cnn.resource("/test/1").get().get().getPayloadString());
+        assertEquals("Dziala", cnn.sendSync(get("/test/1")).getPayloadString());
 
         cnn.close();
     }

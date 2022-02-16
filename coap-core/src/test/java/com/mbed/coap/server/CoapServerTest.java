@@ -26,23 +26,17 @@ import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.reset;
 import static org.mockito.BDDMockito.verify;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.exception.ObservationNotEstablishedException;
-import com.mbed.coap.exception.ObservationTerminatedException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.filter.MaxAllowedPayloadFilter;
 import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -103,7 +97,7 @@ public class CoapServerTest {
         final CoapPacket req = newCoapPacket().get().uriPath("/test").build();
 
         //when
-        final CompletableFuture<CoapPacket> resp = server.makeRequest(req);
+        final CompletableFuture<CoapResponse> resp = server.clientService().apply(CoapRequest.get("/test"));
 
         //then
         verify(msg).makeRequest(eq(req), eq(TransportContext.NULL));
@@ -146,77 +140,6 @@ public class CoapServerTest {
         server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err2").payload("way too big, way too big, way too big, way too big, way too big, way too big, way too big, way too big, way too big").build(), TransportContext.NULL);
 
         assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).size1(100).ack(Code.C413_REQUEST_ENTITY_TOO_LARGE).payload("too big"));
-    }
-
-    @Test
-    public void receiveObservationCancellation_withCode() throws Exception {
-        ObservationHandler observationHandler = mock(ObservationHandler.class);
-        server.setObservationHandler(observationHandler);
-
-        server.coapRequestHandler.handleObservation(newCoapPacket(LOCAL_5683).con(Code.C404_NOT_FOUND).obs(0).token(33).payload("A").mid(2).build(), TransportContext.NULL);
-
-        verify(observationHandler).callException(isA(ObservationTerminatedException.class));
-
-        //ack response
-        assertSendResponse(newCoapPacket(LOCAL_5683).emptyAck(2));
-    }
-
-    @Test
-    public void shouldSendObservationRequest() {
-        server.observe("/test", LOCAL_5683, Opaque.of("aa"), TransportContext.NULL);
-
-        verify(msg).makeRequest(argThat(cp -> cp.headers().getUriPath().equals("/test") && cp.headers().getObserve() != null), eq(TransportContext.NULL));
-    }
-
-    @Test
-    public void shouldSendObservationRequest_andAddObservationHeader() {
-        server.observe(newCoapPacket(LOCAL_5683).get().uriPath("/test").build(), TransportContext.NULL);
-
-        verify(msg).makeRequest(argThat(cp -> cp.headers().getUriPath().equals("/test") && cp.headers().getObserve() != null), eq(TransportContext.NULL));
-    }
-
-    @Test
-    public void shouldRespondToObservationRequest() throws ExecutionException, InterruptedException {
-        CoapPacket resp = newCoapPacket().ack(Code.C205_CONTENT).obs(0).build();
-        CompletableFuture<CoapPacket> obsResp = server.observe("/test", LOCAL_5683, Opaque.of("aa"), TransportContext.NULL);
-
-        verifyMakeRequest_andThen().complete(resp);
-
-        assertEquals(resp, obsResp.get());
-    }
-
-    @Test
-    public void shouldRespondToObservationRequest_notObserved() {
-        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, Opaque.of("aa"), TransportContext.NULL);
-
-        verifyMakeRequest_andThen().complete(newCoapPacket().ack(Code.C205_CONTENT).build());
-
-        assertTrue(
-                assertThrows(ExecutionException.class, resp::get).getCause() instanceof ObservationNotEstablishedException
-        );
-
-    }
-
-    @Test
-    public void shouldRespondToObservationRequest_errorResponse() {
-        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, Opaque.of("aa"), TransportContext.NULL);
-
-        verifyMakeRequest_andThen().complete(newCoapPacket().ack(Code.C404_NOT_FOUND).build());
-
-        assertTrue(
-                assertThrows(ExecutionException.class, resp::get).getCause() instanceof ObservationNotEstablishedException
-        );
-    }
-
-    @Test
-    public void shouldRespondToObservationRequest_exception() {
-        CompletableFuture<CoapPacket> resp = server.observe("/test", LOCAL_5683, Opaque.of("aa"), TransportContext.NULL);
-
-        verifyMakeRequest_andThen().completeExceptionally(new IOException());
-
-        assertTrue(
-                assertThrows(ExecutionException.class, resp::get).getCause() instanceof IOException
-        );
     }
 
     @Test()

@@ -42,8 +42,6 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     private boolean isRunning;
 
-    public abstract CompletableFuture<CoapPacket> ping(InetSocketAddress destination);
-
     public abstract CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext);
 
     public abstract void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext);

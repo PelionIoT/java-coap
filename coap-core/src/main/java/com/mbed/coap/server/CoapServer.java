@@ -17,20 +17,14 @@
 package com.mbed.coap.server;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
-import static com.mbed.coap.utils.FutureHelpers.failedFuture;
 import static java.util.Objects.*;
-import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapUnknownOptionException;
-import com.mbed.coap.exception.ObservationNotEstablishedException;
-import com.mbed.coap.exception.ObservationTerminatedException;
+import com.mbed.coap.observe.ObservationHandler;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.MessageType;
-import com.mbed.coap.packet.Method;
-import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.internal.CoapExchangeImpl;
 import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.server.internal.CoapRequestHandler;
@@ -49,16 +43,18 @@ public class CoapServer {
     private boolean isRunning;
     private final Service<CoapRequest, CoapResponse> requestHandlingService;
     private boolean enabledCriticalOptTest = true;
-    protected ObservationHandler observationHandler;
-    private ObservationIDGenerator observationIDGenerator = new SimpleObservationIDGenerator();
+    final ObservationHandler observationHandler = new ObservationHandler();
     final CoapRequestHandler coapRequestHandler = new CoapRequestHandlerImpl();
-
     private final CoapMessaging coapMessaging;
+    private final Service<CoapRequest, CoapResponse> clientService;
 
     public CoapServer(CoapMessaging coapMessaging, Service<CoapRequest, CoapResponse> routeService) {
         this.coapMessaging = coapMessaging;
         this.requestHandlingService = new ObservationSenderFilter(this::sendNotification)
                 .then(requireNonNull(routeService));
+
+        this.clientService = new ObserveRequestFilter(observationHandler)
+                .then(this::sendRequest);
     }
 
     public static CoapServerBuilder.CoapServerBuilderForUdp builder() {
@@ -124,14 +120,13 @@ public class CoapServer {
     }
 
 
-    /**
-     * Makes asynchronous CoAP request. Sends given packet to specified address..
-     *
-     * @param requestPacket request packet
-     * @return CompletableFuture with response promise
-     */
-    public final CompletableFuture<CoapPacket> makeRequest(CoapPacket requestPacket) {
-        return makeRequest(requestPacket, TransportContext.NULL);
+    public final Service<CoapRequest, CoapResponse> clientService() {
+        return clientService;
+    }
+
+    private CompletableFuture<CoapResponse> sendRequest(CoapRequest req) {
+        return makeRequest(CoapPacket.from(req), req.getTransContext())
+                .thenApply(CoapPacket::toCoapResponse);
     }
 
     /**
@@ -141,7 +136,7 @@ public class CoapServer {
      * @param transContext transport context that will be passed to transport connector
      * @return CompletableFuture with response promise
      */
-    public CompletableFuture<CoapPacket> makeRequest(CoapPacket requestPacket, final TransportContext transContext) {
+    protected CompletableFuture<CoapPacket> makeRequest(CoapPacket requestPacket, final TransportContext transContext) {
         return coapMessaging.makeRequest(requestPacket, transContext);
     }
 
@@ -154,20 +149,6 @@ public class CoapServer {
         }
 
         return makeRequest(notifPacket, transContext);
-    }
-
-    public CompletableFuture<CoapPacket> ping(InetSocketAddress destination) {
-        return coapMessaging.ping(destination);
-    }
-
-    /**
-     * Sets handler for receiving notifications.
-     *
-     * @param observationHandler observation handler
-     */
-    public void setObservationHandler(ObservationHandler observationHandler) {
-        this.observationHandler = observationHandler;
-        LOGGER.trace("Observation handler set [{}]", observationHandler);
     }
 
     public void setConnectHandler(Consumer<InetSocketAddress> disconnectConsumer) {
@@ -197,14 +178,14 @@ public class CoapServer {
                     sendResponse(packet, response);
                 }
 
-                obsHdlr.callException(new ObservationTerminatedException(packet, context));
+                obsHdlr.terminate(packet);
                 return true;
             }
 
             //            if (!findDuplicate(packet, "CoAP notification repeated")) {
             LOGGER.trace("Notification [{}]", packet.getRemoteAddrString());
             CoapExchange exchange = new CoapExchangeImpl(packet, CoapServer.this);
-            obsHdlr.call(exchange);
+            obsHdlr.notify(exchange);
             //            }
             return true;
         }
@@ -272,53 +253,8 @@ public class CoapServer {
     }
 
 
-    /**
-     * Initialize observation.
-     *
-     * <p>
-     * <i>Asynchronous method</i>
-     * </p>
-     *
-     * @param uri resource path for observation
-     * @param destination destination address
-     * @param token observation identification (token)
-     * @return response
-     */
-    public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, Opaque token, TransportContext transportContext) {
-        CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, uri, destination);
-        request.setToken(token);
-        request.headers().setObserve(0);
-        return observe(request, transportContext);
-    }
-
-    public CompletableFuture<CoapPacket> observe(CoapPacket request, TransportContext transportContext) {
-        if (request.headers().getObserve() == null) {
-            request.headers().setObserve(0);
-        }
-        if (request.getToken().isEmpty()) {
-            request.setToken(observationIDGenerator.nextObservationID(request.headers().getUriPath()));
-        }
-
-        return makeRequest(request, transportContext)
-                .thenCompose(resp -> {
-                    if (resp.getCode() != Code.C205_CONTENT || resp.headers().getObserve() == null) {
-                        return failedFuture(new ObservationNotEstablishedException(resp));
-                    } else {
-                        return completedFuture(resp);
-                    }
-                });
-    }
-
-    /**
-     * Sets observation id generator instance.
-     *
-     * @param observationIDGenerator observation id generator instance
-     */
-    public void setObservationIDGenerator(ObservationIDGenerator observationIDGenerator) {
-        this.observationIDGenerator = observationIDGenerator;
-    }
-
     public CoapMessaging getCoapMessaging() {
         return coapMessaging;
     }
+
 }

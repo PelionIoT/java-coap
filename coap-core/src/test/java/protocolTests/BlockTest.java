@@ -16,20 +16,21 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.CoapRequest.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
-import com.mbed.coap.client.ObservationListener;
+import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
-import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.MessageIdSupplierImpl;
-import com.mbed.coap.server.SimpleObservationIDGenerator;
 import com.mbed.coap.transmission.SingleTimeout;
+import com.mbed.coap.utils.ObservationConsumer;
 import java.net.InetSocketAddress;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +49,6 @@ public class BlockTest {
         transport = new TransportConnectorMock();
 
         CoapServer coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
-                .observerIdGenerator(new SimpleObservationIDGenerator(0))
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();
 
@@ -68,7 +68,7 @@ public class BlockTest {
         transport.when(newCoapPacket(2).get().block2Res(1, BlockSize.S_16, false).uriPath("/path1").build())
                 .then(newCoapPacket(2).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build());
 
-        assertEquals("123456789012345|dupa", client.resource("/path1").get().get().getPayloadString());
+        assertEquals("123456789012345|dupa", client.sendSync(get("/path1")).getPayloadString());
 
     }
 
@@ -79,7 +79,7 @@ public class BlockTest {
         transport.when(newCoapPacket(2).get().block2Res(1, BlockSize.S_16, false).uriPath("/path1").build())
                 .then(newCoapPacket(2).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build());
 
-        assertEquals("123456789012345|dupa", client.resource("/path1").blockSize(BlockSize.S_16).get().get().getPayloadString());
+        assertEquals("123456789012345|dupa", client.sendSync(get("/path1").blockSize(BlockSize.S_16)).getPayloadString());
 
     }
 
@@ -94,7 +94,7 @@ public class BlockTest {
         transport.when(newCoapPacket(2).put().block1Req(1, BlockSize.S_32, false).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("dupa").build())
                 .then(newCoapPacket(2).ack(Code.C204_CHANGED).block1Req(1, BlockSize.S_32, false).build());
 
-        assertEquals(Code.C204_CHANGED, client.resource("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
+        assertEquals(Code.C204_CHANGED, client.sendSync(put("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN)).getCode());
 
     }
 
@@ -113,7 +113,7 @@ public class BlockTest {
         transport.when(newCoapPacket(2).put().block1Req(1, BlockSize.S_32, false).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("dupa").build())
                 .then(newCoapPacket(2).ack(Code.C204_CHANGED).block1Req(1, BlockSize.S_16, false).build());
 
-        assertEquals(Code.C204_CHANGED, client.resource("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
+        assertEquals(Code.C204_CHANGED, client.sendSync(put("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN)).getCode());
     }
 
     @Test
@@ -129,7 +129,7 @@ public class BlockTest {
         transport.when(newCoapPacket(2).put().block1Req(2, BlockSize.S_16, false).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("dupa").build())
                 .then(newCoapPacket(2).ack(Code.C204_CHANGED).block1Req(2, BlockSize.S_16, false).build());
 
-        assertEquals(Code.C204_CHANGED, client.resource("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN).put().get().getCode());
+        assertEquals(Code.C204_CHANGED, client.sendSync(put("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN)).getCode());
 
     }
 
@@ -139,8 +139,8 @@ public class BlockTest {
         transport.when(newCoapPacket(1).get().token(1).uriPath("/test").obs(0).build())
                 .then(newCoapPacket(1).ack(Code.C205_CONTENT).token(1).obs(0).payload("12").build());
 
-        ObservationListener observationListener = mock(ObservationListener.class);
-        assertEquals("12", client.resource("/test").observe(observationListener).get().getPayloadString());
+        ObservationConsumer observationListener = new ObservationConsumer();
+        assertEquals("12", client.observe("/test", Opaque.ofBytes(1), observationListener).join().getPayloadString());
 
         //notification with blocks
         System.out.println("------");
@@ -153,10 +153,7 @@ public class BlockTest {
         transport.receive(newCoapPacket(101).con(Code.C205_CONTENT).obs(2).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build(), new InetSocketAddress("127.0.0.1", 61616));
 
 
-        verify(observationListener, timeout(1000))
-                .onObservation(eq(newCoapPacket(new InetSocketAddress("127.0.0.1", 61616)).mid(2).ack(Code.C205_CONTENT).block2Res(2, BlockSize.S_16, false)
-                        .payload("123456789012345|123456789012345|12345").build()));
-
+        assertEquals(observationListener.next(), CoapResponse.ok("123456789012345|123456789012345|12345").options(o -> o.setBlock2Res(new BlockOption(2, BlockSize.S_16, false))));
     }
 
     @Test
@@ -165,8 +162,8 @@ public class BlockTest {
         transport.when(newCoapPacket(1).get().token(1).uriPath("/test").obs(0).build())
                 .then(newCoapPacket(1).ack(Code.C205_CONTENT).token(1).obs(0).payload("12").build());
 
-        ObservationListener observationListener = mock(ObservationListener.class);
-        assertEquals("12", client.resource("/test").observe(observationListener).get().getPayloadString());
+        ObservationConsumer observationListener = new ObservationConsumer();
+        assertEquals("12", client.observe("/test", Opaque.ofBytes(1), observationListener).join().getPayloadString());
 
         //notification with blocks
         System.out.println("------");
@@ -175,8 +172,7 @@ public class BlockTest {
 
         transport.receive(newCoapPacket(101).con(Code.C205_CONTENT).obs(2).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build(), new InetSocketAddress("127.0.0.1", 61616));
 
-
-        verify(observationListener, never()).onObservation(any(CoapPacket.class));
+        assertTrue(observationListener.isEmpty());
     }
 
     @Test
@@ -185,16 +181,15 @@ public class BlockTest {
         transport.when(newCoapPacket(1).get().token(1).uriPath("/test").obs(0).build())
                 .then(newCoapPacket(1).ack(Code.C205_CONTENT).token(1).obs(0).payload("12").build());
 
-        ObservationListener observationListener = mock(ObservationListener.class);
-        assertEquals("12", client.resource("/test").observe(observationListener).get().getPayloadString());
+        ObservationConsumer observationListener = new ObservationConsumer();
+        assertEquals("12", client.observe("/test", Opaque.ofBytes(1), observationListener).get().getPayloadString());
 
         //notification with blocks
         System.out.println("------");
 
         transport.receive(newCoapPacket(101).con(Code.C205_CONTENT).obs(1).token(1).block2Res(0, BlockSize.S_16, true).payload("123456789012345").build(), new InetSocketAddress("127.0.0.1", 61616));
 
-
-        verify(observationListener, never()).onObservation(any(CoapPacket.class));
+        assertTrue(observationListener.isEmpty());
     }
 
 }

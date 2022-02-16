@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
- * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package com.mbed.coap.utils;
 
-import com.mbed.coap.packet.Opaque;
+import java.util.concurrent.CompletionException;
 
-/**
- * Interface for generating observation IDs.
- */
-public interface ObservationIDGenerator {
+public class Exceptions {
 
-    /**
-     * Returns next observation id.
-     *
-     * @param uri URI path
-     * @return observation id
-     */
-    Opaque nextObservationID(String uri);
+    public static <T> T reThrow(CheckExceptionSupplier<T> f) {
+        try {
+            return f.get();
+        } catch (Exception ex) {
+            throw new CompletionException(ex);
+        }
+    }
 
-
+    @FunctionalInterface
+    public interface CheckExceptionSupplier<T> {
+        T get() throws Exception;
+    }
 }

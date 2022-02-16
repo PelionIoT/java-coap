@@ -44,15 +44,15 @@ class BlockWiseCallback {
     private final int numberOfBertBlocks;
     private final CoapTcpCSM csm;
     private final int maxIncomingBlockTransferSize;
-    private final Service<CoapPacket, CoapPacket> requestService;
+    private final Service<CoapPacket, CoapPacket> sendService;
 
 
-    BlockWiseCallback(Service<CoapPacket, CoapPacket> requestService, CoapTcpCSM csm, CoapPacket request, int maxIncomingBlockTransferSize) throws CoapException {
+    BlockWiseCallback(Service<CoapPacket, CoapPacket> sendService, CoapTcpCSM csm, CoapPacket request, int maxIncomingBlockTransferSize) throws CoapException {
         this.request = request;
         this.requestPayload = request.getPayload();
         this.csm = csm;
         this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
-        this.requestService = requestService;
+        this.sendService = sendService;
 
         if (request.getMethod() != null && csm.useBlockTransfer(requestPayload)) {
             //request that needs to use blocks
@@ -216,7 +216,7 @@ class BlockWiseCallback {
     }
 
     private CompletableFuture<CoapPacket> makeRequest() {
-        return requestService.apply(request).thenCompose(this::receive);
+        return sendService.apply(request).thenCompose(this::receive);
     }
 
 

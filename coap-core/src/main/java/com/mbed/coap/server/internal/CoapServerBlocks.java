@@ -47,7 +47,7 @@ public class CoapServerBlocks extends CoapServer {
     }
 
     @Override
-    public CompletableFuture<CoapPacket> makeRequest(CoapPacket request, TransportContext outgoingTransContext) {
+    protected CompletableFuture<CoapPacket> makeRequest(CoapPacket request, TransportContext outgoingTransContext) {
 
         // make consequent requests with block priority and forces adding to queue even if it is full
         Service<CoapPacket, CoapPacket> sendService = coapPacket -> coapMessaging.makeRequest(coapPacket, outgoingTransContext);

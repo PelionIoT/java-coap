@@ -103,6 +103,10 @@ public class CoapResponse {
         return payload;
     }
 
+    public String getPayloadString() {
+        return payload.toUtf8String();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -124,7 +128,15 @@ public class CoapResponse {
 
     @Override
     public String toString() {
-        return "CoapResponse[" + code.codeToString() + "," + options + ", payload=" + payload.toHexShort(20) + ']';
+        String codeString = code != null ? code.codeToString() : "na";
+        String optionsString = options.toString();
+        String optionsComma = optionsString.isEmpty() ? "" : ",";
+
+        if (payload.isEmpty()) {
+            return String.format("CoapResponse[%s%s%s]", codeString, optionsComma, optionsString);
+        } else {
+            return String.format("CoapResponse[%s%s%s, pl(%d):%s]", codeString, optionsComma, optionsString, payload.size(), payload.toHexShort(20));
+        }
     }
 
     // ---  MODIFIERS ---

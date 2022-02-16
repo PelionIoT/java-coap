@@ -17,6 +17,7 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.packet.BlockSize.*;
+import static com.mbed.coap.packet.CoapRequest.*;
 import static com.mbed.coap.utils.Bytes.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,6 +29,8 @@ import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.RouterService;
 import java.util.concurrent.CompletableFuture;
@@ -60,9 +63,9 @@ public class CoapServerBlocksUnitTest {
 
     @Test
     public void shouldMakeNonBlockingRequest() throws Exception {
-        CoapPacket req = newCoapPacket(LOCAL_5683).mid(1).get().uriPath("/test").build();
+        CoapPacket req = newCoapPacket(LOCAL_5683).mid(0).get().uriPath("/test").build();
 
-        CompletableFuture<CoapPacket> resp = server.makeRequest(req);
+        CompletableFuture<CoapResponse> resp = server.clientService().apply(get(LOCAL_5683, "/test"));
 
         verify(msg).makeRequest(eq(req), any());
         assertFalse(resp.isDone());
@@ -70,25 +73,24 @@ public class CoapServerBlocksUnitTest {
 
     @Test
     public void shouldReceiveNonBlockingResponse() throws Exception {
-        CoapPacket req = newCoapPacket(LOCAL_5683).mid(2).get().uriPath("/test").build();
-        CoapPacket resp = newCoapPacket(LOCAL_5683).mid(2).con().payload("OK").build();
+        CoapPacket resp = newCoapPacket(LOCAL_5683).mid(2).con(Code.C205_CONTENT).payload("OK").build();
 
-        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+        CompletableFuture<CoapResponse> respFut = server.clientService().apply(get(LOCAL_5683, "/test"));
 
         assertFalse(respFut.isDone());
 
         //verify response
         promise.complete(resp);
 
-        assertEquals(resp, respFut.get());
+        assertEquals(CoapResponse.ok("OK"), respFut.get());
     }
 
     @Test
     public void shouldMakeBlockingRequest_maxMsgSz20() throws Exception {
-        CoapPacket req = newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_").build();
+        CoapRequest req = post(LOCAL_5683, "/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_");
         capabilities.put(LOCAL_5683, new CoapTcpCSM(20, true));
 
-        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+        CompletableFuture<CoapResponse> respFut = server.clientService().apply(req);
 
         //BLOCK 0
         assertMakeRequest(
@@ -115,8 +117,8 @@ public class CoapServerBlocksUnitTest {
     @Test
     public void shouldFail_toReceive_tooLarge_blockingResponse() throws Exception {
         server = new CoapServerBlocks(msg, capabilities, 2000, RouterService.NOT_FOUND_SERVICE);
-        CoapPacket req = newCoapPacket(LOCAL_5683).get().uriPath("/test").build();
-        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+        CoapRequest req = get(LOCAL_5683, "/test");
+        CompletableFuture<CoapResponse> respFut = server.clientService().apply(req);
 
         //BLOCK 0
         assertMakeRequestAndReceive(
@@ -139,8 +141,8 @@ public class CoapServerBlocksUnitTest {
     public void shoudFail_toReceive_responseWithIncorrectLastBlockSize() {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(20, true));
 
-        CoapPacket req = newCoapPacket(LOCAL_5683).get().uriPath("/test").build();
-        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+        CoapRequest req = get(LOCAL_5683, "/test");
+        CompletableFuture<CoapResponse> respFut = server.clientService().apply(req);
 
         //BLOCK 0
         assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/test"));
@@ -164,8 +166,8 @@ public class CoapServerBlocksUnitTest {
 
     @Test
     public void shouldReceiveBlockingResponse() throws Exception {
-        CoapPacket req = newCoapPacket(LOCAL_5683).get().uriPath("/test").build();
-        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+        CoapRequest req = get(LOCAL_5683, "/test");
+        CompletableFuture<CoapResponse> respFut = server.clientService().apply(req);
 
         //BLOCK 0
         assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/test"));
@@ -189,9 +191,9 @@ public class CoapServerBlocksUnitTest {
     @Test
     public void shouldReceiveBlockingResponse_with_BERT() throws Exception {
         //based on https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-6.1
-        CoapPacket req = newCoapPacket(LOCAL_5683).get().uriPath("/status").build();
+        CoapRequest req = get(LOCAL_5683, "/status");
 
-        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+        CompletableFuture<CoapResponse> respFut = server.clientService().apply(req);
 
         //BLOCK 0
         assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status"));
@@ -224,9 +226,9 @@ public class CoapServerBlocksUnitTest {
         //based on https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-6.2
         capabilities.put(LOCAL_5683, new CoapTcpCSM(10000, true));
 
-        CoapPacket req = newCoapPacket(LOCAL_5683).put().uriPath("/options").payload(opaqueOfSize(8192 + 8192 + 5683)).build();
+        CoapRequest req = put(LOCAL_5683, "/options").payload(opaqueOfSize(8192 + 8192 + 5683));
 
-        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+        CompletableFuture<CoapResponse> respFut = server.clientService().apply(req);
 
         //BLOCK 0
         assertMakeRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(0, S_1024_BERT, true).payload(opaqueOfSize(8192)).size1(22067));
@@ -255,9 +257,9 @@ public class CoapServerBlocksUnitTest {
     public void shouldFailSendBlockingRequest_when_blockTransferIsDisabled() throws Exception {
         //based on https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-6.2
 
-        CoapPacket req = newCoapPacket(LOCAL_5683).put().uriPath("/options").payload(opaqueOfSize(8192 + 8192 + 5683)).build();
+        CoapRequest req = put(LOCAL_5683, "/options").payload(opaqueOfSize(8192 + 8192 + 5683));
 
-        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+        CompletableFuture<CoapResponse> respFut = server.clientService().apply(req);
 
         assertTrue(respFut.isCompletedExceptionally());
         assertThatThrownBy(() -> respFut.get())
@@ -267,14 +269,12 @@ public class CoapServerBlocksUnitTest {
     }
 
 
-
-
     @Test
     public void should_continue_block_transfer_after_block_size_change() throws ExecutionException, InterruptedException {
-        CoapPacket req = newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_LARGE___PAYLOAD").build();
+        CoapRequest req = post(LOCAL_5683, "/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_LARGE___PAYLOAD");
         capabilities.put(LOCAL_5683, new CoapTcpCSM(40, true));
 
-        CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
+        CompletableFuture<CoapResponse> respFut = server.clientService().apply(req);
 
         //BLOCK 0
         assertMakeRequest(

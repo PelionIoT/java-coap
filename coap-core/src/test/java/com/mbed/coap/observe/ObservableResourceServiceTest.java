@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,7 +59,7 @@ public class ObservableResourceServiceTest {
     }
 
     @Test
-    public void doNotCreateObservationRelationWhenObsIsNot1() throws ExecutionException, InterruptedException {
+    public void doNotCreateObservationRelationWhenObsIsNot0() throws ExecutionException, InterruptedException {
         // when
         CompletableFuture<CoapResponse> resp = obsRes.apply(get(PEER_1, "/test").token(13).observe(10));
 

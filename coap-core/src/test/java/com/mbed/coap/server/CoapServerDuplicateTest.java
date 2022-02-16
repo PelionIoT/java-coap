@@ -14,8 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server.internal;
+package com.mbed.coap.server;
 
+import static com.mbed.coap.observe.ObservationConsumer.*;
 import static com.mbed.coap.server.CoapServerBuilder.*;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,10 +28,7 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.CoapExchange;
-import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.ObservationHandler;
-import com.mbed.coap.server.RouterService;
+import com.mbed.coap.server.internal.MockCoapTransport;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
@@ -177,23 +175,11 @@ public class CoapServerDuplicateTest {
     @Test
     public void testDuplicateNotification() throws IOException, CoapException, InterruptedException {
         final AtomicBoolean notificationArrived = new AtomicBoolean(false);
-        server.setObservationHandler(new ObservationHandler() {
-            @Override
-            public boolean hasObservation(Opaque token) {
-                return true;
-            }
-
-            @Override
-            public void call(CoapExchange coapExchange) {
-                notificationArrived.set(true);
-                coapExchange.sendResponse();
-            }
-
-            @Override
-            public void callException(Exception ex) {
-                ex.printStackTrace();
-            }
-        });
+        consumeFrom(server.observationHandler.nextSupplier(Opaque.variableUInt(1234), "/obs"), __ -> {
+                    notificationArrived.set(true);
+                    return true;
+                }
+        );
 
         CoapPacket notif = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, REMOTE_ADDRESS);
         notif.setMessageId(12);

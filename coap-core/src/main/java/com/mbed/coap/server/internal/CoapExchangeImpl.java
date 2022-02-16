@@ -22,9 +22,10 @@ import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
-import com.mbed.coap.packet.Method;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
@@ -105,27 +106,28 @@ public class CoapExchangeImpl implements CoapExchange {
 
 
     @Override
-    public CompletableFuture<CoapPacket> retrieveNotificationBlocks(final String uriPath) throws CoapException {
+    public CompletableFuture<CoapResponse> retrieveNotificationBlocks(final String uriPath) {
         if (request.headers().getObserve() == null || request.headers().getBlock2Res() == null) {
             throw new IllegalStateException("Method retrieveNotificationBlocks can be called only when received notification with block header.");
         }
         //get all blocks
-        CoapPacket fullNotifRequest = new CoapPacket(Method.GET, MessageType.Confirmable, uriPath, getRemoteAddress());
-        fullNotifRequest.headers().setBlock2Res(new BlockOption(1, request.headers().getBlock2Res().getBlockSize(), false));
+        CoapRequest fullNotifRequest = CoapRequest.get(getRemoteAddress(), uriPath);
+        fullNotifRequest.options().setBlock2Res(new BlockOption(1, request.headers().getBlock2Res().getBlockSize(), false));
         final Opaque etag = request.headers().getEtag();
 
         return coapServer
-                .makeRequest(fullNotifRequest)
-                .thenCompose(coapPacket -> {
-                            if (coapPacket.getCode() == Code.C205_CONTENT) {
-                                coapPacket.setPayload(request.getPayload().concat(coapPacket.getPayload()));
-                                if (Objects.equals(etag, coapPacket.headers().getEtag())) {
-                                    return completedFuture(coapPacket);
+                .clientService().apply(fullNotifRequest)
+                .thenCompose(resp -> {
+                            if (resp.getCode() == Code.C205_CONTENT) {
+                                resp = resp.payload(request.getPayload().concat(resp.getPayload()));
+
+                                if (Objects.equals(etag, resp.options().getEtag())) {
+                                    return completedFuture(resp);
                                 } else {
                                     return failedFuture(new CoapException("Could not retrieve full observation message, etag does not mach [" + getRemoteAddress() + uriPath + "]"));
                                 }
                             }
-                            return failedFuture(new CoapCodeException(coapPacket.getCode(), "Unexpected response when retrieving full observation message [" + getRemoteAddress() + uriPath + "]"));
+                            return failedFuture(new CoapCodeException(resp.getCode(), "Unexpected response when retrieving full observation message [" + getRemoteAddress() + uriPath + "]"));
                         }
                 );
 

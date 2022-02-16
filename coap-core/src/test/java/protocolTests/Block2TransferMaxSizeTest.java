@@ -16,6 +16,7 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.CoapRequest.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
@@ -27,7 +28,6 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.MessageIdSupplierImpl;
-import com.mbed.coap.server.SimpleObservationIDGenerator;
 import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
@@ -51,7 +51,6 @@ public class Block2TransferMaxSizeTest {
         transport = new TransportConnectorMock();
 
         coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
-                .observerIdGenerator(new SimpleObservationIDGenerator(0))
                 .timeout(new SingleTimeout(500))
                 .maxIncomingBlockTransferSize(MAX_TRANSFER_SIZE)
                 .build();
@@ -73,7 +72,7 @@ public class Block2TransferMaxSizeTest {
         transport.when(newCoapPacket(2).get().block2Res(1, BlockSize.S_16, false).uriPath("/path1").build())
                 .then(newCoapPacket(2).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("1_3456789012345|").build());
 
-        assertEquals("0_3456789012345|1_3456789012345|", client.resource("/path1").get().get().getPayloadString());
+        assertEquals("0_3456789012345|1_3456789012345|", client.sendSync(get("/path1")).getPayloadString());
     }
 
 
@@ -86,7 +85,7 @@ public class Block2TransferMaxSizeTest {
         transport.when(newCoapPacket(3).get().block2Res(2, BlockSize.S_16, false).uriPath("/path1").build())
                 .then(newCoapPacket(3).ack(Code.C205_CONTENT).block2Res(2, BlockSize.S_16, false).payload("2_3456789012345|").build());
 
-        assertThatThrownBy(() -> client.resource("/path1").get().get().getPayloadString())
+        assertThatThrownBy(() -> client.send(get("/path1")).join())
                 .hasCause(new CoapBlockTooLargeEntityException("Received too large entity for request, max allowed 32, received 48"));
     }
 
@@ -97,7 +96,7 @@ public class Block2TransferMaxSizeTest {
         transport.when(newCoapPacket(2).get().block2Res(1, BlockSize.S_16, false).uriPath("/path1").build())
                 .then(newCoapPacket(2).ack(Code.C205_CONTENT).block2Res(2, BlockSize.S_16, true).payload("1_3456789012345|").build());
 
-        assertThatThrownBy(() -> client.resource("/path1").get().get().getPayloadString())
+        assertThatThrownBy(() -> client.send(get("/path1")).join())
                 .hasCause(new CoapBlockException("Requested and received block number mismatch: req=1|last|16, resp=2|more|16, stopping transaction"));
     }
 }

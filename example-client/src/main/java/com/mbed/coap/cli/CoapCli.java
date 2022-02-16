@@ -21,7 +21,8 @@ import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
-import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.server.CoapServer;
 import java.io.IOException;
@@ -109,11 +110,11 @@ public class CoapCli {
         Thread.sleep(200);
 
         String uriPath = uri.getPath().isEmpty() ? CoapConstants.WELL_KNOWN_CORE : uri.getPath();
-        CoapPacket resp = cli.resource(uriPath)
+        CoapResponse resp = cli.sendSync(CoapRequest.of(destination, Method.valueOf(method), uriPath)
                 .proxy(proxyUri)
                 .blockSize(blockSize)
                 .payload(payload)
-                .sync().invokeMethod(Method.valueOf(method));
+        );
 
         if (resp.getPayload().size() > 0) {
             System.out.println();

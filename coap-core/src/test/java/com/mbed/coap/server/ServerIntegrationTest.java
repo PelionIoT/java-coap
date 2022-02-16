@@ -16,6 +16,8 @@
  */
 package com.mbed.coap.server;
 
+import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.Opaque.of;
 import static com.mbed.coap.packet.Opaque.*;
 import static com.mbed.coap.utils.FutureHelpers.failedFuture;
 import static java.util.concurrent.CompletableFuture.*;
@@ -27,13 +29,10 @@ import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.linkformat.LinkFormat;
 import com.mbed.coap.linkformat.LinkFormatBuilder;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
-import com.mbed.coap.packet.MessageType;
-import com.mbed.coap.packet.Method;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.utils.Service;
@@ -88,16 +87,16 @@ public class ServerIntegrationTest {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
 
         //Getting resources
-        assertEquals("Dziala", client.resource("/test/1").get().join().getPayloadString());
+        assertEquals("Dziala", client.sendSync(get("/test/1")).getPayloadString());
         //assertEquals("Dziala2", cnn.get("/test2").getPayloadString());
 
         //posting to a resource with error
-        assertEquals(Code.C400_BAD_REQUEST, client.resource("/test2").sync().post().getCode());
+        assertEquals(Code.C400_BAD_REQUEST, client.sendSync(post("/test2")).getCode());
 
         //getting non-existing resource
-        assertEquals(Code.C404_NOT_FOUND, client.resource("/do-not-exist").sync().get().getCode());
+        assertEquals(Code.C404_NOT_FOUND, client.sendSync(get("/do-not-exist")).getCode());
 
-        CoapPacket msg = client.resource("/.well-known/core").sync().get();
+        CoapResponse msg = client.sendSync(get("/.well-known/core"));
         assertNotNull(msg);
 
         client.close();
@@ -109,21 +108,17 @@ public class ServerIntegrationTest {
         CoapServer cnn = CoapServerBuilder.newBuilder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(new InetSocketAddress("127.0.0.1", SERVER_PORT));
-        request.setMethod(Method.GET);
-        request.headers().setUriPath("/test2");
-        request.setMessageId(1647);
+        CoapRequest request = get(new InetSocketAddress("127.0.0.1", SERVER_PORT), "/test2")
+                .accept(MediaTypes.CT_APPLICATION_JSON);
 
-        request.headers().setAccept(MediaTypes.CT_APPLICATION_JSON);
-
-        assertEquals(Code.C406_NOT_ACCEPTABLE, cnn.makeRequest(request).get().getCode());
+        assertEquals(Code.C406_NOT_ACCEPTABLE, cnn.clientService().apply(request).get().getCode());
         cnn.stop();
     }
 
     @Test
     public void wellKnownResourcesTest() throws IOException, CoapException, ParseException {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
-        CoapPacket msg = client.resource(CoapConstants.WELL_KNOWN_CORE).sync().get();
+        CoapResponse msg = client.sendSync(get(CoapConstants.WELL_KNOWN_CORE));
 
         assertNotNull(msg);
         LinkFormat[] links = LinkFormatBuilder.parseList(msg.getPayloadString());
@@ -134,7 +129,7 @@ public class ServerIntegrationTest {
     @Disabled
     public void wellKnownResourcesFilterTest() throws IOException, CoapException, ParseException {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).timeout(new SingleTimeout(100000)).build();
-        CoapPacket msg = client.resource(CoapConstants.WELL_KNOWN_CORE).query("rt", "simple").sync().get();
+        CoapResponse msg = client.sendSync(get(CoapConstants.WELL_KNOWN_CORE).query("rt", "simple"));
 
         assertNotNull(msg);
         assertNotNull(msg.getPayloadString());
@@ -145,12 +140,10 @@ public class ServerIntegrationTest {
     @Test
     public void sendPing() throws Exception {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build();
-        CoapPacket pingResp = client.ping().get();
+        CoapResponse pingResp = client.ping().get();
 
-        assertEquals(MessageType.Reset, pingResp.getMessageType());
         assertNull(pingResp.getCode());
         assertEquals(0, pingResp.getPayload().size());
-        assertTrue(pingResp.getToken().isEmpty());
     }
 
     private static class TestResource implements Service<CoapRequest, CoapResponse> {

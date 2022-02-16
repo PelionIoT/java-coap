@@ -17,17 +17,15 @@
 package protocolTests;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import static protocolTests.ObservationWithBlockTest.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
-import com.mbed.coap.client.ObservationListener;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.MessageIdSupplierImpl;
-import com.mbed.coap.server.SimpleObservationIDGenerator;
+import com.mbed.coap.utils.ObservationConsumer;
 import java.net.InetSocketAddress;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,14 +39,13 @@ public class Observation2Test {
     private static final InetSocketAddress SERVER_ADDRESS = new InetSocketAddress("127.0.0.1", 5683);
     private TransportConnectorMock transport;
     private CoapClient client;
-    private ObservationListener observationListener;
+    private ObservationConsumer observationListener;
 
     @BeforeEach
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
-        CoapServer coapServer = CoapServerBuilder.newBuilder().transport(transport).midSupplier(new MessageIdSupplierImpl(0))
-                .observerIdGenerator(new SimpleObservationIDGenerator(0)).build();
+        CoapServer coapServer = CoapServerBuilder.newBuilder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).build();
         coapServer.start();
 
         client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);
@@ -57,9 +54,8 @@ public class Observation2Test {
         transport.when(newCoapPacket(1).get().uriPath("/path1").obs(0).token(1).build())
                 .then(newCoapPacket(1).ack(Code.C205_CONTENT).obs(0).token(1).payload("12345").build());
 
-        observationListener = mock(ObservationListener.class);
-        assertEquals("12345", client.resource("/path1").sync().observe(observationListener).getPayloadString());
-        reset(observationListener);
+        observationListener = new ObservationConsumer();
+        assertEquals("12345", client.observe("/path1", Opaque.ofBytes(1), observationListener).join().getPayloadString());
     }
 
     @AfterEach
@@ -74,6 +70,6 @@ public class Observation2Test {
 
         //important, no token included in response
         assertEquals(transport.getLastOutgoingMessage(), newCoapPacket(SERVER_ADDRESS).mid(3).ack(null).build());
-        verify(observationListener).onObservation(hasPayload("perse perse"));
+        assertEquals(observationListener.next().getPayloadString(), "perse perse");
     }
 }

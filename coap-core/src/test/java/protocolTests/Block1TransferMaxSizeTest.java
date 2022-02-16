@@ -16,7 +16,8 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.Opaque.*;
+import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.Opaque.of;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
@@ -25,7 +26,6 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.observe.ObservableResourceService;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
@@ -33,11 +33,11 @@ import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
+import com.mbed.coap.utils.ObservationConsumer;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ public class Block1TransferMaxSizeTest {
     private ChangeableResource changeableResource;
     private ObservableResourceService observableResource;
 
-    private static final String OBS_RESOURCE_INIT_VALUE = "0_2345678901234|";
+    private static final Opaque OBS_RESOURCE_INIT_VALUE = Opaque.of("0_2345678901234|");
 
     private int SERVER_PORT;
     private static final String CHANGEABLE_RESOURCE_PATH = "/test/res";
@@ -87,7 +87,7 @@ public class Block1TransferMaxSizeTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown() throws IOException {
         client.close();
         server.stop();
     }
@@ -97,11 +97,11 @@ public class Block1TransferMaxSizeTest {
         assertEquals(ChangeableResource.INIT_DATA, changeableResource.data);
 
         Opaque payload = of("0_2345678901234|1_2345678901234|");
-        CoapPacket msg = client.resource(CHANGEABLE_RESOURCE_PATH).blockSize(BlockSize.S_16).payload(payload).sync().put();
+        CoapResponse msg = client.sendSync(put(CHANGEABLE_RESOURCE_PATH).blockSize(BlockSize.S_16).payload(payload));
 
         assertEquals(Code.C204_CHANGED, msg.getCode());
         assertEquals(payload, changeableResource.data);
-        assertEquals(new BlockOption(1, BlockSize.S_16, false), msg.headers().getBlock1Req());
+        assertEquals(new BlockOption(1, BlockSize.S_16, false), msg.options().getBlock1Req());
     }
 
     @Test
@@ -109,12 +109,12 @@ public class Block1TransferMaxSizeTest {
         assertEquals(ChangeableResource.INIT_DATA, changeableResource.data);
 
         String payload = "0_2345678901234|1_2345678901234|2";
-        CoapPacket msg = client.resource(CHANGEABLE_RESOURCE_PATH).payload(payload).sync().put();
+        CoapResponse msg = client.sendSync(put(CHANGEABLE_RESOURCE_PATH).payload(payload));
 
         assertEquals(Code.C413_REQUEST_ENTITY_TOO_LARGE, msg.getCode());
         assertEquals(ChangeableResource.INIT_DATA, changeableResource.data);
         // should report maximum allowed data size in Size1 header
-        assertEquals(new Integer(MAX_DATA), msg.headers().getSize1());
+        assertEquals(new Integer(MAX_DATA), msg.options().getSize1());
     }
 
     @Test
@@ -124,12 +124,12 @@ public class Block1TransferMaxSizeTest {
         String payload = "0_2345678901234|1_2345678901234|2_2345678901234|2";
 
         //transfer should stop if received code != Code.C231_CONTINUE and report
-        CoapPacket msg = client.resource(CHANGEABLE_RESOURCE_PATH).payload(payload).sync().put();
+        CoapResponse msg = client.sendSync(put(CHANGEABLE_RESOURCE_PATH).payload(payload));
 
         assertEquals(Code.C413_REQUEST_ENTITY_TOO_LARGE, msg.getCode());
         assertEquals(ChangeableResource.INIT_DATA, changeableResource.data);
         // should report maximum allowed data size in Size1 header
-        assertEquals(new Integer(MAX_DATA), msg.headers().getSize1());
+        assertEquals(MAX_DATA, msg.options().getSize1().intValue());
     }
 
 
@@ -155,22 +155,22 @@ public class Block1TransferMaxSizeTest {
     @Test
     public void block2_observationWithBlocks() throws Exception {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
-        String expectedBody = OBS_RESOURCE_INIT_VALUE;
+        Opaque expectedBody = OBS_RESOURCE_INIT_VALUE;
 
         //register observation
-        ObservationTest.SyncObservationListener obsListener = new ObservationTest.SyncObservationListener();
-        CoapPacket packet = client.resource(OBSERVABLE_RESOURCE_PATH).sync().observe(obsListener);
-        assertEquals(expectedBody, packet.getPayloadString());
+        ObservationConsumer obsListener = new ObservationConsumer();
+        CoapResponse packet = client.observe(OBSERVABLE_RESOURCE_PATH, obsListener).join();
+        assertEquals(expectedBody, packet.getPayload());
 
         System.out.println("expected: " + expectedBody);
-        System.out.println("received: " + packet.getPayloadString());
+        System.out.println("received: " + packet.getPayload());
 
         //notif 1
         System.out.println("\n-- NOTIF 1");
-        expectedBody += "1_2345678901234|";
-        observableResource.putPayload(of(expectedBody));
-        packet = obsListener.take();
-        assertEquals(expectedBody, packet.getPayloadString());
+        expectedBody = expectedBody.concat(Opaque.of("1_2345678901234|"));
+        observableResource.putPayload(expectedBody);
+        packet = obsListener.next();
+        assertEquals(expectedBody, packet.getPayload());
 
         System.out.println("expected: " + expectedBody);
         System.out.println("received: " + packet.getPayloadString());
@@ -178,10 +178,9 @@ public class Block1TransferMaxSizeTest {
         // actually we will fail only after maxSize + one block
         // first block received by observation code and consequent, with size check,
         // by block mechanism.
-        expectedBody += "2_2345678901234|3_2345678901234|";
-        observableResource.putPayload(of(expectedBody));
-        packet = obsListener.take(1, TimeUnit.SECONDS);
-        assertNull(packet);
+        expectedBody = expectedBody.concat(Opaque.of("2_2345678901234|3_2345678901234|"));
+        observableResource.putPayload(expectedBody);
+        assertTrue(obsListener.isEmpty());
 
 
         System.out.println("-- END");

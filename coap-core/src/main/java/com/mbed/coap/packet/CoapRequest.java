@@ -38,6 +38,17 @@ public final class CoapRequest {
         this.transContext = Objects.requireNonNull(transContext);
     }
 
+    private CoapRequest(InetSocketAddress peerAddress, TransportContext transContext) {
+        // ping
+        this.method = null;
+        this.token = Opaque.EMPTY;
+        this.options = new HeaderOptions();
+        this.payload = Opaque.EMPTY;
+        this.peerAddress = Objects.requireNonNull(peerAddress);
+        this.transContext = Objects.requireNonNull(transContext);
+    }
+
+
     // --- STATIC BUILDERS ---
 
     public static CoapRequest of(InetSocketAddress peerAddress, Method method, String uriPath) {
@@ -79,6 +90,18 @@ public final class CoapRequest {
         return CoapRequest.of(null, Method.DELETE, uriPath);
     }
 
+    public static CoapRequest ping(InetSocketAddress peerAddress, TransportContext transContext) {
+        return new CoapRequest(peerAddress, transContext);
+    }
+
+    public static CoapRequest observe(InetSocketAddress peerAddress, String uriPath) {
+        CoapRequest obsRequest = new CoapRequest(Method.GET, Opaque.EMPTY, new HeaderOptions(), Opaque.EMPTY, peerAddress, TransportContext.NULL);
+        obsRequest.options().setObserve(0);
+        obsRequest.options().setUriPath(uriPath);
+
+        return obsRequest;
+    }
+
     // --------------------
 
 
@@ -106,6 +129,10 @@ public final class CoapRequest {
         return transContext;
     }
 
+    public boolean isPing() {
+        return method == null && token.isEmpty() && payload.isEmpty();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -127,7 +154,17 @@ public final class CoapRequest {
     }
 
     public String toString() {
-        return String.format("CoapRequest[%s%s,Token:%s, pl:%s]", method.toString(), options, token.toHex(), payload.toHexShort(20));
+        if (method == null) {
+            return "CoapRequest[PING]";
+        }
+        if (payload.isEmpty() && token.isEmpty()) {
+            return String.format("CoapRequest[%s%s]", method.toString(), options);
+        } else if (payload.isEmpty()) {
+            return String.format("CoapRequest[%s%s,Token:%s]", method.toString(), options, token.toHex());
+        } else if (token.isEmpty()) {
+            return String.format("CoapRequest[%s%s, pl(%d):%s]", method.toString(), options, payload.size(), payload.toHexShort(20));
+        }
+        return String.format("CoapRequest[%s%s,Token:%s, pl(%d):%s]", method.toString(), options, token.toHex(), payload.size(), payload.toHexShort(20));
     }
 
 
@@ -150,6 +187,11 @@ public final class CoapRequest {
     }
 
     public CoapRequest payload(String newPayload, short contentFormat) {
+        options.setContentFormat(contentFormat);
+        return payload(newPayload);
+    }
+
+    public CoapRequest payload(Opaque newPayload, short contentFormat) {
         options.setContentFormat(contentFormat);
         return payload(newPayload);
     }
@@ -191,6 +233,61 @@ public final class CoapRequest {
 
     public CoapRequest size1(int size) {
         options.setSize1(size);
+        return this;
+    }
+
+    public CoapRequest maxAge(long maxAge) {
+        this.options.setMaxAge(maxAge);
+        return this;
+    }
+
+    public CoapRequest host(String host) {
+        this.options.setUriHost(host);
+        return this;
+    }
+
+    public CoapRequest query(String name, String val) {
+        if (name.isEmpty() || name.contains("=") || name.contains("&") || name.contains("?")
+                || val.isEmpty() || val.contains("=") || val.contains("&") || val.contains("?")) {
+            throw new IllegalArgumentException("Non valid characters provided in query");
+        }
+        final StringBuilder query = new StringBuilder();
+        if (options.getUriQuery() != null) {
+            query.append(options.getUriQuery());
+            query.append('&');
+        }
+        query.append(name).append('=').append(val);
+        options.setUriQuery(query.toString());
+        return this;
+    }
+
+    public CoapRequest blockSize(BlockSize size) {
+        if (method == Method.GET) {
+            options.setBlock2Res(new BlockOption(0, size, false));
+        }
+        if (method == Method.PUT || method == Method.POST) {
+            options.setBlock1Req(new BlockOption(0, size, true));
+        }
+        return this;
+    }
+
+    public CoapRequest query(String uriQuery) {
+        options.setUriQuery(uriQuery);
+        return this;
+    }
+
+    public CoapRequest proxy(String proxyUri) {
+        options.setProxyUri(proxyUri);
+        return this;
+    }
+
+    public CoapRequest ifMatch(Opaque etag) {
+        options.setIfMatch(new Opaque[]{etag});
+        return this;
+    }
+
+    public CoapRequest accept(short contentFormat) {
+        options.setAccept(contentFormat);
         return this;
     }
 }

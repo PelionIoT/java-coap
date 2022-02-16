@@ -51,12 +51,6 @@ public class CoapTcpMessaging extends CoapMessaging {
     }
 
     @Override
-    public CompletableFuture<CoapPacket> ping(InetSocketAddress destination) {
-        CoapPacket pingRequest = new CoapPacket(Code.C702_PING, null, destination);
-        return makeRequest(pingRequest, TransportContext.NULL);
-    }
-
-    @Override
     protected boolean handlePing(CoapPacket packet) {
         if (packet.getCode() == null && packet.getMethod() == null) {
             LOGGER.debug("CoAP ping received.");
@@ -101,6 +95,11 @@ public class CoapTcpMessaging extends CoapMessaging {
 
     @Override
     public CompletableFuture<CoapPacket> makeRequest(CoapPacket packet, TransportContext transContext) {
+        if (packet.getMethod() == null && packet.getCode() == null && packet.getToken().isEmpty() && packet.getPayload().isEmpty()) {
+            // ping request
+            packet.setCode(Code.C702_PING);
+            // new CoapPacket(Code.C702_PING, null, destination);
+        }
 
         int payloadLen = packet.getPayload().size();
         int maxMessageSize = csmStorage.getOrDefault(packet.getRemoteAddress()).getMaxMessageSizeInt();

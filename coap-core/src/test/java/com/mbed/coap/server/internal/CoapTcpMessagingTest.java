@@ -167,14 +167,20 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void should_send_ping_message() throws Exception {
-        tcpMessaging.ping(LOCAL_1_5683);
+        CoapPacket req = new CoapPacket(null, null, LOCAL_1_5683);
+
+        // when
+        tcpMessaging.makeRequest(req, TransportContext.NULL);
 
         assertSent(new CoapPacket(Code.C702_PING, null, LOCAL_1_5683));
     }
 
     @Test
     public void should_handle_pong() throws Exception {
-        CompletableFuture<CoapPacket> resp = tcpMessaging.ping(LOCAL_1_5683);
+        CoapPacket req = new CoapPacket(null, null, LOCAL_1_5683);
+
+        // when
+        CompletableFuture<CoapPacket> resp = tcpMessaging.makeRequest(req, TransportContext.NULL);
         receive(newCoapPacket(LOCAL_1_5683).code(Code.C703_PONG));
 
         assertEquals(Code.C703_PONG, resp.get().getCode());

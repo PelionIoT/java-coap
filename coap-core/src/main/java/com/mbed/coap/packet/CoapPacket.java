@@ -107,6 +107,19 @@ public class CoapPacket {
         return read(remoteAddress, rawData, rawData.length);
     }
 
+    public static CoapPacket from(CoapRequest req) {
+        CoapPacket packet = new CoapPacket(req.getMethod(), MessageType.Confirmable, null, req.getPeerAddress());
+        packet.setToken(req.getToken());
+        packet.setHeaderOptions(req.options());
+        packet.setPayload(req.getPayload());
+
+        return packet;
+    }
+
+    public CoapResponse toCoapResponse() {
+        return new CoapResponse(code, payload, options);
+    }
+
     public InetSocketAddress getRemoteAddress() {
         return remoteAddress;
     }

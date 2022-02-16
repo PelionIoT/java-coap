@@ -16,9 +16,8 @@
  */
 package com.mbed.coap.server;
 
-import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.TransportContext;
 import java.net.InetSocketAddress;
@@ -45,15 +44,6 @@ public interface CoapExchange {
         return getRequest().getRemoteAddress();
     }
 
-    /**
-     * Sets response CoAP code
-     *
-     * @param code CoAP code
-     */
-    default void setResponseCode(Code code) {
-        getResponse().setCode(code);
-    }
-
     void setResponse(CoapPacket message);
 
     /**
@@ -73,8 +63,7 @@ public interface CoapExchange {
      * Retrieves full notification payload. Applies only when handling notification with block2.
      *
      * @param uriPath uri-path
-     * @throws CoapException coap exception
      */
-    CompletableFuture<CoapPacket> retrieveNotificationBlocks(final String uriPath) throws CoapException;
+    CompletableFuture<CoapResponse> retrieveNotificationBlocks(final String uriPath);
 
 }

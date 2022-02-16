@@ -16,226 +16,110 @@
  */
 package com.mbed.coap.client;
 
-import static org.assertj.core.api.Assertions.*;
+import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.MediaTypes.*;
+import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.BDDMockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
-import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.Method;
-import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.server.MessageIdSupplier;
-import com.mbed.coap.transport.BlockingCoapTransport;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.TransportContext;
-import java.io.IOException;
+import com.mbed.coap.utils.FutureQueue;
+import com.mbed.coap.utils.ObservationConsumer;
+import com.mbed.coap.utils.Service;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import protocolTests.utils.CoapPacketBuilder;
 
 public class CoapClientTest {
-    private final BlockingCoapTransport coapTransport = mock(BlockingCoapTransport.class);
-    private ScheduledExecutorService scheduledExecutor = mock(ScheduledExecutorService.class, Mockito.RETURNS_DEEP_STUBS);
-    private int mid = 100;
-    private final MessageIdSupplier midSupplier = () -> mid++;
     private CoapClient client;
+    private final Service<CoapRequest, CoapResponse> clientService = mock(Service.class);
+    private FutureQueue<CoapResponse> next = null;
+    private final Opaque token1001 = Opaque.ofBytes(0x03, 0xE9);
+
 
     @BeforeEach
     public void setUp() throws Exception {
-        client = CoapClientBuilder.newBuilder().transport(coapTransport).target(LOCAL_5683).scheduledExec(scheduledExecutor).midSupplier(midSupplier).build();
+        reset(clientService);
+        client = new CoapClient(LOCAL_5683, clientService, () -> {
+        });
+        next = new FutureQueue<>();
     }
 
     @Test
-    public void request() throws Exception {
-        CompletableFuture<CoapPacket> resp = client.resource("/test").get();
-        assertSent(newCoapPacket(LOCAL_5683).mid(100).uriPath("/test").get());
+    public void request() {
+        given(clientService.apply(get(LOCAL_5683, "/test")))
+                .willReturn(completedFuture(CoapResponse.ok("ABC", CT_TEXT_PLAIN)));
 
-        cliReceive(newCoapPacket(LOCAL_5683).mid(100).payload("ABC").ack(Code.C205_CONTENT));
-        assertEquals("ABC", resp.get().getPayloadString());
+        // when
+        CompletableFuture<CoapResponse> resp = client.send(get(LOCAL_5683, "/test"));
 
+        // then
+        assertEquals("ABC", resp.join().getPayloadString());
     }
 
     @Test
     public void pingRequest() throws Exception {
-        CompletableFuture<CoapPacket> resp = client.ping();
-        assertSent(newCoapPacket(LOCAL_5683).mid(100).con());
+        given(clientService.apply(ping(LOCAL_5683, TransportContext.NULL)))
+                .willReturn(completedFuture(CoapResponse.of(null)));
 
-        cliReceive(newCoapPacket(LOCAL_5683).emptyAck(100));
+        // when
+        CompletableFuture<CoapResponse> resp = client.ping();
+
+        // then
         assertNotNull(resp.get());
     }
 
     @Test
-    public void syncRequest() throws Exception {
-        doAnswer(m -> {
-            cliReceive(newCoapPacket(LOCAL_5683).mid(100).payload("AAA").ack(Code.C205_CONTENT).build());
-            return null;
-        }).when(coapTransport).sendPacket0(eq(newCoapPacket(LOCAL_5683).mid(100).uriPath("/test").get().build()), any(), any());
+    public void syncRequest() throws CoapException {
+        given(clientService.apply(get(LOCAL_5683, "/test")))
+                .willReturn(completedFuture(CoapResponse.ok("ABC", CT_TEXT_PLAIN)));
 
-        assertNotNull(client.resource("/test").sync().invokeMethod(Method.GET));
+        // when
+        CoapResponse resp = client.sendSync(get(LOCAL_5683, "/test"));
 
-        //PUT
-        doAnswer(m -> {
-            cliReceive(newCoapPacket(LOCAL_5683).mid(101).payload("AAA").ack(Code.C205_CONTENT).build());
-            return null;
-        }).when(coapTransport).sendPacket0(eq(newCoapPacket(LOCAL_5683).mid(101).uriPath("/test").put().build()), any(), any());
-
-        assertNotNull(client.resource("/test").sync().invokeMethod(Method.PUT));
-
-        //POST
-        doAnswer(m -> {
-            cliReceive(newCoapPacket(LOCAL_5683).mid(102).payload("AAA").ack(Code.C205_CONTENT).build());
-            return null;
-        }).when(coapTransport).sendPacket0(eq(newCoapPacket(LOCAL_5683).mid(102).uriPath("/test").post().build()), any(), any());
-
-        assertNotNull(client.resource("/test").sync().invokeMethod(Method.POST));
-
-        //DELETE
-        doAnswer(m -> {
-            cliReceive(newCoapPacket(LOCAL_5683).mid(103).payload("AAA").ack(Code.C205_CONTENT).build());
-            return null;
-        }).when(coapTransport).sendPacket0(eq(newCoapPacket(LOCAL_5683).mid(103).uriPath("/test").delete().build()), any(), any());
-
-        assertNotNull(client.resource("/test").sync().invokeMethod(Method.DELETE));
+        // then
+        assertEquals("ABC", resp.getPayloadString());
     }
 
-
-    @Test
-    public void failWhenSyncRequest() throws Exception {
-        doThrow(new CoapException("")).when(coapTransport).sendPacket(any(), any(), any());
-        assertThatThrownBy(() -> client.resource("/test").sync().get()).isExactlyInstanceOf(CoapException.class);
-
-        doThrow(new IOException(new CoapException(""))).when(coapTransport).sendPacket(any(), any(), any());
-        assertThatThrownBy(() -> client.resource("/test").sync().post()).isExactlyInstanceOf(CoapException.class);
-
-        doThrow(new IOException()).when(coapTransport).sendPacket(any(), any(), any());
-        assertThatThrownBy(() -> client.resource("/test").sync().put()).hasCauseExactlyInstanceOf(IOException.class);
-
-        doThrow(new CoapException("")).when(coapTransport).sendPacket(any(), any(), any());
-        assertThatThrownBy(() -> client.resource("/test").sync().delete()).isExactlyInstanceOf(CoapException.class);
-    }
-
-
-    @Test()
-    public void failToCreate_whenNotStartedServer() throws Exception {
-        assertThrows(IllegalStateException.class, () ->
-                new CoapClient(LOCAL_5683, CoapServerBuilder.newBuilder().transport(coapTransport).build())
-        );
-    }
-
-    @Test()
-    public void failToMakeRequest_whenServerNotRunning() throws Exception {
-        client.coapServer.stop();
-        assertThrows(IllegalStateException.class, () ->
-                client.resource("/123")
-        );
-    }
-
-    @Test()
-    public void failToMakeRequest_whenIllegalCharacterInPath() throws Exception {
-        assertThrows(IllegalArgumentException.class, () ->
-                client.resource("fs?fs")
-        );
-    }
-
-    @Test()
-    public void failToMakeRequest_whenIllegalCharacterInPath2() throws Exception {
-        assertThrows(IllegalArgumentException.class, () ->
-                client.resource("fs&fs")
-        );
-    }
 
     @Test
     public void observationTest() throws Exception {
-        ObservationListener obsListener = mock(ObservationListener.class);
-        CompletableFuture<CoapPacket> resp = client.resource("/test").token(1001).observe(obsListener);
+        given(clientService.apply(get(LOCAL_5683, "/test").token(token1001).observe(0)))
+                .willReturn(completedFuture(CoapResponse.ok("1", CT_TEXT_PLAIN).options(o -> o.setObserve(1)).nextSupplier(next)));
 
-        assertSent(newCoapPacket(LOCAL_5683).mid(100).token(1001).obs(0).uriPath("/test").get());
-        cliReceive(newCoapPacket(LOCAL_5683).mid(100).token(1001).obs(1).payload("1").ack(Code.C205_CONTENT));
+        ObservationConsumer obsConsumer = new ObservationConsumer();
+        // when
+        CompletableFuture<CoapResponse> resp = client.observe("/test", token1001, obsConsumer);
+
+        // then
         assertEquals("1", resp.get().getPayloadString());
 
-        //observation
-        cliReceive(newCoapPacket(LOCAL_5683).mid(200).token(1001).obs(2).payload("2").con(Code.C205_CONTENT));
-        verify(obsListener).onObservation(newCoapPacket(LOCAL_5683).mid(200).token(1001).obs(2).payload("2").con(Code.C205_CONTENT).build());
+        // and then observation
+        next.put(CoapResponse.ok("2", CT_TEXT_PLAIN).options(o -> o.setObserve(2)));
+        assertEquals(CoapResponse.ok("2", CT_TEXT_PLAIN).options(o -> o.setObserve(2)), obsConsumer.next());
 
     }
 
     @Test
-    public void observation_notExpectedObs() throws Exception {
-        ObservationListener obsListener = mock(ObservationListener.class);
+    public void shouldTerminateObservation() {
+        given(clientService.apply(get(LOCAL_5683, "/test").token(token1001).observe(0)))
+                .willReturn(completedFuture(CoapResponse.ok("1", CT_TEXT_PLAIN).options(o -> o.setObserve(1)).nextSupplier(next)));
+        ObservationConsumer obsConsumer = new ObservationConsumer();
 
-        CompletableFuture<CoapPacket> resp = client.resource("/test").token(1001).observe(obsListener);
-        cliReceive(newCoapPacket(LOCAL_5683).mid(100).token(1001).obs(1).payload("1").ack(Code.C205_CONTENT));
-        assertEquals("1", resp.get().getPayloadString());
+        // given, established observation relation
+        CompletableFuture<CoapResponse> resp = client.observe("/test", token1001, obsConsumer);
+        assertEquals("1", resp.join().getPayloadString());
 
-        //observation
-        cliReceive(newCoapPacket(LOCAL_5683).mid(200).token(999).obs(2).payload("2").con(Code.C205_CONTENT));
-        assertSent(newCoapPacket(LOCAL_5683).reset(200));
+        // when
+        next.put(CoapResponse.notFound());
 
-        verify(obsListener, never()).onObservation(any());
+        // then
+        assertEquals(CoapResponse.notFound(), obsConsumer.next());
+        assertNull(next.promise);
     }
 
-    @Test
-    public void observation_failWhileHandling() throws Exception {
-        ObservationListener obsListener = mock(ObservationListener.class);
-        CompletableFuture<CoapPacket> resp = client.resource("/test").token(1001).observe(obsListener);
-
-        cliReceive(newCoapPacket(LOCAL_5683).mid(100).token(1001).obs(1).payload("1").ack(Code.C205_CONTENT));
-        assertEquals("1", resp.get().getPayloadString());
-
-        //observation
-        reset(coapTransport);
-        doThrow(new CoapCodeException(Code.C400_BAD_REQUEST))
-                .when(obsListener).onObservation(any());
-
-        cliReceive(newCoapPacket(LOCAL_5683).mid(200).token(1001).obs(2).payload("2").con(Code.C205_CONTENT));
-        assertSent(newCoapPacket(LOCAL_5683).mid(200).ack(Code.C400_BAD_REQUEST));
-
-    }
-
-
-    @Test
-    public void observation_failWhileHandling2() throws Exception {
-        ObservationListener obsListener = mock(ObservationListener.class);
-        CompletableFuture<CoapPacket> resp = client.resource("/test").token(1001).observe(obsListener);
-
-        cliReceive(newCoapPacket(LOCAL_5683).mid(100).token(1001).obs(1).payload("1").ack(Code.C205_CONTENT));
-        assertEquals("1", resp.get().getPayloadString());
-
-        //observation
-        reset(coapTransport);
-        doThrow(new CoapException(""))
-                .when(obsListener).onObservation(any());
-
-        cliReceive(newCoapPacket(LOCAL_5683).mid(200).token(1001).obs(2).payload("2").con(Code.C205_CONTENT));
-        assertSent(newCoapPacket(LOCAL_5683).mid(200).ack(Code.C500_INTERNAL_SERVER_ERROR));
-    }
-
-    @Test
-    public void requestWithProxyUri() throws Exception {
-        CompletableFuture<CoapPacket> resp = client.resource("/test").proxy("/external").get();
-        assertSent(newCoapPacket(LOCAL_5683).mid(100).uriPath("/test").proxy("/external").get());
-
-        cliReceive(newCoapPacket(LOCAL_5683).mid(100).payload("EXT-ABC").ack(Code.C205_CONTENT));
-        assertEquals("EXT-ABC", resp.get().getPayloadString());
-    }
-
-    private void assertSent(CoapPacketBuilder coapPacketBuilder) throws CoapException, IOException {
-        assertSent(coapPacketBuilder.build());
-    }
-
-    private void assertSent(CoapPacket coapPacket) throws CoapException, IOException {
-        verify(coapTransport).sendPacket0(eq(coapPacket), any(), any());
-    }
-
-    private void cliReceive(CoapPacketBuilder coapPacketBuilder) {
-        cliReceive(coapPacketBuilder.build());
-    }
-
-    private void cliReceive(CoapPacket packet) {
-        client.coapServer.getCoapMessaging().handle(packet, TransportContext.NULL);
-    }
 }

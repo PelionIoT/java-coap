@@ -16,13 +16,19 @@
  */
 package com.mbed.coap.client;
 
+import static com.mbed.coap.observe.ObservationConsumer.*;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.utils.Service;
 import java.io.Closeable;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.function.Function;
 
 /**
  * CoAP client implementation.
@@ -30,55 +36,60 @@ import java.util.concurrent.CompletableFuture;
 public class CoapClient implements Closeable {
 
     private final InetSocketAddress destination;
-    final CoapServer coapServer;
-    private ObservationHandlerImpl observationHandler;
+    private final Service<CoapRequest, CoapResponse> clientService;
+    private final Closeable closeable;
 
-    public CoapClient(InetSocketAddress destination, CoapServer coapServer) {
+    public CoapClient(InetSocketAddress destination, Service<CoapRequest, CoapResponse> clientService, Closeable closeable) {
         this.destination = destination;
-        this.coapServer = coapServer;
-        if (!coapServer.isRunning()) {
-            throw new IllegalStateException("Coap server not running");
+        this.clientService = clientService;
+        this.closeable = closeable;
+    }
+
+    public CompletableFuture<CoapResponse> send(CoapRequest request) {
+        return clientService.apply(request.address(destination));
+    }
+
+    public CoapResponse sendSync(CoapRequest request) throws CoapException {
+        return await(send(request));
+    }
+
+    private static CoapResponse await(CompletableFuture<CoapResponse> future) throws CoapException {
+        try {
+            return future.join();
+        } catch (CompletionException ex) {
+            if (ex.getCause() instanceof CoapException) {
+                throw (CoapException) ex.getCause();
+            } else {
+                throw new CoapException(ex.getCause());
+            }
         }
     }
 
-    /**
-     * Creates request builder for provided uri-path.
-     *
-     * @param path uri path
-     * @return request builder
-     */
-    public CoapRequestTarget resource(String path) {
-        if (!coapServer.isRunning()) {
-            throw new IllegalStateException("CoAP server not running");
-        }
-        if (path.contains("?") || path.contains("&")) {
-            throw new IllegalArgumentException("Not supported character in path");
-        }
-        return new CoapRequestTarget(path, this);
+    public CompletableFuture<CoapResponse> observe(String uriPath, Function<CoapResponse, Boolean> consumer) {
+        return observe(uriPath, Opaque.variableUInt(uriPath.hashCode()), consumer);
     }
 
-    public CompletableFuture<CoapPacket> ping() throws CoapException {
-        return coapServer.ping(destination);
+    public CompletableFuture<CoapResponse> observe(String uriPath, Opaque token, Function<CoapResponse, Boolean> consumer) {
+        CompletableFuture<CoapResponse> resp = clientService.apply(
+                CoapRequest.observe(destination, uriPath).token(token)
+        );
+
+        resp.thenAccept(r -> consumeFrom(r.next, consumer));
+
+        return resp;
+    }
+
+
+    public CompletableFuture<CoapResponse> ping() throws CoapException {
+        return clientService.apply(CoapRequest.ping(destination, TransportContext.NULL));
     }
 
     /**
      * Close CoAP client connection.
      */
     @Override
-    public void close() {
-        coapServer.stop();
-    }
-
-    InetSocketAddress getDestination() {
-        return destination;
-    }
-
-    void putObservationListener(ObservationListener observationListener, Opaque token, String uriPath) {
-        if (observationHandler == null) {
-            observationHandler = new ObservationHandlerImpl();
-            coapServer.setObservationHandler(observationHandler);
-        }
-        observationHandler.putObservationListener(observationListener, token, uriPath);
+    public void close() throws IOException {
+        closeable.close();
     }
 
 }

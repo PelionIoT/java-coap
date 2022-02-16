@@ -38,9 +38,7 @@ import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -76,18 +74,7 @@ public class CoapServerBlocksTest {
     @BeforeEach
     public void setUp() {
         protoServer = new CoapUdpMessaging(coapTransport);
-        server = new CoapServerBlocks(protoServer, capabilities, 10000000, route) {
-            @Override
-            public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, Opaque token, TransportContext transportContext) {
-                return failedFuture(new IllegalArgumentException());
-            }
-
-            @Override
-            public CompletableFuture<CoapPacket> observe(CoapPacket request, TransportContext transportContext) {
-                return failedFuture(new IllegalArgumentException());
-            }
-        };
-
+        server = new CoapServerBlocks(protoServer, capabilities, 10000000, route);
         given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(null));
     }
 
@@ -133,17 +120,7 @@ public class CoapServerBlocksTest {
     public void block1_request_shouldFailIfTooBigPayload() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(5000, true));
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
-        server = new CoapServerBlocks(protoServer, capabilities, 10000, route) {
-            @Override
-            public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, Opaque token, TransportContext transportContext) {
-                return failedFuture(new IllegalArgumentException());
-            }
-
-            @Override
-            public CompletableFuture<CoapPacket> observe(CoapPacket request, TransportContext transportContext) {
-                return failedFuture(new IllegalArgumentException());
-            }
-        };
+        server = new CoapServerBlocks(protoServer, capabilities, 10000, route);
         server.start();
 
         blockResource = alwaysFailService;

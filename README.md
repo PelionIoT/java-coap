@@ -179,9 +179,9 @@ To make a CoAP request, use the class `CoapClient`. It uses fluent API. The foll
 
     CoapClient client = CoapClientBuilder.newBuilder(new InetSocketAddress("localhost",5683)).build();
     
-    CoapPacket coapResp = client.resource("/s/temp").sync().get();
+    CoapResponse resp = client.sendSync(get("/s/temp"));
     
-    coapResp = client.resource("/a/relay").payload("1", MediaTypes.CT_TEXT_PLAIN).sync().put();
+    resp = client.sendSync(put("/a/relay").payload("1", MediaTypes.CT_TEXT_PLAIN));
         
     //it is important to close connection in order to release socket
     client.close();

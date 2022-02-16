@@ -16,6 +16,7 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.CoapRequest.*;
 import static com.mbed.coap.packet.Opaque.*;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
@@ -23,8 +24,8 @@ import static org.awaitility.Awaitility.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.client.CoapClientBuilder.CoapClientBuilderForTcp;
 import com.mbed.coap.packet.BlockSize;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
@@ -53,18 +54,15 @@ public class TcpIntegrationTest {
         });
     }
 
-    private void initClient(Consumer<CoapServerBuilder.CoapServerBuilderForTcp> b) throws IOException {
-        CoapServerBuilder.CoapServerBuilderForTcp builder = CoapServerBuilder.newBuilderForTcp()
+    private void initClient(Consumer<CoapClientBuilderForTcp> b) throws IOException {
+        CoapClientBuilderForTcp builder = CoapClientBuilder.newBuilderForTcp(serverAddress)
                 .transport(new SocketClientTransport(serverAddress, SocketFactory.getDefault(), CoapSerializer.TCP, true))
                 .blockSize(BlockSize.S_1024_BERT)
                 .maxMessageSize(1_200);
 
         b.accept(builder);
 
-        client = CoapClientBuilder.clientFor(
-                serverAddress,
-                builder.start()
-        );
+        client = builder.build();
     }
 
     private void initServer(int port) throws IOException {
@@ -79,7 +77,7 @@ public class TcpIntegrationTest {
                                     } catch (InterruptedException e) {
                                         //ignore
                                     }
-                            return CoapResponse.ok(EMPTY);
+                                    return CoapResponse.ok(EMPTY);
                                 }
                         ))
                 )
@@ -92,7 +90,7 @@ public class TcpIntegrationTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown() throws IOException {
         if (client != null) {
             client.close();
         }
@@ -112,7 +110,7 @@ public class TcpIntegrationTest {
         initServer(0);
         initClient();
 
-        CompletableFuture<CoapPacket> resp = client.resource("/test").get();
+        CompletableFuture<CoapResponse> resp = client.send(get("/test"));
 
         assertEquals("1234567890", resp.get().getPayloadString());
     }
@@ -138,11 +136,11 @@ public class TcpIntegrationTest {
         initClient();
 
         await().untilAsserted(() -> {
-            CompletableFuture<CoapPacket> resp = client.resource("/test2").get();
+            CompletableFuture<CoapResponse> resp = client.send(get("/test2"));
 
             assertEquals(1300, resp.get().getPayload().size());
             //verify that blocks was used
-            assertNotNull(resp.get().headers().getBlock2Res());
+            assertNotNull(resp.get().options().getBlock2Res());
         });
     }
 
@@ -154,11 +152,11 @@ public class TcpIntegrationTest {
                 .maxMessageSize(1300)
         );
 
-        CompletableFuture<CoapPacket> resp = client.resource("/test2").get();
+        CompletableFuture<CoapResponse> resp = client.send(get("/test2"));
 
         assertEquals(1300, resp.get().getPayload().size());
         //block was not used
-        assertNull(resp.get().headers().getBlock2Res());
+        assertNull(resp.get().options().getBlock2Res());
     }
 
     @Test
@@ -166,7 +164,7 @@ public class TcpIntegrationTest {
         initServer(0);
         initClient();
 
-        CompletableFuture<CoapPacket> resp = client.resource("/slow").get();
+        CompletableFuture<CoapResponse> resp = client.send(get("/slow"));
         client.close();
         client = null;
 

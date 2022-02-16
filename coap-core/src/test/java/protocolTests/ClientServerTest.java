@@ -16,11 +16,12 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.Opaque.of;
 import static com.mbed.coap.packet.Opaque.*;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
@@ -74,7 +75,7 @@ public class ClientServerTest {
                         } catch (InterruptedException e) {
                             //ignore
                         }
-                return CoapResponse.ok(EMPTY);
+                        return CoapResponse.ok(EMPTY);
                     }
             ))
             .build();
@@ -98,12 +99,7 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(serverAddress);
-        request.setMethod(Method.GET);
-        request.headers().setUriPath("/test/1");
-        request.setMessageId(1647);
-
-        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
+        CompletableFuture<CoapResponse> callback = cnn.clientService().apply(get(serverAddress, "/test/1"));
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
     }
@@ -113,13 +109,10 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(serverAddress);
-        request.setMethod(Method.GET);
-        request.headers().setUriPath("/test/1");
-        request.setMessageId(1647);
-        request.headers().put(74, Opaque.variableUInt(0x010203L));
+        CoapRequest request = get(serverAddress, "/test/1")
+                .options(o -> o.put(74, Opaque.variableUInt(0x010203L)));
 
-        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
+        CompletableFuture<CoapResponse> callback = cnn.clientService().apply(request);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
     }
@@ -130,13 +123,10 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(serverAddress);
-        request.setMethod(Method.GET);
-        request.headers().setUriPath("/test/1");
-        request.setMessageId(1647);
-        request.headers().put(71, Opaque.variableUInt(0x010203L));
+        CoapRequest request = get(serverAddress, "/test/1")
+                .options(o -> o.put(71, Opaque.variableUInt(0x010203L)));
 
-        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
+        CompletableFuture<CoapResponse> callback = cnn.clientService().apply(request);
         assertEquals(Code.C402_BAD_OPTION, callback.get().getCode());
         cnn.stop();
     }
@@ -147,13 +137,10 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(serverAddress);
-        request.setMethod(Method.GET);
-        request.headers().setUriPath("/test/1");
-        request.setMessageId(1647);
-        request.headers().put((byte) 71, Opaque.variableUInt(0x010203L));
+        CoapRequest request = get(serverAddress, "/test/1")
+                .options(o -> o.put(71, Opaque.ofBytes(1, 2, 3)));
 
-        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
+        CompletableFuture<CoapResponse> callback = cnn.clientService().apply(request);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
     }
@@ -163,32 +150,29 @@ public class ClientServerTest {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CoapPacket request = new CoapPacket(serverAddress);
-        request.setMethod(Method.GET);
-        request.headers().setUriPath("/");
-        request.setMessageId(1648);
+        CoapRequest request = get(serverAddress, "/");
 
-        assertEquals("Shortest path", cnn.makeRequest(request).join().getPayloadString());
+        assertEquals("Shortest path", cnn.clientService().apply(request).join().getPayloadString());
         cnn.stop();
     }
 
     @Test
     public void simpleRequest2() throws Exception {
-        try (CoapClient client = CoapClientBuilder.newBuilder().target(SERVER_PORT).build()) {
+        try (CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build()) {
 
-            Future<CoapPacket> coapResp = client.resource("/test/1").get();
+            Future<CoapResponse> coapResp = client.send(get("/test/1"));
             assertEquals("Dziala", coapResp.get().getPayloadString());
         }
     }
 
     @Test
     public void simpleRequest3() throws Exception {
-        try (CoapClient client = CoapClientBuilder.newBuilder().target(SERVER_PORT).build()) {
+        try (CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).build()) {
 
-            Future<CoapPacket> coapResp = client.resource("/resource/123").get();
+            Future<CoapResponse> coapResp = client.send(get("/resource/123"));
             assertEquals("Prefix dziala", coapResp.get().getPayloadString());
 
-            coapResp = client.resource("/test/1/tre").get();
+            coapResp = client.send(get("/test/1/tre"));
             assertEquals(Code.C404_NOT_FOUND, coapResp.get().getCode());
         }
     }
@@ -207,7 +191,7 @@ public class ClientServerTest {
 
         try (CoapClient client = CoapClientBuilder.newBuilder(new InetSocketAddress(adr, ipv6Server.getLocalSocketAddress().getPort())).build()) {
 
-            CoapPacket coapResp = client.resource("/resource").sync().get();
+            CoapResponse coapResp = client.sendSync(get("/resource"));
             assertEquals("1234qwerty", coapResp.getPayloadString());
 
         }
@@ -265,7 +249,7 @@ public class ClientServerTest {
                 })
                 .timeout(new CoapTimeout(100)).build()) {
 
-            CoapPacket resp = cnn.resource("/dropping").sync().get();
+            CoapResponse resp = cnn.sendSync(get("/dropping"));
             assertEquals("dropped", resp.getPayloadString());
         }
     }
@@ -276,7 +260,7 @@ public class ClientServerTest {
         cnn.start();
 
         CoapClient client = CoapClientBuilder.clientFor(serverAddress, cnn);
-        assertEquals("Dziala", client.resource("/test/1").maxAge(2635593050L).get().join().getPayloadString());
+        assertEquals("Dziala", client.send(get("/test/1").maxAge(2635593050L)).join().getPayloadString());
         cnn.stop();
     }
 
@@ -290,7 +274,7 @@ public class ClientServerTest {
         srv.start();
 
         try (CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(61601)).transport(InMemoryCoapTransport.create(0)).build()) {
-            assertEquals("23 C", cnn.resource("/temp").sync().get().getPayloadString());
+            assertEquals("23 C", cnn.sendSync(get("/temp")).getPayloadString());
         }
         srv.stop();
     }
@@ -305,7 +289,7 @@ public class ClientServerTest {
         srv.start();
 
         try (CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(61601)).transport(new InMemoryCoapTransport()).build()) {
-            assertEquals(Code.C402_BAD_OPTION, client.resource("/temp").header(123, of("dupa")).sync().get().getCode());
+            assertEquals(Code.C402_BAD_OPTION, client.sendSync(get("/temp").options(o -> o.put(123, of("dupa")))).getCode());
         }
         srv.stop();
     }
@@ -352,12 +336,9 @@ public class ClientServerTest {
 
         cnn.start();
 
-        CoapPacket request = new CoapPacket(InMemoryCoapTransport.createAddress(5683));
-        request.setMethod(Method.GET);
-        request.headers().setUriPath("/test/1");
-        request.setMessageId(1647);
+        CoapRequest request = get(InMemoryCoapTransport.createAddress(5683), "/test/1");
 
-        CompletableFuture<CoapPacket> callback = cnn.makeRequest(request);
+        CompletableFuture<CoapResponse> callback = cnn.clientService().apply(request);
         assertEquals("Dziala", callback.get().getPayloadString());
         cnn.stop();
     }
@@ -376,47 +357,39 @@ public class ClientServerTest {
                 .transport(InMemoryCoapTransport.create()).timeout(new SingleTimeout(100)).build();
 
         assertThrows(CoapTimeoutException.class, () ->
-                cnn.resource("/test").sync().get()
+                cnn.sendSync(get("/test"))
         );
     }
 
     @Test
     public void testMakeRequestWithNullAddress() throws CoapException {
         assertThrows(NullPointerException.class, () ->
-                server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null))
+                server.clientService().apply(get(""))
         );
     }
-
-    @Test
-    public void testMakeRequestNullRequest() throws CoapException {
-        assertThrows(NullPointerException.class, () ->
-                server.makeRequest(new CoapPacket(Method.GET, MessageType.Confirmable, "", null))
-        );
-    }
-
 
     @Test
     public void should_invoke_callback_exceptionally_when_server_stops() throws Exception {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
-        CompletableFuture<CoapPacket> callback = cnn.makeRequest(newCoapPacket(serverAddress).mid(11).con().get().uriPath("/slow").build());
+        CompletableFuture<CoapResponse> callback = cnn.clientService().apply(get(serverAddress, "/slow"));
         cnn.stop();
 
         assertThatThrownBy(callback::get).hasCauseInstanceOf(IOException.class);
     }
 
     @Test
-    public void should_invoke_callback_exceptionally_when_server_stops_and_non_request() throws Exception {
+    public void clientService_request() throws Exception {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
+        Service<CoapRequest, CoapResponse> client = cnn.clientService();
 
-        CompletableFuture<CoapPacket> callback = cnn.makeRequest(newCoapPacket(serverAddress).mid(11).non().get().token(12).uriPath("/slow").build());
+        CompletableFuture<CoapResponse> resp = client.apply(get(serverAddress, "/test/1"));
+
+        assertEquals("Dziala", resp.get().getPayloadString());
         cnn.stop();
-
-        assertThatThrownBy(callback::get).hasCauseInstanceOf(IOException.class);
     }
-
 
     private static class DroppingPacketsTransportWrapper extends InMemoryCoapTransport {
         private final byte probability; //0-100

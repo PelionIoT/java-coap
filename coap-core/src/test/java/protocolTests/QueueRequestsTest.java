@@ -16,6 +16,7 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.CoapRequest.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
@@ -23,6 +24,7 @@ import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.MessageIdSupplierImpl;
@@ -74,7 +76,7 @@ public class QueueRequestsTest {
     @Test
     public void shouldSendRequestsToADevice_singleRequest() throws Exception {
         //request
-        CompletableFuture<CoapPacket> futResp = client.resource("/path1").get();
+        CompletableFuture<CoapResponse> futResp = client.send(get("/path1"));
 
         verify(transport).sendPacket(any(), any(), any());
 
@@ -87,8 +89,8 @@ public class QueueRequestsTest {
     @Test
     public void shouldSendRequestsToADevice_isASequence_2_requests() throws Exception {
         //requests
-        CompletableFuture<CoapPacket> futResp1 = client.resource("/path1").get();
-        CompletableFuture<CoapPacket> futResp2 = client.resource("/path2").get();
+        CompletableFuture<CoapResponse> futResp1 = client.send(get("/path1"));
+        CompletableFuture<CoapResponse> futResp2 = client.send(get("/path2"));
 
         //only one request should be send
         verify(transport).sendPacket(any(), any(), any());
@@ -117,8 +119,8 @@ public class QueueRequestsTest {
         CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
 
         //requests
-        CompletableFuture<CoapPacket> futResp1 = client.resource("/path1").get(); // makes req with msgId #1 and sends it
-        CompletableFuture<CoapPacket> futResp2 = client.resource("/path2").get(); // makes req with msgId #2 and queues it
+        CompletableFuture<CoapResponse> futResp1 = client.send(get("/path1")); // makes req with msgId #1 and sends it
+        CompletableFuture<CoapResponse> futResp2 = client.send(get("/path2")); // makes req with msgId #2 and queues it
 
         //#1 message - block1
         verify(transport).sendPacket(any(), any(), any());
@@ -158,8 +160,8 @@ public class QueueRequestsTest {
         CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
 
         //requests
-        CompletableFuture<CoapPacket> futResp1 = client.resource("/block").get(); // adds first request
-        CompletableFuture<CoapPacket> futResp2 = client.resource("/path2").get(); // adds second request
+        CompletableFuture<CoapResponse> futResp1 = client.send(get("/block")); // adds first request
+        CompletableFuture<CoapResponse> futResp2 = client.send(get("/path2")); // adds second request
 
         //#1 message - block1 - causes adding to queue extra message from block transfer for a short time (until initial
         // transaction is removed
@@ -187,8 +189,8 @@ public class QueueRequestsTest {
     @Test
     public void test_shouldNotDeleteInactiveTransaction() throws Exception {
         //requests
-        CompletableFuture<CoapPacket> futResp1 = client.resource("/path1").get();
-        CompletableFuture<CoapPacket> futResp2 = client.resource("/path2").get();
+        CompletableFuture<CoapResponse> futResp1 = client.send(get("/path1"));
+        CompletableFuture<CoapResponse> futResp2 = client.send(get("/path2"));
 
         //only one request should be send
         verify(transport).sendPacket(any(), any(), any());

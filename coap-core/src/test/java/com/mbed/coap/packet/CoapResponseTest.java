@@ -16,6 +16,8 @@
  */
 package com.mbed.coap.packet;
 
+import static com.mbed.coap.packet.MediaTypes.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -34,4 +36,10 @@ class CoapResponseTest {
                 .verify();
     }
 
+    @Test
+    void testToString() {
+        assertEquals("CoapResponse[205, pl(4):64757061]", CoapResponse.ok("dupa").toString());
+        assertEquals("CoapResponse[400, ETag:6565]", CoapResponse.badRequest().etag(Opaque.of("ee")).toString());
+        assertEquals("CoapResponse[205, ContTp:0, pl(3):616161]", CoapResponse.ok("aaa", CT_TEXT_PLAIN).toString());
+    }
 }
