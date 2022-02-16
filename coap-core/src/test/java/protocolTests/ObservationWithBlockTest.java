@@ -17,8 +17,6 @@
 package protocolTests;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.client.CoapClient;
