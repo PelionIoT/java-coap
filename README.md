@@ -54,6 +54,10 @@ repositories {
   ...
   maven {
     url = uri("https://maven.pkg.github.com/open-coap/java-coap")
+    credentials {
+      username = "token" // seems anything works
+      password = "PERSONAL_ACCESS_TOKEN" // personal access token with the read:packages scope
+    }
   }
 }
 
@@ -77,6 +81,17 @@ Add repository to build file:
   </repository>
 </repositories>
 ```    
+
+Add credentials to `~/.m2/settings.xml`:
+```xml
+<servers>
+  <server>
+    <id>github-opencoap</id>
+    <username>token</username> <!-- seems anything works -->
+    <password>PERSONAL_ACCESS_TOKEN</password> <!-- personal access token with the read:packages scope -->
+  </server>
+</servers>
+```
 
 Add dependency into your `pom.xml`:
 
