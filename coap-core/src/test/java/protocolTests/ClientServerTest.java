@@ -35,6 +35,7 @@ import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.ReadOnlyCoapResource;
+import io.github.artsok.RepeatedIfExceptionsTest;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -194,7 +195,7 @@ public class ClientServerTest {
         ipv6Server.stop();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 3)
     public void duplicateTest() throws Exception {
         DatagramSocket datagramSocket = new DatagramSocket();
         datagramSocket.setSoTimeout(3000);
