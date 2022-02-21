@@ -29,7 +29,6 @@ import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
@@ -198,53 +197,47 @@ public class CoapUdpMessaging extends CoapMessaging {
 
 
     @Override
-    public void ping(InetSocketAddress destination, Callback<CoapPacket> callback) {
+    public CompletableFuture<CoapPacket> ping(InetSocketAddress destination) {
         CoapPacket pingRequest = new CoapPacket(null, MessageType.Confirmable, destination);
-        makeRequest(pingRequest, callback, TransportContext.NULL);
+        return makeRequest(pingRequest, TransportContext.NULL);
     }
 
     @Override
-    public void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext) {
-        makeRequestInternal(packet, callback, transContext, defaultPriority);
+    public CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext) {
+        return makeRequestInternal(packet, transContext, defaultPriority);
     }
 
     @Override
-    public void makePrioritisedRequest(CoapPacket packet, Callback<CoapPacket> callback, TransportContext transContext) {
-        makeRequestInternal(packet, callback, transContext, specialCoapTransactionPriority, true);
+    public CompletableFuture<CoapPacket> makePrioritisedRequest(CoapPacket packet, TransportContext transContext) {
+        return makeRequestInternal(packet, transContext, specialCoapTransactionPriority, true);
     }
 
     /**
-     * Makes CoAP request. Sends given packet to specified address. Reply is called through asynchronous Callback
-     * interface.
+     * Makes CoAP request. Sends given packet to specified address.
      * <p>
      * <i>Asynchronous method</i>
      * </p>
-     * NOTE: If exception is thrown then callback will never be invoked.
      *
      * @param packet request packet
-     * @param callback handles response
      * @param transContext transport context that will be passed to transport connector
      * @param transactionPriority defines transaction priority (used by CoapServerBlocks mostyl)
      */
-    private void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext, CoapTransaction.Priority transactionPriority) {
-        makeRequestInternal(packet, callback, transContext, transactionPriority, false);
+    private CompletableFuture<CoapPacket> makeRequestInternal(final CoapPacket packet, final TransportContext transContext, CoapTransaction.Priority transactionPriority) {
+        return makeRequestInternal(packet, transContext, transactionPriority, false);
     }
 
     /**
-     * Makes CoAP request. Sends given packet to specified address. Reply is called through asynchronous Callback
-     * interface.
+     * Makes CoAP request. Sends given packet to specified address.
      * <p>
      * <i>Asynchronous method</i>
      * </p>
-     * NOTE: If exception is thrown then callback will never be invoked.
      *
      * @param packet request packet
-     * @param coapCallback handles response
      * @param transContext transport context that will be passed to transport connector
      * @param transactionPriority defines transaction priority (used by CoapServerBlocks mostyl)
      * @param forceAddToQueue forces add to queue even if there is queue limit overflow (block requests)
      */
-    private void makeRequestInternal(final CoapPacket packet, final Callback<CoapPacket> coapCallback, final TransportContext transContext, CoapTransaction.Priority transactionPriority, boolean forceAddToQueue) {
+    private CompletableFuture<CoapPacket> makeRequestInternal(final CoapPacket packet, final TransportContext transContext, CoapTransaction.Priority transactionPriority, boolean forceAddToQueue) {
         if (packet == null || packet.getRemoteAddress() == null) {
             throw new NullPointerException();
         }
@@ -253,7 +246,7 @@ public class CoapUdpMessaging extends CoapMessaging {
         packet.setMessageId(getNextMID());
 
         if (packet.getMustAcknowledge()) {
-            CoapTransaction trans = new CoapTransaction(coapCallback, packet, this, transContext, transactionPriority, this::removeCoapTransId);
+            CoapTransaction trans = new CoapTransaction(packet, this, transContext, transactionPriority, this::removeCoapTransId);
             try {
                 if (transMgr.addTransactionAndGetReadyToSend(trans, forceAddToQueue)) {
                     LOGGER.trace("Sending transaction: {}", trans);
@@ -262,24 +255,26 @@ public class CoapUdpMessaging extends CoapMessaging {
                     LOGGER.trace("Enqueued transaction: {}", trans);
                 }
             } catch (TooManyRequestsForEndpointException e) {
-                coapCallback.callException(e);
+                trans.promise.completeExceptionally(e);
             }
+            return trans.promise;
         } else {
             //send NON message without waiting for piggy-backed response
             DelayedTransactionId delayedTransactionId = new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress());
-            delayedTransMagr.add(delayedTransactionId, new CoapTransaction(coapCallback, packet, this, transContext, transactionPriority, this::removeCoapTransId));
+            CoapTransaction trans = new CoapTransaction(packet, this, transContext, transactionPriority, this::removeCoapTransId);
+            delayedTransMagr.add(delayedTransactionId, trans);
             this.send(packet, packet.getRemoteAddress(), transContext)
                     .whenComplete((wasSent, maybeError) -> {
                         if (maybeError != null) {
                             delayedTransMagr.remove(delayedTransactionId);
-                            coapCallback.callException(((Exception) maybeError));
+                            trans.promise.completeExceptionally(maybeError);
                         }
                     });
             if (packet.getToken().isEmpty()) {
                 LOGGER.warn("Sent NON request without token: {}", packet);
             }
+            return trans.promise;
         }
-
     }
 
     CompletableFuture<Boolean> send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
@@ -307,7 +302,7 @@ public class CoapUdpMessaging extends CoapMessaging {
                 sendResponse(packet, resp);
             }
 
-            trans.invokeCallback(packet);
+            trans.complete(packet);
             return true;
         }
         return false;
@@ -323,7 +318,7 @@ public class CoapUdpMessaging extends CoapMessaging {
         // in other way block transfer will be interrupted by other messages in the queue
         // of TransactionManager, because removeCoapTransId() also sends next message form the queue
 
-        transaction.invokeCallback(packet);
+        transaction.complete(packet);
         removeCoapTransId(transaction.getTransactionId());
     }
 
@@ -426,7 +421,7 @@ public class CoapUdpMessaging extends CoapMessaging {
                         //final timeout, cannot resend, remove transaction
                         removeCoapTransId(trans.getTransactionId());
                         LOGGER.trace("resendTimeouts: CoAP transaction final timeout [{}]", trans);
-                        trans.getCallback().callException(new CoapTimeoutException(trans));
+                        trans.promise.completeExceptionally(new CoapTimeoutException(trans));
                     }
                 }
             }
@@ -437,7 +432,7 @@ public class CoapUdpMessaging extends CoapMessaging {
                     //delayed timeout, remove transaction
                     delayedTransMagr.remove(trans.getDelayedTransId());
                     LOGGER.trace("CoAP delayed transaction timeout [{}]", trans.getDelayedTransId());
-                    trans.getCallback().callException(new CoapTimeoutException(trans));
+                    trans.promise.completeExceptionally(new CoapTimeoutException(trans));
                 }
             }
         } catch (Exception ex) {

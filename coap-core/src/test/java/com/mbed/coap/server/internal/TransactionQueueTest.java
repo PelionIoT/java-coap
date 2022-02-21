@@ -19,10 +19,8 @@ package com.mbed.coap.server.internal;
 import static com.mbed.coap.server.internal.TransactionManagerTest.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.internal.CoapTransaction.Priority;
 import com.mbed.coap.transport.InMemoryCoapTransport;
-import com.mbed.coap.utils.Callback;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
@@ -181,7 +179,7 @@ public class TransactionQueueTest {
     }
 
     private CoapTransaction newTransaction(int mid) {
-        return new CoapTransaction(IGNORE, newCoapPacket(REMOTE_ADR).mid(mid).build(), null, null, null);
+        return new CoapTransaction(newCoapPacket(REMOTE_ADR).mid(mid).build(), null, null, null);
     }
 
     private CoapTransactionId newTransId(int mid) {
@@ -189,18 +187,7 @@ public class TransactionQueueTest {
     }
 
     private CoapTransaction newTransaction(int mid, Priority priority) {
-        return new CoapTransaction(IGNORE, newCoapPacket(REMOTE_ADR).mid(mid).build(), null, null, priority, null);
+        return new CoapTransaction(newCoapPacket(REMOTE_ADR).mid(mid).build(), null, null, priority, null);
     }
 
-    private static final Callback<CoapPacket> IGNORE = new Callback<CoapPacket>() {
-        @Override
-        public void callException(Exception ex) {
-            //ignore
-        }
-
-        @Override
-        public void call(CoapPacket o) {
-            //ignore
-        }
-    };
 }

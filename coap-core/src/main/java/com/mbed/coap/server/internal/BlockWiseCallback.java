@@ -16,6 +16,8 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.utils.FutureHelpers.failedFuture;
+import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapException;
@@ -23,19 +25,18 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.utils.Callback;
 import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.utils.Service;
 import java.io.ByteArrayOutputStream;
 import java.util.Objects;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class BlockWiseCallback implements Callback<CoapPacket> {
+class BlockWiseCallback {
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockWiseCallback.class);
     private static final int MAX_BLOCK_RESOURCE_CHANGE = 3;
 
-    private final Callback<CoapPacket> reqCallback;
     private CoapPacket response;
     final CoapPacket request;
     private final Opaque requestPayload;
@@ -43,16 +44,15 @@ class BlockWiseCallback implements Callback<CoapPacket> {
     private final int numberOfBertBlocks;
     private final CoapTcpCSM csm;
     private final int maxIncomingBlockTransferSize;
-    private final Consumer<BlockWiseCallback> makeRequestFunc;
+    private final Service<CoapPacket, CoapPacket> requestService;
 
 
-    BlockWiseCallback(Consumer<BlockWiseCallback> makeRequestFunc, CoapTcpCSM csm, CoapPacket request, Callback<CoapPacket> reqCallback, int maxIncomingBlockTransferSize) throws CoapException {
-        this.reqCallback = reqCallback;
+    BlockWiseCallback(Service<CoapPacket, CoapPacket> requestService, CoapTcpCSM csm, CoapPacket request, int maxIncomingBlockTransferSize) throws CoapException {
         this.request = request;
         this.requestPayload = request.getPayload();
         this.csm = csm;
         this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
-        this.makeRequestFunc = makeRequestFunc;
+        this.requestService = requestService;
 
         if (request.getMethod() != null && csm.useBlockTransfer(requestPayload)) {
             //request that needs to use blocks
@@ -68,49 +68,43 @@ class BlockWiseCallback implements Callback<CoapPacket> {
         }
     }
 
-    @Override
-    public void call(CoapPacket response) {
+    CompletableFuture<CoapPacket> receive(CoapPacket response) {
         LOGGER.trace("BlockWiseCallback.call(): {}", response);
 
         if (response.getCode() == Code.C413_REQUEST_ENTITY_TOO_LARGE) {
             if (response.headers().getBlock1Req() != null) {
-                restartBlockRequest(response.headers().getBlock1Req().getBlockSize());
+                return restartBlockRequest(response.headers().getBlock1Req().getBlockSize());
             } else {
-                reqCallback.call(response);
+                return completedFuture(response);
             }
-            return;
         }
 
-        if (handleIfBlock1(response)) {
-            return;
+        CompletableFuture<CoapPacket> maybeFuture = handleIfBlock1(response);
+        if (maybeFuture != null) {
+            return maybeFuture;
         }
 
         if (response.headers().getBlock2Res() != null) {
-            try {
-                receiveBlock2(response);
-            } catch (CoapBlockException ex) {
-                reqCallback.callException(ex);
-            }
+            return receiveBlock2(response);
         } else {
-            reqCallback.call(response);
+            return completedFuture(response);
         }
     }
 
-    private boolean handleIfBlock1(CoapPacket response) {
+    private CompletableFuture<CoapPacket> handleIfBlock1(CoapPacket response) {
         if (request.headers().getBlock1Req() == null || response.headers().getBlock1Req() == null) {
-            return false;
+            return null;
         }
 
         if (!request.headers().getBlock1Req().hasMore()) {
-            return false;
+            return null;
         }
 
         if (response.getCode() != Code.C231_CONTINUE) {
             // if server report code other than 231_CONTINUE - abort transfer
             // see https://tools.ietf.org/html/draft-ietf-core-block-19#section-2.9
             LOGGER.warn("Error in block transfer: response=" + response);
-            reqCallback.call(response);
-            return true;
+            return completedFuture(response);
         }
 
         BlockOption responseBlock = response.headers().getBlock1Req();
@@ -132,19 +126,16 @@ class BlockWiseCallback implements Callback<CoapPacket> {
         BlockWiseTransfer.createBlockPart(responseBlock, requestPayload, blockPayload, maxBlockPayload);
         request.setPayload(Opaque.of(blockPayload.toByteArray()));
         LOGGER.trace("BlockWiseCallback.call() next block b1: {}", request);
-        makeRequest();
-        return true;
+        return makeRequest();
     }
 
-    @Override
-    public void callException(Exception ex) {
-        reqCallback.callException(ex);
-    }
-
-    private void receiveBlock2(CoapPacket blResponse) throws CoapBlockException {
+    private CompletableFuture<CoapPacket> receiveBlock2(CoapPacket blResponse) {
         LOGGER.trace("Received CoAP block [{}]", blResponse.headers().getBlock2Res());
 
-        verifyBlockResponse(request.headers().getBlock2Res(), blResponse);
+        String errMsg = verifyBlockResponse(request.headers().getBlock2Res(), blResponse);
+        if (errMsg != null) {
+            return failedFuture(new CoapBlockException(errMsg));
+        }
 
         if (response == null) {
             response = blResponse;
@@ -154,19 +145,18 @@ class BlockWiseCallback implements Callback<CoapPacket> {
             this.response.setCode(blResponse.getCode());
         }
         if (hasResourceChanged(blResponse)) {
-            restartBlockTransfer(blResponse);
-            return;
+            return restartBlockTransfer(blResponse);
         }
 
         if (response.getPayload().size() > maxIncomingBlockTransferSize) {
-            throw new CoapBlockTooLargeEntityException("Received too large entity for request, max allowed " + maxIncomingBlockTransferSize + ", received " + response.getPayload().size());
+            return failedFuture(new CoapBlockTooLargeEntityException("Received too large entity for request, max allowed " + maxIncomingBlockTransferSize + ", received " + response.getPayload().size()));
         }
 
         BlockOption respBlockOption = blResponse.headers().getBlock2Res();
 
         if (!respBlockOption.hasMore()) {
             //isCompleted = true;
-            reqCallback.call(response);
+            return completedFuture(response);
         } else {
             //isCompleted = false;
             //CoapPacket request = new CoapPacket(Method.GET, MessageType.Confirmable, requestUri, destination);
@@ -176,45 +166,45 @@ class BlockWiseCallback implements Callback<CoapPacket> {
             request.headers().setBlock2Res(new BlockOption(respBlockOption.getNr() + receivedBlocksCount, respBlockOption.getBlockSize(), false));
             request.headers().setBlock1Req(null);
             LOGGER.trace("BlockWiseCallback.call() make next b2: {}", request);
-            makeRequest();
+            return makeRequest();
         }
     }
 
-    private void verifyBlockResponse(BlockOption requestBlock, CoapPacket blResponse) throws CoapBlockException {
+    private String verifyBlockResponse(BlockOption requestBlock, CoapPacket blResponse) {
         BlockOption responseBlock = blResponse.headers().getBlock2Res();
         if (requestBlock != null && requestBlock.getNr() != responseBlock.getNr()) {
             String msg = "Requested and received block number mismatch: req=" + requestBlock + ", resp=" + responseBlock + ", stopping transaction";
             LOGGER.warn(msg + " [req: " + request.toString() + ", resp: " + blResponse.toString(false, false, true, true) + "]");
-            throw new CoapBlockException(msg);
+            return msg;
         }
 
         if (!BlockWiseTransfer.isBlockPacketValid(blResponse, responseBlock)) {
-            throw new CoapBlockException("Intermediate block size mismatch with block option " + responseBlock.toString() + " and payload size " + blResponse.getPayload().size());
+            return "Intermediate block size mismatch with block option " + responseBlock + " and payload size " + blResponse.getPayload().size();
         }
         if (!BlockWiseTransfer.isLastBlockPacketValid(blResponse, responseBlock)) {
-            throw new CoapBlockException("Last block size mismatch with block option " + responseBlock + " and payload size " + blResponse.getPayload().size());
+            return "Last block size mismatch with block option " + responseBlock + " and payload size " + blResponse.getPayload().size();
         }
+        return null;
     }
 
     private boolean hasResourceChanged(CoapPacket blResponse) {
         return !Objects.equals(response.headers().getEtag(), blResponse.headers().getEtag());
     }
 
-    private void restartBlockTransfer(CoapPacket blResponse) {
+    private CompletableFuture<CoapPacket> restartBlockTransfer(CoapPacket blResponse) {
         //resource representation has changed, start from beginning
         resourceChanged++;
         if (resourceChanged >= MAX_BLOCK_RESOURCE_CHANGE) {
             LOGGER.trace("CoAP resource representation has changed {}, giving up.", resourceChanged);
-            reqCallback.callException(new CoapBlockException("Resource representation has changed too many times."));
-            return;
+            return failedFuture(new CoapBlockException("Resource representation has changed too many times."));
         }
         LOGGER.trace("CoAP resource representation has changed while getting blocks");
         response = null;
         request.headers().setBlock2Res(new BlockOption(0, blResponse.headers().getBlock2Res().getBlockSize(), false));
-        makeRequest();
+        return makeRequest();
     }
 
-    private void restartBlockRequest(BlockSize newSize) {
+    private CompletableFuture<CoapPacket> restartBlockRequest(BlockSize newSize) {
         BlockOption block1Req = new BlockOption(0, newSize, true);
         request.headers().setBlock1Req(block1Req);
 
@@ -222,11 +212,11 @@ class BlockWiseCallback implements Callback<CoapPacket> {
         BlockWiseTransfer.createBlockPart(block1Req, requestPayload, blockPayload, block1Req.getSize());
         request.setPayload(Opaque.of(blockPayload.toByteArray()));
 
-        makeRequest();
+        return makeRequest();
     }
 
-    private void makeRequest() {
-        makeRequestFunc.accept(this);
+    private CompletableFuture<CoapPacket> makeRequest() {
+        return requestService.apply(request).thenCompose(this::receive);
     }
 
 

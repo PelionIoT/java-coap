@@ -35,8 +35,6 @@ import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -122,9 +120,7 @@ public class CoapUdpMessagingTest {
         assertFalse(resp1.isDone());
 
         //should not fail to make a request
-        FutureCallbackAdapter<CoapPacket> resp2 = new FutureCallbackAdapter<>();
-
-        udpMessaging.makePrioritisedRequest(newCoapPacket(LOCAL_5683).get().uriPath("/11").build(), resp2, TransportContext.NULL);
+        CompletableFuture<CoapPacket> resp2 = udpMessaging.makePrioritisedRequest(newCoapPacket(LOCAL_5683).get().uriPath("/11").build(), TransportContext.NULL);
 
         assertFalse(resp1.isDone());
         assertFalse(resp2.isCompletedExceptionally());
@@ -137,17 +133,12 @@ public class CoapUdpMessagingTest {
 
         //missing address
         assertThatThrownBy(() ->
-                udpMessaging.makeRequest(newCoapPacket(123).get().uriPath("/10").build(), mock(Callback.class), TransportContext.NULL)
+                udpMessaging.makeRequest(newCoapPacket(123).get().uriPath("/10").build(), TransportContext.NULL)
         ).isExactlyInstanceOf(NullPointerException.class);
 
         //missing coap packet
         assertThatThrownBy(() ->
-                udpMessaging.makeRequest(null, mock(Callback.class), TransportContext.NULL)
-        ).isExactlyInstanceOf(NullPointerException.class);
-
-        //missing callback
-        assertThatThrownBy(() ->
-                udpMessaging.makeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/10").build(), ((Callback) null), TransportContext.NULL)
+                udpMessaging.makeRequest(null, TransportContext.NULL)
         ).isExactlyInstanceOf(NullPointerException.class);
 
     }
@@ -326,12 +317,11 @@ public class CoapUdpMessagingTest {
     public void network_fail_when_sending_NON_request() throws Exception {
         initServer();
 
-        Callback<CoapPacket> callback = mock(Callback.class);
         given(coapTransport.sendPacket(any(), any(), any())).willReturn(exceptionFuture());
 
-        udpMessaging.makeRequest(newCoapPacket(LOCAL_1_5683).non().token(12).get().uriPath("/test").build(), callback, TransportContext.NULL);
+        CompletableFuture<CoapPacket> resp = udpMessaging.makeRequest(newCoapPacket(LOCAL_1_5683).non().token(12).get().uriPath("/test").build(), TransportContext.NULL);
 
-        verify(callback).callException(any());
+        assertTrue(resp.isCompletedExceptionally());
     }
 
     // --- OBSERVATIONS ---
@@ -351,7 +341,7 @@ public class CoapUdpMessagingTest {
         initServer();
         mid = 1000;
 
-        udpMessaging.makeRequest(newCoapPacket(LOCAL_5683).mid(0).get().uriPath("/test").build(), new FutureCallbackAdapter<>(), TransportContext.NULL);
+        udpMessaging.makeRequest(newCoapPacket(LOCAL_5683).mid(0).get().uriPath("/test").build(), TransportContext.NULL);
 
         assertSent(newCoapPacket(LOCAL_5683).mid(1000).get().uriPath("/test"));
     }
@@ -434,10 +424,7 @@ public class CoapUdpMessagingTest {
     }
 
     private CompletableFuture<CoapPacket> makeRequest(CoapPacketBuilder coapPacket) {
-        FutureCallbackAdapter<CoapPacket> completableFuture = new FutureCallbackAdapter<>();
-
-        udpMessaging.makeRequest(coapPacket.build(), completableFuture, TransportContext.NULL);
-        return completableFuture;
+        return udpMessaging.makeRequest(coapPacket.build(), TransportContext.NULL);
     }
 
     private void udpMessagingInit(int duplicationListSize,

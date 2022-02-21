@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +22,6 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -43,11 +43,11 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     private boolean isRunning;
 
-    public abstract void ping(InetSocketAddress destination, final Callback<CoapPacket> callback);
+    public abstract CompletableFuture<CoapPacket> ping(InetSocketAddress destination);
 
-    public abstract void makeRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext);
+    public abstract CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext);
 
-    public abstract void makePrioritisedRequest(final CoapPacket packet, final Callback<CoapPacket> callback, final TransportContext transContext);
+    public abstract CompletableFuture<CoapPacket> makePrioritisedRequest(final CoapPacket packet, final TransportContext transContext);
 
     public abstract void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext);
 

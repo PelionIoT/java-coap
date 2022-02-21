@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.utils.FutureHelpers.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
@@ -24,10 +25,10 @@ import com.mbed.coap.packet.SignalingOptions;
 import com.mbed.coap.server.CoapTcpCSMStorage;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
@@ -39,7 +40,7 @@ import org.slf4j.LoggerFactory;
 public class CoapTcpMessaging extends CoapMessaging {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapTcpMessaging.class);
 
-    private final ConcurrentMap<DelayedTransactionId, Callback<CoapPacket>> transactions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<DelayedTransactionId, CompletableFuture<CoapPacket>> transactions = new ConcurrentHashMap<>();
     private final CoapTcpCSMStorage csmStorage;
     private final CoapTcpCSM ownCapability;
 
@@ -50,9 +51,9 @@ public class CoapTcpMessaging extends CoapMessaging {
     }
 
     @Override
-    public void ping(InetSocketAddress destination, Callback<CoapPacket> callback) {
+    public CompletableFuture<CoapPacket> ping(InetSocketAddress destination) {
         CoapPacket pingRequest = new CoapPacket(Code.C702_PING, null, destination);
-        makeRequest(pingRequest, callback, TransportContext.NULL);
+        return makeRequest(pingRequest, TransportContext.NULL);
     }
 
     @Override
@@ -99,20 +100,20 @@ public class CoapTcpMessaging extends CoapMessaging {
     }
 
     @Override
-    public void makeRequest(CoapPacket packet, Callback<CoapPacket> callback, TransportContext transContext) {
+    public CompletableFuture<CoapPacket> makeRequest(CoapPacket packet, TransportContext transContext) {
 
         int payloadLen = packet.getPayload().size();
         int maxMessageSize = csmStorage.getOrDefault(packet.getRemoteAddress()).getMaxMessageSizeInt();
 
         if (payloadLen > maxMessageSize) {
-            callback.callException(
+            return failedFuture(
                     new CoapException("Request payload size is too big and no block transfer support is enabled for " + packet.getRemoteAddress() + ": " + payloadLen)
             );
-            return;
         }
 
         DelayedTransactionId transId = new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress());
-        transactions.put(transId, callback);
+        CompletableFuture<CoapPacket> promise = new CompletableFuture<>();
+        transactions.put(transId, promise);
 
 
         sendPacket(packet, packet.getRemoteAddress(), transContext)
@@ -121,6 +122,7 @@ public class CoapTcpMessaging extends CoapMessaging {
                         removeTransactionExceptionally(transId, (Exception) maybeError);
                     }
                 });
+        return promise;
     }
 
     @Override
@@ -136,10 +138,10 @@ public class CoapTcpMessaging extends CoapMessaging {
     @Override
     protected boolean handleResponse(CoapPacket packet) {
         DelayedTransactionId transId = new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress());
-        Callback<CoapPacket> callback = transactions.remove(transId);
+        CompletableFuture<CoapPacket> promise = transactions.remove(transId);
 
-        if (callback != null) {
-            callback.call(packet);
+        if (promise != null) {
+            promise.complete(packet);
             return true;
         }
 
@@ -176,9 +178,9 @@ public class CoapTcpMessaging extends CoapMessaging {
     }
 
     private void removeTransactionExceptionally(DelayedTransactionId transId, Exception error) {
-        Callback<CoapPacket> requestCallback = transactions.remove(transId);
-        if (requestCallback != null) {
-            requestCallback.callException(error);
+        CompletableFuture<CoapPacket> promise = transactions.remove(transId);
+        if (promise != null) {
+            promise.completeExceptionally(error);
         }
     }
 
@@ -188,9 +190,9 @@ public class CoapTcpMessaging extends CoapMessaging {
     }
 
     @Override
-    public void makePrioritisedRequest(CoapPacket packet, Callback<CoapPacket> callback, TransportContext transContext) {
+    public CompletableFuture<CoapPacket> makePrioritisedRequest(CoapPacket packet, TransportContext transContext) {
         //not applicable in TCP transport
-        makeRequest(packet, callback, transContext);
+        return makeRequest(packet, transContext);
     }
 
 }

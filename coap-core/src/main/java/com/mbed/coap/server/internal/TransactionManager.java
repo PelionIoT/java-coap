@@ -136,7 +136,7 @@ public class TransactionManager {
             InetSocketAddress key = keys.nextElement();
             TransactionQueue transQueue = transactionQueues.remove(key);
             if (transQueue != null) {
-                transQueue.stream().forEach(t -> t.getCallback().callException(new IOException("Server stopped")));
+                transQueue.stream().forEach(t -> t.promise.completeExceptionally(new IOException("Server stopped")));
             }
         }
 

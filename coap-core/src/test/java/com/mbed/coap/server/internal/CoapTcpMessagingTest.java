@@ -30,8 +30,6 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.SignalingOptions;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
-import com.mbed.coap.utils.FutureCallbackAdapter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Random;
@@ -170,16 +168,14 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void should_send_ping_message() throws Exception {
-        tcpMessaging.ping(LOCAL_1_5683, mock(Callback.class));
+        tcpMessaging.ping(LOCAL_1_5683);
 
         assertSent(new CoapPacket(Code.C702_PING, null, LOCAL_1_5683));
     }
 
     @Test
     public void should_handle_pong() throws Exception {
-        FutureCallbackAdapter<CoapPacket> resp = new FutureCallbackAdapter<>();
-
-        tcpMessaging.ping(LOCAL_1_5683, resp);
+        CompletableFuture<CoapPacket> resp = tcpMessaging.ping(LOCAL_1_5683);
         receive(newCoapPacket(LOCAL_1_5683).code(Code.C703_PONG));
 
         assertEquals(Code.C703_PONG, resp.get().getCode());
@@ -252,14 +248,11 @@ public class CoapTcpMessagingTest {
     }
 
     private CompletableFuture<CoapPacket> makeRequest(CoapPacketBuilder coapPacket) {
-        FutureCallbackAdapter<CoapPacket> completableFuture = new FutureCallbackAdapter<>();
-
         if (new Random().nextBoolean()) {
-            tcpMessaging.makeRequest(coapPacket.build(), completableFuture, TransportContext.NULL);
+            return tcpMessaging.makeRequest(coapPacket.build(), TransportContext.NULL);
         } else {
-            tcpMessaging.makePrioritisedRequest(coapPacket.build(), completableFuture, TransportContext.NULL);
+            return tcpMessaging.makePrioritisedRequest(coapPacket.build(), TransportContext.NULL);
         }
-        return completableFuture;
     }
 
 }

@@ -36,7 +36,6 @@ import com.mbed.coap.server.internal.CoapExchangeImpl;
 import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.server.internal.CoapRequestHandler;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.FutureCallbackAdapter;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -144,10 +143,7 @@ public class CoapServer {
      * @return CompletableFuture with response promise
      */
     public CompletableFuture<CoapPacket> makeRequest(CoapPacket requestPacket, final TransportContext transContext) {
-        FutureCallbackAdapter<CoapPacket> completableFuture = new FutureCallbackAdapter<>();
-        coapMessaging.makeRequest(requestPacket, completableFuture, transContext);
-
-        return completableFuture;
+        return coapMessaging.makeRequest(requestPacket, transContext);
     }
 
     public CompletableFuture<CoapPacket> sendNotification(final CoapPacket notifPacket, final TransportContext transContext) {
@@ -162,10 +158,7 @@ public class CoapServer {
     }
 
     public CompletableFuture<CoapPacket> ping(InetSocketAddress destination) {
-        FutureCallbackAdapter<CoapPacket> callbackAdapter = new FutureCallbackAdapter<>();
-
-        coapMessaging.ping(destination, callbackAdapter);
-        return callbackAdapter;
+        return coapMessaging.ping(destination);
     }
 
     /**

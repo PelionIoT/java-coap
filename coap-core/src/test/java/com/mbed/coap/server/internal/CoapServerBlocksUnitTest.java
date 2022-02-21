@@ -22,7 +22,7 @@ import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.BDDMockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
@@ -34,7 +34,6 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,7 +44,8 @@ import protocolTests.utils.CoapPacketBuilder;
 
 public class CoapServerBlocksUnitTest {
 
-    private CoapMessaging msg = mock(CoapMessaging.class);
+    private final CoapMessaging msg = mock(CoapMessaging.class);
+    private CompletableFuture<CoapPacket> promise;
     private CoapServerBlocks server;
     private CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
     private CoapRequestHandler requestHandler;
@@ -54,6 +54,10 @@ public class CoapServerBlocksUnitTest {
     @BeforeEach
     public void setUp() throws Exception {
         reset(msg);
+
+        given(msg.makeRequest(any(), any())).willAnswer(__ -> newPromise());
+        given(msg.makePrioritisedRequest(any(), any())).willAnswer(__ -> newPromise());
+
         server = new CoapServerBlocks(msg, capabilities, 100_000,
                 RouterService.builder()
                         .get("/change", __ -> completedFuture(CoapResponse.ok("")))
@@ -71,13 +75,18 @@ public class CoapServerBlocksUnitTest {
         requestHandler = requestHandlerCaptor.getValue();
     }
 
+    private CompletableFuture<CoapPacket> newPromise() {
+        promise = new CompletableFuture<>();
+        return promise;
+    }
+
     @Test
     public void shouldMakeNonBlockingRequest() throws Exception {
         CoapPacket req = newCoapPacket(LOCAL_5683).mid(1).get().uriPath("/test").build();
 
         CompletableFuture<CoapPacket> resp = server.makeRequest(req);
 
-        verify(msg).makeRequest(eq(req), any(), any());
+        verify(msg).makeRequest(eq(req), any());
         assertFalse(resp.isDone());
     }
 
@@ -85,43 +94,40 @@ public class CoapServerBlocksUnitTest {
     public void shouldReceiveNonBlockingResponse() throws Exception {
         CoapPacket req = newCoapPacket(LOCAL_5683).mid(2).get().uriPath("/test").build();
         CoapPacket resp = newCoapPacket(LOCAL_5683).mid(2).con().payload("OK").build();
-        Callback<CoapPacket> callback;
 
         CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
 
-        callback = assertMakeRequest(req);
         assertFalse(respFut.isDone());
 
         //verify response
-        callback.call(resp);
+        promise.complete(resp);
 
         assertEquals(resp, respFut.get());
     }
 
     @Test
     public void shouldMakeBlockingRequest_maxMsgSz20() throws Exception {
-        Callback<CoapPacket> callback;
         CoapPacket req = newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_").build();
         capabilities.put(LOCAL_5683, new CoapTcpCSM(20, true));
 
         CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
 
         //BLOCK 0
-        callback = assertMakeRequest(
+        assertMakeRequest(
                 newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_").size1(32).block1Req(0, BlockSize.S_16, true)
         );
 
         //response
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, false).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, false).build());
 
 
         //BLOCK 1
-        callback = assertMakePriRequest(
+        assertMakePriRequest(
                 newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_").block1Req(1, BlockSize.S_16, false)
         );
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C204_CHANGED).block1Req(1, BlockSize.S_16, false).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C204_CHANGED).block1Req(1, BlockSize.S_16, false).build());
 
         //verify
         assertTrue(respFut.isDone());
@@ -153,24 +159,23 @@ public class CoapServerBlocksUnitTest {
 
     @Test
     public void shoudFail_toReceive_responseWithIncorrectLastBlockSize() {
-        Callback<CoapPacket> callback;
         capabilities.put(LOCAL_5683, new CoapTcpCSM(20, true));
 
         CoapPacket req = newCoapPacket(LOCAL_5683).get().uriPath("/test").build();
         CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
 
         //BLOCK 0
-        callback = assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/test"));
+        assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/test"));
 
         //response
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("0123456789ABCDEF").build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("0123456789ABCDEF").build());
 
         //BLOCK 1
-        callback = assertMakePriRequest(newCoapPacket(LOCAL_5683).get().block2Res(1, BlockSize.S_16, false).uriPath("/test"));
+        assertMakePriRequest(newCoapPacket(LOCAL_5683).get().block2Res(1, BlockSize.S_16, false).uriPath("/test"));
 
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("0123456789abcdef_").build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("0123456789abcdef_").build());
 
         //verify
         assertTrue(respFut.isDone());
@@ -181,22 +186,21 @@ public class CoapServerBlocksUnitTest {
 
     @Test
     public void shouldReceiveBlockingResponse() throws Exception {
-        Callback<CoapPacket> callback;
         CoapPacket req = newCoapPacket(LOCAL_5683).get().uriPath("/test").build();
         CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
 
         //BLOCK 0
-        callback = assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/test"));
+        assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/test"));
 
         //response
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("LARGE___PAYLOAD_").build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("LARGE___PAYLOAD_").build());
 
         //BLOCK 1
-        callback = assertMakePriRequest(newCoapPacket(LOCAL_5683).get().block2Res(1, BlockSize.S_16, false).uriPath("/test"));
+        assertMakePriRequest(newCoapPacket(LOCAL_5683).get().block2Res(1, BlockSize.S_16, false).uriPath("/test"));
 
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("LARGE___PAYLOAD_").build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("LARGE___PAYLOAD_").build());
 
         //verify
         assertTrue(respFut.isDone());
@@ -207,29 +211,28 @@ public class CoapServerBlocksUnitTest {
     @Test
     public void shouldReceiveBlockingResponse_with_BERT() throws Exception {
         //based on https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-6.1
-        Callback<CoapPacket> callback;
         CoapPacket req = newCoapPacket(LOCAL_5683).get().uriPath("/status").build();
 
         CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
 
         //BLOCK 0
-        callback = assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status"));
+        assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status"));
 
         //response
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, S_1024_BERT, true).payload(opaqueOfSize(3072)).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, S_1024_BERT, true).payload(opaqueOfSize(3072)).build());
 
         //BLOCK 1
-        callback = assertMakePriRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(3, S_1024_BERT, false));
+        assertMakePriRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(3, S_1024_BERT, false));
 
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(3, S_1024_BERT, true).payload(opaqueOfSize(5120)).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(3, S_1024_BERT, true).payload(opaqueOfSize(5120)).build());
 
         //BLOCK 2
-        callback = assertMakePriRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(8, S_1024_BERT, false));
+        assertMakePriRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(8, S_1024_BERT, false));
 
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(8, S_1024_BERT, false).payload(opaqueOfSize(4711)).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(8, S_1024_BERT, false).payload(opaqueOfSize(4711)).build());
 
 
         //verify
@@ -243,28 +246,27 @@ public class CoapServerBlocksUnitTest {
         //based on https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-6.2
         capabilities.put(LOCAL_5683, new CoapTcpCSM(10000, true));
 
-        Callback<CoapPacket> callback;
         CoapPacket req = newCoapPacket(LOCAL_5683).put().uriPath("/options").payload(opaqueOfSize(8192 + 8192 + 5683)).build();
 
         CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
 
         //BLOCK 0
-        callback = assertMakeRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(0, S_1024_BERT, true).payload(opaqueOfSize(8192)).size1(22067));
+        assertMakeRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(0, S_1024_BERT, true).payload(opaqueOfSize(8192)).size1(22067));
 
-        reset(msg);
-        callback.call(newCoapPacket().ack(Code.C231_CONTINUE).block1Req(0, S_1024_BERT, true).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket().ack(Code.C231_CONTINUE).block1Req(0, S_1024_BERT, true).build());
 
         //BLOCK 1
-        callback = assertMakePriRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(8, S_1024_BERT, true).payload(opaqueOfSize(8192)));
+        assertMakePriRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(8, S_1024_BERT, true).payload(opaqueOfSize(8192)));
 
-        reset(msg);
-        callback.call(newCoapPacket().ack(Code.C231_CONTINUE).block1Req(8, S_1024_BERT, true).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket().ack(Code.C231_CONTINUE).block1Req(8, S_1024_BERT, true).build());
 
         //BLOCK 2
-        callback = assertMakePriRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(16, S_1024_BERT, false).payload(opaqueOfSize(5683)));
+        assertMakePriRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(16, S_1024_BERT, false).payload(opaqueOfSize(5683)));
 
-        reset(msg);
-        callback.call(newCoapPacket().ack(Code.C204_CHANGED).block1Req(16, S_1024_BERT, false).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket().ack(Code.C204_CHANGED).block1Req(16, S_1024_BERT, false).build());
 
         //verify
         assertTrue(respFut.isDone());
@@ -283,8 +285,8 @@ public class CoapServerBlocksUnitTest {
         assertThatThrownBy(() -> respFut.get())
                 .hasCause(new CoapException("Block transfers are not enabled for localhost/127.0.0.1:5683 and payload size 22067 > max payload size 1152"));
 
-        verify(msg, never()).makeRequest(any(), any(), any());
-        verify(msg, never()).makePrioritisedRequest(any(), any(), any());
+        verify(msg, never()).makeRequest(any(), any());
+        verify(msg, never()).makePrioritisedRequest(any(), any());
     }
 
     @Test
@@ -327,35 +329,34 @@ public class CoapServerBlocksUnitTest {
 
     @Test
     public void should_continue_block_transfer_after_block_size_change() throws ExecutionException, InterruptedException {
-        Callback<CoapPacket> callback;
         CoapPacket req = newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_LARGE___PAYLOAD").build();
         capabilities.put(LOCAL_5683, new CoapTcpCSM(40, true));
 
         CompletableFuture<CoapPacket> respFut = server.makeRequest(req);
 
         //BLOCK 0
-        callback = assertMakeRequest(
+        assertMakeRequest(
                 newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_").size1(47).block1Req(0, BlockSize.S_32, true)
         );
 
         //response new size=16
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, false).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_16, false).build());
 
 
         //BLOCK 1
-        callback = assertMakePriRequest(
+        assertMakePriRequest(
                 newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_").block1Req(1, BlockSize.S_16, true)
         );
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).block1Req(1, BlockSize.S_16, false).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).block1Req(1, BlockSize.S_16, false).build());
 
         //BLOCK 2
-        callback = assertMakePriRequest(
+        assertMakePriRequest(
                 newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD").block1Req(2, BlockSize.S_16, false)
         );
-        reset(msg);
-        callback.call(newCoapPacket(LOCAL_5683).ack(Code.C204_CHANGED).block1Req(2, BlockSize.S_16, false).build());
+        clearInvocations(msg);
+        promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C204_CHANGED).block1Req(2, BlockSize.S_16, false).build());
 
         //verify
         assertTrue(respFut.isDone());
@@ -415,40 +416,32 @@ public class CoapServerBlocksUnitTest {
 
     //--------------------------
 
-    private Callback<CoapPacket> assertMakeRequest(CoapPacketBuilder req) {
-        return assertMakeRequest(req.build());
+    private void assertMakeRequest(CoapPacketBuilder req) {
+        assertMakeRequest(req.build());
     }
 
-    private Callback<CoapPacket> assertMakeRequest(CoapPacket req) {
-        final ArgumentCaptor<Callback> callback = ArgumentCaptor.forClass(Callback.class);
-
-        verify(msg).makeRequest(eq(req), callback.capture(), any());
-
-        return callback.getValue();
+    private void assertMakeRequest(CoapPacket req) {
+        verify(msg).makeRequest(eq(req), any());
     }
 
-    private Callback<CoapPacket> assertMakePriRequest(CoapPacketBuilder req) {
-        final ArgumentCaptor<Callback> callback = ArgumentCaptor.forClass(Callback.class);
-
-        verify(msg).makePrioritisedRequest(eq(req.build()), callback.capture(), any());
-
-        return callback.getValue();
+    private void assertMakePriRequest(CoapPacketBuilder req) {
+        verify(msg).makePrioritisedRequest(eq(req.build()), any());
     }
 
     private void assertMakeRequestAndReceive(CoapPacketBuilder req, CoapPacketBuilder receive) {
-        Callback<CoapPacket> callback = assertMakeRequest(req);
+        assertMakeRequest(req);
 
         //response
-        reset(msg);
-        callback.call(receive.build());
+        clearInvocations(msg);
+        assertTrue(promise.complete(receive.build()));
     }
 
     private void assertMakePriRequestAndReceive(CoapPacketBuilder req, CoapPacketBuilder receive) {
-        Callback<CoapPacket> callback = assertMakePriRequest(req);
+        assertMakePriRequest(req);
 
         //response
-        reset(msg);
-        callback.call(receive.build());
+        clearInvocations(msg);
+        assertTrue(promise.complete(receive.build()));
     }
 
 }

@@ -18,18 +18,14 @@ package com.mbed.coap.server.internal;
 
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Callback;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Describes CoAP transaction
  */
 public class CoapTransaction {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CoapTransaction.class.getName());
-
-    protected Callback<CoapPacket> callback;
+    final CompletableFuture<CoapPacket> promise = new CompletableFuture<>();
     private long timeout = -1;
     protected byte retrAttempts;
     protected CoapPacket coapRequest;
@@ -41,17 +37,13 @@ public class CoapTransaction {
     private final Consumer<CoapTransactionId> sendErrConsumer;
     private boolean isActive;
 
-    public CoapTransaction(Callback<CoapPacket> callback, CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Consumer<CoapTransactionId> sendErrConsumer) {
-        this(callback, coapRequest, coapServer, transContext, Priority.NORMAL, sendErrConsumer);
+    public CoapTransaction(CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Consumer<CoapTransactionId> sendErrConsumer) {
+        this(coapRequest, coapServer, transContext, Priority.NORMAL, sendErrConsumer);
     }
 
-    public CoapTransaction(Callback<CoapPacket> callback, CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Priority transactionPriority, Consumer<CoapTransactionId> sendErrConsumer) {
-        if (callback == null) {
-            throw new NullPointerException();
-        }
+    public CoapTransaction(CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Priority transactionPriority, Consumer<CoapTransactionId> sendErrConsumer) {
         this.sendErrConsumer = sendErrConsumer;
         this.coapServer = coapServer;
-        this.callback = callback;
         this.coapRequest = coapRequest;
         this.transactionPriority = transactionPriority;
         this.transId = new CoapTransactionId(coapRequest);
@@ -108,20 +100,12 @@ public class CoapTransaction {
     private void onSend(Throwable maybeError) {
         if (maybeError != null) {
             sendErrConsumer.accept(transId);
-            callback.callException(((Exception) maybeError));
+            promise.completeExceptionally(maybeError);
         }
     }
 
-    public Callback<CoapPacket> getCallback() {
-        return callback;
-    }
-
-    public void invokeCallback(CoapPacket packet) {
-        try {
-            callback.call(packet);
-        } catch (Exception ex) {
-            LOGGER.error("Error while handling callback: " + ex.getMessage(), ex);
-        }
+    public void complete(CoapPacket packet) {
+        promise.complete(packet);
     }
 
     public CoapPacket getCoapRequest() {

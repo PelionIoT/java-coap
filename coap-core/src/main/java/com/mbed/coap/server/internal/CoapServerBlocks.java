@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.utils.FutureHelpers.*;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
@@ -29,7 +30,6 @@ import com.mbed.coap.server.CoapExchange;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapTcpCSMStorage;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.FutureCallbackAdapter;
 import com.mbed.coap.utils.Service;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -60,23 +60,24 @@ public class CoapServerBlocks extends CoapServer {
 
     @Override
     public CompletableFuture<CoapPacket> makeRequest(CoapPacket request, TransportContext outgoingTransContext) {
-        FutureCallbackAdapter<CoapPacket> outerCallback = new FutureCallbackAdapter<>();
+
+        // make consequent requests with block priority and forces adding to queue even if it is full
+        Service<CoapPacket, CoapPacket> sendService = coapPacket -> coapMessaging.makePrioritisedRequest(coapPacket, outgoingTransContext);
 
         try {
             BlockWiseCallback blockCallback = new BlockWiseCallback(
-                    // make consequent requests with block priority and forces adding to queue even if it is full
-                    callback -> coapMessaging.makePrioritisedRequest(callback.request, callback, outgoingTransContext),
+                    sendService,
                     capabilities.getOrDefault(request.getRemoteAddress()),
                     request,
-                    outerCallback,
                     maxIncomingBlockTransferSize
             );
 
-            coapMessaging.makeRequest(request, blockCallback, outgoingTransContext);
+            return coapMessaging.makeRequest(request, outgoingTransContext)
+                    .thenCompose(blockCallback::receive);
+
         } catch (CoapException e) {
-            outerCallback.callException(e);
+            return failedFuture(e);
         }
-        return outerCallback;
     }
 
     @Override
