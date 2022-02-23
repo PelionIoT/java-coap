@@ -69,13 +69,6 @@ public interface CoapExchange {
      */
     void sendResponse();
 
-    /**
-     * Returns request transport context.
-     *
-     * @return transport context or null if does not exist.
-     */
-    TransportContext getRequestTransportContext();
-
     TransportContext getResponseTransportContext();
 
     /**

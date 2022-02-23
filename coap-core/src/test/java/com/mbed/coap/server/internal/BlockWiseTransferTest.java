@@ -78,23 +78,17 @@ public class BlockWiseTransferTest {
 
     @Test
     public void should_validate_packet_with_block() {
-        assertTrue(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(100)).post().build(),
-                new BlockOption(1, BlockSize.S_512, false)));
+        assertTrue(isBlockPacketValid(opaqueOfSize(100), new BlockOption(1, BlockSize.S_512, false)));
 
-        assertTrue(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(1024)).post().build(),
-                new BlockOption(2, BlockSize.S_1024_BERT, true)));
+        assertTrue(isBlockPacketValid(opaqueOfSize(1024), new BlockOption(2, BlockSize.S_1024_BERT, true)));
 
-        assertTrue(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(512)).post().build(),
-                new BlockOption(3, BlockSize.S_512, true)));
+        assertTrue(isBlockPacketValid(opaqueOfSize(512), new BlockOption(3, BlockSize.S_512, true)));
 
         //fail
-        assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(1023)).post().build(),
-                new BlockOption(2, BlockSize.S_1024_BERT, true)));
+        assertFalse(isBlockPacketValid(opaqueOfSize(1023), new BlockOption(2, BlockSize.S_1024_BERT, true)));
 
-        assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(0)).post().build(),
-                new BlockOption(2, BlockSize.S_1024_BERT, true)));
+        assertFalse(isBlockPacketValid(opaqueOfSize(0), new BlockOption(2, BlockSize.S_1024_BERT, true)));
 
-        assertFalse(isBlockPacketValid(newCoapPacket(LOCAL_5683).payload(opaqueOfSize(511)).post().build(),
-                new BlockOption(3, BlockSize.S_512, true)));
+        assertFalse(isBlockPacketValid(opaqueOfSize(511), new BlockOption(3, BlockSize.S_512, true)));
     }
 }

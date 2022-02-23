@@ -178,10 +178,10 @@ class BlockWiseCallback {
             return msg;
         }
 
-        if (!BlockWiseTransfer.isBlockPacketValid(blResponse, responseBlock)) {
+        if (!BlockWiseTransfer.isBlockPacketValid(blResponse.getPayload(), responseBlock)) {
             return "Intermediate block size mismatch with block option " + responseBlock + " and payload size " + blResponse.getPayload().size();
         }
-        if (!BlockWiseTransfer.isLastBlockPacketValid(blResponse, responseBlock)) {
+        if (!BlockWiseTransfer.isLastBlockPacketValid(blResponse.getPayload(), responseBlock)) {
             return "Last block size mismatch with block option " + responseBlock + " and payload size " + blResponse.getPayload().size();
         }
         return null;

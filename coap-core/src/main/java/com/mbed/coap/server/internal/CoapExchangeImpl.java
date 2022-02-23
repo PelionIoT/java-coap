@@ -41,16 +41,14 @@ public class CoapExchangeImpl implements CoapExchange {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapExchangeImpl.class.getName());
     private final CoapServer coapServer;
-    private final TransportContext requestTransportContext;
     private final TransportContext responseTransportContext = TransportContext.NULL;
     protected CoapPacket request;
     protected CoapPacket response;
 
-    public CoapExchangeImpl(CoapPacket request, CoapServer coapServer, TransportContext transportContext) {
+    public CoapExchangeImpl(CoapPacket request, CoapServer coapServer) {
         this.request = request;
         this.response = request.createResponse();
         this.coapServer = coapServer;
-        this.requestTransportContext = transportContext;
     }
 
     @Override
@@ -61,11 +59,6 @@ public class CoapExchangeImpl implements CoapExchange {
     @Override
     public CoapPacket getResponse() {
         return response;
-    }
-
-    @Override
-    public TransportContext getRequestTransportContext() {
-        return requestTransportContext;
     }
 
     @Override

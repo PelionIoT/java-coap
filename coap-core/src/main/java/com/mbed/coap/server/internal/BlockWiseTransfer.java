@@ -99,12 +99,12 @@ class BlockWiseTransfer {
     }
 
 
-    static boolean isBlockPacketValid(CoapPacket packet, BlockOption blockOpt) {
+    static boolean isBlockPacketValid(Opaque payload, BlockOption blockOpt) {
         if (!blockOpt.hasMore()) {
             return true;
         }
 
-        int payloadSize = packet.getPayload().size();
+        int payloadSize = payload.size();
         int blockSize = blockOpt.getSize();
 
         if (blockOpt.isBert()) {
@@ -114,12 +114,12 @@ class BlockWiseTransfer {
         }
     }
 
-    static boolean isLastBlockPacketValid(CoapPacket packet, BlockOption blockOpt) {
+    static boolean isLastBlockPacketValid(Opaque payload, BlockOption blockOpt) {
         if (blockOpt.hasMore()) {
             return true;
         }
 
-        int payloadSize = packet.getPayload().size();
+        int payloadSize = payload.size();
         if (!blockOpt.isBert()) {
             return payloadSize <= blockOpt.getSize();
         }

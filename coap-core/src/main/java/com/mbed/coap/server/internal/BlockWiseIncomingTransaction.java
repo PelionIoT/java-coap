@@ -21,7 +21,7 @@ import com.mbed.coap.exception.CoapRequestEntityIncomplete;
 import com.mbed.coap.exception.CoapRequestEntityTooLarge;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
-import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import java.io.ByteArrayOutputStream;
@@ -39,22 +39,22 @@ class BlockWiseIncomingTransaction {
     private final int maxIncomingBlockTransferSize;
     private final CoapTcpCSM csm;
 
-    BlockWiseIncomingTransaction(CoapPacket request, int maxIncomingBlockTransferSize, CoapTcpCSM csm) {
+    BlockWiseIncomingTransaction(CoapRequest request, int maxIncomingBlockTransferSize, CoapTcpCSM csm) {
         this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
         this.csm = csm;
-        Integer expectedPayloadSize = request.headers().getSize1();
-        BlockOption blockOption = request.headers().getBlock1Req();
+        Integer expectedPayloadSize = request.options().getSize1();
+        BlockOption blockOption = request.options().getBlock1Req();
 
         int allocationSize = expectedPayloadSize != null ? expectedPayloadSize : blockOption.getSize() * 4;
 
         this.payload = new ByteArrayOutputStream(allocationSize);
     }
 
-    void appendBlock(CoapPacket request) throws CoapCodeException {
+    void appendBlock(CoapRequest request) throws CoapCodeException {
         validateIncomingRequest(request);
         validateAlreadyReceivedPayloadSize(request);
 
-        BlockOption reqBlock = request.headers().getBlock1Req();
+        BlockOption reqBlock = request.options().getBlock1Req();
 
         int assumedCollectedPayloadSize = reqBlock.getNr() * reqBlock.getSize();
         if (payload.size() < assumedCollectedPayloadSize) {
@@ -76,7 +76,7 @@ class BlockWiseIncomingTransaction {
         return Opaque.of(payload.toByteArray());
     }
 
-    private void validateAlreadyReceivedPayloadSize(CoapPacket request) throws CoapRequestEntityTooLarge {
+    private void validateAlreadyReceivedPayloadSize(CoapRequest request) throws CoapRequestEntityTooLarge {
         int requestPayloadLength = request.getPayload().size();
 
         if (isTooBigPayloadSize(requestPayloadLength + payload.size())) {
@@ -89,8 +89,8 @@ class BlockWiseIncomingTransaction {
         return payloadSize > maxIncomingBlockTransferSize;
     }
 
-    private void validateIncomingRequest(CoapPacket request) throws CoapCodeException {
-        BlockOption reqBlock = request.headers().getBlock1Req();
+    private void validateIncomingRequest(CoapRequest request) throws CoapCodeException {
+        BlockOption reqBlock = request.options().getBlock1Req();
         // BERT request, but BERT support is not enabled on our server
 
 
@@ -100,7 +100,7 @@ class BlockWiseIncomingTransaction {
             throw new CoapCodeException(Code.C402_BAD_OPTION, "BERT is not supported");
         }
 
-        if (!BlockWiseTransfer.isBlockPacketValid(request, reqBlock)) {
+        if (!BlockWiseTransfer.isBlockPacketValid(request.getPayload(), reqBlock)) {
             LOGGER.warn("Intermediate block size does not match payload size {}", request);
             if (request.getPayload().size() > 0 && request.getPayload().size() < reqBlock.getSize() && !reqBlock.isBert()) {
                 throw new CoapRequestEntityTooLarge(new BlockOption(0, agreedBlockSize, true), "");
@@ -108,12 +108,12 @@ class BlockWiseIncomingTransaction {
             throw new CoapCodeException(Code.C400_BAD_REQUEST, "block size mismatch");
         }
 
-        if (!BlockWiseTransfer.isLastBlockPacketValid(request, reqBlock)) {
+        if (!BlockWiseTransfer.isLastBlockPacketValid(request.getPayload(), reqBlock)) {
             LOGGER.warn("LAST block size does not match payload size {}", request);
             throw new CoapCodeException(Code.C400_BAD_REQUEST, "last block size mismatch");
         }
 
-        if (request.headers().getSize1() != null && isTooBigPayloadSize(request.headers().getSize1())) {
+        if (request.options().getSize1() != null && isTooBigPayloadSize(request.options().getSize1())) {
             LOGGER.warn("Received request with too large size1 option: " + request.toString());
             throw new CoapRequestEntityTooLarge(maxIncomingBlockTransferSize, "Entity too large");
         }

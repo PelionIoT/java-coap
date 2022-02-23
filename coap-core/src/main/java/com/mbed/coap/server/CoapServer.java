@@ -21,8 +21,7 @@ import static com.mbed.coap.utils.FutureHelpers.failedFuture;
 import static java.util.Objects.*;
 import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.exception.CoapCodeException;
-import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.exception.CoapRequestEntityTooLarge;
+import com.mbed.coap.exception.CoapUnknownOptionException;
 import com.mbed.coap.exception.ObservationNotEstablishedException;
 import com.mbed.coap.exception.ObservationTerminatedException;
 import com.mbed.coap.packet.CoapPacket;
@@ -40,6 +39,7 @@ import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 public class CoapServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServer.class);
     private boolean isRunning;
-    protected final CoapHandlerToServiceAdapter handler;
+    private final Service<CoapRequest, CoapResponse> requestHandlingService;
     private boolean enabledCriticalOptTest = true;
     protected ObservationHandler observationHandler;
     private ObservationIDGenerator observationIDGenerator = new SimpleObservationIDGenerator();
@@ -57,9 +57,8 @@ public class CoapServer {
 
     public CoapServer(CoapMessaging coapMessaging, Service<CoapRequest, CoapResponse> routeService) {
         this.coapMessaging = coapMessaging;
-        this.handler = new CoapHandlerToServiceAdapter(
-                new ObservationSenderFilter(this::sendNotification).then(requireNonNull(routeService))
-        );
+        this.requestHandlingService = new ObservationSenderFilter(this::sendNotification)
+                .then(requireNonNull(routeService));
     }
 
     public static CoapServerBuilder.CoapServerBuilderForUdp builder() {
@@ -204,7 +203,7 @@ public class CoapServer {
 
             //            if (!findDuplicate(packet, "CoAP notification repeated")) {
             LOGGER.trace("Notification [{}]", packet.getRemoteAddrString());
-            CoapExchange exchange = new CoapExchangeImpl(packet, CoapServer.this, context);
+            CoapExchange exchange = new CoapExchangeImpl(packet, CoapServer.this);
             obsHdlr.call(exchange);
             //            }
             return true;
@@ -212,32 +211,34 @@ public class CoapServer {
 
         @Override
         public void handleRequest(CoapPacket request, TransportContext transportContext) {
-            CoapPacket errorResponse = null;
-
-            try {
-                if (enabledCriticalOptTest) {
+            if (enabledCriticalOptTest) {
+                try {
                     request.headers().criticalOptTest();
+                } catch (CoapUnknownOptionException ex) {
+                    CoapPacket errorResponse = request.createResponse(ex.getCode());
+                    errorResponse.setPayload(ex.getMessage());
+                    sendResponse(request, errorResponse);
+                    return;
                 }
-                callRequestHandler(request, transportContext);
-            } catch (CoapRequestEntityTooLarge ex) {
-                errorResponse = request.createResponse(ex.getCode());
-                if (ex.getMaxSize() > 0) {
-                    errorResponse.headers().setSize1(ex.getMaxSize());
-                }
-                if (ex.getBlockOptionHint() != null) {
-                    errorResponse.headers().setBlock1Req(ex.getBlockOptionHint());
-                }
-                errorResponse.setPayload(ex.getMessage());
-            } catch (CoapCodeException ex) {
-                errorResponse = request.createResponse(ex.getCode());
-                errorResponse.setPayload(ex.getMessage());
-            } catch (Exception ex) {
-                LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
-                errorResponse = request.createResponse(Code.C500_INTERNAL_SERVER_ERROR);
             }
-            if (errorResponse != null) {
-                sendResponse(request, errorResponse);
+
+            requestHandlingService.apply(request.toCoapRequest(transportContext))
+                    .exceptionally(this::rescue)
+                    .thenAccept(resp ->
+                            coapMessaging.sendResponse(request, request.createResponseFrom(resp), transportContext)
+                    );
+        }
+
+        private CoapResponse rescue(Throwable ex) {
+            if (ex instanceof CompletionException) {
+                return rescue(ex.getCause());
             }
+            if (ex instanceof CoapCodeException) {
+                return ((CoapCodeException) ex).toResponse();
+            }
+
+            LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
+            return CoapResponse.of(Code.C500_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -251,13 +252,6 @@ public class CoapServer {
         this.enabledCriticalOptTest = enable;
     }
 
-
-    //    protected abstract boolean findDuplicate(CoapPacket request, String message);
-
-    protected void callRequestHandler(CoapPacket request, TransportContext transportContext) throws CoapException {
-        CoapExchangeImpl exchange = new CoapExchangeImpl(request, this, transportContext);
-        handler.handle(exchange);
-    }
 
     protected void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext) {
         coapMessaging.sendResponse(request, response, transContext);

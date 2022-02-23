@@ -18,7 +18,6 @@ package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.packet.BlockSize.*;
 import static com.mbed.coap.utils.Bytes.*;
-import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -29,17 +28,12 @@ import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.RouterService;
-import com.mbed.coap.transport.TransportContext;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import protocolTests.utils.CoapPacketBuilder;
 
 public class CoapServerBlocksUnitTest {
@@ -48,8 +42,6 @@ public class CoapServerBlocksUnitTest {
     private CompletableFuture<CoapPacket> promise;
     private CoapServerBlocks server;
     private CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
-    private CoapRequestHandler requestHandler;
-    private final AtomicReference<Opaque> receivedPayload = new AtomicReference<>();
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -58,21 +50,8 @@ public class CoapServerBlocksUnitTest {
         given(msg.makeRequest(any(), any())).willAnswer(__ -> newPromise());
         given(msg.makePrioritisedRequest(any(), any())).willAnswer(__ -> newPromise());
 
-        server = new CoapServerBlocks(msg, capabilities, 100_000,
-                RouterService.builder()
-                        .get("/change", __ -> completedFuture(CoapResponse.ok("")))
-                        .put("/change", req -> {
-                            receivedPayload.set(req.getPayload());
-                            return completedFuture(CoapResponse.of(Code.C204_CHANGED));
-                        })
-                        .get("/large", __ -> completedFuture(CoapResponse.ok(opaqueOfSize(2000))))
-                        .get("/xlarge", __ -> completedFuture(CoapResponse.ok(opaqueOfSize(10000))))
-                        .build());
+        server = new CoapServerBlocks(msg, capabilities, 100_000, RouterService.NOT_FOUND_SERVICE);
         server.start();
-
-        ArgumentCaptor<CoapRequestHandler> requestHandlerCaptor = ArgumentCaptor.forClass(CoapRequestHandler.class);
-        verify(msg).start(requestHandlerCaptor.capture());
-        requestHandler = requestHandlerCaptor.getValue();
     }
 
     private CompletableFuture<CoapPacket> newPromise() {
@@ -289,43 +268,8 @@ public class CoapServerBlocksUnitTest {
         verify(msg, never()).makePrioritisedRequest(any(), any());
     }
 
-    @Test
-    public void should_send_blocs_with_different_tokens() {
-        //BLOCK 1
-        receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(opaqueOfSize(16)).block1Req(0, BlockSize.S_16, true));
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).token(1001).block1Req(0, BlockSize.S_16, true));
-
-        //BLOCK 2
-        receive(newCoapPacket(LOCAL_5683).put().token(2002).uriPath("/change").payload(opaqueOfSize(16)).block1Req(1, BlockSize.S_16, true));
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).token(2002).block1Req(1, BlockSize.S_16, true));
-
-        //BLOCK 3
-        receive(newCoapPacket(LOCAL_5683).put().token(3003).uriPath("/change").payload(opaqueOfSize(1)).block1Req(2, BlockSize.S_16, false));
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C204_CHANGED).token(3003).block1Req(2, BlockSize.S_16, false));
 
 
-        assertEquals(33, receivedPayload.get().size());
-    }
-
-    @Test
-    public void should_send_error_when_wrong_first_payload_and_block_size() throws Exception {
-        //BLOCK 1
-        receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(opaqueOfSize(17)).block1Req(0, BlockSize.S_16, true));
-
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C400_BAD_REQUEST).token(1001).payload("block size mismatch"));
-    }
-
-    @Test
-    public void should_send_error_when_wrong_second_payload_and_block_size() throws Exception {
-        //BLOCK 1
-        receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(opaqueOfSize(16)).block1Req(0, BlockSize.S_16, true));
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).token(1001).block1Req(0, BlockSize.S_16, true));
-
-        //BLOCK 2
-        receive(newCoapPacket(LOCAL_5683).put().token(1001).uriPath("/change").payload(opaqueOfSize(17)).block1Req(1, BlockSize.S_16, true));
-
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C400_BAD_REQUEST).token(1001).payload("block size mismatch"));
-    }
 
     @Test
     public void should_continue_block_transfer_after_block_size_change() throws ExecutionException, InterruptedException {
@@ -362,57 +306,6 @@ public class CoapServerBlocksUnitTest {
         assertTrue(respFut.isDone());
         assertEquals(Code.C204_CHANGED, respFut.get().getCode());
     }
-
-    @Test
-    public void shouldSendBlockingResponse_2k_with_BERT() throws Exception {
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(1200, true));
-
-        //BLOCK 0
-        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/large"));
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).block2Res(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)));
-
-        //BLOCK 1
-        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/large").block2Res(1, BlockSize.S_1024_BERT, false));
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).block2Res(1, BlockSize.S_1024_BERT, false).payload(opaqueOfSize(976)));
-    }
-
-    @Test
-    public void shouldSendBlockingResponse_2k_no_BERT_needed() throws Exception {
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(4000, true));
-
-        //when
-        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/large"));
-
-        //then full payload, no blocks
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).payload(opaqueOfSize(2000)));
-    }
-
-    @Test
-    public void shouldSendBlockingResponse_10k_with_BERT() throws Exception {
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(6000, true));
-
-        //BLOCK 0
-        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/xlarge"));
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).block2Res(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(4096)));
-
-        //BLOCK 1
-        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/xlarge").block2Res(4, BlockSize.S_1024_BERT, false));
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).block2Res(4, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(4096)));
-
-        //BLOCK 2
-        receive(newCoapPacket(LOCAL_5683).get().token(1001).uriPath("/xlarge").block2Res(8, BlockSize.S_1024_BERT, false));
-        assertSent(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).token(1001).block2Res(8, BlockSize.S_1024_BERT, false).payload(opaqueOfSize(1808)));
-    }
-
-
-    private void assertSent(CoapPacketBuilder resp) {
-        verify(msg).sendResponse(any(), eq(resp.build()), any());
-    }
-
-    private void receive(CoapPacketBuilder req) {
-        requestHandler.handleRequest(req.build(), TransportContext.NULL);
-    }
-
 
     //--------------------------
 

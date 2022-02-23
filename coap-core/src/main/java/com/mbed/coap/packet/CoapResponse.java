@@ -152,4 +152,14 @@ public class CoapResponse {
         options.setMaxAge(maxAge);
         return this;
     }
+
+    public CoapResponse block1Req(int num, BlockSize size, boolean more) {
+        options.setBlock1Req(new BlockOption(num, size, more));
+        return this;
+    }
+
+    public CoapResponse block2Res(int num, BlockSize size, boolean more) {
+        options.setBlock2Res(new BlockOption(num, size, more));
+        return this;
+    }
 }

@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.packet.CoapRequest.*;
 import static com.mbed.coap.utils.Bytes.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,22 +35,22 @@ import org.junit.jupiter.api.Test;
  */
 public class BlockWiseIncomingTransactionTest {
 
-    BlockWiseIncomingTransaction bwReq = new BlockWiseIncomingTransaction(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)).put().build(), 10_000, new CoapTcpCSM(4096, true));
+    BlockWiseIncomingTransaction bwReq = new BlockWiseIncomingTransaction(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)), 10_000, new CoapTcpCSM(4096, true));
 
     @Test
     public void should_appendBlock() throws Exception {
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(opaqueOfSize(512)).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(opaqueOfSize(512)).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(opaqueOfSize(100)).put().build());
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(opaqueOfSize(512)));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(1, BlockSize.S_512, true).payload(opaqueOfSize(512)));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_512, false).payload(opaqueOfSize(100)));
 
         assertEquals(1124, bwReq.getCombinedPayload().size());
     }
 
     @Test
     public void should_appendBlock_with_different_tokens() throws Exception {
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).token(1).block1Req(0, BlockSize.S_512, true).payload(opaqueOfSize(512)).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).token(2).block1Req(1, BlockSize.S_512, true).payload(opaqueOfSize(512)).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).token(3).block1Req(2, BlockSize.S_512, false).payload(opaqueOfSize(100)).put().build());
+        bwReq.appendBlock(put(LOCAL_5683, "/").token(1).block1Req(0, BlockSize.S_512, true).payload(opaqueOfSize(512)));
+        bwReq.appendBlock(put(LOCAL_5683, "/").token(2).block1Req(1, BlockSize.S_512, true).payload(opaqueOfSize(512)));
+        bwReq.appendBlock(put(LOCAL_5683, "/").token(3).block1Req(2, BlockSize.S_512, false).payload(opaqueOfSize(100)));
 
         assertEquals(1124, bwReq.getCombinedPayload().size());
     }
@@ -59,9 +60,9 @@ public class BlockWiseIncomingTransactionTest {
         Opaque payload0 = opaqueOfSize(0, 512);
         Opaque payload2 = opaqueOfSize(2, 256);
         Opaque payload6 = opaqueOfSize(6, 100);
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_256, true).payload(payload2).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(6, BlockSize.S_128, false).payload(payload6).put().build());
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(payload0));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_256, true).payload(payload2));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(6, BlockSize.S_128, false).payload(payload6));
 
         assertEquals(payload0.concat(payload2).concat(payload6), bwReq.getCombinedPayload());
     }
@@ -71,12 +72,12 @@ public class BlockWiseIncomingTransactionTest {
         Opaque payload0 = opaqueOfSize(0, 512);
         Opaque payload2 = opaqueOfSize(2, 256);
         Opaque payload6 = opaqueOfSize(6, 100);
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_256, true).payload(payload2).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_256, true).payload(payload2).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(6, BlockSize.S_128, false).payload(payload6).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(6, BlockSize.S_128, false).payload(payload6).put().build());
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(payload0));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_256, true).payload(payload2));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(payload0));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_256, true).payload(payload2));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(6, BlockSize.S_128, false).payload(payload6));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(6, BlockSize.S_128, false).payload(payload6));
         assertEquals(payload0.concat(payload2).concat(payload6), bwReq.getCombinedPayload());
     }
 
@@ -86,14 +87,14 @@ public class BlockWiseIncomingTransactionTest {
         Opaque payload1 = opaqueOfSize(1, 512);
         Opaque payload2 = opaqueOfSize(2, 512);
         Opaque payload3 = opaqueOfSize(3, 92);
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, true).payload(payload2).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, true).payload(payload2).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(payload0));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(payload0));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(1, BlockSize.S_512, true).payload(payload1));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_512, true).payload(payload2));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(1, BlockSize.S_512, true).payload(payload1));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_512, true).payload(payload2));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(3, BlockSize.S_512, false).payload(payload3));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(3, BlockSize.S_512, false).payload(payload3));
 
         assertEquals(payload0.concat(payload1).concat(payload2).concat(payload3), bwReq.getCombinedPayload());
     }
@@ -104,13 +105,13 @@ public class BlockWiseIncomingTransactionTest {
         Opaque payload1 = opaqueOfSize(1, 512);
         Opaque payload2 = opaqueOfSize(2, 512);
         Opaque payload3 = opaqueOfSize(3, 92);
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, true).payload(payload2).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(payload0));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(payload0));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(1, BlockSize.S_512, true).payload(payload1));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_512, true).payload(payload2));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(1, BlockSize.S_512, true).payload(payload1));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(3, BlockSize.S_512, false).payload(payload3));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(3, BlockSize.S_512, false).payload(payload3));
 
         assertEquals(payload0.concat(payload1).concat(payload2).concat(payload3), bwReq.getCombinedPayload());
     }
@@ -121,24 +122,24 @@ public class BlockWiseIncomingTransactionTest {
         Opaque payload1 = opaqueOfSize(1, 512);
         Opaque payload2 = opaqueOfSize(2, 512);
         Opaque payload3 = opaqueOfSize(3, 92);
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(payload0).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, true).payload(payload2).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_512, true).payload(payload1).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(payload2).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(3, BlockSize.S_512, false).payload(payload3).put().build());
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(payload0));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(payload0));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(1, BlockSize.S_512, true).payload(payload1));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_512, true).payload(payload2));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(1, BlockSize.S_512, true).payload(payload1));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(3, BlockSize.S_512, false).payload(payload3));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_512, false).payload(payload2));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(3, BlockSize.S_512, false).payload(payload3));
 
         assertEquals(payload0.concat(payload1).concat(payload2).concat(payload3), bwReq.getCombinedPayload());
     }
 
     @Test
     public void should_appendBlock_restart_from_beginning() throws Exception {
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_256, true).payload(opaqueOfSize(256)).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_128, true).payload(opaqueOfSize(128)).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(1, BlockSize.S_128, true).payload(opaqueOfSize(128)).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_128, false).payload(opaqueOfSize(100)).put().build());
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_256, true).payload(opaqueOfSize(256)));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_128, true).payload(opaqueOfSize(128)));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(1, BlockSize.S_128, true).payload(opaqueOfSize(128)));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_128, false).payload(opaqueOfSize(100)));
 
         assertEquals(356, bwReq.getCombinedPayload().size());
     }
@@ -146,9 +147,9 @@ public class BlockWiseIncomingTransactionTest {
     @Test
     public void should_appendBlock_bert() throws Exception {
 
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2048)).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2048)).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(4, BlockSize.S_1024_BERT, false).payload(opaqueOfSize(100)).put().build());
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2048)));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(2, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2048)));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(4, BlockSize.S_1024_BERT, false).payload(opaqueOfSize(100)));
 
         assertEquals(4196, bwReq.getCombinedPayload().size());
     }
@@ -156,11 +157,11 @@ public class BlockWiseIncomingTransactionTest {
     @Test
     public void should_fail_to_appendBlock_when_too_large_total_payload() throws Exception {
 
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(4096)).put().build());
-        bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(4, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(4096)).put().build());
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(4096)));
+        bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(4, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(4096)));
 
         assertThatThrownBy(() ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(8, BlockSize.S_1024_BERT, false).payload(opaqueOfSize(2000)).put().build())
+                bwReq.appendBlock(put(LOCAL_5683, "/").block1Req(8, BlockSize.S_1024_BERT, false).payload(opaqueOfSize(2000)))
         ).isExactlyInstanceOf(CoapRequestEntityTooLarge.class);
     }
 
@@ -168,28 +169,28 @@ public class BlockWiseIncomingTransactionTest {
     public void should_fail_with_invalid_request() throws Exception {
         //missing previous blocks
         assertThatThrownBy(() ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(opaqueOfSize(512)).get().build())
+                bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(2, BlockSize.S_512, false).payload(opaqueOfSize(512)))
         ).isExactlyInstanceOf(CoapRequestEntityIncomplete.class);
 
 
         //size too large for defined capabilities
         assertThatThrownBy(() ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).size1(11_000).block1Req(0, BlockSize.S_512, true).payload(opaqueOfSize(512)).get().build())
+                bwReq.appendBlock(get(LOCAL_5683, "/").size1(11_000).block1Req(0, BlockSize.S_512, true).payload(opaqueOfSize(512)))
         ).isExactlyInstanceOf(CoapRequestEntityTooLarge.class);
 
         //payload size does not match block size
         assertCodeException(Code.C413_REQUEST_ENTITY_TOO_LARGE, () ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).payload(opaqueOfSize(100)).get().build())
+                bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true).payload(opaqueOfSize(100)))
         );
 
         //no payload
         assertCodeException(Code.C400_BAD_REQUEST, () ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_512, true).get().build())
+                bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(0, BlockSize.S_512, true))
         );
 
         //last block and payload size larger that block size
         assertCodeException(Code.C400_BAD_REQUEST, () ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(2, BlockSize.S_512, false).payload(opaqueOfSize(600)).get().build())
+                bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(2, BlockSize.S_512, false).payload(opaqueOfSize(600)))
         );
 
     }
@@ -199,33 +200,33 @@ public class BlockWiseIncomingTransactionTest {
         //-- FAILURES --
 
         //no blocks allowed
-        bwReq = new BlockWiseIncomingTransaction(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)).put().build(), 10_000,
+        bwReq = new BlockWiseIncomingTransaction(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)), 10_000,
                 new CoapTcpCSM(4096, false));
         assertCodeException(Code.C402_BAD_OPTION, () ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2048)).get().build())
+                bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2048)))
         );
 
         //blocks but not bert
-        bwReq = new BlockWiseIncomingTransaction(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)).put().build(), 10_000,
+        bwReq = new BlockWiseIncomingTransaction(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)), 10_000,
                 new CoapTcpCSM(512, true));
         assertCodeException(Code.C402_BAD_OPTION, () ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2048)).get().build())
+                bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2048)))
         );
 
         //payload size does not match block size
-        bwReq = new BlockWiseIncomingTransaction(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)).put().build(), 10_000,
+        bwReq = new BlockWiseIncomingTransaction(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)), 10_000,
                 new CoapTcpCSM(10_000, true));
         assertCodeException(Code.C400_BAD_REQUEST, () ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(100)).get().build())
+                bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(100)))
         );
 
         assertCodeException(Code.C400_BAD_REQUEST, () ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2000)).get().build())
+                bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2000)))
         );
 
         //missing payload
         assertCodeException(Code.C400_BAD_REQUEST, () ->
-                bwReq.appendBlock(newCoapPacket(LOCAL_5683).block1Req(0, BlockSize.S_1024_BERT, true).get().build())
+                bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true))
         );
     }
 

@@ -178,4 +178,19 @@ public final class CoapRequest {
         options.setEtag(etag);
         return this;
     }
+
+    public CoapRequest block1Req(int num, BlockSize size, boolean more) {
+        options.setBlock1Req(new BlockOption(num, size, more));
+        return this;
+    }
+
+    public CoapRequest block2Res(int num, BlockSize size, boolean more) {
+        options.setBlock2Res(new BlockOption(num, size, more));
+        return this;
+    }
+
+    public CoapRequest size1(int size) {
+        options.setSize1(size);
+        return this;
+    }
 }
