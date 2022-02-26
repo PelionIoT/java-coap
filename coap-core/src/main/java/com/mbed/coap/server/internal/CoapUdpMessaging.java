@@ -62,12 +62,9 @@ public class CoapUdpMessaging extends CoapMessaging {
     private DuplicationDetector duplicationDetector;
     private MessageIdSupplier idContext;
     private ScheduledFuture<?> transactionTimeoutWorkerFut;
-    private CoapTransaction.Priority defaultPriority;
     protected long delayedTransactionTimeout;
     protected TransmissionTimeout transmissionTimeout;
     protected DuplicatedCoapMessageCallback duplicatedCoapMessageCallback;
-    private CoapTransaction.Priority specialCoapTransactionPriority = CoapTransaction.Priority.HIGH;
-
 
     public CoapUdpMessaging(CoapTransport coapTransport) {
         super(coapTransport);
@@ -78,12 +75,11 @@ public class CoapUdpMessaging extends CoapMessaging {
             boolean isSelfCreatedExecutor,
             MessageIdSupplier idContext,
             int maxQueueSize,
-            CoapTransaction.Priority defaultPriority,
             long delayedTransactionTimeout,
             DuplicatedCoapMessageCallback duplicatedCoapMessageCallback,
             ScheduledExecutorService scheduledExecutor
     ) {
-        if (coapTransporter == null || scheduledExecutor == null || idContext == null || defaultPriority == null || duplicatedCoapMessageCallback == null || cache == null) {
+        if (coapTransporter == null || scheduledExecutor == null || idContext == null || duplicatedCoapMessageCallback == null || cache == null) {
             throw new NullPointerException();
         }
         if (cache instanceof DefaultDuplicateDetectorCache) {
@@ -96,7 +92,6 @@ public class CoapUdpMessaging extends CoapMessaging {
         this.delayedTransactionTimeout = delayedTransactionTimeout;
         this.duplicatedCoapMessageCallback = duplicatedCoapMessageCallback;
 
-        this.defaultPriority = defaultPriority;
         transMgr.setMaximumEndpointQueueSize(maxQueueSize);
 
         if (transmissionTimeout == null) {
@@ -115,11 +110,6 @@ public class CoapUdpMessaging extends CoapMessaging {
         }
         startTransactionTimeoutWorker();
         super.start(coapRequestHandler);
-    }
-
-
-    public void setSpecialCoapTransactionPriority(CoapTransaction.Priority specialCoapTransactionPriority) {
-        this.specialCoapTransactionPriority = specialCoapTransactionPriority;
     }
 
     private void startTransactionTimeoutWorker() {
@@ -204,26 +194,11 @@ public class CoapUdpMessaging extends CoapMessaging {
 
     @Override
     public CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext) {
-        return makeRequestInternal(packet, transContext, defaultPriority);
-    }
-
-    @Override
-    public CompletableFuture<CoapPacket> makePrioritisedRequest(CoapPacket packet, TransportContext transContext) {
-        return makeRequestInternal(packet, transContext, specialCoapTransactionPriority, true);
-    }
-
-    /**
-     * Makes CoAP request. Sends given packet to specified address.
-     * <p>
-     * <i>Asynchronous method</i>
-     * </p>
-     *
-     * @param packet request packet
-     * @param transContext transport context that will be passed to transport connector
-     * @param transactionPriority defines transaction priority (used by CoapServerBlocks mostyl)
-     */
-    private CompletableFuture<CoapPacket> makeRequestInternal(final CoapPacket packet, final TransportContext transContext, CoapTransaction.Priority transactionPriority) {
-        return makeRequestInternal(packet, transContext, transactionPriority, false);
+        boolean forceAddToQueue = false;
+        if ((packet.headers().getBlock1Req() != null && packet.headers().getBlock1Req().getNr() > 0) || (packet.headers().getBlock2Res() != null && packet.headers().getBlock2Res().getNr() > 0)) {
+            forceAddToQueue = true;
+        }
+        return makeRequestInternal(packet, transContext, forceAddToQueue);
     }
 
     /**
@@ -234,10 +209,9 @@ public class CoapUdpMessaging extends CoapMessaging {
      *
      * @param packet request packet
      * @param transContext transport context that will be passed to transport connector
-     * @param transactionPriority defines transaction priority (used by CoapServerBlocks mostyl)
      * @param forceAddToQueue forces add to queue even if there is queue limit overflow (block requests)
      */
-    private CompletableFuture<CoapPacket> makeRequestInternal(final CoapPacket packet, final TransportContext transContext, CoapTransaction.Priority transactionPriority, boolean forceAddToQueue) {
+    private CompletableFuture<CoapPacket> makeRequestInternal(final CoapPacket packet, final TransportContext transContext, boolean forceAddToQueue) {
         if (packet == null || packet.getRemoteAddress() == null) {
             throw new NullPointerException();
         }
@@ -246,7 +220,7 @@ public class CoapUdpMessaging extends CoapMessaging {
         packet.setMessageId(getNextMID());
 
         if (packet.getMustAcknowledge()) {
-            CoapTransaction trans = new CoapTransaction(packet, this, transContext, transactionPriority, this::removeCoapTransId);
+            CoapTransaction trans = new CoapTransaction(packet, this, transContext, this::removeCoapTransId);
             try {
                 if (transMgr.addTransactionAndGetReadyToSend(trans, forceAddToQueue)) {
                     LOGGER.trace("Sending transaction: {}", trans);
@@ -261,7 +235,7 @@ public class CoapUdpMessaging extends CoapMessaging {
         } else {
             //send NON message without waiting for piggy-backed response
             DelayedTransactionId delayedTransactionId = new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress());
-            CoapTransaction trans = new CoapTransaction(packet, this, transContext, transactionPriority, this::removeCoapTransId);
+            CoapTransaction trans = new CoapTransaction(packet, this, transContext, this::removeCoapTransId);
             delayedTransMagr.add(delayedTransactionId, trans);
             this.send(packet, packet.getRemoteAddress(), transContext)
                     .whenComplete((wasSent, maybeError) -> {

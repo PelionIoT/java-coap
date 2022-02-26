@@ -19,7 +19,6 @@ package com.mbed.coap.server.internal;
 import static com.mbed.coap.server.internal.TransactionManagerTest.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
-import com.mbed.coap.server.internal.CoapTransaction.Priority;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,22 +44,6 @@ public class TransactionQueueTest {
         assertEquals(transQueue.head().get().getCoapRequest().getMessageId(), 12);
 
         assertEquals(transQueue.size(), 3);
-    }
-
-    @Test
-    public void shouldAdd_priority() throws Exception {
-        AtomicBoolean queueOverflow = new AtomicBoolean();
-
-        TransactionQueue transQueue = TransactionQueue.of(newTransaction(12));
-
-        transQueue = transQueue.add(newTransaction(13, Priority.LOW), false, 100, queueOverflow);
-        assertEquals(transQueue.head().get().getCoapRequest().getMessageId(), 12);
-
-        transQueue = transQueue.add(newTransaction(14, Priority.HIGH), false, 100, queueOverflow);
-        assertEquals(transQueue.head().get().getCoapRequest().getMessageId(), 14);
-
-        transQueue = transQueue.add(newTransaction(15, Priority.HIGH), false, 100, queueOverflow);
-        assertEquals(transQueue.head().get().getCoapRequest().getMessageId(), 14);
     }
 
     @Test
@@ -184,10 +167,6 @@ public class TransactionQueueTest {
 
     private CoapTransactionId newTransId(int mid) {
         return new CoapTransactionId(newCoapPacket(REMOTE_ADR).mid(mid).build());
-    }
-
-    private CoapTransaction newTransaction(int mid, Priority priority) {
-        return new CoapTransaction(newCoapPacket(REMOTE_ADR).mid(mid).build(), null, null, priority, null);
     }
 
 }

@@ -95,7 +95,7 @@ public class CoapServerBlocksTest {
 
     @Test
     public void block2_response() throws Exception {
-        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         blockResource = newResource("123456789012345|abcd");
@@ -111,7 +111,7 @@ public class CoapServerBlocksTest {
 
     @Test
     public void block1_request() throws Exception {
-        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         blockResource = request -> {
@@ -134,7 +134,7 @@ public class CoapServerBlocksTest {
     @Test
     public void block1_request_shouldFailIfTooBigPayload() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(5000, true));
-        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
         server = new CoapServerBlocks(protoServer, capabilities, 10000, route) {
             @Override
             public CompletableFuture<CoapPacket> observe(String uri, InetSocketAddress destination, Opaque token, TransportContext transportContext) {
@@ -177,7 +177,7 @@ public class CoapServerBlocksTest {
 
     @Test
     public void block1_incorrectIntermediateBlockSize() throws CoapException, IOException {
-        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         blockResource = alwaysFailService;
@@ -200,7 +200,7 @@ public class CoapServerBlocksTest {
     @Test
     public void block1_request_BERT_multiblock() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(1250, true));
-        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         Opaque payloadBlock1 = generatePayload(0, 4096);
@@ -237,7 +237,7 @@ public class CoapServerBlocksTest {
     @Test
     public void block1_nonBertAgreed_BERT_received() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(1150, true)); // non-BERT
-        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         Opaque payloadBlock1 = generatePayload(0, 4096);
@@ -254,7 +254,7 @@ public class CoapServerBlocksTest {
     @Test
     public void block1_noBlockEnabled_BERT_received() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(1150, false)); // non-BERT
-        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         Opaque payloadBlock1 = generatePayload(0, 4096);
@@ -271,7 +271,7 @@ public class CoapServerBlocksTest {
     @Test
     public void block1_BERT_incorrectIntermediateBlockSize() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(1250, true));
-        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, CoapTransaction.Priority.NORMAL, 0, DuplicatedCoapMessageCallback.NULL);
+        protoServerInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
         server.start();
 
         Opaque payloadBlock1 = generatePayload(0, 4096);
@@ -342,7 +342,6 @@ public class CoapServerBlocksTest {
             boolean isSelfCreatedExecutor,
             MessageIdSupplier idContext,
             int maxQueueSize,
-            CoapTransaction.Priority defaultPriority,
             long delayedTransactionTimeout,
             DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
         PutOnlyMap<CoapRequestId, CoapPacket> cache = new DefaultDuplicateDetectorCache<>(
@@ -357,7 +356,6 @@ public class CoapServerBlocksTest {
                 isSelfCreatedExecutor,
                 idContext,
                 maxQueueSize,
-                defaultPriority,
                 delayedTransactionTimeout,
                 duplicatedCoapMessageCallback,
                 scheduledExecutor);

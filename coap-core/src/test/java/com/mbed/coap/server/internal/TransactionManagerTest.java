@@ -280,132 +280,12 @@ public class TransactionManagerTest {
     }
 
     @Test
-    public void test_queueSorting() throws TooManyRequestsForEndpointException {
-        CoapTransaction transLow1 = createTransaction(REMOTE_ADR, 1, CoapTransaction.Priority.LOW);
-        CoapTransaction transLow2 = createTransaction(REMOTE_ADR, 2, CoapTransaction.Priority.LOW);
-        CoapTransaction transNorm1 = createTransaction(REMOTE_ADR, 3, CoapTransaction.Priority.NORMAL);
-        CoapTransaction transNorm2 = createTransaction(REMOTE_ADR, 4, CoapTransaction.Priority.NORMAL);
-        CoapTransaction transHi1 = createTransaction(REMOTE_ADR, 5, CoapTransaction.Priority.HIGH);
-        CoapTransaction transHi2 = createTransaction(REMOTE_ADR, 6, CoapTransaction.Priority.HIGH);
-
-        assertTrue(transMgr.addTransactionAndGetReadyToSend(transLow1));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transLow2));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transNorm1));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transNorm2));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transHi1));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transHi2));
-
-        assertEquals(6, transMgr.getNumberOfTransactions());
-
-        transLow1.makeActiveForTests();
-
-        assertNotEmpty(transMgr.removeAndLock(transLow1.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transLow1.getTransactionId()).get().makeActiveForTests(), transHi1);
-
-        assertNotEmpty(transMgr.removeAndLock(transHi1.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transHi1.getTransactionId()).get().makeActiveForTests(), transHi2);
-
-        assertNotEmpty(transMgr.removeAndLock(transHi2.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transHi2.getTransactionId()).get().makeActiveForTests(), transNorm1);
-
-        assertNotEmpty(transMgr.removeAndLock(transNorm1.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transNorm1.getTransactionId()).get().makeActiveForTests(), transNorm2);
-
-        assertNotEmpty(transMgr.removeAndLock(transNorm2.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transNorm2.getTransactionId()).get().makeActiveForTests(), transLow2);
-
-        assertNotEmpty(transMgr.removeAndLock(transLow2.getTransactionId()));
-        assertEmpty(transMgr.unlockOrRemoveAndGetNext(transLow2.getTransactionId()));
-
-        assertEquals(0, transMgr.getNumberOfTransactions());
-    }
-
-    @Test
-    public void test_samePriorityInOrder() throws TooManyRequestsForEndpointException {
-        CoapTransaction transHi1 = createTransaction(REMOTE_ADR, 1, CoapTransaction.Priority.HIGH);
-        CoapTransaction transHi2 = createTransaction(REMOTE_ADR, 2, CoapTransaction.Priority.HIGH);
-        CoapTransaction transHi3 = createTransaction(REMOTE_ADR, 3, CoapTransaction.Priority.NORMAL);
-
-        assertTrue(transMgr.addTransactionAndGetReadyToSend(transHi3));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transHi2));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transHi1));
-
-        transHi3.makeActiveForTests();
-
-        assertNotEmpty(transMgr.removeAndLock(transHi3.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transHi3.getTransactionId()).get().makeActiveForTests(), transHi2);
-
-        assertNotEmpty(transMgr.removeAndLock(transHi2.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transHi2.getTransactionId()).get().makeActiveForTests(), transHi1);
-
-        assertNotEmpty(transMgr.removeAndLock(transHi1.getTransactionId()));
-        assertEmpty(transMgr.unlockOrRemoveAndGetNext(transHi1.getTransactionId()));
-
-        assertEquals(transMgr.getNumberOfTransactions(), 0);
-    }
-
-    @Test
-    public void test_nonExistingTransId() throws TooManyRequestsForEndpointException {
-        CoapTransaction transLow1 = createTransaction(REMOTE_ADR, 1, CoapTransaction.Priority.LOW);
-        CoapTransaction transLow2 = createTransaction(REMOTE_ADR, 2, CoapTransaction.Priority.LOW);
-        CoapTransaction transNorm1 = createTransaction(REMOTE_ADR, 3, CoapTransaction.Priority.NORMAL);
-        CoapTransaction transNorm2 = createTransaction(REMOTE_ADR, 4, CoapTransaction.Priority.NORMAL);
-        CoapTransaction transHi_NOT_ADDED = createTransaction(REMOTE_ADR, 5, CoapTransaction.Priority.HIGH);
-        CoapTransaction transHi2 = createTransaction(REMOTE_ADR, 6, CoapTransaction.Priority.HIGH);
-
-        assertTrue(transMgr.addTransactionAndGetReadyToSend(transLow1));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transNorm1));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transLow2));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transNorm2));
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transHi2));
-
-        assertEquals(5, transMgr.getNumberOfTransactions());
-
-        assertEmpty(transMgr.removeAndLock(transHi_NOT_ADDED.getTransactionId())); // not added transHi1
-
-        transLow1.makeActiveForTests();
-
-        assertNotEmpty(transMgr.removeAndLock(transLow1.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transLow1.getTransactionId()).get(), transHi2);
-
-        transHi2.makeActiveForTests(); // emulate sending
-
-        assertNotEmpty(transMgr.removeAndLock(transHi2.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transHi2.getTransactionId()).get(), transNorm1);
-
-        transNorm1.makeActiveForTests();
-
-
-        assertFalse(transMgr.addTransactionAndGetReadyToSend(transHi_NOT_ADDED));                      // add not added trans
-
-        assertNotEmpty(transMgr.removeAndLock(transNorm1.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transNorm1.getTransactionId()).get(), transHi_NOT_ADDED);
-
-        transHi_NOT_ADDED.makeActiveForTests();
-
-        assertNotEmpty(transMgr.removeAndLock(transHi_NOT_ADDED.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transHi_NOT_ADDED.getTransactionId()).get(), transNorm2);
-
-        transNorm2.makeActiveForTests();
-
-        assertNotEmpty(transMgr.removeAndLock(transNorm2.getTransactionId()));
-        assertEquals(transMgr.unlockOrRemoveAndGetNext(transNorm2.getTransactionId()).get(), transLow2);
-
-        transLow2.makeActiveForTests();
-
-        assertNotEmpty(transMgr.removeAndLock(transLow2.getTransactionId()));
-        assertEmpty(transMgr.unlockOrRemoveAndGetNext(transLow2.getTransactionId()));
-
-        assertEquals(0, transMgr.getNumberOfTransactions());
-    }
-
-    @Test
     public void test_noQueueOverflowOnBlockTransferContinue() throws TooManyRequestsForEndpointException {
         transMgr.setMaximumEndpointQueueSize(2);
-        CoapTransaction trans1 = createTransaction(REMOTE_ADR, 1, CoapTransaction.Priority.LOW);
-        CoapTransaction trans2 = createTransaction(REMOTE_ADR, 2, CoapTransaction.Priority.LOW);
-        CoapTransaction trans3 = createTransaction(REMOTE_ADR, 3, CoapTransaction.Priority.LOW);
-        CoapTransaction trans4 = createTransaction(REMOTE_ADR, 4, CoapTransaction.Priority.LOW);
+        CoapTransaction trans1 = createTransaction(REMOTE_ADR, 1);
+        CoapTransaction trans2 = createTransaction(REMOTE_ADR, 2);
+        CoapTransaction trans3 = createTransaction(REMOTE_ADR, 3);
+        CoapTransaction trans4 = createTransaction(REMOTE_ADR, 4);
 
         assertTrue(transMgr.addTransactionAndGetReadyToSend(trans1));
         assertFalse(transMgr.addTransactionAndGetReadyToSend(trans2));
@@ -415,7 +295,7 @@ public class TransactionManagerTest {
 
     @Test
     public void test_noQueueRemoveTransaction() {
-        CoapTransaction trans1 = createTransaction(REMOTE_ADR, 1, CoapTransaction.Priority.LOW);
+        CoapTransaction trans1 = createTransaction(REMOTE_ADR, 1);
 
         assertEmpty(transMgr.removeAndLock(trans1.getTransactionId()));
         assertEmpty(transMgr.unlockOrRemoveAndGetNext(trans1.getTransactionId()));
@@ -446,9 +326,9 @@ public class TransactionManagerTest {
         assertThatThrownBy(() -> trans2.promise.get()).hasCauseExactlyInstanceOf(IOException.class);
     }
 
-    private CoapTransaction createTransaction(InetSocketAddress remote, int mid, CoapTransaction.Priority priority) {
+    private CoapTransaction createTransaction(InetSocketAddress remote, int mid) {
         CoapPacket packet = newCoapPacket(remote).mid(mid).con().get().uriPath("/").build();
-        return new CoapTransaction(packet, mock(CoapUdpMessaging.class), TransportContext.NULL, priority, mock(Consumer.class));
+        return new CoapTransaction(packet, mock(CoapUdpMessaging.class), TransportContext.NULL, mock(Consumer.class));
     }
 
     private void assertNoMatch(CoapPacket packet) {

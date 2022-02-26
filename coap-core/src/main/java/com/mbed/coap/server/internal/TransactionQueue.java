@@ -71,28 +71,17 @@ public class TransactionQueue {
             return this;
         } else {
             queueOverflow.set(false);
-            return add(transaction);
+            return add(transaction, forceAdd);
         }
     }
 
-    private TransactionQueue add(CoapTransaction transaction) {
+    private TransactionQueue add(CoapTransaction transaction, boolean forceAdd) {
         List<CoapTransaction> ret = new ArrayList<>(transactions.size() + 1);
-
-        CoapTransaction last = null;
-        boolean added = false;
-
-        for (CoapTransaction existing : transactions) {
-            if (!added &&
-                    (last == null || last.getTransactionPriority().ordinal() == transaction.getTransactionPriority().ordinal())
-                    && existing.getTransactionPriority().ordinal() > transaction.getTransactionPriority().ordinal()) {
-                ret.add(transaction);
-                added = true;
-            }
-            ret.add(existing);
-            last = existing;
+        if (forceAdd) {
+            ret.add(transaction);
         }
-
-        if (!added) {
+        ret.addAll(transactions);
+        if (!forceAdd) {
             ret.add(transaction);
         }
 

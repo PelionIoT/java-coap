@@ -48,7 +48,6 @@ public class CoapServerBlocksUnitTest {
         reset(msg);
 
         given(msg.makeRequest(any(), any())).willAnswer(__ -> newPromise());
-        given(msg.makePrioritisedRequest(any(), any())).willAnswer(__ -> newPromise());
 
         server = new CoapServerBlocks(msg, capabilities, 100_000, RouterService.NOT_FOUND_SERVICE);
         server.start();
@@ -102,7 +101,7 @@ public class CoapServerBlocksUnitTest {
 
 
         //BLOCK 1
-        assertMakePriRequest(
+        assertMakeRequest(
                 newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_").block1Req(1, BlockSize.S_16, false)
         );
         clearInvocations(msg);
@@ -126,7 +125,7 @@ public class CoapServerBlocksUnitTest {
         );
 
         //BLOCK 1
-        assertMakePriRequestAndReceive(
+        assertMakeRequestAndReceive(
                 newCoapPacket(LOCAL_5683).block2Res(1, BlockSize.S_1024, false).get().uriPath("/test"),
                 newCoapPacket(LOCAL_5683).block2Res(1, BlockSize.S_1024, false).ack(Code.C205_CONTENT).payload(opaqueOfSize(1000))
         );
@@ -151,7 +150,7 @@ public class CoapServerBlocksUnitTest {
         promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("0123456789ABCDEF").build());
 
         //BLOCK 1
-        assertMakePriRequest(newCoapPacket(LOCAL_5683).get().block2Res(1, BlockSize.S_16, false).uriPath("/test"));
+        assertMakeRequest(newCoapPacket(LOCAL_5683).get().block2Res(1, BlockSize.S_16, false).uriPath("/test"));
 
         clearInvocations(msg);
         promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("0123456789abcdef_").build());
@@ -176,7 +175,7 @@ public class CoapServerBlocksUnitTest {
         promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("LARGE___PAYLOAD_").build());
 
         //BLOCK 1
-        assertMakePriRequest(newCoapPacket(LOCAL_5683).get().block2Res(1, BlockSize.S_16, false).uriPath("/test"));
+        assertMakeRequest(newCoapPacket(LOCAL_5683).get().block2Res(1, BlockSize.S_16, false).uriPath("/test"));
 
         clearInvocations(msg);
         promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("LARGE___PAYLOAD_").build());
@@ -202,13 +201,13 @@ public class CoapServerBlocksUnitTest {
         promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(0, S_1024_BERT, true).payload(opaqueOfSize(3072)).build());
 
         //BLOCK 1
-        assertMakePriRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(3, S_1024_BERT, false));
+        assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(3, S_1024_BERT, false));
 
         clearInvocations(msg);
         promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(3, S_1024_BERT, true).payload(opaqueOfSize(5120)).build());
 
         //BLOCK 2
-        assertMakePriRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(8, S_1024_BERT, false));
+        assertMakeRequest(newCoapPacket(LOCAL_5683).get().uriPath("/status").block2Res(8, S_1024_BERT, false));
 
         clearInvocations(msg);
         promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C205_CONTENT).block2Res(8, S_1024_BERT, false).payload(opaqueOfSize(4711)).build());
@@ -236,13 +235,13 @@ public class CoapServerBlocksUnitTest {
         promise.complete(newCoapPacket().ack(Code.C231_CONTINUE).block1Req(0, S_1024_BERT, true).build());
 
         //BLOCK 1
-        assertMakePriRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(8, S_1024_BERT, true).payload(opaqueOfSize(8192)));
+        assertMakeRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(8, S_1024_BERT, true).payload(opaqueOfSize(8192)));
 
         clearInvocations(msg);
         promise.complete(newCoapPacket().ack(Code.C231_CONTINUE).block1Req(8, S_1024_BERT, true).build());
 
         //BLOCK 2
-        assertMakePriRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(16, S_1024_BERT, false).payload(opaqueOfSize(5683)));
+        assertMakeRequest(newCoapPacket(LOCAL_5683).put().uriPath("/options").block1Req(16, S_1024_BERT, false).payload(opaqueOfSize(5683)));
 
         clearInvocations(msg);
         promise.complete(newCoapPacket().ack(Code.C204_CHANGED).block1Req(16, S_1024_BERT, false).build());
@@ -265,7 +264,6 @@ public class CoapServerBlocksUnitTest {
                 .hasCause(new CoapException("Block transfers are not enabled for localhost/127.0.0.1:5683 and payload size 22067 > max payload size 1152"));
 
         verify(msg, never()).makeRequest(any(), any());
-        verify(msg, never()).makePrioritisedRequest(any(), any());
     }
 
 
@@ -289,14 +287,14 @@ public class CoapServerBlocksUnitTest {
 
 
         //BLOCK 1
-        assertMakePriRequest(
+        assertMakeRequest(
                 newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD_").block1Req(1, BlockSize.S_16, true)
         );
         clearInvocations(msg);
         promise.complete(newCoapPacket(LOCAL_5683).ack(Code.C231_CONTINUE).block1Req(1, BlockSize.S_16, false).build());
 
         //BLOCK 2
-        assertMakePriRequest(
+        assertMakeRequest(
                 newCoapPacket(LOCAL_5683).post().uriPath("/test").payload("LARGE___PAYLOAD").block1Req(2, BlockSize.S_16, false)
         );
         clearInvocations(msg);
@@ -317,20 +315,8 @@ public class CoapServerBlocksUnitTest {
         verify(msg).makeRequest(eq(req), any());
     }
 
-    private void assertMakePriRequest(CoapPacketBuilder req) {
-        verify(msg).makePrioritisedRequest(eq(req.build()), any());
-    }
-
     private void assertMakeRequestAndReceive(CoapPacketBuilder req, CoapPacketBuilder receive) {
         assertMakeRequest(req);
-
-        //response
-        clearInvocations(msg);
-        assertTrue(promise.complete(receive.build()));
-    }
-
-    private void assertMakePriRequestAndReceive(CoapPacketBuilder req, CoapPacketBuilder receive) {
-        assertMakePriRequest(req);
 
         //response
         clearInvocations(msg);

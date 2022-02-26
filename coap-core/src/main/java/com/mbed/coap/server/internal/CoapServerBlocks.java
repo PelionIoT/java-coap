@@ -50,7 +50,7 @@ public class CoapServerBlocks extends CoapServer {
     public CompletableFuture<CoapPacket> makeRequest(CoapPacket request, TransportContext outgoingTransContext) {
 
         // make consequent requests with block priority and forces adding to queue even if it is full
-        Service<CoapPacket, CoapPacket> sendService = coapPacket -> coapMessaging.makePrioritisedRequest(coapPacket, outgoingTransContext);
+        Service<CoapPacket, CoapPacket> sendService = coapPacket -> coapMessaging.makeRequest(coapPacket, outgoingTransContext);
 
         try {
             BlockWiseCallback blockCallback = new BlockWiseCallback(

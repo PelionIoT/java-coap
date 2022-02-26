@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +25,6 @@ import com.mbed.coap.server.internal.CoapServerBlocks;
 import com.mbed.coap.server.internal.CoapTcpCSM;
 import com.mbed.coap.server.internal.CoapTcpCSMStorageImpl;
 import com.mbed.coap.server.internal.CoapTcpMessaging;
-import com.mbed.coap.server.internal.CoapTransaction;
 import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.server.internal.DefaultDuplicateDetectorCache;
 import com.mbed.coap.transmission.TransmissionTimeout;
@@ -143,9 +143,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
         private ScheduledExecutorService scheduledExecutorService;
         private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
 
-        private CoapTransaction.Priority defaultTransactionPriority = CoapTransaction.Priority.NORMAL;
-        private CoapTransaction.Priority blockTransferPriority = CoapTransaction.Priority.HIGH;
-
         private int maxQueueSize = 100;
         private long delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
         private DuplicatedCoapMessageCallback duplicatedCoapMessageCallback = DuplicatedCoapMessageCallback.NULL;
@@ -197,7 +194,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
 
             CoapUdpMessaging server = new CoapUdpMessaging(getCoapTransport());
 
-            server.setSpecialCoapTransactionPriority(blockTransferPriority);
             server.setTransmissionTimeout(transmissionTimeout);
 
             if (duplicateDetectionCache == null) {
@@ -214,7 +210,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
                     isSelfCreatedExecutor,
                     midSupplier,
                     maxQueueSize,
-                    defaultTransactionPriority,
                     delayedTransactionTimeout,
                     duplicatedCoapMessageCallback,
                     scheduledExecutorService);
@@ -265,18 +260,8 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             return this;
         }
 
-        public CoapServerBuilderForUdp defaultQueuePriority(CoapTransaction.Priority priority) {
-            this.defaultTransactionPriority = priority;
-            return this;
-        }
-
         public CoapServerBuilderForUdp queueMaxSize(int maxQueueSize) {
             this.maxQueueSize = maxQueueSize;
-            return this;
-        }
-
-        public CoapServerBuilderForUdp blockMessageTransactionQueuePriority(CoapTransaction.Priority priority) {
-            blockTransferPriority = priority;
             return this;
         }
 

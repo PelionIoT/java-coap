@@ -26,8 +26,6 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.MessageIdSupplierImpl;
-import com.mbed.coap.server.internal.CoapTransaction;
-import com.mbed.coap.server.internal.CoapUdpMessaging;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
@@ -59,8 +57,6 @@ public class QueueRequestsTest {
                 .midSupplier(new MessageIdSupplierImpl(0))
                 .blockSize(BlockSize.S_32)
                 .disableDuplicateCheck()
-                .defaultQueuePriority(CoapTransaction.Priority.NORMAL)
-                //                .blockMessageTransactionQueuePriority(CoapTransaction.Priority.HIGH) //default config
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();
 
@@ -149,41 +145,6 @@ public class QueueRequestsTest {
     }
 
 
-    // all messages transaction priority:   CoapTransaction.Priority.NORMAL
-    // block messages transaction priority: CoapTransaction.Priority.NORMAL
-    // (interleave mode)
-    @Test
-    public void shouldSendRequestsToADevice_isASequence_2_requests_with_block_inserting_message_in_block() throws Exception {
-        ((CoapUdpMessaging) coapServer.getCoapMessaging()).setSpecialCoapTransactionPriority(CoapTransaction.Priority.NORMAL);
-
-        CoapPacket blockResp1 = newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
-        CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
-
-        //requests
-        CompletableFuture<CoapPacket> futResp1 = client.resource("/block").get();
-        CompletableFuture<CoapPacket> futResp2 = client.resource("/path2").get();
-
-        //#1 message - block1
-        verify(transport).sendPacket(any(), any(), any());
-        resetTransport();
-        transportReceiver.handle(blockResp1, null);
-
-        //#2 message - request2
-        verify(transport).sendPacket(any(), any(), any());
-        resetTransport();
-        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
-
-        //#2 message - block2
-        verify(transport).sendPacket(any(), any(), any());
-        resetTransport();
-        transportReceiver.handle(blockResp2, null);
-
-
-        //verify responses
-        assertEquals("123456789012345|dupa", futResp1.get().getPayloadString());
-        assertEquals("dupa2", futResp2.get().getPayloadString());
-    }
-
     @Test
     @Timeout(10)
     public void shouldQueueBlockTransferEvenQueueIsFull() throws Exception {
@@ -192,7 +153,6 @@ public class QueueRequestsTest {
                 .blockSize(BlockSize.S_32)
                 .disableDuplicateCheck()
                 .queueMaxSize(2)
-                .blockMessageTransactionQueuePriority(CoapTransaction.Priority.HIGH)
                 .timeout(new SingleTimeout(500)).build();
 
 

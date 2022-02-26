@@ -33,19 +33,13 @@ public class CoapTransaction {
     private DelayedTransactionId delayedTransId;
     private final CoapUdpMessaging coapServer;
     private final TransportContext transContext;
-    private final Priority transactionPriority;
     private final Consumer<CoapTransactionId> sendErrConsumer;
     private boolean isActive;
 
     public CoapTransaction(CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Consumer<CoapTransactionId> sendErrConsumer) {
-        this(coapRequest, coapServer, transContext, Priority.NORMAL, sendErrConsumer);
-    }
-
-    public CoapTransaction(CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Priority transactionPriority, Consumer<CoapTransactionId> sendErrConsumer) {
         this.sendErrConsumer = sendErrConsumer;
         this.coapServer = coapServer;
         this.coapRequest = coapRequest;
-        this.transactionPriority = transactionPriority;
         this.transId = new CoapTransactionId(coapRequest);
         this.retrAttempts = 0;
         this.transContext = transContext;
@@ -57,10 +51,6 @@ public class CoapTransaction {
 
     public CoapTransactionId getTransactionId() {
         return transId;
-    }
-
-    public Priority getTransactionPriority() {
-        return transactionPriority;
     }
 
     public void setDelayedTransId(DelayedTransactionId delayedTransId) {
@@ -123,12 +113,6 @@ public class CoapTransaction {
     }
 
 
-    public enum Priority {
-        HIGH,
-        NORMAL,
-        LOW;
-    }
-
     @Override
     public String toString() {
         return "CoapTransaction{ " +
@@ -139,7 +123,6 @@ public class CoapTransaction {
                 ", pkt=" + System.identityHashCode(coapRequest) +
                 ", tid=" + System.identityHashCode(transId) +
                 (delayedTransId != null ? " , delayedId= '" + delayedTransId + "'" : "") +
-                " , prio=" + transactionPriority +
                 (timeout >= 0 ? ", timeout=" + timeout : "") +
                 '}';
     }

@@ -189,10 +189,4 @@ public class CoapTcpMessaging extends CoapMessaging {
         // no additional stop hooks
     }
 
-    @Override
-    public CompletableFuture<CoapPacket> makePrioritisedRequest(CoapPacket packet, TransportContext transContext) {
-        //not applicable in TCP transport
-        return makeRequest(packet, transContext);
-    }
-
 }

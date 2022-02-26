@@ -47,8 +47,6 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     public abstract CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext);
 
-    public abstract CompletableFuture<CoapPacket> makePrioritisedRequest(final CoapPacket packet, final TransportContext transContext);
-
     public abstract void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext);
 
 

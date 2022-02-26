@@ -32,7 +32,6 @@ import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
@@ -248,11 +247,7 @@ public class CoapTcpMessagingTest {
     }
 
     private CompletableFuture<CoapPacket> makeRequest(CoapPacketBuilder coapPacket) {
-        if (new Random().nextBoolean()) {
-            return tcpMessaging.makeRequest(coapPacket.build(), TransportContext.NULL);
-        } else {
-            return tcpMessaging.makePrioritisedRequest(coapPacket.build(), TransportContext.NULL);
-        }
+        return tcpMessaging.makeRequest(coapPacket.build(), TransportContext.NULL);
     }
 
 }
