@@ -30,9 +30,7 @@ import com.mbed.coap.packet.Opaque;
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon
- */
+
 public class BlockWiseIncomingTransactionTest {
 
     BlockWiseIncomingTransaction bwReq = new BlockWiseIncomingTransaction(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)), 10_000, new CoapTcpCSM(4096, true));

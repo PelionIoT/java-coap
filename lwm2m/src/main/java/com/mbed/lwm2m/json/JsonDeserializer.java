@@ -29,8 +29,6 @@ import java.util.Map;
  * Deserialises resources from the JSON representation according to the OMA LWM2M specification chapter 6.3.4. OMA LWM2M
  * resource model is described in chapter 6.1. Historical representation of a resource will be created as individual
  * resources with the same resource ID.
- *
- * @author nordav01
  */
 public class JsonDeserializer {
 

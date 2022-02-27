@@ -17,9 +17,7 @@ package microbenchmark;
 
 import java.util.concurrent.Executors;
 
-/**
- * @author szymon
- */
+
 public class ServerSingleThreadBenchmark extends ServerBenchmarkBase {
 
     public ServerSingleThreadBenchmark() {

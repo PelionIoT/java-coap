@@ -20,7 +20,6 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.Opaque;
 
 /**
- * Created by olesmi01 on 26.07.2017.
  * Capabilities And Settings POJO for CoAP over TCP https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09
  */
 public class CoapTcpCSM {

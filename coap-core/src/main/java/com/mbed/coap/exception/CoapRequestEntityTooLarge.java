@@ -20,9 +20,6 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 
-/**
- * Created by szymon
- */
 public class CoapRequestEntityTooLarge extends CoapCodeException {
 
     private final int maxSize;

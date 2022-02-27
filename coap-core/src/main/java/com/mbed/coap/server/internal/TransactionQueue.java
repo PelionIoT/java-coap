@@ -29,8 +29,6 @@ import java.util.stream.Stream;
 
 /**
  * Immutable object that holds transaction queue.
- *
- * Created by szymon
  */
 public class TransactionQueue {
     private static final TransactionQueue EMPTY = new TransactionQueue(Collections.emptyList(), Optional.empty());

@@ -20,9 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon
- */
+
 public class CoapTcpCSMStorageImplTest {
 
     @Test

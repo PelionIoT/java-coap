@@ -32,9 +32,7 @@ import java.net.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Created by szymon
- */
+
 public class SingleConnectionSocketServerTransport extends BlockingCoapTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleConnectionSSLSocketServerTransport.class);
 

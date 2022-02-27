@@ -18,9 +18,6 @@ package com.mbed.lwm2m.model;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author nordav01
- */
 class IntegerResourceValidator {
 
     private static class IntegerValidator implements ResourceValidator {

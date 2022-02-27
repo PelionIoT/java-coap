@@ -17,9 +17,6 @@ package com.mbed.lwm2m;
 
 import java.util.Objects;
 
-/**
- * @author nordav01
- */
 @SuppressWarnings("PMD.AvoidDollarSigns")
 public class LWM2MID implements Comparable<LWM2MID> {
 

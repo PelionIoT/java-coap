@@ -18,9 +18,7 @@ package com.mbed.coap.packet;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author szymon
- */
+
 public class MediaTypes {
     //https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats
 

@@ -26,9 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Created by szymon
- */
+
 public class TransportConnectorMock extends BlockingCoapTransport {
 
     private CoapReceiver transReceiver;

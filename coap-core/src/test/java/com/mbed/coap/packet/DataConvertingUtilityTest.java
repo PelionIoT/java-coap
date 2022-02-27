@@ -26,9 +26,6 @@ import java.util.Map;
 import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon
- */
 public class DataConvertingUtilityTest {
 
     @Test

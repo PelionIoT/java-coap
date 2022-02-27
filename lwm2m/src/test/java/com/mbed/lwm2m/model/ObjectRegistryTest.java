@@ -24,9 +24,6 @@ import java.io.Reader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author nordav01
- */
 public class ObjectRegistryTest {
 
     private static final String LWM2M_TEST_OBJECTS_JSON = "lwm2m-test-objects.json";

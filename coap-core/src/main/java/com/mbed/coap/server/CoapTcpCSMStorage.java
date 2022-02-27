@@ -19,7 +19,6 @@ import com.mbed.coap.server.internal.CoapTcpCSM;
 import java.net.InetSocketAddress;
 
 /**
- * Created by olesmi01 on 26.07.2017.
  * CoAP over TCP capabilities and settings storage interface
  */
 public interface CoapTcpCSMStorage {

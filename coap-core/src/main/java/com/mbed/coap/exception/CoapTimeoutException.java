@@ -17,9 +17,7 @@ package com.mbed.coap.exception;
 
 import com.mbed.coap.server.internal.CoapTransaction;
 
-/**
- * @author szymon
- */
+
 public class CoapTimeoutException extends CoapException {
 
     public CoapTimeoutException(String message) {

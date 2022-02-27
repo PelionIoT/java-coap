@@ -15,9 +15,6 @@
  */
 package com.mbed.lwm2m;
 
-/**
- * @author nordav01
- */
 public enum LWM2MResourceType {
 
     STRING, INTEGER, FLOAT, BOOLEAN, OPAQUE, TIME, OBJECTLINK

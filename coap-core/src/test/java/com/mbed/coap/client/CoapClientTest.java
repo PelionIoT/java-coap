@@ -37,9 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import protocolTests.utils.CoapPacketBuilder;
 
-/**
- * Created by szymon
- */
 public class CoapClientTest {
     private final BlockingCoapTransport coapTransport = mock(BlockingCoapTransport.class);
     private ScheduledExecutorService scheduledExecutor = mock(ScheduledExecutorService.class, Mockito.RETURNS_DEEP_STUBS);

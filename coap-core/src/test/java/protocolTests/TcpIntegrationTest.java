@@ -41,9 +41,7 @@ import javax.net.SocketFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon
- */
+
 public class TcpIntegrationTest {
 
     private CoapServer server;

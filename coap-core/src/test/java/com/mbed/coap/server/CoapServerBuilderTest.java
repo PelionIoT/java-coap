@@ -26,9 +26,7 @@ import java.net.InetAddress;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon
- */
+
 public class CoapServerBuilderTest {
 
     @Test

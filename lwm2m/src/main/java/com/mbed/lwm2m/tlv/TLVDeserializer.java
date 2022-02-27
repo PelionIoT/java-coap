@@ -29,8 +29,6 @@ import java.util.List;
  * builds the <code>lwm2m</code> representation from it. See OMA-LWM2M
  * specification, chapter 6.1 for the resource model and chapter 6.3.3 for
  * the OMA-TLV specification.
- *
- * @author nordav01
  */
 public class TLVDeserializer {
 

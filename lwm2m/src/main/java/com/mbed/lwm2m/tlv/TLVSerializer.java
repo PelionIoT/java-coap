@@ -27,8 +27,6 @@ import java.util.List;
  * TLV Serialiser constructs the binary representation of object instances,
  * resources and resource instances (see OMA-LWM2M specification, chapter 6.1
  * for resource model) as OMA-TLV according described in chapter 6.3.3. 
- * 
- * @author nordav01
  */
 public class TLVSerializer {
 

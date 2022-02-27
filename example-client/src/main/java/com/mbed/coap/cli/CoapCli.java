@@ -30,9 +30,7 @@ import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Created by szymon
- */
+
 public class CoapCli {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapCli.class);

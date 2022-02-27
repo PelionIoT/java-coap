@@ -27,9 +27,6 @@ import java.util.Base64;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author nordav01
- */
 public class JsonSerializerTest {
 
     private JsonSerializer serializer;

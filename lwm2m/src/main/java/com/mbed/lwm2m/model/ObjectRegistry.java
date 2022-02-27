@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * @author nordav01
- */
 public class ObjectRegistry {
 
     private static final String LWM2M_OBJECTS_JSON = "lwm2m-objects.json";

@@ -43,9 +43,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 
-/**
- * @author szymon
- */
 public class CoapServerTransportContextTest {
 
     private CoapServer server;

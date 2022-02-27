@@ -36,9 +36,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import protocolTests.utils.TransportConnectorMock;
 
-/**
- * Created by szymon
- */
 public class RegistrationManagerTest {
     private CoapServer deviceSrv;
     private TransportConnectorMock trnsport;

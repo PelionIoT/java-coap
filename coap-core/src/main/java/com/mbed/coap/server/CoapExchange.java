@@ -24,9 +24,7 @@ import com.mbed.coap.transport.TransportContext;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * @author szymon
- */
+
 public interface CoapExchange {
 
     CoapPacket getRequest();

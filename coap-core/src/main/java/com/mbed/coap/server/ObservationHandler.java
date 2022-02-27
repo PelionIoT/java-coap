@@ -18,9 +18,7 @@ package com.mbed.coap.server;
 
 import com.mbed.coap.packet.Opaque;
 
-/**
- * @author szymon
- */
+
 public interface ObservationHandler {
 
     /**

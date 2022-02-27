@@ -19,10 +19,6 @@ package com.mbed.lwm2m.model;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author nordav01
- *
- */
 public class ResourceModelTest {
 
     @Test

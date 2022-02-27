@@ -24,9 +24,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon
- */
+
 public class TransactionQueueTest {
     private static final InetSocketAddress REMOTE_ADR = InMemoryCoapTransport.createAddress(5683);
 

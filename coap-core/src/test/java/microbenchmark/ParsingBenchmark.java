@@ -33,9 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author szymon
- */
+
 public class ParsingBenchmark {
 
     long stTime, endTime;

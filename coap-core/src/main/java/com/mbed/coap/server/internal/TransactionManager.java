@@ -32,9 +32,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author szymon
- */
+
 public class TransactionManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionManager.class.getName());

@@ -43,9 +43,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 
-/**
- * @author szymon
- */
 public abstract class ServerBenchmarkBase {
 
     FloodTransportStub trans;

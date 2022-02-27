@@ -22,9 +22,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author szymon
- */
+
 public class IpPortAddressTest {
 
     @Test

@@ -17,8 +17,6 @@ package com.mbed.lwm2m.transport;
 
 /**
  * Implements transport binding as specified in chapter 5.2.1.1
- *
- * @author szymon
  */
 public final class TransportBinding {
 

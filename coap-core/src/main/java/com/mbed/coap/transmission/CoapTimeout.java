@@ -18,9 +18,7 @@ package com.mbed.coap.transmission;
 import com.mbed.coap.CoapConstants;
 import java.util.Random;
 
-/**
- * @author szymon
- */
+
 public class CoapTimeout implements TransmissionTimeout {
 
     public static final int MULTICAST_TIMEOUT = 2000;

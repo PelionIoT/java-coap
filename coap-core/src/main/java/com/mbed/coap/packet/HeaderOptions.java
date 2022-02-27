@@ -24,8 +24,6 @@ import java.util.Objects;
  * - RFC 7959 (Block-Wise Transfers)
  * - draft-ietf-core-observe-09
  * - draft-ietf-core-coap-tcp-tls-09
- *
- * @author szymon
  */
 public class HeaderOptions extends BasicHeaderOptions {
 

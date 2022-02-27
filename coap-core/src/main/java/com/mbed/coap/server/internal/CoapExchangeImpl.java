@@ -34,9 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author szymon
- */
+
 public class CoapExchangeImpl implements CoapExchange {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapExchangeImpl.class.getName());

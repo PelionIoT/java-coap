@@ -15,9 +15,6 @@
  */
 package com.mbed.lwm2m.model;
 
-/**
- * @author nordav01
- */
 public class OpaqueResourceValidator {
 
     private static class OpaqueValidator implements ResourceValidator {

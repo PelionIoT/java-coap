@@ -17,9 +17,6 @@ package com.mbed.lwm2m.model;
 
 import com.google.gson.annotations.SerializedName;
 
-/**
- * @author nordav01
- */
 public class ResourceModel implements ResourceValidator {
     
     @SerializedName("resource-id")

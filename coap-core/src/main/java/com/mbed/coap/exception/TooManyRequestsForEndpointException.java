@@ -15,9 +15,6 @@
  */
 package com.mbed.coap.exception;
 
-/**
- * Created by olesmi01 on 29.8.2016.
- */
 public class TooManyRequestsForEndpointException extends CoapException {
 
     public TooManyRequestsForEndpointException(String message) {

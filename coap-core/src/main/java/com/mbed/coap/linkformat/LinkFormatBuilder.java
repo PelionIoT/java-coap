@@ -23,9 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author szymon
- */
+
 public class LinkFormatBuilder {
 
     public static String toString(Collection<LinkFormat> links) {

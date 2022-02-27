@@ -20,10 +20,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.lwm2m.LWM2MResourceType;
 import org.junit.jupiter.api.Test;
 
-
-/**
- * @author nordav01
- */
 public class JsonResourceTest {
 
     private static final String NAME = "res";

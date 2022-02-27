@@ -17,9 +17,6 @@ package com.mbed.coap.exception;
 
 import com.mbed.coap.packet.Code;
 
-/**
- * Created by szymon
- */
 public class CoapRequestEntityIncomplete extends CoapCodeException {
 
     public CoapRequestEntityIncomplete() {

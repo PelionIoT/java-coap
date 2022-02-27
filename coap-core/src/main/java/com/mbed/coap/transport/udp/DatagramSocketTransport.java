@@ -32,8 +32,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Datagram transport based on DatagramSocket. Not thread-save.
- *
- * @author szymon
  */
 public class DatagramSocketTransport extends BlockingCoapTransport {
 

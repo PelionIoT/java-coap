@@ -23,8 +23,6 @@ import java.util.List;
 /**
  * This class represents a JSON resource array as described in OMA LWM2M
  * specification chapter 6.3.4.
- *
- * @author nordav01
  */
 public class JsonResourceArray {
 

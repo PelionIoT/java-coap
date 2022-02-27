@@ -17,9 +17,7 @@ package com.mbed.coap.exception;
 
 import com.mbed.coap.packet.CoapPacket;
 
-/**
- * @author szymon
- */
+
 public class ObservationNotEstablishedException extends CoapException {
 
     public ObservationNotEstablishedException(String message) {

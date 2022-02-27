@@ -20,9 +20,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Method;
 import java.util.concurrent.ExecutionException;
 
-/**
- * @author szymon
- */
+
 public class SyncRequestTarget {
 
     private final CoapRequestTarget coapRequestTarget;

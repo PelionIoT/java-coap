@@ -15,9 +15,7 @@
  */
 package com.mbed.coap.exception;
 
-/**
- * @author szymon
- */
+
 public class CoapException extends Exception {
 
     public CoapException(Throwable cause) {

@@ -37,9 +37,7 @@ import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author szymon
- */
+
 public class TimeoutTest {
 
     @Test()

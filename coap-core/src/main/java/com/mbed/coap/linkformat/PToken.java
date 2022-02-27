@@ -18,9 +18,7 @@ package com.mbed.coap.linkformat;
 import java.io.Serializable;
 import java.util.Arrays;
 
-/**
- * @author szymon
- */
+
 public class PToken implements CharSequence, Serializable {
 
     private static int validRangeStart = 33; //'!'

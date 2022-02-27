@@ -19,9 +19,7 @@ package com.mbed.coap.packet;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author szymon
- */
+
 public class CoapPacketToStringTest {
 
     @Test

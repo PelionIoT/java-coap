@@ -25,9 +25,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-/**
- * Created by szymon
- */
+
 public class MockCoapTransport extends BlockingCoapTransport {
 
     private volatile CoapReceiver coapReceiver = null;

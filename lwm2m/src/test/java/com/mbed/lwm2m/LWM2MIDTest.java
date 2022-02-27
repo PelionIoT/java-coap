@@ -20,9 +20,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author nordav01
- */
 public class LWM2MIDTest {
 
     @Test

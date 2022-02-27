@@ -19,9 +19,7 @@ package com.mbed.coap.exception;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 
-/**
- * @author szymon
- */
+
 public class CoapCodeException extends CoapException {
 
     private final Code code;

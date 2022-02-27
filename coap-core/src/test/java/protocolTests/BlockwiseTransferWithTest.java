@@ -36,9 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import protocolTests.utils.TransportConnectorMock;
 
-/**
- * Created by szymon
- */
+
 public class BlockwiseTransferWithTest {
     private static final InetSocketAddress SERVER_ADDRESS = new InetSocketAddress("127.0.0.1", 5683);
     private TransportConnectorMock transport;

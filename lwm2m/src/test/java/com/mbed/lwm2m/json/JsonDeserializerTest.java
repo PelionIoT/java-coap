@@ -27,9 +27,6 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author nordav01
- */
 public class JsonDeserializerTest {
 
     private static final String DEVICE_OBJECT_JSON = "device-object.json";

@@ -20,7 +20,6 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Created by olesmi01 on 27.07.2017.
  * Per-connection CSM storage
  */
 public class CoapTcpCSMStorageImpl implements CoapTcpCSMStorage {

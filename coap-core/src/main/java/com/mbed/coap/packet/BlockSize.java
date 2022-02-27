@@ -15,9 +15,7 @@
  */
 package com.mbed.coap.packet;
 
-/**
- * @author szymon
- */
+
 public enum BlockSize {
 
     S_16(4, false), S_32(5, false), S_64(6, false), S_128(7, false), S_256(8, false), S_512(9, false), S_1024(10, false), S_1024_BERT(10, true);

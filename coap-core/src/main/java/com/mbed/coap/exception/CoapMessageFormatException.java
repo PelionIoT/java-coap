@@ -15,9 +15,7 @@
  */
 package com.mbed.coap.exception;
 
-/**
- * @author szymon
- */
+
 public class CoapMessageFormatException extends CoapException {
 
     public CoapMessageFormatException(String message) {

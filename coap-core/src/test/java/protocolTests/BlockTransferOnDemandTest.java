@@ -42,7 +42,6 @@ import org.junit.jupiter.api.Test;
 
 
 /**
- * Created by olesmi01 on 19.4.2016.
  * Block1 header option block transfer size limit tests.
  */
 public class BlockTransferOnDemandTest {

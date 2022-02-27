@@ -21,9 +21,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Created by szymon
- */
 public abstract class BlockingCoapTransport implements CoapTransport {
 
     @Override

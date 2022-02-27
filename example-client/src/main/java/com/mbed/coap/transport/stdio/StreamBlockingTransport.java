@@ -32,9 +32,7 @@ import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Created by szymon
- */
+
 public class StreamBlockingTransport extends BlockingCoapTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamBlockingTransport.class);
     private final OutputStream outputStream;

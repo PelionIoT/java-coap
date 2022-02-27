@@ -15,9 +15,7 @@
  */
 package com.mbed.coap.packet;
 
-/**
- * @author szymon
- */
+
 public enum Code {
     //RFC 7252
     //draft-ietf-core-http-mapping-08 - for HTTP mapping

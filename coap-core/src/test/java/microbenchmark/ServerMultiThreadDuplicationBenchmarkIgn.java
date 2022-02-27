@@ -17,9 +17,7 @@ package microbenchmark;
 
 import java.util.concurrent.Executors;
 
-/**
- * @author szymon
- */
+
 public class ServerMultiThreadDuplicationBenchmarkIgn extends ServerBenchmarkBase {
 
     public ServerMultiThreadDuplicationBenchmarkIgn() {

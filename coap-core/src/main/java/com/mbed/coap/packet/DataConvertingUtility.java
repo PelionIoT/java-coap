@@ -25,8 +25,6 @@ import java.util.Map;
 
 /**
  * Utility class that provides static helper methods for creating and parsing CoAP packet
- *
- * @author szymon
  */
 public final class DataConvertingUtility {
 

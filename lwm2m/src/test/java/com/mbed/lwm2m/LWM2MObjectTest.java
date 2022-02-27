@@ -22,9 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author nordav01
- */
 public class LWM2MObjectTest {
 
     private final List<LWM2MObjectInstance> instances = new ArrayList<>();

@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Created by olesmi01 on 14.08.2017.
  * Base functionality for CoAP protocol servers
  */
 public abstract class CoapMessaging implements CoapReceiver {

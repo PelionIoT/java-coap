@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Created by olesmi01 on 24.07.2017.
  * Extracted inner class, implements InputStream which throws EOFException if data can't be read.
  */
 class StrictInputStream extends InputStream {

@@ -15,10 +15,6 @@
  */
 package com.mbed.lwm2m.model;
 
-/**
- * @author nordav01
- *
- */
 class DefaultResourceValidator implements ResourceValidator {
 
     private final boolean verdict;

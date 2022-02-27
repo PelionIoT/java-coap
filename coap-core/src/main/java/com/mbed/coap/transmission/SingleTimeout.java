@@ -15,9 +15,7 @@
  */
 package com.mbed.coap.transmission;
 
-/**
- * @author szymon
- */
+
 public class SingleTimeout implements TransmissionTimeout {
 
     long timeout;

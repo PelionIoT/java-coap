@@ -17,7 +17,6 @@
 package com.mbed.coap.server.internal;
 
 /**
- * Created by olesmi01 on 14.08.2017.
  * Minor utilities for Protocol CoAP servers
  */
 public class CoapServerUtils {

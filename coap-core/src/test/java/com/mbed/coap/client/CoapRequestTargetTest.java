@@ -27,9 +27,7 @@ import com.mbed.coap.packet.Opaque;
 import java.net.InetSocketAddress;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author szymon
- */
+
 public class CoapRequestTargetTest {
     private InetSocketAddress destination = new InetSocketAddress("localhost", 5683);
     private CoapClient mockClient = when(mock(CoapClient.class).getDestination()).thenReturn(destination).getMock();

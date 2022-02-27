@@ -33,8 +33,6 @@ import java.util.Optional;
 
 /**
  * Implements CoAP basic header options.
- *
- * @author szymon
  */
 @SuppressWarnings({"PMD.NPathComplexity", "PMD.CyclomaticComplexity"})
 public class BasicHeaderOptions {

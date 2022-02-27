@@ -18,9 +18,7 @@ package com.mbed.coap.packet;
 
 import java.util.Arrays;
 
-/**
- * @author szymon
- */
+
 final class RawOption implements Comparable<RawOption> {
 
     final int optNumber;

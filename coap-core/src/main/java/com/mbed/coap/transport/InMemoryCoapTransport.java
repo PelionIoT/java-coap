@@ -32,8 +32,6 @@ import org.slf4j.LoggerFactory;
 /**
  * Creates instance of a TransportConnector that uses java internal memory as a
  * connection transport. No Network traffic is being produced.
- *
- * @author szymon
  */
 public class InMemoryCoapTransport extends BlockingCoapTransport {
 

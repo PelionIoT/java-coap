@@ -42,9 +42,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import protocolTests.utils.CoapPacketBuilder;
 
-/**
- * Created by szymon
- */
+
 public class CoapUdpMessagingTest {
 
     private final CoapTransport coapTransport = mock(CoapTransport.class);

@@ -15,10 +15,6 @@
  */
 package com.mbed.lwm2m.transport;
 
-/**
- *
- * @author szymon
- */
 public class TransportBindingParseException extends Exception {
 
     public TransportBindingParseException() {

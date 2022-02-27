@@ -26,8 +26,6 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * CoAP client implementation.
- *
- * @author szymon
  */
 public class CoapClient implements Closeable {
 

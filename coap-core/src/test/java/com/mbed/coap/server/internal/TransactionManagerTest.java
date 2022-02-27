@@ -32,9 +32,6 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon.
- */
 public class TransactionManagerTest {
     private static final InetSocketAddress REMOTE_ADR = InMemoryCoapTransport.createAddress(5683);
     private static final InetSocketAddress REMOTE_ADR2 = InMemoryCoapTransport.createAddress(5685);

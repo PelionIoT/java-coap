@@ -28,8 +28,6 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * CoAP request builder.
- *
- * @author szymon
  */
 public class CoapRequestTarget {
 

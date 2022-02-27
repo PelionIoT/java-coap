@@ -18,9 +18,7 @@ package com.mbed.coap.exception;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.TransportContext;
 
-/**
- * @author szymon
- */
+
 public class ObservationTerminatedException extends CoapException {
 
     private final CoapPacket packet;

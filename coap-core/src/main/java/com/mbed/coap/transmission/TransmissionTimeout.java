@@ -15,9 +15,7 @@
  */
 package com.mbed.coap.transmission;
 
-/**
- * @author szymon
- */
+
 public interface TransmissionTimeout {
 
     /**

@@ -32,9 +32,7 @@ import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-/**
- * @author szymon
- */
+
 public class HeaderOptionTest {
 
     @Test

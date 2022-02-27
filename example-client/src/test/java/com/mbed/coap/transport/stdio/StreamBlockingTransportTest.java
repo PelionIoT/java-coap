@@ -30,9 +30,7 @@ import java.net.InetSocketAddress;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-/**
- * Created by szymon
- */
+
 public class StreamBlockingTransportTest {
 
     private final InetSocketAddress adr = new InetSocketAddress("localhost", 5683);

@@ -34,9 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import protocolTests.utils.TransportConnectorMock;
 
-/**
- * Created by szymon
- */
+
 public class Observation2Test {
 
 

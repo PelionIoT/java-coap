@@ -32,9 +32,6 @@ import java.net.UnknownHostException;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.net.SocketFactory;
 
-/**
- * @author szymon
- */
 public abstract class CoapClientBuilder {
 
     protected InetSocketAddress destination;

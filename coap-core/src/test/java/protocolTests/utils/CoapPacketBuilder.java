@@ -26,9 +26,7 @@ import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.packet.SignalingOptions;
 import java.net.InetSocketAddress;
 
-/**
- * Created by szymon
- */
+
 public class CoapPacketBuilder {
     public static final InetSocketAddress LOCAL_5683 = new InetSocketAddress("localhost", 5683);
     public static final InetSocketAddress LOCAL_1_5683 = new InetSocketAddress("localhost", 1_5683);

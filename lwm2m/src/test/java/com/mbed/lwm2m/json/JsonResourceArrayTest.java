@@ -21,9 +21,6 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author nordav01
- */
 public class JsonResourceArrayTest {
 
     @Test

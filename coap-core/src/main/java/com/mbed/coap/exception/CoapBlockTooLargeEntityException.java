@@ -16,7 +16,6 @@
 package com.mbed.coap.exception;
 
 /**
- * Created by olesmi01 on 20.4.2016.
  * Too large entity received
  */
 public class CoapBlockTooLargeEntityException extends CoapBlockException {

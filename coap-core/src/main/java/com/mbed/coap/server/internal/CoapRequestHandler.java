@@ -19,7 +19,6 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.TransportContext;
 
 /**
- * Created by olesmi01 on 15.08.2017.
  * CoAP requests handler interface which is called by CoAP protocol servers impl (messaging layer)
  */
 public interface CoapRequestHandler {

@@ -20,9 +20,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Created by szymon
- */
 public interface CoapTransport {
     void start(CoapReceiver coapReceiver) throws IOException;
 

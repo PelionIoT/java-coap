@@ -19,9 +19,6 @@ package com.mbed.coap.packet;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon
- */
 public class BlockOptionTest {
 
     @Test

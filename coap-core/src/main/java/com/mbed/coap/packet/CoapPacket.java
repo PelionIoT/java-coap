@@ -28,8 +28,6 @@ import java.util.Objects;
 
 /**
  * This class encode and decode CoAP messages based on RFC 7252 document
- *
- * @author szymon
  */
 public class CoapPacket {
 

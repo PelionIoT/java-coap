@@ -17,8 +17,6 @@ package com.mbed.coap.server;
 
 /**
  * Interface for generating CoAP message ID.
- *
- * @author szymon
  */
 @FunctionalInterface
 public interface MessageIdSupplier {

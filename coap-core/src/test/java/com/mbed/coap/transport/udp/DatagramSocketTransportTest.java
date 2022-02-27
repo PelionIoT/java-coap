@@ -31,9 +31,7 @@ import java.util.concurrent.Executor;
 import org.junit.jupiter.api.Test;
 import protocolTests.utils.CoapPacketBuilder;
 
-/**
- * @author szymon
- */
+
 public class DatagramSocketTransportTest {
 
     public static final CoapPacket COAP_PACKET = CoapPacketBuilder.newCoapPacket().get().uriPath("/test").mid(1).build();

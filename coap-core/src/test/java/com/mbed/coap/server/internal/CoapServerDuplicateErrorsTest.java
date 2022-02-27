@@ -34,7 +34,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Created by olesmi01 on 11.12.2015.
  * Test for deduplication of error requests
  */
 public class CoapServerDuplicateErrorsTest {

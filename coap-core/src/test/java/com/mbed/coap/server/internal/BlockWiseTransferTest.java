@@ -26,9 +26,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import org.junit.jupiter.api.Test;
 
-/**
- * Created by szymon
- */
+
 public class BlockWiseTransferTest {
     private CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
     private BlockWiseTransfer bwt = new BlockWiseTransfer(capabilities);

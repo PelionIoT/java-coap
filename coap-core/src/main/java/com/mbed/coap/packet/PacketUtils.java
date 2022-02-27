@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Created by olesmi01 on 24.07.2017.
  * Minor CoapPacket binary read/write utility methods with specific optional checks.
  */
 class PacketUtils {

@@ -20,9 +20,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author nordav01
- */
 public class LWM2MObjectInstanceTest {
 
     @SuppressWarnings("unused")

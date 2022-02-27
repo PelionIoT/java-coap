@@ -37,9 +37,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-/**
- * @author szymon
- */
+
 public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
     private static final int DEFAULT_DUPLICATE_DETECTOR_CLEAN_INTERVAL_MILLIS = 10000;

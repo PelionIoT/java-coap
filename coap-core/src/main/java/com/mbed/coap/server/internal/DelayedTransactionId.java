@@ -20,9 +20,7 @@ import com.mbed.coap.packet.Opaque;
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
-/**
- * @author szymon
- */
+
 public class DelayedTransactionId {
     private final Opaque token;
     private final InetSocketAddress source;

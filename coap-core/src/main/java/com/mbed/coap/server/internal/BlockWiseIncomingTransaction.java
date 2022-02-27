@@ -29,9 +29,6 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Created by szymon
- */
 class BlockWiseIncomingTransaction {
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockWiseIncomingTransaction.class.getName());
 

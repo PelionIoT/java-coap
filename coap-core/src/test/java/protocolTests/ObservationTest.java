@@ -46,9 +46,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author szymon
- */
+
 public class ObservationTest {
 
     private final String RES_OBS_PATH1 = "/obs/path1";

@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import protocolTests.utils.TransportConnectorMock;
 
 /**
- * Created by olesmi01 on 18.4.2016.
  * Block2 header option block transfer size limit tests.
  */
 public class Block2TransferMaxSizeTest {

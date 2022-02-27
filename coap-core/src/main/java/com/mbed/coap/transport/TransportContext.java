@@ -19,8 +19,6 @@ import java.util.function.Supplier;
 
 /**
  * This class provides transport context information.
- *
- * Created by szymon
  */
 @FunctionalInterface
 public interface TransportContext {

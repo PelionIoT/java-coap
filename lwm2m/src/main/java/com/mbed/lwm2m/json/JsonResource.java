@@ -18,9 +18,6 @@ package com.mbed.lwm2m.json;
 import com.google.gson.annotations.SerializedName;
 import com.mbed.lwm2m.LWM2MResourceType;
 
-/**
- * @author nordav01
- */
 public class JsonResource {
 
     @SerializedName("n")

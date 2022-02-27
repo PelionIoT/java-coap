@@ -17,9 +17,7 @@ package com.mbed.coap.exception;
 
 import com.mbed.coap.packet.Code;
 
-/**
- * @author szymon
- */
+
 public class CoapUnknownOptionException extends CoapCodeException {
 
     public CoapUnknownOptionException(int type) {

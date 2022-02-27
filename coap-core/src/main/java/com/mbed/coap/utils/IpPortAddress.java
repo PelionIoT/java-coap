@@ -24,8 +24,6 @@ import java.util.Arrays;
 /**
  * Container class for raw IP and port without hostname. Avoids deterministic
  * problem of serializing InetSocketAddress with hostname.
- *
- * @author szymon
  */
 public class IpPortAddress implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -42,8 +42,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Implements CoAP server ( RFC 7252)
- *
- * @author szymon
  * @see <a href="http://www.rfc-editor.org/rfc/rfc7252.txt" >http://www.rfc-editor.org/rfc/rfc7252.txt</a>
  */
 public class CoapUdpMessaging extends CoapMessaging {

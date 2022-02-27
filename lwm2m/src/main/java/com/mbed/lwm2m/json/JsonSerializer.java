@@ -28,8 +28,6 @@ import java.util.List;
 /**
  * Serialises resources to JSON format according to the OMA LWM2M specification chapter 6.3.4. OMA LWM2M resource model
  * is described in chapter 6.1.
- *
- * @author nordav01
  */
 public class JsonSerializer {
 

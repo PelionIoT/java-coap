@@ -20,8 +20,6 @@ import java.io.Serializable;
 
 /**
  * This class implements RFC7959 (Block-Wise Transfers in the Constrained Application Protocol)
- *
- * @author szymon
  */
 public final class BlockOption implements Serializable {
 

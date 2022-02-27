@@ -17,8 +17,6 @@ package com.mbed.lwm2m.utils;
 
 /**
  * Utility class to convert byte array to string.
- *
- * @author szymon
  */
 public final class HexArray {
 

@@ -17,9 +17,7 @@ package com.mbed.coap.packet;
 
 import com.mbed.coap.exception.CoapException;
 
-/**
- * @author szymon
- */
+
 public enum MessageType {
 
     Confirmable, NonConfirmable, Acknowledgement, Reset;

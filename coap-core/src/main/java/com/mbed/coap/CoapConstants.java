@@ -21,8 +21,6 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * CoAP constants that are defined in RFC 7252 document
- *
- * @author szymon
  */
 public final class CoapConstants {
 

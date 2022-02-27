@@ -21,8 +21,6 @@ import com.mbed.coap.server.PutOnlyMap;
 
 /**
  * Checks if incoming request has been repeated
- *
- * @author szymon
  */
 public class DuplicationDetector {
     public static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket(null);

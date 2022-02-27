@@ -24,7 +24,6 @@ import java.util.Map;
 /**
  * Implements CoRE Link Format defined in RFC 6690
  *
- * @author szymon
  * @see <a
  * href="http://tools.ietf.org/rfc/rfc6690.txt">http://tools.ietf.org/rfc/rfc6690.txt</a>
  */

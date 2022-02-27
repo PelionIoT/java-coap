@@ -20,9 +20,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author nordav01
- */
  class StringResourceValidator {
 
      private static class StringValidator implements ResourceValidator {
