@@ -16,8 +16,6 @@
  */
 package com.mbed.coap.server.internal;
 
-import static com.mbed.coap.utils.FutureHelpers.*;
-import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -33,39 +31,17 @@ import java.util.concurrent.CompletableFuture;
  */
 public class CoapServerBlocks extends CoapServer {
 
-    private final CoapMessaging coapMessaging;
     private final CoapTcpCSMStorage capabilities;
-    private final int maxIncomingBlockTransferSize;
     private final BlockWiseTransfer blockWiseTransfer;
 
     public CoapServerBlocks(CoapMessaging coapMessaging, CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize, Service<CoapRequest, CoapResponse> route) {
-        super(coapMessaging, new BlockWiseIncomingFilter(capabilities, maxIncomingBlockTransferSize).then(route));
-        this.coapMessaging = coapMessaging;
+        super(coapMessaging,
+                new BlockWiseOutgoingFilter(capabilities, maxIncomingBlockTransferSize),
+                new BlockWiseIncomingFilter(capabilities, maxIncomingBlockTransferSize)
+                        .then(route)
+        );
         this.capabilities = capabilities;
-        this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
         this.blockWiseTransfer = new BlockWiseTransfer(capabilities);
-    }
-
-    @Override
-    protected CompletableFuture<CoapPacket> makeRequest(CoapPacket request, TransportContext outgoingTransContext) {
-
-        // make consequent requests with block priority and forces adding to queue even if it is full
-        Service<CoapPacket, CoapPacket> sendService = coapPacket -> coapMessaging.makeRequest(coapPacket, outgoingTransContext);
-
-        try {
-            BlockWiseCallback blockCallback = new BlockWiseCallback(
-                    sendService,
-                    capabilities.getOrDefault(request.getRemoteAddress()),
-                    request,
-                    maxIncomingBlockTransferSize
-            );
-
-            return coapMessaging.makeRequest(request, outgoingTransContext)
-                    .thenCompose(blockCallback::receive);
-
-        } catch (CoapException e) {
-            return failedFuture(e);
-        }
     }
 
     @Override

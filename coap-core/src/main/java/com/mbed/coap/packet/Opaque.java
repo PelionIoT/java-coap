@@ -108,10 +108,6 @@ public final class Opaque {
         outputStream.write(data);
     }
 
-    public void writeTo(OutputStream outputStream, int startPos, int len) throws IOException {
-        outputStream.write(data, startPos, len);
-    }
-
     @Override
     public String toString() {
         return toHex();

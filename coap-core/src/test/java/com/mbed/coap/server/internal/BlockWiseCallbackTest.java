@@ -17,6 +17,9 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.packet.BlockSize.*;
+import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.CoapResponse.of;
+import static com.mbed.coap.packet.CoapResponse.*;
 import static com.mbed.coap.packet.Code.*;
 import static com.mbed.coap.utils.Bytes.*;
 import static org.assertj.core.api.Assertions.*;
@@ -26,7 +29,9 @@ import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
-import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.utils.Service;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,56 +40,56 @@ import protocolTests.utils.CoapPacketBuilder;
 
 public class BlockWiseCallbackTest {
 
-    private CompletableFuture<CoapPacket> promise;
-    private CoapPacket lastReq;
-    private final Service<CoapPacket, CoapPacket> makeRequestFunc = req -> {
+    private CompletableFuture<CoapResponse> promise;
+    private CoapRequest lastReq;
+    private final Service<CoapRequest, CoapResponse> makeRequestFunc = req -> {
         lastReq = req;
         promise = new CompletableFuture<>();
         return promise;
     };
-    private CompletableFuture<CoapPacket> callback;
+    private CompletableFuture<CoapResponse> response;
     private BlockWiseCallback bwc;
 
     @BeforeEach
     void setUp() {
-        callback = new CompletableFuture<>();
+        response = new CompletableFuture<>();
     }
 
     @Test
     public void should_send_payload_in_blocks() throws CoapException {
         bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(512, true),
-                coap().payload(opaqueOfSize(1500)).put().build(), 10_000);
+                put("/9").payload(opaqueOfSize(1500)), 10_000);
 
         //BLOCK 1
-        assertEquals(coap().block1Req(0, S_512, true).size1(1500).payload(opaqueOfSize(512)).put().build(), bwc.request);
+        assertEquals(put("/9").block1Req(0, S_512, true).size1(1500).payload(opaqueOfSize(512)), bwc.request);
 
         //when
-        receiveFirst(coap().block1Req(0, S_512, false).ack(C231_CONTINUE));
+        receiveFirst(of(C231_CONTINUE).block1Req(0, S_512, false));
         //then
-        assertSent(coap().block1Req(1, S_512, true).payload(opaqueOfSize(512)).put());
+        assertSent(put("/9").block1Req(1, S_512, true).payload(opaqueOfSize(512)));
 
         //BLOCK 2
         //when
-        receive(coap().block1Req(1, S_512, false).ack(C231_CONTINUE));
+        receive(of(C231_CONTINUE).block1Req(1, S_512, false));
         //then
-        assertSent(coap().block1Req(2, S_512, false).payload(opaqueOfSize(476)).put());
+        assertSent(put("/9").block1Req(2, S_512, false).payload(opaqueOfSize(476)));
 
         //when
-        receive(coap().block1Req(2, S_512, false).ack(C204_CHANGED));
+        receive(of(C204_CHANGED).block1Req(2, S_512, false));
         //then
-        assertEquals(coap().block1Req(2, S_512, false).ack(C204_CHANGED).build(), callback.join());
+        assertEquals(of(C204_CHANGED).block1Req(2, S_512, false), response.join());
     }
 
     @Test
     public void should_receive_non_block_response() throws CoapException {
         givenPutRequest(100);
-        assertEquals(coap().payload(opaqueOfSize(100)).put().build(), bwc.request);
+        assertEquals(put("/9").payload(opaqueOfSize(100)), bwc.request);
 
         //when
-        receiveFirst(coap().payload(opaqueOfSize(200)).ack(C204_CHANGED));
+        receiveFirst(of(C204_CHANGED).payload(opaqueOfSize(200)));
 
         //then
-        assertEquals(coap().payload(opaqueOfSize(200)).ack(C204_CHANGED).build(), callback.join());
+        assertEquals(of(C204_CHANGED).payload(opaqueOfSize(200)), response.join());
     }
 
     @Test
@@ -92,68 +97,67 @@ public class BlockWiseCallbackTest {
         givenGetRequest();
 
         //when
-        receiveFirst(coap().block2Res(0, S_512, true).payload(opaqueOfSize(512)).ack(C205_CONTENT));
+        receiveFirst(ok(opaqueOfSize(512)).block2Res(0, S_512, true));
         //then
-        assertSent(coap().block2Res(1, S_512, false).get());
+        assertSent(get("/9").block2Res(1, S_512, false));
 
         //BLOCK 2
         //when
-        receive(coap().block2Res(1, S_512, true).payload(opaqueOfSize(512)));
+        receive(ok(opaqueOfSize(512)).block2Res(1, S_512, true));
         //then
-        assertSent(coap().block2Res(2, S_512, false).get());
+        assertSent(get("/9").block2Res(2, S_512, false));
 
         //when
-        receive(coap().block2Res(2, S_512, false).payload(opaqueOfSize(100)).ack(C205_CONTENT));
+        receive(ok(opaqueOfSize(100)).block2Res(2, S_512, false));
         //then
-        assertEquals(coap().block2Res(2, S_512, false).payload(opaqueOfSize(1124)).ack(C205_CONTENT).build(), callback.join());
+        assertEquals(ok(opaqueOfSize(1124)).block2Res(2, S_512, false), response.join());
     }
 
     @Test
     public void should_send_payload_in_bert_blocks() throws CoapException {
         bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(3500, true),
-                coap().payload(opaqueOfSize(4196)).put().build(), 10_000);
+                put("/9").payload(opaqueOfSize(4196)), 10_000);
 
-        assertEquals(coap().payload(opaqueOfSize(100)).block1Req(0, S_1024_BERT, true).size1(4196).payload(opaqueOfSize(2048)).put().build(), bwc.request);
+        assertEquals(put("/9").block1Req(0, S_1024_BERT, true).size1(4196).payload(opaqueOfSize(2048)), bwc.request);
 
         //when
-        receiveFirst(coap().block1Req(0, S_1024_BERT, false).ack(C231_CONTINUE));
+        receiveFirst(of(C231_CONTINUE).block1Req(0, S_1024_BERT, false));
         //then
-        assertSent(coap().block1Req(2, S_1024_BERT, true).payload(opaqueOfSize(2048)).put());
+        assertSent(put("/9").block1Req(2, S_1024_BERT, true).payload(opaqueOfSize(2048)));
 
         //BLOCK 2
         //when
-        receive(coap().block1Req(2, S_1024_BERT, false).ack(C231_CONTINUE));
+        receive(of(C231_CONTINUE).block1Req(2, S_1024_BERT, false));
         //then
-        assertSent(coap().block1Req(4, S_1024_BERT, false).payload(opaqueOfSize(100)).put());
+        assertSent(put("/9").block1Req(4, S_1024_BERT, false).payload(opaqueOfSize(100)));
 
         //when
-        receive(coap().block1Req(4, S_1024_BERT, false).ack(C204_CHANGED));
+        receive(of(C204_CHANGED).block1Req(4, S_1024_BERT, false));
         //then
-        assertEquals(coap().block1Req(4, S_1024_BERT, false).ack(C204_CHANGED).build(), callback.join());
+        assertEquals(of(C204_CHANGED).block1Req(4, S_1024_BERT, false), response.join());
     }
 
     @Test
     public void should_receive_payload_in_bert_blocks() throws CoapException {
-        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(4096, true),
-                coap().get().build(), 10_000);
+        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(4096, true), get("/9"), 10_000);
 
-        assertEquals(coap().get().build(), bwc.request);
+        assertEquals(get("/9"), bwc.request);
 
         //when
-        receiveFirst(coap().block2Res(0, S_1024_BERT, true).payload(opaqueOfSize(2048)).ack(C205_CONTENT));
+        receiveFirst(ok(opaqueOfSize(2048)).block2Res(0, S_1024_BERT, true));
         //then
-        assertSent(coap().block2Res(2, S_1024_BERT, false).get());
+        assertSent(get("/9").block2Res(2, S_1024_BERT, false));
 
         //BLOCK 2
         //when
-        receive(coap().block2Res(2, S_1024_BERT, true).payload(opaqueOfSize(2048)));
+        receive(ok(opaqueOfSize(2048)).block2Res(2, S_1024_BERT, true));
         //then
-        assertSent(coap().block2Res(4, S_1024_BERT, false).get());
+        assertSent(get("/9").block2Res(4, S_1024_BERT, false));
 
         //when
-        receive(coap().block2Res(4, S_1024_BERT, false).payload(opaqueOfSize(100)).ack(C205_CONTENT));
+        receive(ok(opaqueOfSize(100)).block2Res(4, S_1024_BERT, false).payload(opaqueOfSize(100)));
         //then
-        assertEquals(coap().block2Res(4, S_1024_BERT, false).payload(opaqueOfSize(4196)).ack(C205_CONTENT).build(), callback.join());
+        assertEquals(ok(opaqueOfSize(4196)).block2Res(4, S_1024_BERT, false), response.join());
     }
 
     @Test
@@ -161,88 +165,88 @@ public class BlockWiseCallbackTest {
         givenPutRequest(1500);
 
         //when
-        receiveFirst(coap().block1Req(0, S_512, false).ack(C400_BAD_REQUEST));
+        receiveFirst(badRequest().block1Req(0, S_512, false));
 
         //then
         assertNothingSent();
-        assertEquals(coap().block1Req(0, S_512, false).ack(C400_BAD_REQUEST).build(), callback.join());
+        assertEquals(badRequest().block1Req(0, S_512, false), response.join());
     }
 
     @Test
     public void should_restart_transfer_when_etag_changes() throws CoapException {
         givenGetRequest();
 
-        receiveFirst(coap().etag(100).block2Res(0, S_512, true).payload(opaqueOfSize(512)).ack(C205_CONTENT));
-        assertSent(coap().block2Res(1, S_512, false).get());
+        receiveFirst(ok(opaqueOfSize(512)).etag(Opaque.of("100")).block2Res(0, S_512, true));
+        assertSent(get("/9").block2Res(1, S_512, false));
 
         //when, etag changes
-        receive(coap().etag(200).block2Res(1, S_512, true).payload(opaqueOfSize(512)));
+        receive(ok(opaqueOfSize(512)).etag(Opaque.of("200")).block2Res(1, S_512, true));
 
         //then, start from beginning
-        assertSent(coap().block2Res(0, S_512, false).get());
+        assertSent(get("/9").block2Res(0, S_512, false));
 
-        receive(coap().etag(200).block2Res(0, S_512, false).payload(opaqueOfSize(500)).ack(C205_CONTENT));
-        assertEquals(coap().etag(200).block2Res(0, S_512, false).payload(opaqueOfSize(500)).ack(C205_CONTENT).build(), callback.join());
+        receive(ok(opaqueOfSize(500)).etag(Opaque.of("200")).block2Res(0, S_512, false));
+        assertEquals(ok(opaqueOfSize(500)).etag(Opaque.of("200")).block2Res(0, S_512, false), response.join());
     }
 
     @Test
     public void should_fail_transfer_when_etag_changes_multiple_times() throws CoapException {
         givenGetRequest();
 
-        receiveFirst(coap().block2Res(0, S_512, true).payload(opaqueOfSize(512)).ack(C205_CONTENT));
-        assertSent(coap().block2Res(1, S_512, false).get());
+        receiveFirst(ok(opaqueOfSize(512)).block2Res(0, S_512, true));
+        assertSent(get("/9").block2Res(1, S_512, false));
 
         //when, etag changes three times
         //1st etag change
-        receive(coap().etag(100).block2Res(1, S_512, true).payload(opaqueOfSize(512)));
-        assertSent(coap().block2Res(0, S_512, false).get());
+        receive(ok(opaqueOfSize(512)).etag(Opaque.of("100")).block2Res(1, S_512, true));
+        assertSent(get("/9").block2Res(0, S_512, false));
 
-        receive(coap().etag(100).block2Res(0, S_512, true).payload(opaqueOfSize(512)));
-        assertSent(coap().block2Res(1, S_512, false).get());
+        receive(ok(opaqueOfSize(512)).etag(Opaque.of("100")).block2Res(0, S_512, true));
+        assertSent(get("/9").block2Res(1, S_512, false));
 
         //2nd etag change
-        receive(coap().etag(200).block2Res(1, S_512, true).payload(opaqueOfSize(512)));
-        assertSent(coap().block2Res(0, S_512, false).get());
+        receive(ok(opaqueOfSize(512)).etag(Opaque.of("200")).block2Res(1, S_512, true));
+        assertSent(get("/9").block2Res(0, S_512, false));
 
-        receive(coap().etag(200).block2Res(0, S_512, true).payload(opaqueOfSize(512)));
-        assertSent(coap().block2Res(1, S_512, false).get());
+        receive(ok(opaqueOfSize(512)).etag(Opaque.of("200")).block2Res(0, S_512, true));
+        assertSent(get("/9").block2Res(1, S_512, false));
 
         //3rd etag change
-        receive(coap().etag(300).block2Res(1, S_512, true).payload(opaqueOfSize(512)));
+        receive(ok(opaqueOfSize(512)).etag(Opaque.of("300")).block2Res(1, S_512, true));
 
         //then
         assertNothingSent();
-        assertThatThrownBy(() -> callback.get()).hasCauseExactlyInstanceOf(CoapBlockException.class);
+        assertThatThrownBy(() -> response.get()).hasCauseExactlyInstanceOf(CoapBlockException.class);
     }
 
     @Test
     public void should_fail_transfer_when_block_number_do_not_match() throws CoapException {
         givenGetRequest();
 
-        receiveFirst(coap().block2Res(0, S_512, true).payload(opaqueOfSize(512)).ack(C205_CONTENT));
-        assertSent(coap().block2Res(1, S_512, false).get());
+        receiveFirst(ok(opaqueOfSize(512)).block2Res(0, S_512, true));
+        assertSent(get("/9").block2Res(1, S_512, false));
 
         //when, block number mismatch
-        receive(coap().block2Res(20, S_512, true).payload(opaqueOfSize(512)));
+        receive(ok(opaqueOfSize(512)).block2Res(20, S_512, true));
 
         //then, fail
         assertNothingSent();
-        assertThatThrownBy(() -> callback.get()).hasCauseExactlyInstanceOf(CoapBlockException.class);
+        assertThatThrownBy(() -> response.get()).hasCauseExactlyInstanceOf(CoapBlockException.class);
     }
 
     @Test
     public void should_fail_transfer_when_invalid_block_response() throws CoapException {
         givenGetRequest();
 
-        receiveFirst(coap().block2Res(0, S_512, true).payload(opaqueOfSize(512)).ack(C205_CONTENT));
-        assertSent(coap().block2Res(1, S_512, false).get());
+        receiveFirst(ok(opaqueOfSize(512)).block2Res(0, S_512, true));
+        assertSent(get("/9").block2Res(1, S_512, false));
 
         //when, invalid block response
-        receive(coap().block2Res(1, S_512, true).payload(opaqueOfSize(400)));
+        receive(ok(opaqueOfSize(400)).block2Res(1, S_512, true));
 
         //then, fail
         assertNothingSent();
-        assertThatThrownBy(() -> callback.get()).hasCauseExactlyInstanceOf(CoapBlockException.class);
+        assertThatThrownBy(() -> response.get()).hasCauseExactlyInstanceOf(CoapBlockException.class);
     }
 
     @Test
@@ -250,38 +254,37 @@ public class BlockWiseCallbackTest {
         givenGetRequest();
 
         //when, invalid block response
-        receiveFirst(coap().block2Res(0, S_512, false).payload(opaqueOfSize(513)).ack(C205_CONTENT));
+        receiveFirst(ok(opaqueOfSize(513)).block2Res(0, S_512, false));
 
         //then, fail
         assertNothingSent();
-        assertThatThrownBy(() -> callback.get()).hasCauseExactlyInstanceOf(CoapBlockException.class);
+        assertThatThrownBy(() -> response.get()).hasCauseExactlyInstanceOf(CoapBlockException.class);
     }
 
     @Test
     public void should_fail_transfer_when_too_large_total_response_payload() throws CoapException {
-        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(1024, true),
-                coap().get().build(), 1000);
+        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(1024, true), get("/9"), 1000);
 
-        receiveFirst(coap().block2Res(0, S_512, true).payload(opaqueOfSize(512)).ack(C205_CONTENT));
-        assertSent(coap().block2Res(1, S_512, false).get());
+        receiveFirst(ok(opaqueOfSize(512)).block2Res(0, S_512, true));
+        assertSent(get("/9").block2Res(1, S_512, false));
 
         //when
-        receive(coap().block2Res(1, S_512, true).payload(opaqueOfSize(512)));
+        receive(ok(opaqueOfSize(512)).block2Res(1, S_512, true));
 
         //then, fail
         assertNothingSent();
-        assertThatThrownBy(() -> callback.get()).hasCauseExactlyInstanceOf(CoapBlockTooLargeEntityException.class);
+        assertThatThrownBy(() -> response.get()).hasCauseExactlyInstanceOf(CoapBlockTooLargeEntityException.class);
     }
 
     @Test
     public void should_send_payload_in_blocks_with_block_size_negotiation() throws CoapException {
         givenPutRequest(1500);
-        assertEquals(coap().block1Req(0, S_1024, true).size1(1500).payload(opaqueOfSize(1024)).put().build(), bwc.request);
+        assertEquals(put("/9").block1Req(0, S_1024, true).size1(1500).payload(opaqueOfSize(1024)), bwc.request);
 
         //when, received ACK with smaller block size
-        receiveFirst(coap().block1Req(0, S_256, false).ack(C231_CONTINUE));
+        receiveFirst(of(C231_CONTINUE).block1Req(0, S_256, false));
         //then
-        assertSent(coap().block1Req(1, S_256, true).payload(opaqueOfSize(256)).put());
+        assertSent(put("/9").block1Req(1, S_256, true).payload(opaqueOfSize(256)));
     }
 
     @Test
@@ -289,13 +292,13 @@ public class BlockWiseCallbackTest {
         givenPutRequest(1500);
 
         //when, received ACK 4.13 with a new size hint
-        receiveFirst(coap().ack(C413_REQUEST_ENTITY_TOO_LARGE).block1Req(0, S_256, true));
+        receiveFirst(of(C413_REQUEST_ENTITY_TOO_LARGE).block1Req(0, S_256, true));
         //then, restart with new size
-        assertSent(coap().block1Req(0, S_256, true).size1(1500).payload(opaqueOfSize(256)).put());
+        assertSent(put("/9").block1Req(0, S_256, true).size1(1500).payload(opaqueOfSize(256)));
 
         //and continue
-        receive(coap().ack(C231_CONTINUE).block1Req(0, S_256, true));
-        assertSent(coap().block1Req(1, S_256, true).payload(opaqueOfSize(256)).put());
+        receive(of(C231_CONTINUE).block1Req(0, S_256, true));
+        assertSent(put("/9").block1Req(1, S_256, true).payload(opaqueOfSize(256)));
     }
 
     @Test
@@ -303,10 +306,10 @@ public class BlockWiseCallbackTest {
         givenPutRequest(1500);
 
         //when, received ACK 4.13
-        receiveFirst(coap().ack(C413_REQUEST_ENTITY_TOO_LARGE));
+        receiveFirst(of(C413_REQUEST_ENTITY_TOO_LARGE));
         //then, restart with new size
         assertNothingSent();
-        assertEquals(coap().ack(C413_REQUEST_ENTITY_TOO_LARGE).build(), callback.join());
+        assertEquals(of(C413_REQUEST_ENTITY_TOO_LARGE), response.join());
     }
 
     @Test
@@ -328,7 +331,7 @@ public class BlockWiseCallbackTest {
     public void should_fail_when_too_large_payload() throws CoapException {
         assertThrows(CoapException.class, () ->
                 new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(2000, false),
-                        coap().payload(opaqueOfSize(2010)).put().build(), 10_000)
+                        put("/9").payload(opaqueOfSize(2010)), 10_000)
         );
     }
 
@@ -336,35 +339,34 @@ public class BlockWiseCallbackTest {
         return newCoapPacket(LOCAL_5683);
     }
 
-    private void assertSent(CoapPacketBuilder coapPacket) {
-        assertFalse(callback.isDone());
+    private void assertSent(CoapRequest expected) {
+        assertFalse(response.isDone());
         assertNotNull(lastReq);
         lastReq = null;
-        assertEquals(coapPacket.build(), bwc.request);
+        assertEquals(expected, bwc.request);
     }
 
     private void assertNothingSent() {
         assertNull(lastReq);
     }
 
-    private void receiveFirst(CoapPacketBuilder coapPacket) {
-        callback = bwc.receive(coapPacket.build());
+    private void receiveFirst(CoapResponse resp) {
+        response = bwc.receive(resp);
     }
 
-    private void receive(CoapPacketBuilder coapPacket) {
-        promise.complete(coapPacket.build());
+    private void receive(CoapResponse resp) {
+        promise.complete(resp);
     }
 
     private void givenPutRequest(int payloadSize) throws CoapException {
         bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(1024, true),
-                coap().payload(opaqueOfSize(payloadSize)).put().build(), 10_000);
+                put("/9").payload(opaqueOfSize(payloadSize)), 10_000);
     }
 
     private void givenGetRequest() throws CoapException {
-        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(1024, true),
-                coap().get().build(), 10_000);
+        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(1024, true), get("/9"), 10_000);
 
-        assertEquals(coap().get().build(), bwc.request);
+        assertEquals(get("/9"), bwc.request);
     }
 
 

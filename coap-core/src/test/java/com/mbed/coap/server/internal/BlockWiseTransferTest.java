@@ -23,6 +23,7 @@ import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.Code;
 import org.junit.jupiter.api.Test;
 
@@ -33,30 +34,28 @@ public class BlockWiseTransferTest {
 
     @Test
     public void should_set_first_block_header_for_request() {
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(512, true));
-        CoapPacket coap = newCoapPacket(LOCAL_5683).payload(opaqueOfSize(2000)).post().build();
+        CoapTcpCSM csm = new CoapTcpCSM(512, true);
+        CoapRequest req = CoapRequest.post(LOCAL_5683, "/").payload(opaqueOfSize(2000));
 
-        assertEquals(1, bwt.updateWithFirstBlock(coap));
+        assertEquals(512, BlockWiseTransfer.updateWithFirstBlock(req, csm).size());
 
-        assertEquals(2000, coap.headers().getSize1().intValue());
-        assertEquals(new BlockOption(0, BlockSize.S_512, true), coap.headers().getBlock1Req());
-        assertNull(coap.headers().getSize2Res());
-        assertNull(coap.headers().getBlock2Res());
-        assertEquals(512, coap.getPayload().size());
+        assertEquals(2000, req.options().getSize1().intValue());
+        assertEquals(new BlockOption(0, BlockSize.S_512, true), req.options().getBlock1Req());
+        assertNull(req.options().getSize2Res());
+        assertNull(req.options().getBlock2Res());
     }
 
     @Test
     public void should_set_first_block_header_for_request_bert() {
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(3300, true));
-        CoapPacket coap = newCoapPacket(LOCAL_5683).payload(opaqueOfSize(5000)).post().build();
+        CoapTcpCSM csm = new CoapTcpCSM(3300, true);
+        CoapRequest req = CoapRequest.post(LOCAL_5683, "/").payload(opaqueOfSize(5000));
 
-        assertEquals(2, bwt.updateWithFirstBlock(coap));
+        assertEquals(2048, BlockWiseTransfer.updateWithFirstBlock(req, csm).size());
 
-        assertEquals(5000, coap.headers().getSize1().intValue());
-        assertEquals(new BlockOption(0, BlockSize.S_1024_BERT, true), coap.headers().getBlock1Req());
-        assertNull(coap.headers().getSize2Res());
-        assertNull(coap.headers().getBlock2Res());
-        assertEquals(2048, coap.getPayload().size());
+        assertEquals(5000, req.options().getSize1().intValue());
+        assertEquals(new BlockOption(0, BlockSize.S_1024_BERT, true), req.options().getBlock1Req());
+        assertNull(req.options().getSize2Res());
+        assertNull(req.options().getBlock2Res());
     }
 
     @Test
@@ -64,7 +63,7 @@ public class BlockWiseTransferTest {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(512, true));
         CoapPacket coap = newCoapPacket(LOCAL_5683).payload(opaqueOfSize(2000)).ack(Code.C205_CONTENT).build();
 
-        assertEquals(1, bwt.updateWithFirstBlock(coap));
+        bwt.updateWithFirstBlock(coap);
 
         assertEquals(2000, coap.headers().getSize2Res().intValue());
         assertEquals(new BlockOption(0, BlockSize.S_512, true), coap.headers().getBlock2Res());

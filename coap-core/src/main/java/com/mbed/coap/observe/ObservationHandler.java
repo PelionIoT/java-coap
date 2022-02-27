@@ -16,16 +16,22 @@
  */
 package com.mbed.coap.observe;
 
-import static com.mbed.coap.utils.FutureHelpers.*;
+import static com.mbed.coap.utils.FutureHelpers.failedFuture;
+import static java.util.concurrent.CompletableFuture.*;
+import com.mbed.coap.exception.CoapCodeException;
+import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
-import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
-import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.CoapExchange;
-import java.util.HashMap;
+import com.mbed.coap.utils.FutureHelpers;
+import com.mbed.coap.utils.Service;
+import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,52 +39,57 @@ import org.slf4j.LoggerFactory;
 public class ObservationHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ObservationHandler.class.getName());
-    private final Map<Opaque, ObservationListenerContainer> observationMap = new HashMap<>();
+    private final Map<Opaque, ObservationListenerContainer> observationMap = new ConcurrentHashMap<>();
 
-    public void terminate(CoapPacket terminatingPacket) {
-        ObservationListenerContainer obsListContainer = observationMap.get(terminatingPacket.getToken());
+    public void terminate(Opaque token, CoapResponse observationResp) {
+        ObservationListenerContainer obsListContainer = observationMap.remove(token);
         if (obsListContainer != null) {
-            obsListContainer.complete(terminatingPacket.toCoapResponse());
+            obsListContainer.complete(observationResp);
         }
     }
 
-    public void notify(CoapExchange t) {
-        Opaque token = t.getRequest().getToken();
+    public boolean notify(InetSocketAddress peerAddress, Opaque token, CoapResponse observationResp, Service<CoapRequest, CoapResponse> clientService) {
         final ObservationListenerContainer obsListContainer = observationMap.remove(token);
-        if (obsListContainer != null) {
-            BlockOption requestBlock2Res = t.getRequest().headers().getBlock2Res();
-            if (requestBlock2Res != null && requestBlock2Res.getNr() == 0 && requestBlock2Res.hasMore()) {
-                if (requestBlock2Res.hasMore() && requestBlock2Res.getSize() != t.getRequestBody().size()) {
-                    LOGGER.warn("Block size does not match payload size " + requestBlock2Res.getSize() + "!=" + t.getRequestBody().size());
-                    t.setResponse(resetResponse(t));
-                    t.sendResponse();
-                    return;
-                }
-                t.sendResponse();
 
-                t.retrieveNotificationBlocks(obsListContainer.uriPath)
-                        .thenAccept(obsListContainer::complete)
-                        .exceptionally(log(LOGGER));
-            } else {
-                obsListContainer.complete(t.getRequest().toCoapResponse());
-                if (observationMap.containsKey(token)) {
-                    t.sendResponse();
-                } else {
-                    // observer did not provide next promise, terminating observation
-                    t.sendResetResponse();
-                }
+        if (obsListContainer == null) {
+            LOGGER.info("No observer for token: {}, sending reset", token.toHex());
+            return false;
+        }
+
+        BlockOption requestBlock2Res = observationResp.options().getBlock2Res();
+        if (requestBlock2Res != null && requestBlock2Res.getNr() == 0 && requestBlock2Res.hasMore()) {
+            if (requestBlock2Res.getSize() != observationResp.getPayload().size()) {
+                LOGGER.warn("Block size does not match payload size {}!={}", requestBlock2Res.getSize(), observationResp.getPayload().size());
+                obsListContainer.cancel();
+                return false;
             }
+            // retrieve full notification payload
+            CoapRequest fullNotifRequest = CoapRequest.get(peerAddress, obsListContainer.uriPath)
+                    .block2Res(1, observationResp.options().getBlock2Res().getBlockSize(), false);
+
+            clientService
+                    .apply(fullNotifRequest)
+                    .thenCompose(resp -> merge(resp, observationResp))
+                    .thenAccept(obsListContainer::complete)
+                    .exceptionally(FutureHelpers.log(LOGGER));
+            return true;
         } else {
-            LOGGER.info("No observer for token: {}, sending reset", t.getRequest().getToken().toHex());
-            t.sendResetResponse();
+            obsListContainer.complete(observationResp);
+            // if observer did not provide next promise, terminating observation
+            return observationMap.containsKey(token);
         }
     }
 
-    private static CoapPacket resetResponse(CoapExchange t) {
-        CoapPacket resetResponse = new CoapPacket(t.getRemoteAddress());
-        resetResponse.setMessageType(MessageType.Reset);
-        resetResponse.setMessageId(t.getRequest().getMessageId());
-        return resetResponse;
+    private CompletableFuture<CoapResponse> merge(CoapResponse resp, CoapResponse observationResp) {
+        if (resp.getCode() != Code.C205_CONTENT) {
+            return failedFuture(new CoapCodeException(resp.getCode(), "Unexpected response when retrieving full observation message"));
+        }
+        if (!Objects.equals(observationResp.options().getEtag(), resp.options().getEtag())) {
+            return failedFuture(new CoapException("Could not retrieve full observation message, etag does not mach"));
+        }
+
+        resp = resp.payload(observationResp.getPayload().concat(resp.getPayload()));
+        return completedFuture(resp);
     }
 
     public Supplier<CompletableFuture<CoapResponse>> nextSupplier(Opaque token, String uriPath) {

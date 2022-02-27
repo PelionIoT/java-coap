@@ -18,6 +18,8 @@ package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
@@ -43,6 +45,8 @@ public abstract class CoapMessaging implements CoapReceiver {
     private boolean isRunning;
 
     public abstract CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext);
+
+    public abstract CompletableFuture<CoapResponse> send(final CoapRequest request);
 
     public abstract void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext);
 

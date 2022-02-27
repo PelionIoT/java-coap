@@ -17,6 +17,8 @@
 package com.mbed.coap.server;
 
 
+import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.CoapResponse.*;
 import static com.mbed.coap.utils.FutureHelpers.failedFuture;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
@@ -50,6 +52,7 @@ public class CoapServerTest {
 
     private CoapMessaging msg = mock(CoapMessaging.class);
     private CompletableFuture<CoapPacket> promise;
+    private CompletableFuture<CoapResponse> sendPromise;
     private CoapServer server;
     private final Service<CoapRequest, CoapResponse> route = RouterService.builder()
             .post("/some*", req ->
@@ -71,8 +74,12 @@ public class CoapServerTest {
             promise = new CompletableFuture<>();
             return promise;
         });
+        given(msg.send(any())).willAnswer((Answer<CompletableFuture<CoapResponse>>) __ -> {
+            sendPromise = new CompletableFuture<>();
+            return sendPromise;
+        });
 
-        server = new CoapServer(msg, route).start();
+        server = new CoapServer(msg, (request, service) -> service.apply(request), route).start();
     }
 
     @Test
@@ -87,24 +94,22 @@ public class CoapServerTest {
 
     @Test
     public void shouldFailWhenAttemptToStopWhenNotRunning() throws Exception {
-        final CoapServer nonStartedServer = new CoapServer(msg, RouterService.NOT_FOUND_SERVICE);
+        final CoapServer nonStartedServer = new CoapServer(msg, (request, service) -> service.apply(request), RouterService.NOT_FOUND_SERVICE);
 
         assertThatThrownBy(nonStartedServer::stop).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     public void shouldPassMakeRequest_toMessaging() throws ExecutionException, InterruptedException {
-        final CoapPacket req = newCoapPacket().get().uriPath("/test").build();
-
         //when
-        final CompletableFuture<CoapResponse> resp = server.clientService().apply(CoapRequest.get("/test"));
+        final CompletableFuture<CoapResponse> resp = server.clientService().apply(get("/test"));
 
         //then
-        verify(msg).makeRequest(eq(req), eq(TransportContext.NULL));
+        verify(msg).send(eq(get("/test")));
         assertFalse(resp.isDone());
 
         //verify callback
-        promise.complete(newCoapPacket().ack(Code.C400_BAD_REQUEST).build());
+        sendPromise.complete(badRequest());
         assertTrue(resp.isDone());
         assertEquals(Code.C400_BAD_REQUEST, resp.get().getCode());
     }

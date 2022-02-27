@@ -25,10 +25,11 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.server.internal.CoapExchangeImpl;
+import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.internal.CoapMessaging;
 import com.mbed.coap.server.internal.CoapRequestHandler;
 import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -48,13 +49,14 @@ public class CoapServer {
     private final CoapMessaging coapMessaging;
     private final Service<CoapRequest, CoapResponse> clientService;
 
-    public CoapServer(CoapMessaging coapMessaging, Service<CoapRequest, CoapResponse> routeService) {
+    public CoapServer(CoapMessaging coapMessaging, Filter.SimpleFilter<CoapRequest, CoapResponse> sendFilter, Service<CoapRequest, CoapResponse> routeService) {
         this.coapMessaging = coapMessaging;
         this.requestHandlingService = new ObservationSenderFilter(this::sendNotification)
                 .then(requireNonNull(routeService));
 
         this.clientService = new ObserveRequestFilter(observationHandler)
-                .then(this::sendRequest);
+                .andThen(sendFilter)
+                .then(coapMessaging::send);
     }
 
     public static CoapServerBuilder.CoapServerBuilderForUdp builder() {
@@ -120,22 +122,6 @@ public class CoapServer {
         return clientService;
     }
 
-    private CompletableFuture<CoapResponse> sendRequest(CoapRequest req) {
-        return makeRequest(CoapPacket.from(req), req.getTransContext())
-                .thenApply(CoapPacket::toCoapResponse);
-    }
-
-    /**
-     * Makes asynchronous CoAP request. Sends given packet to specified address..
-     *
-     * @param requestPacket request packet
-     * @param transContext transport context that will be passed to transport connector
-     * @return CompletableFuture with response promise
-     */
-    protected CompletableFuture<CoapPacket> makeRequest(CoapPacket requestPacket, final TransportContext transContext) {
-        return coapMessaging.makeRequest(requestPacket, transContext);
-    }
-
     public CompletableFuture<CoapPacket> sendNotification(final CoapPacket notifPacket, final TransportContext transContext) {
         if (notifPacket.headers().getObserve() == null) {
             throw new IllegalArgumentException("Notification packet should have observation header set");
@@ -144,7 +130,7 @@ public class CoapServer {
             throw new IllegalArgumentException("Notification packet should have non-empty token");
         }
 
-        return makeRequest(notifPacket, transContext);
+        return coapMessaging.makeRequest(notifPacket, transContext);
     }
 
     public void setConnectHandler(Consumer<InetSocketAddress> disconnectConsumer) {
@@ -155,17 +141,12 @@ public class CoapServer {
 
         @Override
         public boolean handleObservation(CoapPacket packet, TransportContext context) {
-            ObservationHandler obsHdlr = observationHandler;
-            if (obsHdlr == null) {
-                return false;
-            }
-
             Integer observe = packet.headers().getObserve();
-            if (observe == null && !obsHdlr.hasObservation(packet.getToken())) {
+            if (observe == null && !observationHandler.hasObservation(packet.getToken())) {
                 return false;
             }
-
-            if (observe == null || (packet.getCode() != Code.C205_CONTENT && packet.getCode() != Code.C203_VALID)) {
+            CoapResponse obsResponse = packet.toCoapResponse();
+            if (observe == null || (obsResponse.getCode() != Code.C205_CONTENT && obsResponse.getCode() != Code.C203_VALID)) {
 
                 LOGGER.trace("Notification termination [{}]", packet);
 
@@ -174,15 +155,17 @@ public class CoapServer {
                     sendResponse(packet, response);
                 }
 
-                obsHdlr.terminate(packet);
+                observationHandler.terminate(packet.getToken(), obsResponse);
                 return true;
             }
 
-            //            if (!findDuplicate(packet, "CoAP notification repeated")) {
             LOGGER.trace("Notification [{}]", packet.getRemoteAddrString());
-            CoapExchange exchange = new CoapExchangeImpl(packet, CoapServer.this);
-            obsHdlr.notify(exchange);
-            //            }
+            boolean sendAck = observationHandler.notify(packet.getRemoteAddress(), packet.getToken(), obsResponse, CoapServer.this.clientService);
+            CoapPacket response = packet.createResponse();
+            if (!sendAck) {
+                response.setMessageType(MessageType.Reset);
+            }
+            sendResponse(packet, response);
             return true;
         }
 
@@ -230,22 +213,8 @@ public class CoapServer {
     }
 
 
-    protected void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext) {
-        coapMessaging.sendResponse(request, response, transContext);
-    }
-
-    protected void sendResponse(CoapPacket request, CoapPacket response) {
-        sendResponse(request, response, TransportContext.NULL);
-    }
-
-
-    public void sendResponse(CoapExchange exchange) {
-        CoapPacket resp = exchange.getResponse();
-        if (resp == null) {
-            //nothing to send
-            return;
-        }
-        sendResponse(exchange.getRequest(), resp, exchange.getResponseTransportContext());
+    private void sendResponse(CoapPacket request, CoapPacket response) {
+        coapMessaging.sendResponse(request, response, TransportContext.NULL);
     }
 
 

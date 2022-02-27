@@ -19,6 +19,8 @@ package com.mbed.coap.server.internal;
 import static com.mbed.coap.utils.FutureHelpers.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.SignalingOptions;
@@ -122,6 +124,12 @@ public class CoapTcpMessaging extends CoapMessaging {
                     }
                 });
         return promise;
+    }
+
+    @Override
+    public CompletableFuture<CoapResponse> send(CoapRequest req) {
+        return makeRequest(CoapPacket.from(req), req.getTransContext())
+                .thenApply(CoapPacket::toCoapResponse);
     }
 
     @Override

@@ -20,6 +20,8 @@ import static com.mbed.coap.server.internal.CoapServerUtils.*;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.server.CoapRequestId;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
@@ -42,6 +44,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Implements CoAP server ( RFC 7252)
+ *
  * @see <a href="http://www.rfc-editor.org/rfc/rfc7252.txt" >http://www.rfc-editor.org/rfc/rfc7252.txt</a>
  */
 public class CoapUdpMessaging extends CoapMessaging {
@@ -190,6 +193,12 @@ public class CoapUdpMessaging extends CoapMessaging {
             forceAddToQueue = true;
         }
         return makeRequestInternal(packet, transContext, forceAddToQueue);
+    }
+
+    @Override
+    public CompletableFuture<CoapResponse> send(CoapRequest req) {
+        return makeRequest(CoapPacket.from(req), req.getTransContext())
+                .thenApply(CoapPacket::toCoapResponse);
     }
 
     /**
