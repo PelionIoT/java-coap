@@ -17,6 +17,7 @@
 package com.mbed.coap.packet;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * This class implements RFC7959 (Block-Wise Transfers in the Constrained Application Protocol)
@@ -29,7 +30,7 @@ public final class BlockOption implements Serializable {
 
     public BlockOption(int blockNr, BlockSize blockSize, boolean more) {
         this.blockNr = blockNr;
-        this.blockSize = blockSize;
+        this.blockSize = Objects.requireNonNull(blockSize);
         this.more = more;
     }
 

@@ -262,6 +262,9 @@ public final class CoapRequest {
     }
 
     public CoapRequest blockSize(BlockSize size) {
+        if (size == null) {
+            return this;
+        }
         if (method == Method.GET) {
             options.setBlock2Res(new BlockOption(0, size, false));
         }

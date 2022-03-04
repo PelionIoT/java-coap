@@ -17,4 +17,4 @@
 
 
 ARGS=$@
-gradle -q run --args="$ARGS"
+../gradlew -q run --args="$ARGS"

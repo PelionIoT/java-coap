@@ -41,7 +41,7 @@ public class CoapCli {
     }
 
     public static void main(String[] args, CoapSchemes providers) {
-        if (args.length == 0) {
+        if (args.length < 2) {
             System.out.println("Usage: [options...] <method> <scheme>://<host>:<port>/<uri-path> [<payload>]");
             System.out.println("Method: GET | POST | PUT | DELETE");
             System.out.println("Schemes: " + providers.supportedSchemes().replaceAll("\n", "\n         "));
