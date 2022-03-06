@@ -105,4 +105,38 @@ public class OpaqueTest {
 
         assertThrows(IllegalArgumentException.class, () -> Opaque.decodeHex("dupa"));
     }
+
+    @Test
+    void fragment() {
+        Opaque text = Opaque.of("The Constrained Application Protocol (CoAP)");
+
+        assertEquals(Opaque.of("The Constr"), text.fragment(0, 10));
+        assertEquals(Opaque.of("ained Appl"), text.fragment(1, 10));
+        assertEquals(Opaque.of("AP)"), text.fragment(4, 10));
+        assertEquals(Opaque.of(")"), text.fragment(1, 42));
+        assertEquals(Opaque.EMPTY, text.fragment(1, 43));
+        assertEquals(Opaque.EMPTY, text.fragment(5, 10));
+
+        assertEquals(text, text.fragment(0, 50));
+
+        // should return same object instance
+        assertTrue(text == text.fragment(0, 50));
+    }
+
+    @Test
+    void fragmentWithMultipleFragments() {
+        Opaque text = Opaque.of("The Constrained Application Protocol (CoAP)");
+
+        assertEquals(Opaque.of("The Constrained Appl"), text.fragment(0, 10, 2));
+        assertEquals(Opaque.of("ained Application Pr"), text.fragment(1, 10, 2));
+        assertEquals(Opaque.of("AP)"), text.fragment(4, 10, 2));
+        assertEquals(Opaque.of(")"), text.fragment(1, 42, 2));
+        assertEquals(Opaque.EMPTY, text.fragment(1, 43, 2));
+        assertEquals(Opaque.EMPTY, text.fragment(5, 10, 2));
+
+        assertEquals(text, text.fragment(0, 30, 2));
+
+        // should return same object instance
+        assertTrue(text == text.fragment(0, 30, 2));
+    }
 }

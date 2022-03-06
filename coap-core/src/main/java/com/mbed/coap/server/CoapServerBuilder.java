@@ -21,7 +21,6 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.internal.CoapMessaging;
-import com.mbed.coap.server.internal.CoapServerBlocks;
 import com.mbed.coap.server.internal.CoapTcpCSM;
 import com.mbed.coap.server.internal.CoapTcpCSMStorageImpl;
 import com.mbed.coap.server.internal.CoapTcpMessaging;
@@ -104,7 +103,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     }
 
     public CoapServer build() {
-        return new CoapServerBlocks(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize, route);
+        return CoapServer.create(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize, route);
     }
 
     protected abstract CoapMessaging buildCoapMessaging();

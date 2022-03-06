@@ -18,22 +18,18 @@ package com.mbed.coap.server;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
 import static java.util.Objects.*;
-import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.observe.ObservationHandler;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
-import com.mbed.coap.packet.Code;
-import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.SeparateResponse;
+import com.mbed.coap.server.internal.BlockWiseIncomingFilter;
+import com.mbed.coap.server.internal.BlockWiseNotificationFilter;
+import com.mbed.coap.server.internal.BlockWiseOutgoingFilter;
 import com.mbed.coap.server.internal.CoapMessaging;
-import com.mbed.coap.server.internal.CoapRequestHandler;
-import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Filter;
+import com.mbed.coap.utils.Filter.SimpleFilter;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,21 +38,39 @@ public class CoapServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServer.class);
     private boolean isRunning;
     private final Service<CoapRequest, CoapResponse> requestHandlingService;
-    final ObservationHandler observationHandler = new ObservationHandler();
-    final CoapRequestHandler coapRequestHandler = new CoapRequestHandlerImpl();
+    private final ObservationHandler observationHandler = new ObservationHandler();
     private final CoapMessaging coapMessaging;
     private final Service<CoapRequest, CoapResponse> clientService;
 
-    public CoapServer(CoapMessaging coapMessaging, Filter.SimpleFilter<CoapRequest, CoapResponse> sendFilter, Service<CoapRequest, CoapResponse> routeService) {
+    public CoapServer(
+            CoapMessaging coapMessaging,
+            SimpleFilter<CoapRequest, CoapResponse> sendFilter,
+            Service<CoapRequest, CoapResponse> routeService,
+            SimpleFilter<SeparateResponse, Boolean> sendNotificationFilter
+    ) {
+        Service<SeparateResponse, Boolean> sendNotification = new NotificationValidator()
+                .andThen(sendNotificationFilter)
+                .then(coapMessaging::send);
+
         this.coapMessaging = coapMessaging;
-        this.requestHandlingService = new CriticalOptionVerifier()
-                .andThen(new ObservationSenderFilter(this::sendNotification))
+        this.requestHandlingService = new RescueFilter()
+                .andThen(new CriticalOptionVerifier())
+                .andThen(new ObservationSenderFilter(sendNotification))
                 .then(requireNonNull(routeService));
 
         this.clientService = new ObserveRequestFilter(observationHandler)
                 .andThen(sendFilter)
                 .then(coapMessaging::send);
     }
+
+    public static CoapServer create(CoapMessaging coapMessaging, CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize, Service<CoapRequest, CoapResponse> route) {
+        return new CoapServer(coapMessaging,
+                new BlockWiseOutgoingFilter(capabilities, maxIncomingBlockTransferSize),
+                new BlockWiseIncomingFilter(capabilities, maxIncomingBlockTransferSize).then(route),
+                new BlockWiseNotificationFilter(capabilities)
+        );
+    }
+
 
     public static CoapServerBuilder.CoapServerBuilderForUdp builder() {
         return CoapServerBuilder.newBuilder();
@@ -71,7 +85,7 @@ public class CoapServer {
      */
     public synchronized CoapServer start() throws IOException, IllegalStateException {
         assertNotRunning();
-        coapMessaging.start(coapRequestHandler);
+        coapMessaging.start(obs -> observationHandler.notify(obs, clientService), this.requestHandlingService);
         isRunning = true;
         return this;
     }
@@ -121,79 +135,9 @@ public class CoapServer {
         return clientService;
     }
 
-    public CompletableFuture<CoapPacket> sendNotification(final CoapPacket notifPacket, final TransportContext transContext) {
-        if (notifPacket.headers().getObserve() == null) {
-            throw new IllegalArgumentException("Notification packet should have observation header set");
-        }
-        if (notifPacket.getToken().isEmpty()) {
-            throw new IllegalArgumentException("Notification packet should have non-empty token");
-        }
-
-        return coapMessaging.makeRequest(notifPacket, transContext);
-    }
-
     public void setConnectHandler(Consumer<InetSocketAddress> disconnectConsumer) {
         coapMessaging.setConnectHandler(disconnectConsumer);
     }
-
-    private class CoapRequestHandlerImpl implements CoapRequestHandler {
-
-        @Override
-        public boolean handleObservation(CoapPacket packet, TransportContext context) {
-            Integer observe = packet.headers().getObserve();
-            if (observe == null && !observationHandler.hasObservation(packet.getToken())) {
-                return false;
-            }
-            CoapResponse obsResponse = packet.toCoapResponse();
-            if (observe == null || (obsResponse.getCode() != Code.C205_CONTENT && obsResponse.getCode() != Code.C203_VALID)) {
-
-                LOGGER.trace("Notification termination [{}]", packet);
-
-                if (packet.getMustAcknowledge()) {
-                    CoapPacket response = packet.createResponse();
-                    sendResponse(packet, response);
-                }
-
-                observationHandler.terminate(packet.getToken(), obsResponse);
-                return true;
-            }
-
-            LOGGER.trace("Notification [{}]", packet.getRemoteAddrString());
-            boolean sendAck = observationHandler.notify(packet.getRemoteAddress(), packet.getToken(), obsResponse, CoapServer.this.clientService);
-            CoapPacket response = packet.createResponse();
-            if (!sendAck) {
-                response.setMessageType(MessageType.Reset);
-            }
-            sendResponse(packet, response);
-            return true;
-        }
-
-        @Override
-        public void handleRequest(CoapPacket request, TransportContext transportContext) {
-            requestHandlingService.apply(request.toCoapRequest(transportContext))
-                    .exceptionally(this::rescue)
-                    .thenAccept(resp ->
-                            coapMessaging.sendResponse(request, request.createResponseFrom(resp), transportContext)
-                    );
-        }
-
-        private CoapResponse rescue(Throwable ex) {
-            if (ex instanceof CompletionException) {
-                return rescue(ex.getCause());
-            }
-            if (ex instanceof CoapCodeException) {
-                return ((CoapCodeException) ex).toResponse();
-            }
-
-            LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
-            return CoapResponse.of(Code.C500_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    private void sendResponse(CoapPacket request, CoapPacket response) {
-        coapMessaging.sendResponse(request, response, TransportContext.EMPTY);
-    }
-
 
     public CoapMessaging getCoapMessaging() {
         return coapMessaging;

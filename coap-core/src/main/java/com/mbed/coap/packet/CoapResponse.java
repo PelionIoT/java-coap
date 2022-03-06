@@ -16,6 +16,8 @@
  */
 package com.mbed.coap.packet;
 
+import com.mbed.coap.transport.TransportContext;
+import java.net.InetSocketAddress;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -107,6 +109,14 @@ public class CoapResponse {
         return payload.toUtf8String();
     }
 
+    public SeparateResponse toSeparate(Opaque token, InetSocketAddress peerAddress, TransportContext transContext) {
+        return new SeparateResponse(this, token, peerAddress, transContext);
+    }
+
+    public SeparateResponse toSeparate(Opaque token, InetSocketAddress peerAddress) {
+        return toSeparate(token, peerAddress, TransportContext.EMPTY);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -174,4 +184,10 @@ public class CoapResponse {
         options.setBlock2Res(new BlockOption(num, size, more));
         return this;
     }
+
+    public CoapResponse observe(int observe) {
+        options.setObserve(observe);
+        return this;
+    }
+
 }

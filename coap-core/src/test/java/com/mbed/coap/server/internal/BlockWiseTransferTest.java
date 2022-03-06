@@ -16,21 +16,21 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.packet.BlockSize.*;
 import static com.mbed.coap.server.internal.BlockWiseTransfer.*;
 import static com.mbed.coap.utils.Bytes.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
-import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.CoapResponse;
+import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.packet.SeparateResponse;
 import org.junit.jupiter.api.Test;
 
 
 public class BlockWiseTransferTest {
-    private CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
-    private BlockWiseTransfer bwt = new BlockWiseTransfer(capabilities);
 
     @Test
     public void should_set_first_block_header_for_request() {
@@ -60,16 +60,16 @@ public class BlockWiseTransferTest {
 
     @Test
     public void should_set_first_block_header_for_observation() {
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(512, true));
-        CoapPacket coap = newCoapPacket(LOCAL_5683).payload(opaqueOfSize(2000)).ack(Code.C205_CONTENT).build();
+        CoapTcpCSM csm = new CoapTcpCSM(512, true);
+        SeparateResponse obs = CoapResponse.ok(opaqueOfSize(2000)).toSeparate(Opaque.EMPTY, null);
 
-        bwt.updateWithFirstBlock(coap);
+        Opaque newPayload = updateWithFirstBlock(obs, csm);
 
-        assertEquals(2000, coap.headers().getSize2Res().intValue());
-        assertEquals(new BlockOption(0, BlockSize.S_512, true), coap.headers().getBlock2Res());
-        assertNull(coap.headers().getSize1());
-        assertNull(coap.headers().getBlock1Req());
-        assertEquals(512, coap.getPayload().size());
+        assertEquals(2000, obs.options().getSize2Res().intValue());
+        assertEquals(new BlockOption(0, BlockSize.S_512, true), obs.options().getBlock2Res());
+        assertNull(obs.options().getSize1());
+        assertNull(obs.options().getBlock1Req());
+        assertEquals(512, newPayload.size());
     }
 
 
@@ -87,5 +87,41 @@ public class BlockWiseTransferTest {
         assertFalse(isBlockPacketValid(opaqueOfSize(0), new BlockOption(2, BlockSize.S_1024_BERT, true)));
 
         assertFalse(isBlockPacketValid(opaqueOfSize(511), new BlockOption(3, BlockSize.S_512, true)));
+    }
+
+    @Test
+    void sliceBlockFragment_noBert() {
+        Opaque payload = Opaque.of("The Constrained Application Protocol (CoAP)");
+
+        assertEquals(
+                Opaque.of("The Constrained "),
+                createBlockPart(new BlockOption(0, S_16, false), payload, 10000)
+        );
+
+        assertEquals(
+                Opaque.of("Application Prot"),
+                createBlockPart(new BlockOption(1, S_16, false), payload, 10000)
+        );
+
+        assertEquals(
+                Opaque.of("ocol (CoAP)"),
+                createBlockPart(new BlockOption(2, S_16, false), payload, 10000)
+        );
+    }
+
+    @Test
+    void sliceBlockFragment_bert() {
+        Opaque payload = opaqueOfSize('a', 2048).concat(opaqueOfSize('b', 1952));
+
+        assertEquals(
+                opaqueOfSize('a', 2048),
+                createBlockPart(new BlockOption(0, S_1024_BERT, false), payload, 3000)
+        );
+
+        assertEquals(
+                opaqueOfSize('b', 1952),
+                createBlockPart(new BlockOption(2, S_1024_BERT, false), payload, 3000)
+        );
+
     }
 }

@@ -25,9 +25,9 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.utils.FutureHelpers;
 import com.mbed.coap.utils.Service;
-import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -41,18 +41,30 @@ public class ObservationHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ObservationHandler.class.getName());
     private final Map<Opaque, ObservationListenerContainer> observationMap = new ConcurrentHashMap<>();
 
-    public void terminate(Opaque token, CoapResponse observationResp) {
-        ObservationListenerContainer obsListContainer = observationMap.remove(token);
+    private void terminate(SeparateResponse observationResp) {
+        ObservationListenerContainer obsListContainer = observationMap.remove(observationResp.getToken());
         if (obsListContainer != null) {
-            obsListContainer.complete(observationResp);
+            obsListContainer.complete(observationResp.asResponse());
         }
     }
 
-    public boolean notify(InetSocketAddress peerAddress, Opaque token, CoapResponse observationResp, Service<CoapRequest, CoapResponse> clientService) {
-        final ObservationListenerContainer obsListContainer = observationMap.remove(token);
+    public boolean notify(SeparateResponse observationResp, Service<CoapRequest, CoapResponse> clientService) {
+        Integer observe = observationResp.options().getObserve();
+        if (observe == null && !hasObservation(observationResp.getToken())) {
+            return false;
+        }
+        if (observe == null || (observationResp.getCode() != Code.C205_CONTENT && observationResp.getCode() != Code.C203_VALID)) {
+            LOGGER.trace("Notification termination [{}]", observationResp);
+            terminate(observationResp);
+            return true;
+        }
+
+        LOGGER.trace("Notification [{}]", observationResp.getPeerAddress());
+
+        final ObservationListenerContainer obsListContainer = observationMap.remove(observationResp.getToken());
 
         if (obsListContainer == null) {
-            LOGGER.info("No observer for token: {}, sending reset", token.toHex());
+            LOGGER.info("No observer for token: {}, sending reset", observationResp.getToken().toHex());
             return false;
         }
 
@@ -64,7 +76,7 @@ public class ObservationHandler {
                 return false;
             }
             // retrieve full notification payload
-            CoapRequest fullNotifRequest = CoapRequest.get(peerAddress, obsListContainer.uriPath)
+            CoapRequest fullNotifRequest = CoapRequest.get(observationResp.getPeerAddress(), obsListContainer.uriPath)
                     .block2Res(1, observationResp.options().getBlock2Res().getBlockSize(), false);
 
             clientService
@@ -74,13 +86,13 @@ public class ObservationHandler {
                     .exceptionally(FutureHelpers.log(LOGGER));
             return true;
         } else {
-            obsListContainer.complete(observationResp);
+            obsListContainer.complete(observationResp.asResponse());
             // if observer did not provide next promise, terminating observation
-            return observationMap.containsKey(token);
+            return observationMap.containsKey(observationResp.getToken());
         }
     }
 
-    private CompletableFuture<CoapResponse> merge(CoapResponse resp, CoapResponse observationResp) {
+    private CompletableFuture<CoapResponse> merge(CoapResponse resp, SeparateResponse observationResp) {
         if (resp.getCode() != Code.C205_CONTENT) {
             return failedFuture(new CoapCodeException(resp.getCode(), "Unexpected response when retrieving full observation message"));
         }
@@ -103,7 +115,7 @@ public class ObservationHandler {
         };
     }
 
-    public boolean hasObservation(Opaque token) {
+    boolean hasObservation(Opaque token) {
         return observationMap.containsKey(token);
     }
 

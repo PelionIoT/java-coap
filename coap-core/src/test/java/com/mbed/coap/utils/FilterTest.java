@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -84,4 +84,11 @@ public class FilterTest {
         assertEquals("3", srv.apply("2").get());
     }
 
+    @Test
+    void identityFilter() {
+        Filter.SimpleFilter<String, String> identity = Filter.identity();
+
+        assertEquals(srv, identity.then(srv));
+        assertEquals(filter, identity.andThen(filter));
+    }
 }

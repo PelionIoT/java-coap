@@ -17,32 +17,22 @@
 package com.mbed.coap.server.internal;
 
 import com.mbed.coap.packet.BlockOption;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.CoapTcpCSMStorage;
+import com.mbed.coap.packet.SeparateResponse;
 
 class BlockWiseTransfer {
-    private final CoapTcpCSMStorage capabilities;
 
-    BlockWiseTransfer(CoapTcpCSMStorage capabilities) {
-        this.capabilities = capabilities;
-    }
-
-    void updateWithFirstBlock(CoapPacket coapPacket) {
-        CoapTcpCSM csm = capabilities.getOrDefault(coapPacket.getRemoteAddress());
-
+    static Opaque updateWithFirstBlock(SeparateResponse resp, CoapTcpCSM csm) {
         BlockOption blockOption = new BlockOption(0, csm.getBlockSize(), true);
-        int payloadSize = coapPacket.getPayload().size();
 
-        coapPacket.headers().setBlock1Req(null);
-        coapPacket.headers().setBlock2Res(blockOption);
-        coapPacket.headers().setSize1(null);
-        coapPacket.headers().setSize2Res(payloadSize);
+        resp.options().setBlock1Req(null);
+        resp.options().setBlock2Res(blockOption);
+        resp.options().setSize1(null);
+        resp.options().setSize2Res(resp.getPayload().size());
 
         int maxBlockPayload = csm.getMaxOutboundPayloadSize();
-        Opaque blockPayload = createBlockPart(blockOption, coapPacket.getPayload(), maxBlockPayload);
-        coapPacket.setPayload(blockPayload);
+        return createBlockPart(blockOption, resp.getPayload(), maxBlockPayload);
     }
 
     static Opaque updateWithFirstBlock(CoapRequest request, CoapTcpCSM csm) {
@@ -59,26 +49,8 @@ class BlockWiseTransfer {
     }
 
     static Opaque createBlockPart(BlockOption blockOption, Opaque fullPayload, int maxPayloadSizePerBlock) {
-        //block size 16
-        //b0: 0 - 15
-        //b1: 16 - 31
-
-        int startPos = blockOption.getNr() * blockOption.getSize();
-        if (startPos > fullPayload.size() - 1) {
-            //payload too small
-            return fullPayload;
-        }
-
-        int blocksCount = blockOption.getBlockSize().numberOfBlocksPerMessage(maxPayloadSizePerBlock);
-
-        // maxPayloadSize is not used to round len to blockSize
-        // by default, maxPayloadSizePerBlock usually should be rounded to n*blockSize
-        int len = blockOption.getSize() * blocksCount;
-        if (startPos + len > fullPayload.size()) {
-            len = fullPayload.size() - startPos;
-            assert !blockOption.hasMore();
-        }
-        return fullPayload.slice(startPos, len);
+        int numOfBlockPerMessage = blockOption.getBlockSize().numberOfBlocksPerMessage(maxPayloadSizePerBlock);
+        return fullPayload.fragment(blockOption.getNr(), blockOption.getSize(), numOfBlockPerMessage);
     }
 
 

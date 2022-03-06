@@ -17,17 +17,21 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
+import static com.mbed.coap.utils.FutureHelpers.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,25 +43,27 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     final CoapTransport coapTransporter;
 
-    private CoapRequestHandler coapRequestHandler;
+    protected Function<SeparateResponse, Boolean> observationHandler;
+    private Service<CoapRequest, CoapResponse> requestHandler;
     private Consumer<InetSocketAddress> connectedHandler;
 
     private boolean isRunning;
 
-    public abstract CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext);
+    public abstract CompletableFuture<CoapResponse> send(CoapRequest req);
 
-    public abstract CompletableFuture<CoapResponse> send(final CoapRequest request);
+    public abstract CompletableFuture<Boolean> send(final SeparateResponse resp);
 
-    public abstract void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext);
+    protected abstract void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext);
 
 
     public CoapMessaging(CoapTransport coapTransport) {
         this.coapTransporter = coapTransport;
     }
 
-    public synchronized void start(CoapRequestHandler coapRequestHandler) throws IllegalStateException, IOException {
+    public synchronized void start(Function<SeparateResponse, Boolean> observationHandler, Service<CoapRequest, CoapResponse> requestHandler) throws IllegalStateException, IOException {
         assertNotRunning();
-        this.coapRequestHandler = coapRequestHandler;
+        this.observationHandler = observationHandler;
+        this.requestHandler = requestHandler;
         coapTransporter.start(this);
         isRunning = true;
     }
@@ -80,7 +86,8 @@ public abstract class CoapMessaging implements CoapReceiver {
         LOGGER.trace("Stopping CoapMessaging: {}", this);
         stop0();
         coapTransporter.stop();
-        coapRequestHandler = null;
+        requestHandler = null;
+        observationHandler = null;
 
         LOGGER.debug("CoapMessaging stopped: {}", this);
     }
@@ -130,7 +137,8 @@ public abstract class CoapMessaging implements CoapReceiver {
                 return;
             } else if (handleDelayedResponse(packet)) {
                 return;
-            } else if (handleObservation(packet, transportContext)) {
+            } else if (packet.headers().getObserve() != null) {
+                handleObservation(packet, transportContext);
                 return;
             }
         }
@@ -153,17 +161,7 @@ public abstract class CoapMessaging implements CoapReceiver {
         sendResponse(request, response, TransportContext.EMPTY);
     }
 
-
-    private void handleNotProcessedMessage(CoapPacket packet) {
-        CoapPacket resp = packet.createResponse(null);
-        if (resp != null) {
-            resp.setMessageType(MessageType.Reset);
-            LOGGER.warn("Can not process CoAP message [{}] sent RESET message", packet);
-            sendResponse(packet, resp);
-        } else {
-            handleNotProcessedMessageWeAreNotRespondingTo(packet);
-        }
-    }
+    protected abstract void handleNotProcessedMessage(CoapPacket packet);
 
     public void setConnectHandler(Consumer<InetSocketAddress> connectHandler) {
         this.connectedHandler = connectHandler;
@@ -182,14 +180,6 @@ public abstract class CoapMessaging implements CoapReceiver {
         LOGGER.debug("[{}] Connected", remoteAddress);
     }
 
-    private static void handleNotProcessedMessageWeAreNotRespondingTo(CoapPacket packet) {
-        if (MessageType.Acknowledgement.equals(packet.getMessageType())) {
-            LOGGER.debug("Discarding extra ACK: {}", packet);
-            return;
-        }
-        LOGGER.warn("Can not process CoAP message [{}]", packet);
-    }
-
     public InetSocketAddress getLocalSocketAddress() {
         return coapTransporter.getLocalSocketAddress();
     }
@@ -199,11 +189,12 @@ public abstract class CoapMessaging implements CoapReceiver {
     protected abstract boolean handleResponse(CoapPacket packet);
 
     protected void handleRequest(CoapPacket packet, TransportContext transContext) {
-        coapRequestHandler.handleRequest(packet, transContext);
+        requestHandler.apply(packet.toCoapRequest(transContext))
+                .thenAccept(resp ->
+                        sendResponse(packet, packet.createResponseFrom(resp), transContext)
+                ).exceptionally(logError(LOGGER));
     }
 
-    protected boolean handleObservation(CoapPacket packet, TransportContext transContext) {
-        return coapRequestHandler.handleObservation(packet, transContext);
-    }
+    protected abstract void handleObservation(CoapPacket packet, TransportContext transContext);
 
 }

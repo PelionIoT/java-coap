@@ -23,6 +23,7 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.packet.SignalingOptions;
 import com.mbed.coap.server.CoapTcpCSMStorage;
 import com.mbed.coap.transport.CoapTransport;
@@ -63,6 +64,11 @@ public class CoapTcpMessaging extends CoapMessaging {
         return handleSignal(packet);
     }
 
+    @Override
+    protected void handleNotProcessedMessage(CoapPacket packet) {
+        LOGGER.warn("Can not process CoAP message [{}]", packet);
+    }
+
     private boolean handleSignal(CoapPacket packet) {
         if (packet.getCode() == null || !packet.getCode().isSignaling()) {
             return false;
@@ -96,20 +102,16 @@ public class CoapTcpMessaging extends CoapMessaging {
     }
 
     @Override
-    public CompletableFuture<CoapPacket> makeRequest(CoapPacket packet, TransportContext transContext) {
-        if (packet.getMethod() == null && packet.getCode() == null && packet.getToken().isEmpty() && packet.getPayload().isEmpty()) {
-            // ping request
-            packet.setCode(Code.C702_PING);
-            // new CoapPacket(Code.C702_PING, null, destination);
+    public CompletableFuture<CoapResponse> send(CoapRequest req) {
+        CoapPacket packet;
+        if (req.isPing()) {
+            packet = new CoapPacket(Code.C702_PING, null, req.getPeerAddress());
+        } else {
+            packet = CoapPacket.from(req);
         }
 
-        int payloadLen = packet.getPayload().size();
-        int maxMessageSize = csmStorage.getOrDefault(packet.getRemoteAddress()).getMaxMessageSizeInt();
-
-        if (payloadLen > maxMessageSize) {
-            return failedFuture(
-                    new CoapException("Request payload size is too big and no block transfer support is enabled for " + packet.getRemoteAddress() + ": " + payloadLen)
-            );
+        if (verifyPayloadSize(packet)) {
+            return failedFuture(new CoapException("Request payload size is too big and no block transfer support is enabled for " + packet.getRemoteAddress() + ": " + packet.getPayload().size()));
         }
 
         DelayedTransactionId transId = new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress());
@@ -117,19 +119,26 @@ public class CoapTcpMessaging extends CoapMessaging {
         transactions.put(transId, promise);
 
 
-        sendPacket(packet, packet.getRemoteAddress(), transContext)
+        sendPacket(packet, packet.getRemoteAddress(), req.getTransContext())
                 .whenComplete((wasSent, maybeError) -> {
                     if (maybeError != null) {
                         removeTransactionExceptionally(transId, (Exception) maybeError);
                     }
                 });
-        return promise;
+
+        return promise.thenApply(CoapPacket::toCoapResponse);
+
     }
 
     @Override
-    public CompletableFuture<CoapResponse> send(CoapRequest req) {
-        return makeRequest(CoapPacket.from(req), req.getTransContext())
-                .thenApply(CoapPacket::toCoapResponse);
+    public CompletableFuture<Boolean> send(final SeparateResponse resp) {
+        CoapPacket packet = CoapPacket.from(resp);
+
+        if (verifyPayloadSize(packet)) {
+            return failedFuture(new CoapException("Request payload size is too big and no block transfer support is enabled for " + packet.getRemoteAddress() + ": " + packet.getPayload().size()));
+        }
+
+        return sendPacket(packet, resp.getPeerAddress(), resp.getTransContext());
     }
 
     @Override
@@ -155,6 +164,11 @@ public class CoapTcpMessaging extends CoapMessaging {
         return false;
     }
 
+    @Override
+    protected void handleObservation(CoapPacket packet, TransportContext transContext) {
+        SeparateResponse obs = packet.toCoapResponse().toSeparate(packet.getToken(), packet.getRemoteAddress(), transContext);
+        observationHandler.apply(obs);
+    }
 
     @Override
     public void onConnected(InetSocketAddress remoteAddress) {
@@ -189,6 +203,13 @@ public class CoapTcpMessaging extends CoapMessaging {
         if (promise != null) {
             promise.completeExceptionally(error);
         }
+    }
+
+    private boolean verifyPayloadSize(CoapPacket packet) {
+        int payloadLen = packet.getPayload().size();
+        int maxMessageSize = csmStorage.getOrDefault(packet.getRemoteAddress()).getMaxMessageSizeInt();
+
+        return payloadLen > maxMessageSize;
     }
 
     @Override

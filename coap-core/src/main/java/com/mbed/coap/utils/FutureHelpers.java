@@ -37,4 +37,11 @@ public class FutureHelpers {
         };
     }
 
+    public static Function<Throwable, Void> logError(Logger logger) {
+        return ex -> {
+            logger.error(ex.getMessage());
+            return null;
+        };
+    }
+
 }

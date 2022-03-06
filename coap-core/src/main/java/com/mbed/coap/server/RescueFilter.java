@@ -14,43 +14,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server.internal;
+package com.mbed.coap.server;
 
-import static com.mbed.coap.utils.FutureHelpers.*;
-import com.mbed.coap.exception.CoapException;
+import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
-import com.mbed.coap.server.CoapTcpCSMStorage;
+import com.mbed.coap.packet.Code;
 import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class BlockWiseOutgoingFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
-    private final CoapTcpCSMStorage capabilities;
-    private final int maxIncomingBlockTransferSize;
-
-    public BlockWiseOutgoingFilter(CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize) {
-        this.capabilities = capabilities;
-        this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
-    }
-
+class RescueFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RescueFilter.class);
 
     @Override
     public CompletableFuture<CoapResponse> apply(CoapRequest request, Service<CoapRequest, CoapResponse> service) {
-
-        try {
-            BlockWiseCallback blockCallback = new BlockWiseCallback(
-                    service,
-                    capabilities.getOrDefault(request.getPeerAddress()),
-                    request,
-                    maxIncomingBlockTransferSize
-            );
-
-            return service.apply(blockCallback.request)
-                    .thenCompose(blockCallback::receive);
-
-        } catch (CoapException e) {
-            return failedFuture(e);
-        }
+        return service.apply(request).exceptionally(this::rescue);
     }
+
+    private CoapResponse rescue(Throwable ex) {
+        if (ex instanceof CompletionException) {
+            return rescue(ex.getCause());
+        }
+        if (ex instanceof CoapCodeException) {
+            return ((CoapCodeException) ex).toResponse();
+        }
+
+        LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
+        return CoapResponse.of(Code.C500_INTERNAL_SERVER_ERROR);
+    }
+
 }

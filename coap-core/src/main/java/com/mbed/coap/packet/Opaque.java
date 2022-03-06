@@ -178,9 +178,27 @@ public final class Opaque {
     }
 
     public Opaque slice(int indexFrom, int len) {
+        int indexTo = indexFrom + len;
+        if (indexTo > data.length) {
+            indexTo = data.length;
+        }
+        if (indexFrom > indexTo) {
+            return Opaque.EMPTY;
+        }
+        if (indexFrom == 0 && indexTo == data.length) {
+            return this;
+        }
         return new Opaque(
-                Arrays.copyOfRange(data, indexFrom, indexFrom + len)
+                Arrays.copyOfRange(data, indexFrom, indexTo)
         );
+    }
+
+    public Opaque fragment(int num, int fragmentLen, int maxNumOfFragments) {
+        return slice(num * fragmentLen, fragmentLen * maxNumOfFragments);
+    }
+
+    public Opaque fragment(int num, int fragmentLen) {
+        return fragment(num, fragmentLen, 1);
     }
 
     public byte[] getBytes() {

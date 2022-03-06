@@ -16,8 +16,12 @@
  */
 package com.mbed.coap.server.internal;
 
+import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.CoapResponse.*;
+import static com.mbed.coap.packet.Opaque.*;
 import static com.mbed.coap.utils.Bytes.*;
-import static com.mbed.coap.utils.FutureHelpers.*;
+import static com.mbed.coap.utils.FutureHelpers.failedFuture;
+import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -26,14 +30,20 @@ import static org.mockito.BDDMockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.packet.SignalingOptions;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,14 +54,16 @@ public class CoapTcpMessagingTest {
     private final CoapTransport coapTransport = mock(CoapTransport.class);
     CoapTcpCSMStorageImpl csmStorage = new CoapTcpCSMStorageImpl();
     CoapTcpMessaging tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage, false, 501);
-    CoapRequestHandler coapRequestHandler = mock(CoapRequestHandler.class);
+    Function<SeparateResponse, Boolean> observationHandler = mock(Function.class);
+    Service<CoapRequest, CoapResponse> requestService = req -> completedFuture(ok("OK"));
 
     @BeforeEach
     public void setUp() throws Exception {
-        reset(coapRequestHandler);
+        reset(observationHandler);
+        given(observationHandler.apply(any())).willReturn(true);
 
-        tcpMessaging.start(coapRequestHandler);
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(CompletableFuture.completedFuture(true));
+        tcpMessaging.start(observationHandler, requestService);
+        given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(true));
     }
 
     @AfterEach
@@ -61,15 +73,23 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void should_receive_response_to_request() throws Exception {
-        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
+        CompletableFuture<CoapResponse> resp = tcpMessaging.send(get(LOCAL_1_5683, "/test").token(2001));
 
         receive(newCoapPacket(LOCAL_1_5683).token(2001).ack(Code.C205_CONTENT));
         assertNotNull(resp.get());
     }
 
     @Test
+    public void should_receive_observation() throws Exception {
+        receive(newCoapPacket(LOCAL_1_5683).token(2001).code(Code.C205_CONTENT).obs(12).payload("21C"));
+
+        verify(observationHandler).apply(ok("21C").observe(12).toSeparate(Opaque.variableUInt(2001), LOCAL_1_5683));
+        verify(coapTransport, never()).sendPacket(any(), any(), any());
+    }
+
+    @Test
     public void should_ignore_non_matching_response() throws Exception {
-        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
+        CompletableFuture<CoapResponse> resp = tcpMessaging.send(get(LOCAL_1_5683, "/test").token(2001));
 
         receive(newCoapPacket(LOCAL_1_5683).token(1002).ack(Code.C205_CONTENT));
         assertFalse(resp.isDone());
@@ -77,19 +97,18 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void should_pass_request_to_request_handler() throws Exception {
-        CoapPacketBuilder req = newCoapPacket(LOCAL_1_5683).token(2002).get().uriPath("/some/request");
+        CoapPacketBuilder req = newCoapPacket(LOCAL_1_5683).mid(123).token(2002).get().uriPath("/some/request");
 
         receive(req);
 
-        verify(coapRequestHandler).handleRequest(eq(req.build()), any());
-        assertNothingSent();
+        assertSent(newCoapPacket(LOCAL_1_5683).mid(123).ack(Code.C205_CONTENT).token(2002).payload("OK"));
     }
 
     @Test
     public void should_fail_to_make_request_when_transport_fails() throws Exception {
         given(coapTransport.sendPacket(any(), any(), any())).willReturn(failedFuture(new IOException()));
 
-        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
+        CompletableFuture<CoapResponse> resp = tcpMessaging.send(get(LOCAL_1_5683, "/test").token(2001));
 
         assertTrue(resp.isCompletedExceptionally());
     }
@@ -111,8 +130,8 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void should_call_exception_when_disconnected() throws Exception {
-        CompletableFuture<CoapPacket> resp1 = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
-        CompletableFuture<CoapPacket> resp2 = makeRequest(newCoapPacket(LOCAL_1_5683).token(2002).con().get().uriPath("/test2"));
+        CompletableFuture<CoapResponse> resp1 = tcpMessaging.send(get(LOCAL_1_5683, "/test").token(2001));
+        CompletableFuture<CoapResponse> resp2 = tcpMessaging.send(get(LOCAL_1_5683, "/test2").token(2002));
 
         tcpMessaging.onDisconnected(LOCAL_1_5683);
 
@@ -124,7 +143,7 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void should_call_exception_when_abort_signal_received() throws Exception {
-        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_1_5683).token(2001).con().get().uriPath("/test"));
+        CompletableFuture<CoapResponse> resp = tcpMessaging.send(get(LOCAL_1_5683, "/test").token(2001));
         reset(coapTransport);
 
         receive(newCoapPacket(LOCAL_1_5683).con(Code.C705_ABORT));
@@ -167,22 +186,19 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void should_send_ping_message() throws Exception {
-        CoapPacket req = new CoapPacket(null, null, LOCAL_1_5683);
-
         // when
-        tcpMessaging.makeRequest(req, TransportContext.EMPTY);
+        tcpMessaging.send(ping(LOCAL_1_5683, TransportContext.EMPTY));
 
         assertSent(new CoapPacket(Code.C702_PING, null, LOCAL_1_5683));
     }
 
     @Test
     public void should_handle_pong() throws Exception {
-        CoapPacket req = new CoapPacket(null, null, LOCAL_1_5683);
-
         // when
-        CompletableFuture<CoapPacket> resp = tcpMessaging.makeRequest(req, TransportContext.EMPTY);
+        CompletableFuture<CoapResponse> resp = tcpMessaging.send(ping(LOCAL_1_5683, TransportContext.EMPTY));
         receive(newCoapPacket(LOCAL_1_5683).code(Code.C703_PONG));
 
+        assertSent(new CoapPacket(Code.C702_PING, null, LOCAL_1_5683));
         assertEquals(Code.C703_PONG, resp.get().getCode());
     }
 
@@ -202,7 +218,7 @@ public class CoapTcpMessagingTest {
     @Test
     public void shouldSendCapabilities_whenConnected_withBlocking() throws CoapException, IOException {
         tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage, true, 10501);
-        tcpMessaging.start(coapRequestHandler);
+        tcpMessaging.start(observationHandler, requestService);
         SignalingOptions signOpt = new SignalingOptions();
         signOpt.setMaxMessageSize(10501);
         signOpt.setBlockWiseTransfer(true);
@@ -216,7 +232,7 @@ public class CoapTcpMessagingTest {
 
     @Test
     public void shouldThrowExceptionWhenTooLargePayload() {
-        CompletableFuture<CoapPacket> resp = makeRequest(newCoapPacket(LOCAL_5683).get().payload(opaqueOfSize(1200)));
+        CompletableFuture<CoapResponse> resp = tcpMessaging.send(put(LOCAL_5683, "/").payload(opaqueOfSize(1200)));
 
         assertTrue(resp.isCompletedExceptionally());
         assertThatThrownBy(resp::get).hasCauseExactlyInstanceOf(CoapException.class);
@@ -234,6 +250,38 @@ public class CoapTcpMessagingTest {
         verify(handler).accept(eq(LOCAL_5683));
     }
 
+    @Test
+    void shouldSendObservation() throws CoapException, IOException {
+        CompletableFuture<Boolean> ack = tcpMessaging.send(ok("21C").observe(12).toSeparate(variableUInt(1003), LOCAL_1_5683));
+
+        assertSent(newCoapPacket(LOCAL_1_5683).token(1003).con(Code.C205_CONTENT).obs(12).payload("21C"));
+        assertTrue(ack.join());
+    }
+
+    @Test
+    void shouldFailToSendObservation_when_transportFails() throws CoapException, IOException {
+        given(coapTransport.sendPacket(any(), any(), any())).willReturn(failedFuture(new IOException()));
+
+        CompletableFuture<Boolean> ack = tcpMessaging.send(ok("21C").observe(12).toSeparate(variableUInt(1003), LOCAL_1_5683));
+
+        assertThatThrownBy(ack::join).hasCauseExactlyInstanceOf(IOException.class);
+    }
+
+    @Test
+    public void shouldFailToSendObservation_when_tooLargePayload() {
+        CompletableFuture<Boolean> resp = tcpMessaging.send(ok(opaqueOfSize(1200)).observe(12).toSeparate(variableUInt(1003), LOCAL_1_5683));
+
+        assertThatThrownBy(resp::get).hasCauseExactlyInstanceOf(CoapException.class);
+    }
+
+    @Test
+    void shouldIgnoreUnexpectedMessage() throws Exception {
+        receive(newCoapPacket(LOCAL_1_5683).con(Code.C205_CONTENT).payload("dupa"));
+
+        verify(coapTransport, never()).sendPacket(any(), any(), any());
+    }
+
+
     //=======================================================================
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {
@@ -250,10 +298,6 @@ public class CoapTcpMessagingTest {
 
     private void assertNothingSent() throws CoapException, IOException {
         verify(coapTransport, never()).sendPacket(any(), any(), any());
-    }
-
-    private CompletableFuture<CoapPacket> makeRequest(CoapPacketBuilder coapPacket) {
-        return tcpMessaging.makeRequest(coapPacket.build(), TransportContext.EMPTY);
     }
 
 }

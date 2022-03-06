@@ -35,13 +35,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class BlockWiseIncomingFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CoapServerBlocks.class.getName());
+public class BlockWiseIncomingFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BlockWiseIncomingFilter.class.getName());
     private final Map<BlockRequestId, BlockWiseIncomingTransaction> blockReqMap = new ConcurrentHashMap<>();
     private final CoapTcpCSMStorage capabilities;
     private final int maxIncomingBlockTransferSize;
 
-    BlockWiseIncomingFilter(CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize) {
+    public BlockWiseIncomingFilter(CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize) {
         this.capabilities = capabilities;
         this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
     }

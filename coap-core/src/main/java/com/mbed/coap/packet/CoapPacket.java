@@ -116,6 +116,15 @@ public class CoapPacket {
         return packet;
     }
 
+    public static CoapPacket from(SeparateResponse resp) {
+        CoapPacket packet = new CoapPacket(resp.getCode(), MessageType.Confirmable, resp.getPeerAddress());
+        packet.setToken(resp.getToken());
+        packet.setHeaderOptions(resp.options().duplicate());
+        packet.setPayload(resp.getPayload());
+
+        return packet;
+    }
+
     public CoapResponse toCoapResponse() {
         return new CoapResponse(code, payload, options);
     }

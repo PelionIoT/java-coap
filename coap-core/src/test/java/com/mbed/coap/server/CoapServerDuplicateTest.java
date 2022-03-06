@@ -16,7 +16,6 @@
  */
 package com.mbed.coap.server;
 
-import static com.mbed.coap.observe.ObservationConsumer.*;
 import static com.mbed.coap.server.CoapServerBuilder.*;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,10 +23,8 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
-import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
-import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.internal.MockCoapTransport;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
@@ -36,7 +33,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -172,34 +168,4 @@ public class CoapServerDuplicateTest {
         assertTrue(duplicated.get() == 1);
     }
 
-    @Test
-    public void testDuplicateNotification() throws IOException, CoapException, InterruptedException {
-        final AtomicBoolean notificationArrived = new AtomicBoolean(false);
-        consumeFrom(server.observationHandler.nextSupplier(Opaque.variableUInt(1234), "/obs"), __ -> {
-                    notificationArrived.set(true);
-                    return true;
-                }
-        );
-
-        CoapPacket notif = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, REMOTE_ADDRESS);
-        notif.setMessageId(12);
-        notif.setToken(Opaque.variableUInt(1234));
-        notif.headers().setObserve(2);
-        notif.setPayload("dupa2");
-
-        serverTransport.receive(notif);
-        CoapPacket resp = serverTransport.sentPackets.poll(10, TimeUnit.SECONDS);
-        assertEquals(MessageType.Acknowledgement, resp.getMessageType());
-        assertTrue(notificationArrived.get());
-        assertTrue(duplicated.get() == 0);
-
-        //repeated request
-        //coapServer.reset();
-        notificationArrived.set(false);
-        serverTransport.receive(notif);
-        resp = serverTransport.sentPackets.poll(10, TimeUnit.SECONDS);
-        assertEquals(MessageType.Acknowledgement, resp.getMessageType());
-        assertFalse(notificationArrived.get(), "received notification from retransmission");
-        assertTrue(duplicated.get() == 1);
-    }
 }

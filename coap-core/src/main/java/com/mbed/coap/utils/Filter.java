@@ -1,5 +1,4 @@
-/**
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+/*
  * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,5 +44,24 @@ public interface Filter<REQ, RES, IN_REQ, IN_RES> extends BiFunction<REQ, Servic
 
     interface UnaryFilter<T> extends Filter<T, T, T, T> {
 
+    }
+
+    static <REQ, RES> SimpleFilter<REQ, RES> identity() {
+        return new SimpleFilter<REQ, RES>() {
+            @Override
+            public CompletableFuture<RES> apply(REQ request, Service<REQ, RES> service) {
+                return service.apply(request);
+            }
+
+            @Override
+            public <REQ2, RES2> Filter<REQ, RES, REQ2, RES2> andThen(Filter<REQ, RES, REQ2, RES2> next) {
+                return next;
+            }
+
+            @Override
+            public Service<REQ, RES> then(Service<REQ, RES> service) {
+                return service;
+            }
+        };
     }
 }

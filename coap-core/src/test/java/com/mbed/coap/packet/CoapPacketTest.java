@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.packet;
 
+import static com.mbed.coap.packet.CoapResponse.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
@@ -388,5 +389,19 @@ public class CoapPacketTest extends CoapPacketTestBase {
         coap.setToken(Opaque.ofBytes(123));
         coap.setPayload(Opaque.of("dupa"));
         assertEquals(CoapRequest.put(addr, "/test").token(123).payload("dupa"), coap.toCoapRequest(TransportContext.EMPTY));
+    }
+
+    @Test
+    void fromSeparateResponse() {
+        SeparateResponse response = ok("<dupa>", MediaTypes.CT_APPLICATION_XML).toSeparate(Opaque.of("100"), LOCAL_1_5683);
+
+        CoapPacket packet = CoapPacket.from(response);
+
+        CoapPacket expected = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, LOCAL_1_5683);
+        expected.setToken(Opaque.of("100"));
+        expected.setPayload("<dupa>");
+        expected.headers().setContentFormat(MediaTypes.CT_APPLICATION_XML);
+
+        assertEquals(expected, packet);
     }
 }

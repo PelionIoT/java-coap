@@ -17,12 +17,14 @@
 package com.mbed.coap.server.internal;
 
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
+import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.MessageType;
+import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.server.CoapRequestId;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.server.MessageIdSupplier;
@@ -31,14 +33,17 @@ import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,12 +110,12 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
     @Override
-    public synchronized void start(CoapRequestHandler coapRequestHandler) throws IOException, IllegalStateException {
+    public synchronized void start(Function<SeparateResponse, Boolean> observationHandler, Service<CoapRequest, CoapResponse> requestService) throws IOException, IllegalStateException {
         if (cache != null) {
             cache.start();
         }
         startTransactionTimeoutWorker();
-        super.start(coapRequestHandler);
+        super.start(observationHandler, requestService);
     }
 
     private void startTransactionTimeoutWorker() {
@@ -187,7 +192,15 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
     @Override
-    public CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext) {
+    public CompletableFuture<CoapResponse> send(CoapRequest req) {
+        return makeRequest(CoapPacket.from(req), req.getTransContext())
+                .thenApply(CoapPacket::toCoapResponse);
+    }
+
+    private CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext) {
+        if (transContext.get(MessageType.NonConfirmable) != null) {
+            packet.setMessageType(MessageType.NonConfirmable);
+        }
         boolean forceAddToQueue = false;
         if ((packet.headers().getBlock1Req() != null && packet.headers().getBlock1Req().getNr() > 0) || (packet.headers().getBlock2Res() != null && packet.headers().getBlock2Res().getNr() > 0)) {
             forceAddToQueue = true;
@@ -196,9 +209,20 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
     @Override
-    public CompletableFuture<CoapResponse> send(CoapRequest req) {
-        return makeRequest(CoapPacket.from(req), req.getTransContext())
-                .thenApply(CoapPacket::toCoapResponse);
+    public CompletableFuture<Boolean> send(final SeparateResponse resp) {
+        CoapPacket packet = CoapPacket.from(resp);
+
+        return makeRequest(packet, resp.getTransContext())
+                .thenApply(ack -> {
+                    switch (ack.getMessageType()) {
+                        case Reset:
+                            return false;
+                        case Acknowledgement:
+                            return true;
+                        default:
+                            throw new CompletionException(new CoapException("Unexpected coap response: " + ack));
+                    }
+                });
     }
 
     /**
@@ -305,15 +329,20 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
     @Override
-    protected boolean handleObservation(CoapPacket packet, TransportContext transportContext) {
-        Integer observe = packet.headers().getObserve();
-        if (observe == null) {
-            return false;
+    protected void handleObservation(CoapPacket obsPacket, TransportContext transportContext) {
+        if (findDuplicate(obsPacket, "CoAP notification repeated")) {
+            return;
         }
-        if (findDuplicate(packet, "CoAP notification repeated")) {
-            return true;
+        SeparateResponse obs = obsPacket.toCoapResponse().toSeparate(obsPacket.getToken(), obsPacket.getRemoteAddress(), transportContext);
+        boolean ack = observationHandler.apply(obs);
+        if (obsPacket.getMustAcknowledge()) {
+            CoapPacket coapAck = new CoapPacket(null, MessageType.Acknowledgement, obsPacket.getRemoteAddress());
+            coapAck.setMessageId(obsPacket.getMessageId());
+            if (!ack) {
+                coapAck.setMessageType(MessageType.Reset);
+            }
+            sendResponse(obsPacket, coapAck, transportContext);
         }
-        return super.handleObservation(packet, transportContext);
     }
 
     @Override
@@ -361,7 +390,22 @@ public class CoapUdpMessaging extends CoapMessaging {
 
     }
 
-    //    @Override
+    @Override
+    protected void handleNotProcessedMessage(CoapPacket packet) {
+        CoapPacket resp = packet.createResponse(null);
+        if (resp != null) {
+            resp.setMessageType(MessageType.Reset);
+            LOGGER.warn("Can not process CoAP message [{}] sent RESET message", packet);
+            sendResponse(packet, resp);
+        } else {
+            if (MessageType.Acknowledgement.equals(packet.getMessageType())) {
+                LOGGER.debug("Discarding extra ACK: {}", packet);
+                return;
+            }
+            LOGGER.warn("Can not process CoAP message [{}]", packet);
+        }
+    }
+
     protected boolean findDuplicate(CoapPacket request, String message) {
         //request
         if (duplicationDetector != null) {

@@ -16,21 +16,22 @@
 package com.mbed.coap.server;
 
 import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.CoapResponse.*;
 import static com.mbed.coap.packet.Opaque.of;
+import static com.mbed.coap.packet.Opaque.*;
 import static com.mbed.coap.utils.FutureHelpers.failedFuture;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapTimeoutException;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.utils.FutureQueue;
+import com.mbed.coap.utils.Service;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ import org.mockito.Mockito;
 
 public class ObservationSenderFilterTest {
 
-    private BiFunction<CoapPacket, TransportContext, CompletableFuture<CoapPacket>> sendNotification = Mockito.mock(BiFunction.class);
+    private Service<SeparateResponse, Boolean> sendNotification = Mockito.mock(Service.class);
     private ObservationSenderFilter obs = new ObservationSenderFilter(sendNotification);
     private FutureQueue<CoapResponse> next = null;
 
@@ -46,9 +47,9 @@ public class ObservationSenderFilterTest {
     public void setUp() throws Exception {
         reset(sendNotification);
 
-        given(sendNotification.apply(any(), any())).willReturn(completedFuture(
-                newCoapPacket().emptyAck(1)
-        ));
+        given(sendNotification.apply(any())).willReturn(
+                completedFuture(true)
+        );
         next = new FutureQueue<>();
     }
 
@@ -77,10 +78,10 @@ public class ObservationSenderFilterTest {
         assertTrue(next.put(null));
 
         // then
-        CoapPacket notif1 = newCoapPacket().con(Code.C205_CONTENT).payload("test2").obs(2).build();
-        verify(sendNotification).apply(eq(notif1), any());
-        CoapPacket notif2 = newCoapPacket().con(Code.C205_CONTENT).payload("test3").obs(3).build();
-        verify(sendNotification).apply(eq(notif2), any());
+        SeparateResponse notif1 = ok("test2").observe(2).toSeparate(EMPTY, null);
+        verify(sendNotification).apply(eq(notif1));
+        SeparateResponse notif2 = ok("test3").observe(3).toSeparate(EMPTY, null);
+        verify(sendNotification).apply(eq(notif2));
         assertNull(next.promise);
     }
 
@@ -88,9 +89,9 @@ public class ObservationSenderFilterTest {
     public void clientTerminatesObservationWithReset() {
         // given
         inServiceResponse(CoapResponse.ok("test").nextSupplier(next));
-        given(sendNotification.apply(any(), any())).willReturn(completedFuture(
-                newCoapPacket().reset().build()
-        ));
+        given(sendNotification.apply(any())).willReturn(
+                completedFuture(false)
+        );
 
 
         // when
@@ -99,8 +100,8 @@ public class ObservationSenderFilterTest {
         // then
         assertFalse(next.put(new CoapResponse(Code.C205_CONTENT, of("test3"), opts -> opts.setObserve(3))));
         // and
-        CoapPacket notif1 = newCoapPacket().con(Code.C205_CONTENT).payload("test2").obs(2).build();
-        verify(sendNotification).apply(eq(notif1), any());
+        SeparateResponse notif1 = ok("test2").observe(2).toSeparate(EMPTY, null);
+        verify(sendNotification).apply(eq(notif1));
         assertNull(next.promise);
     }
 
@@ -108,7 +109,7 @@ public class ObservationSenderFilterTest {
     public void terminateWhenTimeoutException() {
         // given
         inServiceResponse(CoapResponse.ok("test").nextSupplier(next));
-        given(sendNotification.apply(any(), any())).willReturn(failedFuture(new CoapTimeoutException("")));
+        given(sendNotification.apply(any())).willReturn(failedFuture(new CoapTimeoutException("")));
 
 
         // when
@@ -117,8 +118,8 @@ public class ObservationSenderFilterTest {
         // then
         assertFalse(next.put(new CoapResponse(Code.C205_CONTENT, of("test3"), opts -> opts.setObserve(3))));
         // and
-        CoapPacket notif1 = newCoapPacket().con(Code.C205_CONTENT).payload("test2").obs(2).build();
-        verify(sendNotification).apply(eq(notif1), any());
+        SeparateResponse notif1 = ok("test2").observe(2).toSeparate(EMPTY, null);
+        verify(sendNotification).apply(eq(notif1));
         assertNull(next.promise);
     }
 
@@ -133,8 +134,8 @@ public class ObservationSenderFilterTest {
         // then
         assertFalse(next.put(new CoapResponse(Code.C205_CONTENT, of("test3"), opts -> opts.setObserve(3))));
         // and
-        CoapPacket notif1 = newCoapPacket().con(Code.C404_NOT_FOUND).payload("test2").obs(2).build();
-        verify(sendNotification).apply(eq(notif1), any());
+        SeparateResponse notif1 = notFound().payload(Opaque.of("test2")).observe(2).toSeparate(EMPTY, null);
+        verify(sendNotification).apply(eq(notif1));
         assertNull(next.promise);
 
     }

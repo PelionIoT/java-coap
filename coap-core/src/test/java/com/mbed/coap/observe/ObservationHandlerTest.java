@@ -45,9 +45,8 @@ class ObservationHandlerTest {
     @Test
     void missingObservationRelation() {
         assertFalse(obs.hasObservation(of("100")));
-        obs.terminate(of("100"), notFound());
 
-        assertFalse(obs.notify(null, of("100"), ok("OK"), service));
+        assertFalse(obs.notify(ok("OK").observe(2).toSeparate(of("100"), null), service));
     }
 
     @Test
@@ -57,11 +56,25 @@ class ObservationHandlerTest {
         assertTrue(obs.hasObservation(of("100")));
 
         // when
-        obs.terminate(of("100"), notFound());
+        obs.notify(notFound().toSeparate(of("100"), null), null);
 
         // then
         assertFalse(obs.hasObservation(of("100")));
         assertEquals(notFound(), promise.join());
+    }
+
+    @Test
+    void shouldTerminateWhenMissingObsOption() {
+        // given
+        CompletableFuture<CoapResponse> promise = obs.nextSupplier(of("100"), "/obs").get();
+        assertTrue(obs.hasObservation(of("100")));
+
+        // when
+        obs.notify(ok("123").toSeparate(of("100"), null), null);
+
+        // then
+        assertFalse(obs.hasObservation(of("100")));
+        assertEquals(ok("123"), promise.join());
     }
 
     @Test
@@ -73,11 +86,12 @@ class ObservationHandlerTest {
         assertTrue(obs.hasObservation(of("100")));
 
         // when
-        assertTrue(obs.notify(null, of("100"), ok("21C"), service));
+        assertTrue(obs.notify(ok("21C").observe(3).toSeparate(of("100"), null), service));
 
         // then
-        assertEquals(ok("21C"), promise.join());
+        assertEquals(ok("21C").observe(3), promise.join());
     }
+
 
     @Test
     void shouldNotifyAndRetrieveBlocks() {
@@ -88,7 +102,7 @@ class ObservationHandlerTest {
         given(service.apply(get("/obs").block2Res(1, S_16, false))).willReturn(completedFuture(ok("bbb")));
 
         // when
-        assertTrue(obs.notify(null, of("100"), ok("aaaaaaaaaaaaaaaa").block2Res(0, S_16, true), service));
+        assertTrue(obs.notify(ok("aaaaaaaaaaaaaaaa").observe(2).block2Res(0, S_16, true).toSeparate(of("100"), null), service));
 
         // then
         assertEquals(ok("aaaaaaaaaaaaaaaabbb"), promise.join());
@@ -103,7 +117,7 @@ class ObservationHandlerTest {
         given(service.apply(get("/obs").block2Res(1, S_16, false))).willReturn(completedFuture(notFound()));
 
         // when
-        assertTrue(obs.notify(null, of("100"), ok("aaaaaaaaaaaaaaaa").block2Res(0, S_16, true), service));
+        assertTrue(obs.notify(ok("aaaaaaaaaaaaaaaa").observe(2).block2Res(0, S_16, true).toSeparate(of("100"), null), service));
 
         // then
         assertFalse(promise.isDone());
@@ -117,7 +131,7 @@ class ObservationHandlerTest {
         promise.thenRun(supplier::get);
 
         // when
-        assertFalse(obs.notify(null, of("100"), ok("aaa").block2Res(0, S_16, true), service));
+        assertFalse(obs.notify(ok("aaa").observe(2).block2Res(0, S_16, true).toSeparate(of("100"), null), service));
 
         // then
         assertThrows(CancellationException.class, promise::join);
@@ -136,4 +150,8 @@ class ObservationHandlerTest {
         assertTrue(promise.isCancelled());
     }
 
+    @Test
+    void skipWhenNoObservationOption() {
+        assertFalse(obs.notify(ok("bbb").toSeparate(of("100"), null), service));
+    }
 }

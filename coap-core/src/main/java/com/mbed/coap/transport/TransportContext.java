@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.transport;
 
+import com.mbed.coap.packet.MessageType;
 import java.util.function.Supplier;
 
 /**
@@ -25,6 +26,7 @@ import java.util.function.Supplier;
 public interface TransportContext {
 
     TransportContext EMPTY = key -> null;
+    TransportContext NON_CONFIRMABLE = EMPTY.add(MessageType.NonConfirmable, true);
 
     Object get(Object key);
 
@@ -52,8 +54,9 @@ public interface TransportContext {
 
     default <T> T getAndCast(Object key, Class<T> clazz) {
         Object val = get(key);
-        if (val != null && clazz.isInstance(val)) {
-            return ((T) val);
+
+        if (clazz.isInstance(val)) {
+            return clazz.cast(val);
         } else {
             return null;
         }

@@ -29,15 +29,14 @@ import static org.mockito.BDDMockito.reset;
 import static org.mockito.BDDMockito.verify;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.eq;
-import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.server.filter.MaxAllowedPayloadFilter;
 import com.mbed.coap.server.internal.CoapMessaging;
-import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -45,13 +44,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.stubbing.Answer;
-import protocolTests.utils.CoapPacketBuilder;
 
 public class CoapServerTest {
 
     private CoapMessaging msg = mock(CoapMessaging.class);
-    private CompletableFuture<CoapPacket> promise;
     private CompletableFuture<CoapResponse> sendPromise;
     private CoapServer server;
     private final Service<CoapRequest, CoapResponse> route = RouterService.builder()
@@ -70,21 +66,18 @@ public class CoapServerTest {
     @BeforeEach
     public void setUp() throws Exception {
         reset(msg);
-        given(msg.makeRequest(any(), any())).willAnswer((Answer<CompletableFuture<CoapPacket>>) invocation -> {
-            promise = new CompletableFuture<>();
-            return promise;
-        });
-        given(msg.send(any())).willAnswer((Answer<CompletableFuture<CoapResponse>>) __ -> {
+        given(msg.send(any(SeparateResponse.class))).willAnswer(__ -> completedFuture(true));
+        given(msg.send(any(CoapRequest.class))).willAnswer(__ -> {
             sendPromise = new CompletableFuture<>();
             return sendPromise;
         });
 
-        server = new CoapServer(msg, (request, service) -> service.apply(request), route).start();
+        server = new CoapServer(msg, Filter.identity(), route, Filter.identity()).start();
     }
 
     @Test
     public void shouldStartAndStop() throws Exception {
-        verify(msg).start(any());
+        verify(msg).start(any(), any());
         assertTrue(server.isRunning());
 
         server.stop();
@@ -94,7 +87,7 @@ public class CoapServerTest {
 
     @Test
     public void shouldFailWhenAttemptToStopWhenNotRunning() throws Exception {
-        final CoapServer nonStartedServer = new CoapServer(msg, (request, service) -> service.apply(request), RouterService.NOT_FOUND_SERVICE);
+        final CoapServer nonStartedServer = new CoapServer(msg, Filter.identity(), RouterService.NOT_FOUND_SERVICE, Filter.identity());
 
         assertThatThrownBy(nonStartedServer::stop).isInstanceOf(IllegalStateException.class);
     }
@@ -115,61 +108,6 @@ public class CoapServerTest {
     }
 
     @Test
-    public void shouldResponseWith404_to_unknownResource() throws Exception {
-        server.coapRequestHandler.handleRequest(
-                newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/non-existing-resource").build(), TransportContext.EMPTY
-        );
-
-        assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C404_NOT_FOUND));
-
-    }
-
-    @Test
-    public void shouldResponse_to_resource_that_matches_pattern() throws Exception {
-        server.coapRequestHandler.handleRequest(
-                newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/some-1234").build(), TransportContext.EMPTY
-        );
-
-        assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C205_CONTENT).payload("OK"));
-    }
-
-    @Test
-    public void sendError_when_exceptionWhileHandlingRequest() throws Exception {
-        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err").build(), TransportContext.EMPTY);
-
-        assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C500_INTERNAL_SERVER_ERROR));
-    }
-
-    @Test
-    public void send413_when_RequestEntityTooLarge_whileHandlingRequest() {
-        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err2").payload("way too big, way too big, way too big, way too big, way too big, way too big, way too big, way too big, way too big").build(), TransportContext.EMPTY);
-
-        assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).size1(100).ack(Code.C413_REQUEST_ENTITY_TOO_LARGE).payload("too big"));
-    }
-
-    @Test()
-    public void shouldSendNotification() {
-        CoapPacket notif = newCoapPacket(LOCAL_5683).obs(12).token(11).ack(Code.C205_CONTENT).build();
-        server.sendNotification(notif, TransportContext.EMPTY);
-
-        verify(msg).makeRequest(eq(notif), any());
-    }
-
-    @Test()
-    public void failToSendNotificationWithout_missingHeaders() {
-
-        //observation is missing
-        assertThatThrownBy(() ->
-                server.sendNotification(newCoapPacket(LOCAL_5683).token(11).ack(Code.C205_CONTENT).build(), TransportContext.EMPTY)
-        ).isInstanceOf(IllegalArgumentException.class);
-
-        //token is missing
-        assertThatThrownBy(() ->
-                server.sendNotification(newCoapPacket(LOCAL_5683).obs(2).ack(Code.C205_CONTENT).build(), TransportContext.EMPTY)
-        ).isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
     public void should_pass_disconnectionHandler() {
         Consumer<InetSocketAddress> disconnectConsumer = inetSocketAddress -> {
         };
@@ -181,13 +119,4 @@ public class CoapServerTest {
         verify(msg).setConnectHandler(eq(disconnectConsumer));
     }
 
-    //---------------
-
-    private void assertSendResponse(CoapPacketBuilder resp) {
-        assertSendResponse(resp.build());
-    }
-
-    private void assertSendResponse(CoapPacket resp) {
-        verify(msg).sendResponse(any(), eq(resp), any());
-    }
 }

@@ -24,7 +24,6 @@ import static com.mbed.coap.packet.Code.*;
 import static com.mbed.coap.utils.Bytes.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapException;
@@ -36,7 +35,6 @@ import com.mbed.coap.utils.Service;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import protocolTests.utils.CoapPacketBuilder;
 
 public class BlockWiseCallbackTest {
 
@@ -333,10 +331,6 @@ public class BlockWiseCallbackTest {
                 new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(2000, false),
                         put("/9").payload(opaqueOfSize(2010)), 10_000)
         );
-    }
-
-    private CoapPacketBuilder coap() {
-        return newCoapPacket(LOCAL_5683);
     }
 
     private void assertSent(CoapRequest expected) {

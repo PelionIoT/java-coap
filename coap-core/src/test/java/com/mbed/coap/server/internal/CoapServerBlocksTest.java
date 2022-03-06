@@ -30,6 +30,7 @@ import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapRequestId;
+import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.server.MessageIdSupplier;
 import com.mbed.coap.server.PutOnlyMap;
@@ -53,7 +54,7 @@ public class CoapServerBlocksTest {
     private final CoapTransport coapTransport = mock(CoapTransport.class);
     private int mid = 100;
     private final MessageIdSupplier midSupplier = () -> mid++;
-    private CoapServerBlocks server;
+    private CoapServer server;
     private CoapUdpMessaging protoServer;
     private ScheduledExecutorService scheduledExecutor = mock(ScheduledExecutorService.class);
     private CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
@@ -74,7 +75,7 @@ public class CoapServerBlocksTest {
     @BeforeEach
     public void setUp() {
         protoServer = new CoapUdpMessaging(coapTransport);
-        server = new CoapServerBlocks(protoServer, capabilities, 10000000, route);
+        server = CoapServer.create(protoServer, capabilities, 10000000, route);
         given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(null));
     }
 
@@ -120,7 +121,7 @@ public class CoapServerBlocksTest {
     public void block1_request_shouldFailIfTooBigPayload() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(5000, true));
         protoServerInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
-        server = new CoapServerBlocks(protoServer, capabilities, 10000, route);
+        server = CoapServer.create(protoServer, capabilities, 10000, route);
         server.start();
 
         blockResource = alwaysFailService;
