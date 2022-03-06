@@ -17,12 +17,10 @@
 package protocolTests;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.BlockSize;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.Opaque;
@@ -215,7 +213,4 @@ public class ObservationWithBlockTest {
         assertTrue(observationListener.isEmpty());
     }
 
-    public static CoapPacket hasPayload(String expectedPayload) {
-        return argThat(packet -> expectedPayload.equals(packet.getPayloadString()));
-    }
 }

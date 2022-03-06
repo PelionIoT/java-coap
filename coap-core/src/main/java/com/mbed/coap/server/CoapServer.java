@@ -61,10 +61,6 @@ public class CoapServer {
         return CoapServerBuilder.newBuilder();
     }
 
-    public static CoapServerBuilder.CoapServerBuilderForTcp builderForTcp() {
-        return CoapServerBuilder.newBuilderForTcp();
-    }
-
     /**
      * Starts CoAP server
      *

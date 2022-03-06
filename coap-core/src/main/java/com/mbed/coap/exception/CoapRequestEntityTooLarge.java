@@ -37,14 +37,6 @@ public class CoapRequestEntityTooLarge extends CoapCodeException {
         this.blockOptionHint = blockOptionHint;
     }
 
-    public int getMaxSize() {
-        return maxSize;
-    }
-
-    public BlockOption getBlockOptionHint() {
-        return blockOptionHint;
-    }
-
     @Override
     public CoapResponse toResponse() {
         CoapResponse resp = super.toResponse();

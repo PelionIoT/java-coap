@@ -236,13 +236,7 @@ public class ObservationTest {
 
         public CoapResponse take() throws InterruptedException {
             System.out.println("TAKE");
-            return queue.poll(5, TimeUnit.SECONDS); // avoid test blocking
-            //            return queue.take();
+            return queue.poll(5, TimeUnit.SECONDS);
         }
-
-        public CoapResponse take(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            return queue.poll(timeout, timeUnit);
-        }
-
     }
 }

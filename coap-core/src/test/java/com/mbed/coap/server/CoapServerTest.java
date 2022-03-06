@@ -185,9 +185,4 @@ public class CoapServerTest {
     private void assertSendResponse(CoapPacket resp) {
         verify(msg).sendResponse(any(), eq(resp), any());
     }
-
-    private CompletableFuture<CoapPacket> verifyMakeRequest_andThen() {
-        verify(msg).makeRequest(any(), any());
-        return promise;
-    }
 }
