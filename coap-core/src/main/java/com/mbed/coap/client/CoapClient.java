@@ -81,7 +81,7 @@ public class CoapClient implements Closeable {
 
 
     public CompletableFuture<CoapResponse> ping() throws CoapException {
-        return clientService.apply(CoapRequest.ping(destination, TransportContext.NULL));
+        return clientService.apply(CoapRequest.ping(destination, TransportContext.EMPTY));
     }
 
     /**

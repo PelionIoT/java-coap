@@ -288,11 +288,11 @@ public class CoapServerBlocksTest {
 
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {
-        protoServer.handle(coapPacketBuilder.build(), TransportContext.NULL);
+        protoServer.handle(coapPacketBuilder.build(), TransportContext.EMPTY);
     }
 
     private void receive(CoapPacket coapPacket) {
-        protoServer.handle(coapPacket, TransportContext.NULL);
+        protoServer.handle(coapPacket, TransportContext.EMPTY);
     }
 
     private void assertSent(CoapPacketBuilder coapPacketBuilder) throws CoapException, IOException {

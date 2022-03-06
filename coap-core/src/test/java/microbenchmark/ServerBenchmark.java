@@ -120,7 +120,7 @@ public class ServerBenchmark {
 
         public synchronized void receive(ByteBuffer data) throws InterruptedException {
             try {
-                udpReceiver.handle(CoapPacket.read(addr, data.array(), data.position()), TransportContext.NULL);
+                udpReceiver.handle(CoapPacket.read(addr, data.array(), data.position()), TransportContext.EMPTY);
             } catch (CoapException e) {
                 throw new RuntimeException(e);
             }

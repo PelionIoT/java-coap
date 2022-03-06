@@ -55,7 +55,7 @@ public final class CoapRequest {
         HeaderOptions options = new HeaderOptions();
         options.setUriPath(uriPath);
 
-        return new CoapRequest(method, Opaque.EMPTY, options, Opaque.EMPTY, peerAddress, TransportContext.NULL);
+        return new CoapRequest(method, Opaque.EMPTY, options, Opaque.EMPTY, peerAddress, TransportContext.EMPTY);
     }
 
     public static CoapRequest get(InetSocketAddress peerAddress, String uriPath) {
@@ -95,7 +95,7 @@ public final class CoapRequest {
     }
 
     public static CoapRequest observe(InetSocketAddress peerAddress, String uriPath) {
-        CoapRequest obsRequest = new CoapRequest(Method.GET, Opaque.EMPTY, new HeaderOptions(), Opaque.EMPTY, peerAddress, TransportContext.NULL);
+        CoapRequest obsRequest = new CoapRequest(Method.GET, Opaque.EMPTY, new HeaderOptions(), Opaque.EMPTY, peerAddress, TransportContext.EMPTY);
         obsRequest.options().setObserve(0);
         obsRequest.options().setUriPath(uriPath);
 

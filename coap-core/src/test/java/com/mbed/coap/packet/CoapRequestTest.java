@@ -42,7 +42,7 @@ class CoapRequestTest {
                 .query("b", "2")
                 .token(45463L);
 
-        CoapRequest expected = new CoapRequest(Method.GET, Opaque.ofBytes(0xB1, 0x97), new HeaderOptions(), Opaque.of("perse"), destination, TransportContext.NULL);
+        CoapRequest expected = new CoapRequest(Method.GET, Opaque.ofBytes(0xB1, 0x97), new HeaderOptions(), Opaque.of("perse"), destination, TransportContext.EMPTY);
         expected.options().setUriPath("/0/1/2");
         expected.options().setAccept((short) 1);
         expected.options().setEtag(Opaque.ofBytes(10, 8, 6));
@@ -76,13 +76,13 @@ class CoapRequestTest {
 
     @Test
     void shouldCreatePing() {
-        CoapRequest ping = ping(destination, TransportContext.NULL);
+        CoapRequest ping = ping(destination, TransportContext.EMPTY);
 
         assertTrue(ping.isPing());
         assertThrows(NullPointerException.class, () -> ping.payload("a").isPing());
         assertThrows(NullPointerException.class, () -> ping.token(1).isPing());
 
-        assertFalse(new CoapRequest(Method.GET, Opaque.EMPTY, new HeaderOptions(), Opaque.EMPTY, destination, TransportContext.NULL).isPing());
+        assertFalse(new CoapRequest(Method.GET, Opaque.EMPTY, new HeaderOptions(), Opaque.EMPTY, destination, TransportContext.EMPTY).isPing());
     }
 
     @Test
@@ -91,7 +91,7 @@ class CoapRequestTest {
         assertEquals("CoapRequest[POST URI:/test, pl(4):64757061]", CoapRequest.post("/test").payload("dupa").toString());
         assertEquals("CoapRequest[DELETE URI:/test,Token:03ff]", CoapRequest.delete("/test").token(1023).toString());
         assertEquals("CoapRequest[GET URI:/test]", CoapRequest.get("/test").toString());
-        assertEquals("CoapRequest[PING]", CoapRequest.ping(destination, TransportContext.NULL).toString());
+        assertEquals("CoapRequest[PING]", CoapRequest.ping(destination, TransportContext.EMPTY).toString());
     }
 
     @Test

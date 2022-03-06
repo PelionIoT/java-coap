@@ -24,7 +24,7 @@ public class TransportContextTest {
 
     @Test
     public void test() {
-        TransportContext tc = TransportContext.NULL.add("1", () -> "1");
+        TransportContext tc = TransportContext.EMPTY.add("1", () -> "1");
 
         assertEquals(tc.get("1"), "1");
         assertNull(tc.get("2"));
@@ -37,7 +37,7 @@ public class TransportContextTest {
 
     @Test
     public void testNested() {
-        TransportContext tcFirst = TransportContext.NULL.add("1", "1");
+        TransportContext tcFirst = TransportContext.EMPTY.add("1", "1");
         TransportContext tc = tcFirst.add("2", () -> "2");
 
         assertEquals(tc.get("1"), "1");

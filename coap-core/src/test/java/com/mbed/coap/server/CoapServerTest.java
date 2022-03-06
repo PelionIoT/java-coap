@@ -117,7 +117,7 @@ public class CoapServerTest {
     @Test
     public void shouldResponseWith404_to_unknownResource() throws Exception {
         server.coapRequestHandler.handleRequest(
-                newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/non-existing-resource").build(), TransportContext.NULL
+                newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/non-existing-resource").build(), TransportContext.EMPTY
         );
 
         assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C404_NOT_FOUND));
@@ -127,7 +127,7 @@ public class CoapServerTest {
     @Test
     public void shouldResponse_to_resource_that_matches_pattern() throws Exception {
         server.coapRequestHandler.handleRequest(
-                newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/some-1234").build(), TransportContext.NULL
+                newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/some-1234").build(), TransportContext.EMPTY
         );
 
         assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C205_CONTENT).payload("OK"));
@@ -135,14 +135,14 @@ public class CoapServerTest {
 
     @Test
     public void sendError_when_exceptionWhileHandlingRequest() throws Exception {
-        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err").build(), TransportContext.NULL);
+        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err").build(), TransportContext.EMPTY);
 
         assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C500_INTERNAL_SERVER_ERROR));
     }
 
     @Test
     public void send413_when_RequestEntityTooLarge_whileHandlingRequest() {
-        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err2").payload("way too big, way too big, way too big, way too big, way too big, way too big, way too big, way too big, way too big").build(), TransportContext.NULL);
+        server.coapRequestHandler.handleRequest(newCoapPacket(LOCAL_1_5683).mid(1).con().post().uriPath("/err2").payload("way too big, way too big, way too big, way too big, way too big, way too big, way too big, way too big, way too big").build(), TransportContext.EMPTY);
 
         assertSendResponse(newCoapPacket(LOCAL_1_5683).mid(1).size1(100).ack(Code.C413_REQUEST_ENTITY_TOO_LARGE).payload("too big"));
     }
@@ -150,7 +150,7 @@ public class CoapServerTest {
     @Test()
     public void shouldSendNotification() {
         CoapPacket notif = newCoapPacket(LOCAL_5683).obs(12).token(11).ack(Code.C205_CONTENT).build();
-        server.sendNotification(notif, TransportContext.NULL);
+        server.sendNotification(notif, TransportContext.EMPTY);
 
         verify(msg).makeRequest(eq(notif), any());
     }
@@ -160,12 +160,12 @@ public class CoapServerTest {
 
         //observation is missing
         assertThatThrownBy(() ->
-                server.sendNotification(newCoapPacket(LOCAL_5683).token(11).ack(Code.C205_CONTENT).build(), TransportContext.NULL)
+                server.sendNotification(newCoapPacket(LOCAL_5683).token(11).ack(Code.C205_CONTENT).build(), TransportContext.EMPTY)
         ).isInstanceOf(IllegalArgumentException.class);
 
         //token is missing
         assertThatThrownBy(() ->
-                server.sendNotification(newCoapPacket(LOCAL_5683).obs(2).ack(Code.C205_CONTENT).build(), TransportContext.NULL)
+                server.sendNotification(newCoapPacket(LOCAL_5683).obs(2).ack(Code.C205_CONTENT).build(), TransportContext.EMPTY)
         ).isInstanceOf(IllegalArgumentException.class);
     }
 

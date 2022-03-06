@@ -152,7 +152,7 @@ public abstract class ServerBenchmarkBase {
 
             executor.execute(() -> {
                 try {
-                    udpReceiver.handle(CoapPacket.read(adr, packetData), TransportContext.NULL);
+                    udpReceiver.handle(CoapPacket.read(adr, packetData), TransportContext.EMPTY);
                 } catch (CoapException e) {
                     throw new RuntimeException(e);
                 }

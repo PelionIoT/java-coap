@@ -63,7 +63,7 @@ public class CoapClientTest {
 
     @Test
     public void pingRequest() throws Exception {
-        given(clientService.apply(ping(LOCAL_5683, TransportContext.NULL)))
+        given(clientService.apply(ping(LOCAL_5683, TransportContext.EMPTY)))
                 .willReturn(completedFuture(CoapResponse.of(null)));
 
         // when

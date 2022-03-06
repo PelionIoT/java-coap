@@ -170,7 +170,7 @@ public class CoapTcpMessagingTest {
         CoapPacket req = new CoapPacket(null, null, LOCAL_1_5683);
 
         // when
-        tcpMessaging.makeRequest(req, TransportContext.NULL);
+        tcpMessaging.makeRequest(req, TransportContext.EMPTY);
 
         assertSent(new CoapPacket(Code.C702_PING, null, LOCAL_1_5683));
     }
@@ -180,7 +180,7 @@ public class CoapTcpMessagingTest {
         CoapPacket req = new CoapPacket(null, null, LOCAL_1_5683);
 
         // when
-        CompletableFuture<CoapPacket> resp = tcpMessaging.makeRequest(req, TransportContext.NULL);
+        CompletableFuture<CoapPacket> resp = tcpMessaging.makeRequest(req, TransportContext.EMPTY);
         receive(newCoapPacket(LOCAL_1_5683).code(Code.C703_PONG));
 
         assertEquals(Code.C703_PONG, resp.get().getCode());
@@ -237,7 +237,7 @@ public class CoapTcpMessagingTest {
     //=======================================================================
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {
-        tcpMessaging.handle(coapPacketBuilder.build(), TransportContext.NULL);
+        tcpMessaging.handle(coapPacketBuilder.build(), TransportContext.EMPTY);
     }
 
     private void assertSent(CoapPacketBuilder coapPacketBuilder) throws CoapException, IOException {
@@ -253,7 +253,7 @@ public class CoapTcpMessagingTest {
     }
 
     private CompletableFuture<CoapPacket> makeRequest(CoapPacketBuilder coapPacket) {
-        return tcpMessaging.makeRequest(coapPacket.build(), TransportContext.NULL);
+        return tcpMessaging.makeRequest(coapPacket.build(), TransportContext.EMPTY);
     }
 
 }

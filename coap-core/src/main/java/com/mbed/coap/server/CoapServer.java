@@ -214,7 +214,7 @@ public class CoapServer {
 
 
     private void sendResponse(CoapPacket request, CoapPacket response) {
-        coapMessaging.sendResponse(request, response, TransportContext.NULL);
+        coapMessaging.sendResponse(request, response, TransportContext.EMPTY);
     }
 
 

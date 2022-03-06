@@ -368,7 +368,7 @@ public class CoapUdpMessaging extends CoapMessaging {
             CoapPacket duplResp = duplicationDetector.isMessageRepeated(request);
             if (duplResp != null) {
                 if (duplResp != DuplicationDetector.EMPTY_COAP_PACKET) {
-                    sendPacket(duplResp, request.getRemoteAddress(), TransportContext.NULL);
+                    sendPacket(duplResp, request.getRemoteAddress(), TransportContext.EMPTY);
                     LOGGER.debug("{}, resending response [{}]", message, request);
                 } else {
                     LOGGER.debug("{}, no response available [{}]", message, request);

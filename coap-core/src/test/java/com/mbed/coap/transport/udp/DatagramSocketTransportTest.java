@@ -56,7 +56,7 @@ public class DatagramSocketTransportTest {
         DatagramSocketTransport trans = createDatagramSocketTransport();
         try {
             try {
-                trans.sendPacket0(COAP_PACKET, new InetSocketAddress(5683), TransportContext.NULL);
+                trans.sendPacket0(COAP_PACKET, new InetSocketAddress(5683), TransportContext.EMPTY);
                 fail();
             } catch (Exception e) {
                 assertTrue(e instanceof IllegalStateException);

@@ -150,7 +150,7 @@ public abstract class CoapMessaging implements CoapReceiver {
     }
 
     protected void sendResponse(CoapPacket request, CoapPacket response) {
-        sendResponse(request, response, TransportContext.NULL);
+        sendResponse(request, response, TransportContext.EMPTY);
     }
 
 

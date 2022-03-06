@@ -81,7 +81,7 @@ public class CoapTcpMessaging extends CoapMessaging {
         } else if (packet.getCode() == Code.C702_PING) {
             CoapPacket pongResp = new CoapPacket(Code.C703_PONG, MessageType.Acknowledgement, packet.getRemoteAddress());
             pongResp.setToken(packet.getToken());
-            sendPacket(pongResp, packet.getRemoteAddress(), TransportContext.NULL);
+            sendPacket(pongResp, packet.getRemoteAddress(), TransportContext.EMPTY);
         } else if (packet.getCode() == Code.C703_PONG) {
             //handle this as reply
             return false;
@@ -165,7 +165,7 @@ public class CoapTcpMessaging extends CoapMessaging {
                 SignalingOptions.capabilities(ownCapability.getMaxMessageSizeInt(), ownCapability.isBlockTransferEnabled())
         );
         LOGGER.info("[" + remoteAddress + "] CoAP sent [" + packet.toString(false, false, false, true) + "]");
-        coapTransporter.sendPacket(packet, remoteAddress, TransportContext.NULL);
+        coapTransporter.sendPacket(packet, remoteAddress, TransportContext.EMPTY);
 
         super.onConnected(remoteAddress);
     }

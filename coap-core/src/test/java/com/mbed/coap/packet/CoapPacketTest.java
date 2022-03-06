@@ -383,10 +383,10 @@ public class CoapPacketTest extends CoapPacketTestBase {
         InetSocketAddress addr = new InetSocketAddress("localhost", 5683);
 
         CoapPacket coap = new CoapPacket(Method.PUT, MessageType.Confirmable, "/test", addr);
-        assertEquals(CoapRequest.put(addr, "/test"), coap.toCoapRequest(TransportContext.NULL));
+        assertEquals(CoapRequest.put(addr, "/test"), coap.toCoapRequest(TransportContext.EMPTY));
 
         coap.setToken(Opaque.ofBytes(123));
         coap.setPayload(Opaque.of("dupa"));
-        assertEquals(CoapRequest.put(addr, "/test").token(123).payload("dupa"), coap.toCoapRequest(TransportContext.NULL));
+        assertEquals(CoapRequest.put(addr, "/test").token(123).payload("dupa"), coap.toCoapRequest(TransportContext.EMPTY));
     }
 }
