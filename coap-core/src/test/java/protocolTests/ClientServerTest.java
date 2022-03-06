@@ -83,7 +83,6 @@ public class ClientServerTest {
     @BeforeEach
     public void setUp() throws IOException {
         server = CoapServer.builder().transport(0).route(route).build();
-        server.useCriticalOptionTest(false);
         server.start();
         SERVER_PORT = server.getLocalSocketAddress().getPort();
         serverAddress = new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT);
@@ -119,7 +118,6 @@ public class ClientServerTest {
 
     @Test
     public void simpleRequestWithCriticalCustomHeader() throws Exception {
-        server.useCriticalOptionTest(true);
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
@@ -132,13 +130,12 @@ public class ClientServerTest {
     }
 
     @Test
-    public void simpleRequestWithCriticalCustomHeader2() throws Exception {
-        server.useCriticalOptionTest(false);
+    public void simpleRequestWithNonCriticalCustomHeader() throws Exception {
         CoapServer cnn = CoapServer.builder().transport(0).build();
         cnn.start();
 
         CoapRequest request = get(serverAddress, "/test/1")
-                .options(o -> o.put(71, Opaque.ofBytes(1, 2, 3)));
+                .options(o -> o.put(72, Opaque.ofBytes(1, 2, 3)));
 
         CompletableFuture<CoapResponse> callback = cnn.clientService().apply(request);
         assertEquals("Dziala", callback.get().getPayloadString());

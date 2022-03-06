@@ -19,7 +19,6 @@ package com.mbed.coap.server;
 import static com.mbed.coap.server.internal.CoapServerUtils.*;
 import static java.util.Objects.*;
 import com.mbed.coap.exception.CoapCodeException;
-import com.mbed.coap.exception.CoapUnknownOptionException;
 import com.mbed.coap.observe.ObservationHandler;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
@@ -43,7 +42,6 @@ public class CoapServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServer.class);
     private boolean isRunning;
     private final Service<CoapRequest, CoapResponse> requestHandlingService;
-    private boolean enabledCriticalOptTest = true;
     final ObservationHandler observationHandler = new ObservationHandler();
     final CoapRequestHandler coapRequestHandler = new CoapRequestHandlerImpl();
     private final CoapMessaging coapMessaging;
@@ -51,7 +49,8 @@ public class CoapServer {
 
     public CoapServer(CoapMessaging coapMessaging, Filter.SimpleFilter<CoapRequest, CoapResponse> sendFilter, Service<CoapRequest, CoapResponse> routeService) {
         this.coapMessaging = coapMessaging;
-        this.requestHandlingService = new ObservationSenderFilter(this::sendNotification)
+        this.requestHandlingService = new CriticalOptionVerifier()
+                .andThen(new ObservationSenderFilter(this::sendNotification))
                 .then(requireNonNull(routeService));
 
         this.clientService = new ObserveRequestFilter(observationHandler)
@@ -171,17 +170,6 @@ public class CoapServer {
 
         @Override
         public void handleRequest(CoapPacket request, TransportContext transportContext) {
-            if (enabledCriticalOptTest) {
-                try {
-                    request.headers().criticalOptTest();
-                } catch (CoapUnknownOptionException ex) {
-                    CoapPacket errorResponse = request.createResponse(ex.getCode());
-                    errorResponse.setPayload(ex.getMessage());
-                    sendResponse(request, errorResponse);
-                    return;
-                }
-            }
-
             requestHandlingService.apply(request.toCoapRequest(transportContext))
                     .exceptionally(this::rescue)
                     .thenAccept(resp ->
@@ -201,17 +189,6 @@ public class CoapServer {
             return CoapResponse.of(Code.C500_INTERNAL_SERVER_ERROR);
         }
     }
-
-    /**
-     * Enable or disable test for critical options. If enabled and incoming coap packet contains non-recognized critical
-     * option, server will send error message (4.02 bad option)
-     *
-     * @param enable if true then critical option verification is enabled
-     */
-    public void useCriticalOptionTest(boolean enable) {
-        this.enabledCriticalOptTest = enable;
-    }
-
 
     private void sendResponse(CoapPacket request, CoapPacket response) {
         coapMessaging.sendResponse(request, response, TransportContext.EMPTY);

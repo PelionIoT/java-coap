@@ -18,7 +18,6 @@ package com.mbed.coap.packet;
 
 import static com.mbed.coap.packet.PacketUtils.*;
 import com.mbed.coap.exception.CoapMessageFormatException;
-import com.mbed.coap.exception.CoapUnknownOptionException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -139,21 +138,16 @@ public class BasicHeaderOptions {
         return unrecognizedOptions.get(optNumber).getFirstValue();
     }
 
-    /**
-     * Tests for unknown critical options. If any of critical option is unknown
-     * then throws CoapUnknownOptionException
-     *
-     * @throws CoapUnknownOptionException when critical option is unknown
-     */
-    public void criticalOptTest() throws CoapUnknownOptionException {
+    public boolean containsUnrecognisedCriticalOption() {
         if (unrecognizedOptions == null) {
-            return;
+            return false;
         }
         for (int tp : unrecognizedOptions.keySet()) {
             if (isCritical(tp)) {
-                throw new CoapUnknownOptionException(tp);
+                return true;
             }
         }
+        return false;
     }
 
     public static boolean isCritical(int optionNumber) {

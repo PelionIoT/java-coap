@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapMessageFormatException;
-import com.mbed.coap.exception.CoapUnknownOptionException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -393,13 +392,13 @@ public class HeaderOptionTest {
     @Test
     public void criticalOptTest() throws Exception {
         BasicHeaderOptions h = new BasicHeaderOptions();
-        h.criticalOptTest();
+        assertFalse(h.containsUnrecognisedCriticalOption());
 
         h.put(1000, Opaque.of("foo"));
-        h.criticalOptTest();
+        assertFalse(h.containsUnrecognisedCriticalOption());
 
         h.put(1001, Opaque.of("foo"));
-        assertThatThrownBy(h::criticalOptTest).isExactlyInstanceOf(CoapUnknownOptionException.class);
+        assertTrue(h.containsUnrecognisedCriticalOption());
     }
 
     @Test
