@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +18,10 @@ package com.mbed.coap.cli;
 
 import com.mbed.coap.cli.providers.JdkProvider;
 import com.mbed.coap.cli.providers.OpensslProvider;
+import com.mbed.coap.cli.providers.Pair;
 import com.mbed.coap.cli.providers.PlainTextProvider;
 import com.mbed.coap.cli.providers.StandardIoProvider;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.FileInputStream;
@@ -36,10 +39,10 @@ public class CoapSchemes {
         return "secret".toCharArray();
     }
 
-    public final CoapServerBuilder create(TransportProvider transportProvider, String keystoreFile, URI uri) {
+    public final CoapServerBuilder create(TransportProvider transportProvider, String keystoreFile, Pair<String, Opaque> psk, URI uri) {
 
         try {
-            return create(transportProvider, loadKeystore(keystoreFile), uri);
+            return create(transportProvider, loadKeystore(keystoreFile), psk, uri);
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException(e);
         }
@@ -49,13 +52,13 @@ public class CoapSchemes {
         return "coap, coap+tcp, coaps, coaps+tcp, coaps+tcp-d2 (draft 2)";
     }
 
-    protected CoapServerBuilder create(TransportProvider transportProvider, KeyStore ks, URI uri) throws GeneralSecurityException, IOException {
+    protected CoapServerBuilder create(TransportProvider transportProvider, KeyStore ks, Pair<String, Opaque> psk, URI uri) throws GeneralSecurityException, IOException {
         InetSocketAddress destAdr = addressFromUri(uri);
 
         switch (uri.getScheme()) {
             case "coap":
                 return CoapServerBuilder.newBuilder()
-                        .transport(new PlainTextProvider().createUDP(CoapSerializer.UDP, destAdr, ks));
+                        .transport(new PlainTextProvider().createUDP(CoapSerializer.UDP, destAdr, ks, psk));
 
             case "coap+tcp":
                 return CoapServerBuilder.newBuilderForTcp()
@@ -63,7 +66,7 @@ public class CoapSchemes {
 
             case "coaps":
                 return CoapServerBuilder.newBuilder()
-                        .transport(transportProvider.createUDP(CoapSerializer.UDP, destAdr, ks));
+                        .transport(transportProvider.createUDP(CoapSerializer.UDP, destAdr, ks, psk));
 
             case "coaps+tcp":
                 return CoapServerBuilder.newBuilderForTcp()

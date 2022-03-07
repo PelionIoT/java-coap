@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +18,7 @@ package com.mbed.coap.cli.providers;
 
 import static com.mbed.coap.cli.CoapSchemes.*;
 import com.mbed.coap.cli.TransportProvider;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.stdio.OpensslProcessTransport;
@@ -44,8 +46,18 @@ public class OpensslProvider extends TransportProvider {
     }
 
     @Override
-    public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException {
-        return create(coapSerializer, destAdr, ks, true);
+    public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException {
+        if (psk == null) {
+            return create(coapSerializer, destAdr, ks, true);
+        } else {
+            return create(coapSerializer, destAdr, psk, true);
+        }
+    }
+
+    private CoapTransport create(CoapSerializer coapSerializer, InetSocketAddress destAdr, Pair<String, Opaque> psk, Boolean isDtls) throws GeneralSecurityException, IOException {
+        ProcessBuilder process = OpensslProcessTransport.createProcess(psk, destAdr, isDtls, cipherSuite);
+
+        return new OpensslProcessTransport(process.start(), destAdr, coapSerializer);
     }
 
     private CoapTransport create(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Boolean isDtls) throws GeneralSecurityException, IOException {

@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +16,8 @@
  */
 package com.mbed.coap.transport.stdio;
 
+import com.mbed.coap.cli.providers.Pair;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.File;
 import java.io.IOException;
@@ -40,20 +43,38 @@ public class OpensslProcessTransport extends StreamBlockingTransport {
     }
 
     public static ProcessBuilder createProcess(String certPemFile, InetSocketAddress destination, boolean isDtls, String cipherSuite) throws IOException {
-        String opensslBinPath = Optional.ofNullable(System.getenv("OPENSSL_BIN_PATH")).map(p -> p + "/").orElse("");
-
-        InetSocketAddress adr = InetSocketAddress.createUnresolved(destination.getHostName(), destination.getPort());
         String sessIn = new File("openssl-session.tmp").exists() ? "-sess_in openssl-session.tmp " : "";
         String dtls = isDtls ? "-dtls " : "";
 
-        String cmd = String.format("%sopenssl s_client -crlf -ign_eof -connect %s -cert %s -cipher %s %s -sess_out openssl-session.tmp %s -quiet",
-                opensslBinPath, adr, certPemFile, cipherSuite, sessIn, dtls)
+        String cmd = String.format("%s s_client -crlf -ign_eof -connect %s -cert %s -cipher %s %s -sess_out openssl-session.tmp %s -quiet",
+                        getOpensslBinPath(), toString(destination), certPemFile, cipherSuite, sessIn, dtls)
                 .replace("  ", " ");
 
         LOGGER.info("Running " + cmd);
 
         return new ProcessBuilder(cmd.split(" "))
                 .redirectError(ProcessBuilder.Redirect.INHERIT);
+    }
+
+    public static ProcessBuilder createProcess(Pair<String, Opaque> psk, InetSocketAddress destination, boolean isDtls, String cipherSuite) throws IOException {
+        String dtls = isDtls ? "-dtls " : "";
+
+        String cmd = String.format("%s s_client -crlf -ign_eof -connect %s -psk_identity %s -psk %s -cipher %s %s -quiet",
+                        getOpensslBinPath(), toString(destination), psk.key, psk.value.toHex(), cipherSuite, dtls)
+                .replace("  ", " ");
+
+        LOGGER.info("Running " + cmd);
+
+        return new ProcessBuilder(cmd.split(" "))
+                .redirectError(ProcessBuilder.Redirect.INHERIT);
+    }
+
+    private static String getOpensslBinPath() {
+        return Optional.ofNullable(System.getenv("COAPCLI_OPENSSL")).orElse("openssl");
+    }
+
+    private static String toString(InetSocketAddress destination) {
+        return destination.getHostString() + ":" + destination.getPort();
     }
 
 }

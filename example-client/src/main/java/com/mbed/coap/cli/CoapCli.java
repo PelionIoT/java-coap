@@ -17,6 +17,7 @@
 package com.mbed.coap.cli;
 
 import com.mbed.coap.CoapConstants;
+import com.mbed.coap.cli.providers.Pair;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
@@ -24,6 +25,7 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -50,9 +52,13 @@ public class CoapCli {
             System.out.println("                        openssl (requires installed openssl that supports dtls),");
             System.out.println("                        stdio (standard IO)");
             System.out.println("     -k <file>          KeyStore file");
+            System.out.println("     --psk <id:hex-secret>  Pre shared key pair");
             System.out.println("     --cipher <name>    Cipher suite");
             System.out.println("     -b <block size>    Block size, one of: 16, 32, 64, 128, 256, 512, 1024");
             System.out.println("     -p <proxy>         Proxy-Uri");
+            System.out.println("");
+            System.out.println("Environments variables:");
+            System.out.println("     COAPCLI_OPENSSL    openssl command, default: 'openssl'");
             System.out.println("");
             System.out.println("Example: GET coap://localhost:5683/small");
             System.out.println("");
@@ -65,6 +71,7 @@ public class CoapCli {
             BlockSize blockSize = null;
             TransportProvider transportProvider = providers.defaultProvider();
             String cipherSuite = null;
+            Pair<String, Opaque> psk = null;
             int i;
             for (i = 0; i < args.length; i++) {
                 if (args[i].equals("-k")) {
@@ -77,6 +84,8 @@ public class CoapCli {
                     transportProvider = providers.transportProviderFor(args[++i]);
                 } else if (args[i].equals("--cipher")) {
                     cipherSuite = args[++i];
+                } else if (args[i].equals("--psk")) {
+                    psk = Pair.split(args[++i], ':').mapValue(Opaque::decodeHex);
                 } else if (args[i].charAt(0) == '-') {
                     throw new IllegalArgumentException("Unrecognised flag: " + args[i]);
                 } else {
@@ -89,9 +98,9 @@ public class CoapCli {
             String method = args[i++];
             URI uri = URI.create(args[i++]);
 
-            String payload = (args.length > i) ? args[i] : null;
+            Opaque payload = (args.length > i) ? Opaque.of(args[i]) : Opaque.EMPTY;
 
-            new CoapCli(providers, transportProvider, keystoreFile, blockSize, proxyUri, method, uri, payload);
+            new CoapCli(providers, transportProvider, keystoreFile, psk, blockSize, proxyUri, method, uri, payload);
         } catch (IllegalArgumentException ex) {
             LOGGER.error(ex.getMessage());
         } catch (Exception ex) {
@@ -100,9 +109,9 @@ public class CoapCli {
         System.exit(0);
     }
 
-    public CoapCli(CoapSchemes providers, TransportProvider transportProvider, String keystoreFile, BlockSize blockSize, String proxyUri, String method, URI uri, String payload) throws IOException, InterruptedException, CoapException {
+    public CoapCli(CoapSchemes providers, TransportProvider transportProvider, String keystoreFile, Pair<String, Opaque> psk, BlockSize blockSize, String proxyUri, String method, URI uri, Opaque payload) throws IOException, InterruptedException, CoapException {
 
-        CoapServer cliServer = providers.create(transportProvider, keystoreFile, uri).blockSize(blockSize).build().start();
+        CoapServer cliServer = providers.create(transportProvider, keystoreFile, psk, uri).blockSize(blockSize).build().start();
 
         InetSocketAddress destination = new InetSocketAddress(uri.getHost(), uri.getPort());
         CoapClient cli = CoapClientBuilder.clientFor(destination, cliServer);

@@ -37,3 +37,11 @@ task(runDeviceEmulator, dependsOn: 'classes', type: JavaExec) {
     main = 'com.mbed.coap.cli.DeviceEmulator'
     classpath = sourceSets.main.runtimeClasspath
 }
+
+
+distributions {
+    applicationName = 'coap'
+    main {
+        distributionBaseName = 'coap-cli'
+    }
+}
