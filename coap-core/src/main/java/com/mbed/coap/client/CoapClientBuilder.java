@@ -19,7 +19,7 @@ package com.mbed.coap.client;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.server.CoapTcpCSMStorage;
+import com.mbed.coap.server.messaging.CoapTcpCSMStorage;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;

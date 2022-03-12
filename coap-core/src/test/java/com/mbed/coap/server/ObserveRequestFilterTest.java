@@ -21,7 +21,6 @@ import static com.mbed.coap.packet.CoapResponse.*;
 import static com.mbed.coap.packet.Opaque.*;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
-import com.mbed.coap.observe.ObservationHandler;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.utils.Service;

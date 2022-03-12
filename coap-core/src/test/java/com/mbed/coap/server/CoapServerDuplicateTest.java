@@ -25,7 +25,6 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
-import com.mbed.coap.server.internal.MockCoapTransport;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;

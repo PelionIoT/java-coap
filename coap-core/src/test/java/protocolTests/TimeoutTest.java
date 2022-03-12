@@ -27,7 +27,7 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.server.internal.CoapUdpMessaging;
+import com.mbed.coap.server.messaging.CoapUdpMessaging;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.io.IOException;

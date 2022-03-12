@@ -16,16 +16,16 @@
  */
 package com.mbed.coap.server;
 
-import static com.mbed.coap.server.internal.CoapServerUtils.*;
+import static com.mbed.coap.utils.CoapServerUtils.*;
 import static java.util.Objects.*;
-import com.mbed.coap.observe.ObservationHandler;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.SeparateResponse;
-import com.mbed.coap.server.internal.BlockWiseIncomingFilter;
-import com.mbed.coap.server.internal.BlockWiseNotificationFilter;
-import com.mbed.coap.server.internal.BlockWiseOutgoingFilter;
-import com.mbed.coap.server.internal.CoapMessaging;
+import com.mbed.coap.server.block.BlockWiseIncomingFilter;
+import com.mbed.coap.server.block.BlockWiseNotificationFilter;
+import com.mbed.coap.server.block.BlockWiseOutgoingFilter;
+import com.mbed.coap.server.messaging.CoapMessaging;
+import com.mbed.coap.server.messaging.CoapTcpCSMStorage;
 import com.mbed.coap.utils.Filter.SimpleFilter;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;

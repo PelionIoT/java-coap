@@ -27,7 +27,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.MessageIdSupplierImpl;
+import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;

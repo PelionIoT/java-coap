@@ -35,7 +35,7 @@ import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.server.filter.MaxAllowedPayloadFilter;
-import com.mbed.coap.server.internal.CoapMessaging;
+import com.mbed.coap.server.messaging.CoapMessaging;
 import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
 import java.net.InetSocketAddress;

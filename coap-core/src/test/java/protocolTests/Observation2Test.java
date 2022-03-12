@@ -24,7 +24,7 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.server.MessageIdSupplierImpl;
+import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
 import com.mbed.coap.utils.ObservationConsumer;
 import java.net.InetSocketAddress;
 import org.junit.jupiter.api.AfterEach;

@@ -16,7 +16,7 @@
  */
 package com.mbed.coap.client;
 
-import static com.mbed.coap.observe.ObservationConsumer.*;
+import static com.mbed.coap.client.ObservationConsumer.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;

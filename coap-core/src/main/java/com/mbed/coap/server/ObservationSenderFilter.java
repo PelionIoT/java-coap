@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ObservationSenderFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
+class ObservationSenderFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
     private final static Logger LOGGER = LoggerFactory.getLogger(ObservationSenderFilter.class);
 
     private final Service<SeparateResponse, Boolean> sendNotification;

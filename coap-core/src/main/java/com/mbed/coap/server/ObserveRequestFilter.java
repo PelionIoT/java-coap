@@ -16,7 +16,6 @@
  */
 package com.mbed.coap.server;
 
-import com.mbed.coap.observe.ObservationHandler;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;

@@ -17,11 +17,11 @@ package com.mbed.coap.cli;
 
 import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.client.RegistrationManager;
-import com.mbed.coap.observe.ObservableResourceService;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.ObservableResourceService;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;

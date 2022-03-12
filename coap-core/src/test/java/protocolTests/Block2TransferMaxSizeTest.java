@@ -27,7 +27,7 @@ import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.MessageIdSupplierImpl;
+import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
 import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;

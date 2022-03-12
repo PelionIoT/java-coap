@@ -24,7 +24,7 @@ import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.server.MessageIdSupplierImpl;
+import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.ScheduledExecutorService;
