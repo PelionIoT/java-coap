@@ -135,9 +135,9 @@ public abstract class CoapMessaging implements CoapReceiver {
         } else {
             if (handleResponse(packet)) {
                 return;
-            } else if (handleDelayedResponse(packet)) {
+            } else if (packet.isSeparateResponse() && handleDelayedResponse(packet)) {
                 return;
-            } else if (packet.headers().getObserve() != null) {
+            } else if (packet.isSeparateResponse() && packet.headers().getObserve() != null) {
                 handleObservation(packet, transportContext);
                 return;
             }

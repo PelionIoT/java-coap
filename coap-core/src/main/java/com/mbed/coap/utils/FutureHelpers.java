@@ -17,6 +17,7 @@ package com.mbed.coap.utils;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import org.slf4j.Logger;
 
@@ -44,4 +45,13 @@ public class FutureHelpers {
         };
     }
 
+    public static <T> void become(CompletableFuture<T> promise, CompletionStage<T> future) {
+        future.whenComplete((v, err) -> {
+            if (err != null) {
+                promise.completeExceptionally(err);
+            } else {
+                promise.complete(v);
+            }
+        });
+    }
 }

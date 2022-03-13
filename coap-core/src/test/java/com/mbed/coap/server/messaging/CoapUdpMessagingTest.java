@@ -28,7 +28,6 @@ import static org.mockito.BDDMockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
-import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
@@ -81,16 +80,16 @@ public class CoapUdpMessagingTest {
 
     @Test
     public void failWhenNoTransportIsProvided() throws Exception {
-        assertThatThrownBy(() -> udpMessagingInit(1, null, false, null, 1, 0, DuplicatedCoapMessageCallback.NULL))
+        assertThatThrownBy(() -> udpMessagingInit(1, null, false, null, 0, DuplicatedCoapMessageCallback.NULL))
                 .isExactlyInstanceOf(NullPointerException.class);
 
-        assertThatThrownBy(() -> udpMessagingInit(1, scheduledExecutor, false, null, 1, 0, DuplicatedCoapMessageCallback.NULL))
+        assertThatThrownBy(() -> udpMessagingInit(1, scheduledExecutor, false, null, 0, DuplicatedCoapMessageCallback.NULL))
                 .isExactlyInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void doNotStopScheduleExecutor() throws Exception {
-        udpMessagingInit(0, scheduledExecutor, false, mock(MessageIdSupplier.class), 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(0, scheduledExecutor, false, mock(MessageIdSupplier.class), 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(observationHandler, requestService);
         assertEquals(scheduledExecutor, udpMessaging.getScheduledExecutor());
 
@@ -99,25 +98,9 @@ public class CoapUdpMessagingTest {
     }
 
     @Test
-    public void shouldFailToMakeRequest_whenQueueIsFull() throws Exception {
-        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
-        udpMessaging.start(observationHandler, requestService);
-
-        CompletableFuture<CoapResponse> resp1 = udpMessaging.send(get(LOCAL_5683, "/10"));
-        assertFalse(resp1.isDone());
-
-        //should fail to make a request
-        CompletableFuture<CoapResponse> resp2 = udpMessaging.send(get(LOCAL_5683, "/11"));
-
-        assertTrue(resp2.isDone());
-        assertTrue(resp2.isCompletedExceptionally());
-        assertThatThrownBy(resp2::get).hasCauseExactlyInstanceOf(TooManyRequestsForEndpointException.class);
-    }
-
-    @Test
     public void shouldSucceedToMakeRequest_whenQueueIsFull_forceAdd() throws Exception {
         //init with max queue size of 1
-        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(observationHandler, requestService);
 
         CompletableFuture<CoapResponse> resp1 = udpMessaging.send(get(LOCAL_5683, "/10"));
@@ -132,7 +115,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     public void failToMakeRequestWhenMissingParameters() throws Exception {
-        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(observationHandler, requestService);
 
         //missing address
@@ -149,7 +132,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     public void responseToPingMessage() throws Exception {
-        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(observationHandler, requestService);
 
         receive(newCoapPacket(LOCAL_1_5683).mid(1).con(null));
@@ -168,7 +151,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     public void ignore_nonProcessedMessage() throws Exception {
-        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(observationHandler, requestService);
 
         receive(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C203_VALID));
@@ -180,7 +163,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     public void duplicateRequest() throws Exception {
-        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(observationHandler, requestService);
 
         CoapPacket req = newCoapPacket(LOCAL_1_5683).mid(1).con().delete().uriPath("/19").build();
@@ -195,7 +178,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     public void duplicateResponseToGetRequest() throws Exception {
-        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(observationHandler, requestService);
         CompletableFuture<CoapResponse> resp1 = udpMessaging.send(get(LOCAL_5683, "/10"));
         assertFalse(resp1.isDone());
@@ -208,7 +191,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     public void duplicateRequest_noDuplicateDetector() throws Exception {
-        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(observationHandler, requestService);
 
         CoapPacket req = newCoapPacket(LOCAL_1_5683).mid(1).con().delete().uriPath("/19").build();
@@ -222,7 +205,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     public void non_request_response() throws Exception {
-        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(observationHandler, requestService);
 
         //request
@@ -237,7 +220,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     public void separate_confirmable_response() throws Exception {
-        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
 
         //request
         CompletableFuture<CoapResponse> resp = udpMessaging.send(get(LOCAL_5683, "/").token(1001));
@@ -274,7 +257,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     public void networkFail_whenRetransmissions() throws Exception {
-        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 1, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.setTransmissionTimeout(new CoapTimeout(1, 5));
 
         CompletableFuture<CoapResponse> resp = udpMessaging.send(get(LOCAL_5683, "/10"));
@@ -286,20 +269,6 @@ public class CoapUdpMessagingTest {
 
         assertTrue(resp.isCompletedExceptionally());
         assertThatThrownBy(resp::get).hasCauseExactlyInstanceOf(IOException.class);
-    }
-
-    @Test
-    public void shouldFail_toMakeSecondRequestFromQueue() throws Exception {
-        initServer();
-
-        CompletableFuture<CoapResponse> resp1 = udpMessaging.send(get(LOCAL_5683, "/10"));
-        CompletableFuture<CoapResponse> resp2 = udpMessaging.send(get(LOCAL_5683, "/11"));
-
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(exceptionFuture());
-        receive(newCoapPacket(LOCAL_5683).mid(100).ack(Code.C205_CONTENT).payload("ABC"));
-
-        assertEquals("ABC", resp1.get().getPayloadString());
-        assertThatThrownBy(resp2::get).hasCauseExactlyInstanceOf(IOException.class);
     }
 
 
@@ -380,7 +349,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     void shouldSendObservation() throws CoapException, IOException {
-        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 10, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
 
         //when
         CompletableFuture<Boolean> ack = udpMessaging.send(ok("21C").observe(12).toSeparate(variableUInt(1003), LOCAL_1_5683));
@@ -392,7 +361,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     void shouldSendObservation_andReturnFalseWhenReset() throws CoapException, IOException {
-        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 10, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
 
         //when
         CompletableFuture<Boolean> ack = udpMessaging.send(ok("21C").observe(12).toSeparate(variableUInt(1003), LOCAL_1_5683));
@@ -404,7 +373,7 @@ public class CoapUdpMessagingTest {
 
     @Test
     void shouldFailToSendObservation_when_transportFails() throws CoapException, IOException {
-        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 10, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(0, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         given(coapTransport.sendPacket(any(), any(), any())).willReturn(failedFuture(new IOException()));
 
         CompletableFuture<Boolean> ack = udpMessaging.send(ok("21C").observe(12).toSeparate(variableUInt(1003), LOCAL_1_5683));
@@ -433,7 +402,7 @@ public class CoapUdpMessagingTest {
     }
 
     private void initServer() throws IOException {
-        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 10, 0, DuplicatedCoapMessageCallback.NULL);
+        udpMessagingInit(10, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
         udpMessaging.start(observationHandler, requestService);
     }
 
@@ -464,7 +433,6 @@ public class CoapUdpMessagingTest {
             ScheduledExecutorService scheduledExecutor,
             boolean isSelfCreatedExecutor,
             MessageIdSupplier idContext,
-            int maxQueueSize,
             long delayedTransactionTimeout,
             DuplicatedCoapMessageCallback duplicatedCoapMessageCallback) {
         PutOnlyMap<CoapRequestId, CoapPacket> cache = new DefaultDuplicateDetectorCache<>(
@@ -477,7 +445,6 @@ public class CoapUdpMessagingTest {
         udpMessaging.init(cache,
                 isSelfCreatedExecutor,
                 idContext,
-                maxQueueSize,
                 delayedTransactionTimeout,
                 duplicatedCoapMessageCallback,
                 scheduledExecutor);

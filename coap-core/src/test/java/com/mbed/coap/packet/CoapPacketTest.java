@@ -404,4 +404,44 @@ public class CoapPacketTest extends CoapPacketTestBase {
 
         assertEquals(expected, packet);
     }
+
+    @Test
+    void ConCoapRequest() {
+        CoapPacket packet = new CoapPacket(Method.GET, MessageType.Confirmable, "/12", null);
+
+        assertTrue(packet.isRequest());
+        assertFalse(packet.isResponse());
+        assertFalse(packet.isSeparateResponse());
+        assertFalse(packet.isEmptyAck());
+    }
+
+    @Test
+    void NonCoapRequest() {
+        CoapPacket packet = new CoapPacket(Method.GET, MessageType.NonConfirmable, "/12", null);
+
+        assertTrue(packet.isRequest());
+        assertFalse(packet.isResponse());
+        assertFalse(packet.isSeparateResponse());
+        assertFalse(packet.isEmptyAck());
+    }
+
+    @Test
+    void ackCoapResponse() {
+        CoapPacket packet = new CoapPacket(Code.C205_CONTENT, MessageType.Acknowledgement, null);
+
+        assertTrue(packet.isResponse());
+        assertFalse(packet.isSeparateResponse());
+        assertFalse(packet.isEmptyAck());
+        assertFalse(packet.isRequest());
+    }
+
+    @Test
+    void separateCoapResponse() {
+        CoapPacket packet = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, null);
+
+        assertTrue(packet.isResponse());
+        assertTrue(packet.isSeparateResponse());
+        assertFalse(packet.isEmptyAck());
+        assertFalse(packet.isRequest());
+    }
 }

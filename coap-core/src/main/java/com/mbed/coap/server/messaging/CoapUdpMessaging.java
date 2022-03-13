@@ -19,7 +19,6 @@ package com.mbed.coap.server.messaging;
 import static com.mbed.coap.utils.CoapServerUtils.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
-import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -78,7 +77,6 @@ public class CoapUdpMessaging extends CoapMessaging {
             PutOnlyMap<CoapRequestId, CoapPacket> cache,
             boolean isSelfCreatedExecutor,
             MessageIdSupplier idContext,
-            int maxQueueSize,
             long delayedTransactionTimeout,
             DuplicatedCoapMessageCallback duplicatedCoapMessageCallback,
             ScheduledExecutorService scheduledExecutor
@@ -95,8 +93,6 @@ public class CoapUdpMessaging extends CoapMessaging {
         this.idContext = idContext;
         this.delayedTransactionTimeout = delayedTransactionTimeout;
         this.duplicatedCoapMessageCallback = duplicatedCoapMessageCallback;
-
-        transMgr.setMaximumEndpointQueueSize(maxQueueSize);
 
         if (transmissionTimeout == null) {
             this.transmissionTimeout = new CoapTimeout();
@@ -199,11 +195,7 @@ public class CoapUdpMessaging extends CoapMessaging {
         if (transContext.get(MessageType.NonConfirmable) != null) {
             packet.setMessageType(MessageType.NonConfirmable);
         }
-        boolean forceAddToQueue = false;
-        if ((packet.headers().getBlock1Req() != null && packet.headers().getBlock1Req().getNr() > 0) || (packet.headers().getBlock2Res() != null && packet.headers().getBlock2Res().getNr() > 0)) {
-            forceAddToQueue = true;
-        }
-        return makeRequestInternal(packet, transContext, forceAddToQueue);
+        return makeRequestInternal(packet, transContext);
     }
 
     @Override
@@ -231,9 +223,8 @@ public class CoapUdpMessaging extends CoapMessaging {
      *
      * @param packet request packet
      * @param transContext transport context that will be passed to transport connector
-     * @param forceAddToQueue forces add to queue even if there is queue limit overflow (block requests)
      */
-    private CompletableFuture<CoapPacket> makeRequestInternal(final CoapPacket packet, final TransportContext transContext, boolean forceAddToQueue) {
+    private CompletableFuture<CoapPacket> makeRequestInternal(final CoapPacket packet, final TransportContext transContext) {
         if (packet == null || packet.getRemoteAddress() == null) {
             throw new NullPointerException();
         }
@@ -242,22 +233,15 @@ public class CoapUdpMessaging extends CoapMessaging {
         packet.setMessageId(getNextMID());
 
         if (packet.getMustAcknowledge()) {
-            CoapTransaction trans = new CoapTransaction(packet, this, transContext, this::removeCoapTransId);
-            try {
-                if (transMgr.addTransactionAndGetReadyToSend(trans, forceAddToQueue)) {
-                    LOGGER.trace("Sending transaction: {}", trans);
-                    trans.send();
-                } else {
-                    LOGGER.trace("Enqueued transaction: {}", trans);
-                }
-            } catch (TooManyRequestsForEndpointException e) {
-                trans.promise.completeExceptionally(e);
-            }
+            CoapTransaction trans = new CoapTransaction(packet, this, transContext, transMgr::remove);
+            transMgr.put(trans);
+            LOGGER.trace("Sending transaction: {}", trans);
+            trans.send();
             return trans.promise;
         } else {
             //send NON message without waiting for piggy-backed response
             DelayedTransactionId delayedTransactionId = new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress());
-            CoapTransaction trans = new CoapTransaction(packet, this, transContext, this::removeCoapTransId);
+            CoapTransaction trans = new CoapTransaction(packet, this, transContext, transMgr::remove);
             delayedTransMagr.add(delayedTransactionId, trans);
             this.send(packet, packet.getRemoteAddress(), transContext)
                     .whenComplete((wasSent, maybeError) -> {
@@ -304,19 +288,6 @@ public class CoapUdpMessaging extends CoapMessaging {
         return false;
     }
 
-    private void removeCoapTransId(CoapTransactionId coapTransId) {
-        transMgr.unlockOrRemoveAndGetNext(coapTransId)
-                .ifPresent(CoapTransaction::send);
-    }
-
-    private void invokeCallbackAndRemoveTransaction(CoapTransaction transaction, CoapPacket packet) {
-        // first call callback and only then remove transaction - important for CoapServerBlocks
-        // in other way block transfer will be interrupted by other messages in the queue
-        // of TransactionManager, because removeCoapTransId() also sends next message form the queue
-
-        transaction.complete(packet);
-        removeCoapTransId(transaction.getTransactionId());
-    }
 
     @Override
     protected void handleRequest(CoapPacket packet, TransportContext transContext) {
@@ -348,41 +319,33 @@ public class CoapUdpMessaging extends CoapMessaging {
         //find corresponding transaction
         CoapTransactionId coapTransId = new CoapTransactionId(packet);
 
-        Optional<CoapTransaction> maybeTrans = transMgr.removeAndLock(coapTransId);
+        Optional<CoapTransaction> maybeTrans = transMgr.getAndRemove(coapTransId);
         if (!maybeTrans.isPresent() && packet.getMessageType() == MessageType.Confirmable || packet.getMessageType() == MessageType.NonConfirmable) {
             //find if it is separate response
             maybeTrans = transMgr.findMatchAndRemoveForSeparateResponse(packet);
         }
 
-        boolean packetHandled = maybeTrans
+        return maybeTrans
                 .map(trans -> handleResponse(trans, packet))
                 .orElse(false);
-
-        if (packetHandled && packet.headers().getObserve() != null && packet.getMessageType() == MessageType.Acknowledgement) {
-            // put the response to duplicate detector to avoid duplicate observation for retransmitted request.
-            findDuplicate(packet, "CoAP notification repeated (for first response)");
-        }
-
-        return packetHandled;
     }
 
     private boolean handleResponse(CoapTransaction trans, CoapPacket packet) {
         MessageType messageType = packet.getMessageType();
-        if (packet.getCode() != null || messageType == MessageType.Reset) {
-            invokeCallbackAndRemoveTransaction(trans, packet);
+        if (!packet.isEmptyAck() || messageType == MessageType.Reset) {
+            trans.complete(packet);
             return true;
         }
 
         assume(messageType == MessageType.Acknowledgement, "not handled transaction");
 
         if (trans.getCoapRequest().getMethod() == null) {
-            invokeCallbackAndRemoveTransaction(trans, packet);
+            trans.complete(packet);
             return true;
         }
 
         //delayed response
         DelayedTransactionId delayedTransactionId = new DelayedTransactionId(trans.getCoapRequest().getToken(), packet.getRemoteAddress());
-        removeCoapTransId(trans.getTransactionId());
         delayedTransMagr.add(delayedTransactionId, trans);
         return true;
 
@@ -429,18 +392,15 @@ public class CoapUdpMessaging extends CoapMessaging {
         try {
             //find timeouts
             final long currentTime = System.currentTimeMillis();
-            Collection<CoapTransaction> transTimeOut = transMgr.findTimeoutTransactions(currentTime);
-            for (CoapTransaction trans : transTimeOut) {
-                if (trans.isTimedOut(currentTime)) {
-                    LOGGER.trace("resendTimeouts: try to resend timed out transaction [{}]", trans);
-                    if (!trans.send(currentTime)) {
+
+            transMgr.findTimeoutTransactions(currentTime)
+                    .filter(trans -> !trans.send(currentTime))
+                    .forEach(trans -> {
                         //final timeout, cannot resend, remove transaction
-                        removeCoapTransId(trans.getTransactionId());
+                        transMgr.remove(trans.getTransactionId());
                         LOGGER.trace("resendTimeouts: CoAP transaction final timeout [{}]", trans);
                         trans.promise.completeExceptionally(new CoapTimeoutException(trans.toString()));
-                    }
-                }
-            }
+                    });
 
             Collection<CoapTransaction> delayedTransTimeOut = delayedTransMagr.findTimeoutTransactions(currentTime);
             for (CoapTransaction trans : delayedTransTimeOut) {

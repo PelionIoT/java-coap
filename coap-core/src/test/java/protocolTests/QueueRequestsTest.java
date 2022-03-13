@@ -31,12 +31,12 @@ import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
+import com.mbed.coap.transport.TransportContext;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
 
@@ -57,6 +57,7 @@ public class QueueRequestsTest {
                 .midSupplier(new MessageIdSupplierImpl(0))
                 .blockSize(BlockSize.S_32)
                 .disableDuplicateCheck()
+                .queueMaxSize(2)
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();
 
@@ -111,12 +112,10 @@ public class QueueRequestsTest {
     }
 
 
-    // all messages transaction priority:   CoapTransaction.Priority.NORMAL  // default config
-    // block messages transaction priority: CoapTransaction.Priority.HIGH    // default config
     @Test
     public void shouldSendRequestsToADevice_isASequence_2_requests_with_block() throws Exception {
         CoapPacket blockResp1 = newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
-        CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
+        CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
 
         //requests
         CompletableFuture<CoapResponse> futResp1 = client.send(get("/path1")); // makes req with msgId #1 and sends it
@@ -138,7 +137,7 @@ public class QueueRequestsTest {
         //#2 message - request2
         verify(transport).sendPacket(any(), any(), any());
         resetTransport();
-        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
         //verify responses
         assertEquals("dupa2", futResp2.get().getPayloadString());
@@ -146,18 +145,9 @@ public class QueueRequestsTest {
 
 
     @Test
-    @Timeout(10)
     public void shouldQueueBlockTransferEvenQueueIsFull() throws Exception {
-        coapServer = CoapServer.builder().transport(transport)
-                .midSupplier(new MessageIdSupplierImpl(0))
-                .blockSize(BlockSize.S_32)
-                .disableDuplicateCheck()
-                .queueMaxSize(2)
-                .timeout(new SingleTimeout(500)).build();
-
-
         CoapPacket blockResp1 = newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("123456789012345|").build();
-        CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
+        CoapPacket blockResp2 = newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("dupa").build();
 
         //requests
         CompletableFuture<CoapResponse> futResp1 = client.send(get("/block")); // adds first request
@@ -178,7 +168,7 @@ public class QueueRequestsTest {
         //#2 message - request2
         verify(transport).sendPacket(any(), any(), any());
         resetTransport();
-        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(3).ack(Code.C205_CONTENT).payload("dupa2").build(), null);
 
 
         //verify responses
@@ -220,6 +210,33 @@ public class QueueRequestsTest {
         assertTrue(futResp2.isDone());
         assertEquals("dupa3", futResp2.get().getPayloadString());
 
+    }
+
+    @Test
+    public void shouldFailToSendTooManyRequests() throws Exception {
+        coapServer = CoapServer.builder().transport(transport)
+                .midSupplier(new MessageIdSupplierImpl(0))
+                .blockSize(BlockSize.S_32)
+                .disableDuplicateCheck()
+                .queueMaxSize(2)
+                .timeout(new SingleTimeout(500)).build();
+
+
+        // given
+        CompletableFuture<CoapResponse> futResp1 = client.send(get(LOCAL_5683, "/path1"));
+        CompletableFuture<CoapResponse> futResp2 = client.send(get(LOCAL_5683, "/path2"));
+
+        // when
+        CompletableFuture<CoapResponse> futResp3 = client.send(get(LOCAL_5683, "/path3"));
+
+        // then
+        assertTrue(futResp3.isCompletedExceptionally());
+
+        // and first two requests should be handled
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(1).ack(Code.C205_CONTENT).payload("ok1").build(), TransportContext.EMPTY);
+        transportReceiver.handle(newCoapPacket(SERVER_ADDRESS).mid(2).ack(Code.C205_CONTENT).payload("ok2").build(), TransportContext.EMPTY);
+        assertEquals("ok1", futResp1.join().getPayloadString());
+        assertEquals("ok2", futResp2.join().getPayloadString());
     }
 
     private void resetTransport() {

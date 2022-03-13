@@ -32,10 +32,6 @@ class CoapTransactionId {
         address = packet.getRemoteAddress();
     }
 
-    public boolean matches(CoapTransaction coapTransaction) {
-        return coapTransaction.isActive() && this.equals(coapTransaction.getTransactionId());
-    }
-
     @Override
     public int hashCode() {
         int hash = 7;
@@ -65,10 +61,6 @@ class CoapTransactionId {
     @Override
     public String toString() {
         return messageId + "#" + address.toString();
-    }
-
-    public InetSocketAddress getAddress() {
-        return address;
     }
 
 }

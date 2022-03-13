@@ -34,7 +34,6 @@ class CoapTransaction {
     private final CoapUdpMessaging coapServer;
     private final TransportContext transContext;
     private final Consumer<CoapTransactionId> sendErrConsumer;
-    private boolean isActive;
 
     public CoapTransaction(CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Consumer<CoapTransactionId> sendErrConsumer) {
         this.sendErrConsumer = sendErrConsumer;
@@ -79,7 +78,6 @@ class CoapTransaction {
         if (nextTimeout <= 0) {
             return false;
         }
-        isActive = true;
         coapServer.send(coapRequest, coapRequest.getRemoteAddress(), transContext)
                 .whenComplete((wasSent, maybeError) -> onSend(maybeError));
 
@@ -102,23 +100,11 @@ class CoapTransaction {
         return coapRequest;
     }
 
-    public boolean isActive() {
-        return isActive;
-    }
-
-    //ONY FOR TESTS, package access only
-    CoapTransaction makeActiveForTests() {
-        this.isActive = true;
-        return this;
-    }
-
-
     @Override
     public String toString() {
         return "CoapTransaction{ " +
                 transId +
                 ", MID:" + coapRequest.getMessageId() +
-                ", active=" + isActive +
                 ", this=" + System.identityHashCode(this) +
                 ", pkt=" + System.identityHashCode(coapRequest) +
                 ", tid=" + System.identityHashCode(transId) +

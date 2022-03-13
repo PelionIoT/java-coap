@@ -20,6 +20,7 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
+import com.mbed.coap.server.filter.CongestionControlFilter;
 import com.mbed.coap.server.messaging.CoapMessaging;
 import com.mbed.coap.server.messaging.CoapRequestId;
 import com.mbed.coap.server.messaging.CoapTcpCSM;
@@ -55,6 +56,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     protected int maxMessageSize = 1152; //default
     protected CoapTcpCSMStorage csmStorage;
     protected Service<CoapRequest, CoapResponse> route = RouterService.NOT_FOUND_SERVICE;
+    protected int maxQueueSize = 100;
 
     protected abstract T me();
 
@@ -107,7 +109,9 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     }
 
     public CoapServer build() {
-        return CoapServer.create(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize, route);
+        CongestionControlFilter<InetSocketAddress, CoapRequest, CoapResponse> congestionFilter = new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress);
+
+        return CoapServer.create(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize, route, congestionFilter);
     }
 
     protected abstract CoapMessaging buildCoapMessaging();
@@ -132,7 +136,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
         private ScheduledExecutorService scheduledExecutorService;
         private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
 
-        private int maxQueueSize = 100;
         private long delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
         private DuplicatedCoapMessageCallback duplicatedCoapMessageCallback = DuplicatedCoapMessageCallback.NULL;
         private TransmissionTimeout transmissionTimeout;
@@ -198,7 +201,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             server.init(duplicateDetectionCache,
                     isSelfCreatedExecutor,
                     midSupplier,
-                    maxQueueSize,
                     delayedTransactionTimeout,
                     duplicatedCoapMessageCallback,
                     scheduledExecutorService);

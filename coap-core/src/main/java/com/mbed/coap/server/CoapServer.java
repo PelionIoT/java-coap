@@ -26,6 +26,7 @@ import com.mbed.coap.server.block.BlockWiseNotificationFilter;
 import com.mbed.coap.server.block.BlockWiseOutgoingFilter;
 import com.mbed.coap.server.messaging.CoapMessaging;
 import com.mbed.coap.server.messaging.CoapTcpCSMStorage;
+import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Filter.SimpleFilter;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class CoapServer {
 
     public CoapServer(
             CoapMessaging coapMessaging,
-            SimpleFilter<CoapRequest, CoapResponse> sendFilter,
+            Filter<CoapRequest, CoapResponse, CoapRequest, CoapResponse> sendFilter,
             Service<CoapRequest, CoapResponse> routeService,
             SimpleFilter<SeparateResponse, Boolean> sendNotificationFilter
     ) {
@@ -63,10 +64,12 @@ public class CoapServer {
                 .then(coapMessaging::send);
     }
 
-    public static CoapServer create(CoapMessaging coapMessaging, CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize, Service<CoapRequest, CoapResponse> route) {
+    public static CoapServer create(CoapMessaging coapMessaging, CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize,
+            Service<CoapRequest, CoapResponse> inboundFilter,
+            SimpleFilter<CoapRequest, CoapResponse> outboundFilter) {
         return new CoapServer(coapMessaging,
-                new BlockWiseOutgoingFilter(capabilities, maxIncomingBlockTransferSize),
-                new BlockWiseIncomingFilter(capabilities, maxIncomingBlockTransferSize).then(route),
+                outboundFilter.andThen(new BlockWiseOutgoingFilter(capabilities, maxIncomingBlockTransferSize)),
+                new BlockWiseIncomingFilter(capabilities, maxIncomingBlockTransferSize).then(inboundFilter),
                 new BlockWiseNotificationFilter(capabilities)
         );
     }

@@ -117,7 +117,8 @@ public class CoapPacket {
     }
 
     public static CoapPacket from(SeparateResponse resp) {
-        CoapPacket packet = new CoapPacket(resp.getCode(), MessageType.Confirmable, resp.getPeerAddress());
+        MessageType messageType = resp.getTransContext().get(MessageType.NonConfirmable) == null ? MessageType.Confirmable : MessageType.NonConfirmable;
+        CoapPacket packet = new CoapPacket(resp.getCode(), messageType, resp.getPeerAddress());
         packet.setToken(resp.getToken());
         packet.setHeaderOptions(resp.options().duplicate());
         packet.setPayload(resp.getPayload());
@@ -593,6 +594,22 @@ public class CoapPacket {
                 || headers().getContentFormat() == MediaTypes.CT_APPLICATION_LINK__FORMAT
                 || headers().getContentFormat() == MediaTypes.CT_APPLICATION_XML
                 || headers().getContentFormat() == MediaTypes.CT_APPLICATION_LWM2M_JSON;
+    }
+
+    public boolean isEmptyAck() {
+        return messageType == MessageType.Acknowledgement && method == null && code == null && payload.isEmpty() && token.isEmpty();
+    }
+
+    public boolean isRequest() {
+        return method != null;
+    }
+
+    public boolean isResponse() {
+        return code != null;
+    }
+
+    public boolean isSeparateResponse() {
+        return isResponse() && (messageType == MessageType.Confirmable || messageType == MessageType.NonConfirmable);
     }
 
     @Override

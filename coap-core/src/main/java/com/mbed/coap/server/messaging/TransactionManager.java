@@ -16,19 +16,14 @@
  */
 package com.mbed.coap.server.messaging;
 
-import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
-import com.mbed.coap.server.messaging.TransactionQueue.QueueUpdateResult;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Collection;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,64 +31,24 @@ import org.slf4j.LoggerFactory;
 class TransactionManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionManager.class.getName());
-    private final ConcurrentHashMap<InetSocketAddress, TransactionQueue> transactionQueues = new ConcurrentHashMap<>();
-    private int maximumEndpointQueueSize = 100;
+    private final ConcurrentHashMap<CoapTransactionId, CoapTransaction> transactions = new ConcurrentHashMap<>();
 
-
-    public void setMaximumEndpointQueueSize(int maximumEndpointQueueSize) {
-        if (maximumEndpointQueueSize < 1 || maximumEndpointQueueSize > 65536) {
-            throw new IllegalArgumentException("Endpoint queue size should be in range 1..65536");
+    public void put(CoapTransaction transaction) {
+        if (transactions.putIfAbsent(transaction.getTransactionId(), transaction) != null) {
+            throw new RuntimeException("Transaction already exists");
         }
-        this.maximumEndpointQueueSize = maximumEndpointQueueSize;
     }
 
-    boolean addTransactionAndGetReadyToSend(CoapTransaction transaction) throws TooManyRequestsForEndpointException {
-        return addTransactionAndGetReadyToSend(transaction, false);
+    public Optional<CoapTransaction> getAndRemove(CoapTransactionId transId) {
+        return Optional.ofNullable(transactions.remove(transId));
     }
 
-    @SuppressWarnings("PMD.PrematureDeclaration") //false positive
-    public boolean addTransactionAndGetReadyToSend(CoapTransaction transaction, boolean forceAdd) throws TooManyRequestsForEndpointException {
-        AtomicBoolean queueOverflow = new AtomicBoolean(false);
-
-        TransactionQueue inserted = transactionQueues.compute(transaction.getTransactionId().getAddress(), (address, coapTransactions) -> {
-            if (coapTransactions == null) {
-                return TransactionQueue.of(transaction);
-            } else {
-                return coapTransactions.add(transaction, forceAdd, maximumEndpointQueueSize, queueOverflow);
-            }
-        });
-
-        if (queueOverflow.get()) {
-            throw new TooManyRequestsForEndpointException("TOO_MANY_REQUESTS maximum allowed per endpoint " + maximumEndpointQueueSize);
-        }
-
-        return inserted.size() == 1 && inserted.notLocked();
-    }
-
-    public Optional<CoapTransaction> removeAndLock(CoapTransactionId transId) {
-        AtomicReference<Optional<CoapTransaction>> transactionFound = new AtomicReference<>(Optional.empty());
-
-        transactionQueues.computeIfPresent(transId.getAddress(), (address, coapTransactions) -> {
-            QueueUpdateResult result = coapTransactions.removeAndLock(transId);
-
-            transactionFound.set(result.coapTransaction);
-            return result.transactionQueue;
-        });
-
-        return transactionFound.get();
-    }
-
-    public Optional<CoapTransaction> unlockOrRemoveAndGetNext(CoapTransactionId transId) {
-
-        return Optional.ofNullable(
-                transactionQueues.computeIfPresent(transId.getAddress(),
-                        (address, coapTransactions) -> coapTransactions.unlockOrRemove(transId).orElse(null)
-                )
-        ).flatMap(TransactionQueue::head);
+    public void remove(CoapTransactionId transId) {
+        transactions.remove(transId);
     }
 
     public int getNumberOfTransactions() {
-        return transactionQueues.values().stream().mapToInt(TransactionQueue::size).sum();
+        return transactions.size();
     }
 
 
@@ -101,16 +56,11 @@ class TransactionManager {
         if ((req.getMessageType() == MessageType.Confirmable || req.getMessageType() == MessageType.NonConfirmable)
                 && req.getCode() != null && req.getToken().nonEmpty()) {
 
-            AtomicReference<Optional<CoapTransaction>> transactionFound = new AtomicReference<>(Optional.empty());
+            return transactions.values().stream()
+                    .filter(trans -> isMatchForSeparateResponse(trans, req))
+                    .findFirst()
+                    .map(trans -> transactions.remove(trans.getTransactionId()));
 
-            transactionQueues.computeIfPresent(req.getRemoteAddress(), (address, coapTransactions) -> {
-                QueueUpdateResult result = coapTransactions.findAndRemoveSeparateResponse(req);
-
-                transactionFound.set(result.coapTransaction);
-                return result.transactionQueue;
-            });
-
-            return transactionFound.get();
         } else {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("findMatchAndRemoveForSeparateResponse(" + req.toString(false) + "): not found");
@@ -119,24 +69,28 @@ class TransactionManager {
         }
     }
 
-    public Collection<CoapTransaction> findTimeoutTransactions(final long currentTime) {
-        Collection<CoapTransaction> ret = transactionQueues.values().stream()
-                .flatMap(TransactionQueue::stream)
-                .filter(trans -> trans.isTimedOut(currentTime))
-                .collect(Collectors.toList());
-        return ret;
+    public Stream<CoapTransaction> findTimeoutTransactions(final long currentTime) {
+        return transactions.values().stream()
+                .filter(trans -> trans.isTimedOut(currentTime));
     }
 
     public void close() {
-        Enumeration<InetSocketAddress> keys = transactionQueues.keys();
+        Enumeration<CoapTransactionId> keys = transactions.keys();
 
         while (keys.hasMoreElements()) {
-            InetSocketAddress key = keys.nextElement();
-            TransactionQueue transQueue = transactionQueues.remove(key);
-            if (transQueue != null) {
-                transQueue.stream().forEach(t -> t.promise.completeExceptionally(new IOException("Server stopped")));
+            CoapTransactionId key = keys.nextElement();
+            CoapTransaction trans = transactions.remove(key);
+            if (trans != null) {
+                trans.promise.completeExceptionally(new IOException("Server stopped"));
             }
         }
 
+    }
+
+    private boolean isMatchForSeparateResponse(CoapTransaction trans, CoapPacket packet) {
+        return (packet.getMessageType() == MessageType.Confirmable || packet.getMessageType() == MessageType.NonConfirmable)
+                && packet.getCode() != null
+                && trans.coapRequest.getRemoteAddress().equals(packet.getRemoteAddress())
+                && Objects.equals(trans.coapRequest.getToken(), packet.getToken());
     }
 }
