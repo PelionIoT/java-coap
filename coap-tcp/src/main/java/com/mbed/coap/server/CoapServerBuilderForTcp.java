@@ -77,7 +77,7 @@ public class CoapServerBuilderForTcp extends CoapServerBuilder<CoapServerBuilder
 
     @Override
     public CoapServer build() {
-        Service<CoapPacket, Boolean> sender = packet -> getCoapTransport()
+        Service<CoapPacket, Boolean> sender = packet -> coapTransport
                 .sendPacket(packet)
                 .whenComplete((__, throwable) -> logSent(packet, throwable));
 
@@ -115,7 +115,7 @@ public class CoapServerBuilderForTcp extends CoapServerBuilder<CoapServerBuilder
                 inboundObservation
         );
 
-        return new CoapServer(coapTransport, dispatcher, outboundService);
+        return new CoapServer(coapTransport, dispatcher, outboundService, Function::identity);
     }
 
 }

@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
+import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -69,13 +70,16 @@ public class MockCoapTransport extends BlockingCoapTransport {
             return sentPackets.poll(1, TimeUnit.SECONDS);
         }
 
-        public CoapPacket peekReceived() throws InterruptedException {
-            return sentPackets.peek();
+        public void verifyReceived(CoapPacketBuilder packetBuilder) throws InterruptedException {
+            verifyReceived(packetBuilder.build());
         }
 
-        public void verifyReceived(CoapPacketBuilder packetBuilder) throws InterruptedException {
+        public void verifyReceived(CoapPacket packet) throws InterruptedException {
             CoapPacket received = sentPackets.poll(1, TimeUnit.SECONDS);
-            assertEquals(packetBuilder.build(), received);
+            assertNotNull(received);
+            received.setTransportContext(TransportContext.EMPTY);
+
+            assertEquals(packet, received);
         }
 
         public boolean nothingReceived() {

@@ -114,4 +114,12 @@ public class FilterTest {
         assertEquals(14, service.apply(2).join());
         assertEquals(0, service.apply(-5).join());
     }
+
+    @Test
+    void FilterOf() {
+        Filter<Integer, Integer, Integer, Integer> filter = Filter.of(it -> it + 1, it -> it - 2);
+
+        assertEquals(0, filter.apply(1, CompletableFuture::completedFuture).join());
+        assertEquals(16, filter.apply(17, CompletableFuture::completedFuture).join());
+    }
 }

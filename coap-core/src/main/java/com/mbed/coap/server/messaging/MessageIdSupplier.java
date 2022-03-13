@@ -16,6 +16,8 @@
  */
 package com.mbed.coap.server.messaging;
 
+import com.mbed.coap.packet.CoapPacket;
+
 /**
  * Interface for generating CoAP message ID.
  */
@@ -30,4 +32,8 @@ public interface MessageIdSupplier {
      */
     int getNextMID();
 
+    default CoapPacket update(CoapPacket packet) {
+        packet.setMessageId(getNextMID());
+        return packet;
+    }
 }

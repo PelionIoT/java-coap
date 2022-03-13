@@ -19,34 +19,12 @@ package com.mbed.coap.server;
 import static com.mbed.coap.server.CoapServerBuilder.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.server.messaging.CoapRequestId;
-import com.mbed.coap.server.messaging.CoapUdpMessaging;
-import com.mbed.coap.server.messaging.DefaultDuplicateDetectorCache;
-import java.net.InetAddress;
+import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.jupiter.api.Test;
 
 
 public class CoapServerBuilderTest {
-
-    @Test
-    public void scheduleExecutor() throws Exception {
-        ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
-
-        CoapServer server = newBuilder().transport(0).scheduledExecutor(scheduledExecutorService).build();
-
-        assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getDispatcher()).getScheduledExecutor());
-    }
-
-    @Test
-    public void scheduleExecutorWithPort() throws Exception {
-        ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
-
-        CoapServer server = newBuilder().transport(InetAddress.getByName("localhost"), 0).scheduledExecutor(scheduledExecutorService).build();
-
-        assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getDispatcher()).getScheduledExecutor());
-    }
 
     @Test
     public void shouldFail_when_illegal_duplicateMsgCacheSize() throws Exception {
@@ -79,16 +57,16 @@ public class CoapServerBuilderTest {
     @Test
     public void usingCustomCacheWithoutTransport() throws Exception {
         ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
-        DefaultDuplicateDetectorCache<CoapRequestId, CoapPacket> cache =
-                new DefaultDuplicateDetectorCache<>("testCache", 100, 120_1000, 10_000, 10_000, scheduledExecutorService);
-        assertThrows(IllegalArgumentException.class, () ->
+        DefaultDuplicateDetectorCache cache =
+                new DefaultDuplicateDetectorCache("testCache", 100, 120_1000, 10_000, 10_000, scheduledExecutorService);
+        assertThrows(NullPointerException.class, () ->
                 newBuilder().duplicateMessageDetectorCache(cache).build()
         );
     }
 
     @Test
     public void shouldFail_when_missingTransport() throws Exception {
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(NullPointerException.class, () ->
                 newBuilder().build()
         );
     }
@@ -103,7 +81,7 @@ public class CoapServerBuilderTest {
     @Test
     public void shouldFail_whenIllegalTimeoutValue() throws Exception {
         assertThrows(IllegalArgumentException.class, () ->
-                newBuilder().delayedTimeout(-1L)
+                newBuilder().finalTimeout(Duration.ofMillis(-1))
         );
     }
 }

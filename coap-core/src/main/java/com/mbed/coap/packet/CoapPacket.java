@@ -109,7 +109,9 @@ public class CoapPacket {
     }
 
     public static CoapPacket from(CoapRequest req) {
-        CoapPacket packet = new CoapPacket(req.getMethod(), MessageType.Confirmable, null, req.getPeerAddress());
+        CoapPacket packet = new CoapPacket(Objects.requireNonNull(req.getPeerAddress()));
+        packet.setMessageType(req.getTransContext().get(MessageType.NonConfirmable) == null ? MessageType.Confirmable : MessageType.NonConfirmable);
+        packet.setMethod(req.getMethod());
         packet.setTransportContext(req.getTransContext());
         packet.setToken(req.getToken());
         packet.setHeaderOptions(req.options());
@@ -131,6 +133,10 @@ public class CoapPacket {
 
     public CoapResponse toCoapResponse() {
         return new CoapResponse(code, payload, options);
+    }
+
+    public SeparateResponse toSeparateResponse() {
+        return toCoapResponse().toSeparate(getToken(), getRemoteAddress(), getTransportContext());
     }
 
     public InetSocketAddress getRemoteAddress() {
@@ -354,7 +360,7 @@ public class CoapPacket {
      *
      * @param messageID message ID
      */
-    public synchronized void setMessageId(int messageID) {
+    public void setMessageId(int messageID) {
         if (messageID > 65535 || messageID < 0) {
             throw new IllegalArgumentException("invalid messageid, should be within range 0-65535: " + messageID);
         }
@@ -367,7 +373,7 @@ public class CoapPacket {
      *
      * @return message ID
      */
-    public synchronized int getMessageId() {
+    public int getMessageId() {
         return messageId;
     }
 
@@ -610,6 +616,10 @@ public class CoapPacket {
 
     public boolean isResponse() {
         return code != null;
+    }
+
+    public boolean isAck() {
+        return messageType == MessageType.Acknowledgement;
     }
 
     public boolean isSeparateResponse() {

@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server.messaging;
+package com.mbed.coap.server;
 
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.server.PutOnlyMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,19 +27,17 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultDuplicateDetectorCache<K extends CoapRequestId, V extends CoapPacket> implements PutOnlyMap<K, V> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DuplicationDetector.class.getName());
+public class DefaultDuplicateDetectorCache implements PutOnlyMap<CoapRequestId, CoapPacket> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDuplicateDetectorCache.class);
     private final Lock REDUCE_LOCK = new ReentrantLock();
-    private final ConcurrentHashMap<K, V> underlying;
+    private final ConcurrentHashMap<CoapRequestId, CoapPacket> underlying;
     private final long maxSize;
     private final long overSizeMargin;
     private final long warnIntervalMillis;
-    private final long cleanIntervalMillis;
     private long nextWarnMessage;
     private final long duplicateDetectionTimeMillis;
     private final String cacheName;
-    private final ScheduledExecutorService scheduledExecutor;
-    private ScheduledFuture<?> cleanWorkerFut;
+    private final ScheduledFuture<?> cleanWorkerFut;
 
     public DefaultDuplicateDetectorCache(String cacheName,
             long maxSize,
@@ -51,26 +48,21 @@ public class DefaultDuplicateDetectorCache<K extends CoapRequestId, V extends Co
         this.cacheName = cacheName;
         this.duplicateDetectionTimeMillis = duplicateDetectionTimeMillis;
         this.maxSize = maxSize;
-        this.cleanIntervalMillis = cleanIntervalMillis;
         this.warnIntervalMillis = warnIntervalMillis;
-        this.scheduledExecutor = scheduledExecutor;
         this.overSizeMargin = maxSize / 100; //1%
         underlying = new ConcurrentHashMap<>();
-    }
 
-    public void start() {
-        cleanWorkerFut = scheduledExecutor.scheduleWithFixedDelay(() -> clean(), cleanIntervalMillis, cleanIntervalMillis, TimeUnit.MILLISECONDS);
-    }
-
-    public void stop() {
-        if (cleanWorkerFut != null) {
-            cleanWorkerFut.cancel(true);
-        }
+        cleanWorkerFut = scheduledExecutor.scheduleWithFixedDelay(this::clean, cleanIntervalMillis, cleanIntervalMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public V putIfAbsent(K key, V value) {
-        V result = underlying.putIfAbsent(key, value);
+    public void stop() {
+        cleanWorkerFut.cancel(true);
+    }
+
+    @Override
+    public CoapPacket putIfAbsent(CoapRequestId key, CoapPacket value) {
+        CoapPacket result = underlying.putIfAbsent(key, value);
         // Cleanup only if new entry was added to map.
         if (result == null) {
             cleanupBulk();
@@ -80,13 +72,13 @@ public class DefaultDuplicateDetectorCache<K extends CoapRequestId, V extends Co
     }
 
     @Override
-    public void put(K key, V value) {
+    public void put(CoapRequestId key, CoapPacket value) {
         underlying.put(key, value);
     }
 
     public void clean() {
         int removedItems = 0;
-        Iterator<K> it = underlying.keySet().iterator();
+        Iterator<CoapRequestId> it = underlying.keySet().iterator();
         final long currentTimeMillis = System.currentTimeMillis();
         while (it.hasNext()) {
             if (currentTimeMillis - it.next().getCreatedTimestampMillis() > duplicateDetectionTimeMillis) {
@@ -103,7 +95,7 @@ public class DefaultDuplicateDetectorCache<K extends CoapRequestId, V extends Co
         if (underlying.size() > maxSize + overSizeMargin && REDUCE_LOCK.tryLock()) {
             try {
                 //reduce map size in bulk
-                Iterator<K> it = underlying.keySet().iterator();
+                Iterator<CoapRequestId> it = underlying.keySet().iterator();
                 try {
                     for (int i = 0; i <= overSizeMargin && it.hasNext(); i++) {
                         it.next();

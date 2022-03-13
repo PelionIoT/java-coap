@@ -18,7 +18,7 @@ package com.mbed.coap.exception;
 
 public class CoapTimeoutException extends CoapException {
 
-    public CoapTimeoutException(String message) {
-        super("Timeout " + message);
+    public CoapTimeoutException() {
+        super("Timeout");
     }
 }

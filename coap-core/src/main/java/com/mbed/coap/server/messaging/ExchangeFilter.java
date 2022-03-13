@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
- * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,33 +17,38 @@ package com.mbed.coap.server.messaging;
 
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
-import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class TcpExchangeFilter implements Filter<CoapRequest, CoapResponse, CoapRequest, Boolean> {
+public class ExchangeFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
 
     private final ConcurrentMap<TransactionId, CompletableFuture<CoapResponse>> transactions = new ConcurrentHashMap<>();
 
     @Override
-    public CompletableFuture<CoapResponse> apply(CoapRequest request, Service<CoapRequest, Boolean> service) {
-        TransactionId tid = new TransactionId(request.getToken(), request.getPeerAddress());
+    public CompletableFuture<CoapResponse> apply(CoapRequest request, Service<CoapRequest, CoapResponse> service) {
+        if (request.isPing()) {
+            return service.apply(request);
+        }
 
+        TransactionId tid = new TransactionId(request.getToken(), request.getPeerAddress());
         CompletableFuture<CoapResponse> promise = new CompletableFuture<>();
         transactions.put(tid, promise);
 
-        CompletableFuture<Boolean> servicePromise = service.apply(request);
-        servicePromise.whenComplete((resp, ex) -> {
-            if (ex != null) {
-                promise.completeExceptionally(ex);
-            }
-        });
+        CompletableFuture<CoapResponse> servicePromise = service.apply(request);
+        servicePromise
+                .whenComplete((resp, ex) -> {
+                    if (ex != null) {
+                        promise.completeExceptionally(ex);
+                    } else {
+                        if (resp.getCode() != null) {
+                            promise.complete(resp);
+                        }
+                    }
+                });
 
         promise.whenComplete((__, ex) -> {
             servicePromise.cancel(false);
@@ -54,12 +58,11 @@ public class TcpExchangeFilter implements Filter<CoapRequest, CoapResponse, Coap
         return promise;
     }
 
-    public boolean handleResponse(SeparateResponse resp) {
-        if (resp.getCode() == Code.C705_ABORT) {
-            removeTransactions(resp.getPeerAddress());
-            return true;
-        }
+    public int transactions() {
+        return transactions.size();
+    }
 
+    public boolean handleResponse(SeparateResponse resp) {
         TransactionId tid = new TransactionId(resp.getToken(), resp.getPeerAddress());
         CompletableFuture<CoapResponse> promise = transactions.remove(tid);
         if (promise != null) {
@@ -68,21 +71,4 @@ public class TcpExchangeFilter implements Filter<CoapRequest, CoapResponse, Coap
             return false;
         }
     }
-
-    private void removeTransactions(InetSocketAddress remoteAddress) {
-        for (TransactionId transId : transactions.keySet()) {
-            if (transId.hasRemoteAddress(remoteAddress)) {
-
-                CompletableFuture<CoapResponse> promise = transactions.remove(transId);
-                if (promise != null) {
-                    promise.completeExceptionally(new IOException("Socket closed"));
-                }
-            }
-        }
-    }
-
-    public int transactions() {
-        return transactions.size();
-    }
-
 }

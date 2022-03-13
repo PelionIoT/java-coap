@@ -108,9 +108,8 @@ public class DuplicateTest {
         client.send(coap(33).non().get().uriPath("/test-non"));
 
         // then
-        int mid = client.peekReceived().getMessageId();
-        client.verifyReceived(coap(mid).non(Code.C205_CONTENT).payload("dupa2"));
-        client.verifyReceived(coap(mid).non(Code.C205_CONTENT).payload("dupa2"));
+        client.verifyReceived(coap(1).non(Code.C205_CONTENT).payload("dupa2"));
+        client.verifyReceived(coap(1).non(Code.C205_CONTENT).payload("dupa2"));
 
         assertEquals(1, duplicated.get());
     }

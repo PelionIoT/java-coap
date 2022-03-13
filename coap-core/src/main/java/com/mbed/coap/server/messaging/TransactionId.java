@@ -16,28 +16,22 @@
  */
 package com.mbed.coap.server.messaging;
 
-import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.Opaque;
 import java.net.InetSocketAddress;
+import java.util.Objects;
 
-/**
- * Identifies CoAP transaction
- */
-class CoapTransactionId {
 
-    private final int messageId;
-    protected InetSocketAddress address;
+public class TransactionId {
+    private final Opaque token;
+    private final InetSocketAddress source;
 
-    public CoapTransactionId(CoapPacket packet) {
-        messageId = packet.getMessageId();
-        address = packet.getRemoteAddress();
+    public TransactionId(Opaque token, InetSocketAddress source) {
+        this.token = token;
+        this.source = source;
     }
 
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 67 * hash + this.messageId;
-        hash = 67 * hash + (this.address != null ? this.address.hashCode() : 0);
-        return hash;
+    public boolean hasRemoteAddress(InetSocketAddress adr) {
+        return source.equals(adr);
     }
 
     @Override
@@ -48,19 +42,27 @@ class CoapTransactionId {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final CoapTransactionId other = (CoapTransactionId) obj;
-        if (this.messageId != other.messageId) {
+        final TransactionId other = (TransactionId) obj;
+        if (!Objects.equals(this.token, other.token)) {
             return false;
         }
-        if (this.address != other.address && (this.address == null || !this.address.equals(other.address))) {
+        if (this.source != other.source && (this.source == null || !this.source.equals(other.source))) {
             return false;
         }
         return true;
     }
 
     @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 41 * hash + Objects.hashCode(this.token);
+        hash = 41 * hash + (this.source != null ? this.source.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
     public String toString() {
-        return messageId + "#" + address.toString();
+        return token + "#" + source.toString();
     }
 
 }

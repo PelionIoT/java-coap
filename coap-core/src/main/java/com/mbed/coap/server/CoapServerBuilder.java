@@ -16,6 +16,11 @@
  */
 package com.mbed.coap.server;
 
+import static com.mbed.coap.transport.CoapTransport.*;
+import static com.mbed.coap.utils.Timer.*;
+import static com.mbed.coap.utils.Validations.*;
+import static java.util.Objects.*;
+import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
@@ -25,24 +30,29 @@ import com.mbed.coap.server.block.BlockWiseIncomingFilter;
 import com.mbed.coap.server.block.BlockWiseNotificationFilter;
 import com.mbed.coap.server.block.BlockWiseOutgoingFilter;
 import com.mbed.coap.server.filter.CongestionControlFilter;
+import com.mbed.coap.server.filter.TimeoutFilter;
 import com.mbed.coap.server.messaging.Capabilities;
 import com.mbed.coap.server.messaging.CapabilitiesResolver;
-import com.mbed.coap.server.messaging.CoapMessaging;
-import com.mbed.coap.server.messaging.CoapRequestId;
-import com.mbed.coap.server.messaging.CoapUdpMessaging;
-import com.mbed.coap.server.messaging.DefaultDuplicateDetectorCache;
+import com.mbed.coap.server.messaging.CoapDispatcher;
+import com.mbed.coap.server.messaging.CoapRequestConverter;
+import com.mbed.coap.server.messaging.DuplicateDetector;
+import com.mbed.coap.server.messaging.ExchangeFilter;
 import com.mbed.coap.server.messaging.MessageIdSupplier;
 import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
+import com.mbed.coap.server.messaging.ObservationMapper;
+import com.mbed.coap.server.messaging.PiggybackedExchangeFilter;
+import com.mbed.coap.server.messaging.RetransmissionFilter;
+import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
+import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
-import java.io.IOException;
-import java.net.InetAddress;
+import com.mbed.coap.utils.Timer;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Function;
 
 
 public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
@@ -73,7 +83,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
     }
 
     public final T transport(CoapTransport coapTransport) {
-        this.coapTransport = coapTransport;
+        this.coapTransport = requireNonNull(coapTransport);
         return me();
     }
 
@@ -90,21 +100,9 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
         return route != RouterService.NOT_FOUND_SERVICE;
     }
 
-    public CoapServer start() throws IOException {
-        return build().start();
-    }
-
     public abstract CoapServer build();
 
     protected abstract CapabilitiesResolver capabilities();
-
-    protected CoapTransport getCoapTransport() {
-        if (coapTransport == null) {
-            throw new IllegalArgumentException("Transport is missing");
-        }
-
-        return coapTransport;
-    }
 
     public static class CoapServerBuilderForUdp extends CoapServerBuilder<CoapServerBuilderForUdp> {
         private int duplicationMaxSize = DEFAULT_MAX_DUPLICATION_LIST_SIZE;
@@ -116,9 +114,9 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
         private ScheduledExecutorService scheduledExecutorService;
         private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
 
-        private long delayedTransactionTimeout = DELAYED_TRANSACTION_TIMEOUT_MS;
+        private Duration finalOutboundTimeout = Duration.ofMillis(DELAYED_TRANSACTION_TIMEOUT_MS);
         private DuplicatedCoapMessageCallback duplicatedCoapMessageCallback = DuplicatedCoapMessageCallback.NULL;
-        private TransmissionTimeout transmissionTimeout;
+        private TransmissionTimeout transmissionTimeout = new CoapTimeout();
 
         private CoapServerBuilderForUdp() {
         }
@@ -137,11 +135,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
             return this;
         }
 
-        public CoapServerBuilderForUdp transport(InetAddress address, int port) {
-            transport(new DatagramSocketTransport(new InetSocketAddress(address, port)));
-            return this;
-        }
-
         public CoapServerBuilderForUdp maxMessageSize(int maxMessageSize) {
             this.maxMessageSize = maxMessageSize;
             return this;
@@ -152,23 +145,9 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
             return this;
         }
 
-        private CoapUdpMessaging buildCoapMessaging() {
-            boolean isSelfCreatedExecutor = false;
-            if (scheduledExecutorService == null) {
-                scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-                isSelfCreatedExecutor = true;
-            }
-
-            if (blockSize != null && blockSize.isBert()) {
-                throw new IllegalArgumentException("BlockSize with BERT support is defined only for CoAP overt TCP/TLS 2017 standard draft");
-            }
-
-            CoapUdpMessaging server = new CoapUdpMessaging(getCoapTransport());
-
-            server.setTransmissionTimeout(transmissionTimeout);
-
+        private PutOnlyMap<CoapRequestId, CoapPacket> getDuplicateDetectorCache() {
             if (duplicateDetectionCache == null) {
-                duplicateDetectionCache = new DefaultDuplicateDetectorCache<>(
+                duplicateDetectionCache = new DefaultDuplicateDetectorCache(
                         "Default cache",
                         duplicationMaxSize,
                         duplicateMsgDetectionTimeMillis,
@@ -176,14 +155,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
                         duplicateMsgWarningMessageIntervalMillis,
                         scheduledExecutorService);
             }
-
-            server.init(duplicateDetectionCache,
-                    isSelfCreatedExecutor,
-                    midSupplier,
-                    delayedTransactionTimeout,
-                    duplicatedCoapMessageCallback,
-                    scheduledExecutorService);
-            return server;
+            return duplicateDetectionCache;
         }
 
         @Override
@@ -213,19 +185,14 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
             return this;
         }
 
-        public CoapServerBuilderForUdp delayedTimeout(long delayedTransactionTimeout) {
-            if (delayedTransactionTimeout <= 0) {
-                throw new IllegalArgumentException();
-            }
-            this.delayedTransactionTimeout = delayedTransactionTimeout;
+        public CoapServerBuilderForUdp finalTimeout(Duration timeout) {
+            require(timeout.toMillis() > 0);
+            this.finalOutboundTimeout = timeout;
             return this;
         }
 
         public CoapServerBuilderForUdp duplicatedCoapMessageCallback(DuplicatedCoapMessageCallback duplicatedCallback) {
-            if (duplicatedCallback == null) {
-                throw new NullPointerException();
-            }
-            this.duplicatedCoapMessageCallback = duplicatedCallback;
+            this.duplicatedCoapMessageCallback = requireNonNull(duplicatedCallback);
             return this;
         }
 
@@ -241,33 +208,25 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
          * @return this instance
          */
         public CoapServerBuilderForUdp duplicateMsgCacheSize(int duplicationMaxSize) {
-            if (duplicationMaxSize <= 0) {
-                throw new IllegalArgumentException();
-            }
+            require(duplicationMaxSize > 0);
             this.duplicationMaxSize = duplicationMaxSize;
             return this;
         }
 
         public CoapServerBuilderForUdp duplicateMsgCleanIntervalInMillis(long intervalInMillis) {
-            if (intervalInMillis < 1000) {
-                throw new IllegalArgumentException();
-            }
+            require(intervalInMillis >= 1000);
             this.duplicateMsgCleanIntervalMillis = intervalInMillis;
             return this;
         }
 
         public CoapServerBuilderForUdp duplicateMsgWarningMessageIntervalInMillis(long intervalInMillis) {
-            if (intervalInMillis < 1000) {
-                throw new IllegalArgumentException();
-            }
+            require(intervalInMillis >= 1000);
             this.duplicateMsgWarningMessageIntervalMillis = intervalInMillis;
             return this;
         }
 
         public CoapServerBuilderForUdp duplicateMsgDetectionTimeInMillis(long intervalInMillis) {
-            if (intervalInMillis < 1000) {
-                throw new IllegalArgumentException();
-            }
+            require(intervalInMillis >= 1000);
             this.duplicateMsgDetectionTimeMillis = intervalInMillis;
             return this;
         }
@@ -284,33 +243,75 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
 
         @Override
         public CoapServer build() {
-            CoapMessaging messaging = buildCoapMessaging();
+            requireNonNull(coapTransport);
+            if (scheduledExecutorService == null) {
+                scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+            }
 
-            // NOTIFICATION
+            if (blockSize != null && blockSize.isBert()) {
+                throw new IllegalArgumentException("BlockSize with BERT support is defined only for CoAP overt TCP/TLS 2017 standard draft");
+            }
+
+
+            Timer timer = toTimer(scheduledExecutorService);
+            Service<CoapPacket, Boolean> sender = packet -> coapTransport.sendPacket(packet)
+                    .whenComplete((__, throwable) -> logSent(packet, throwable));
+
             ObservationHandler observationHandler = new ObservationHandler();
-            Service<SeparateResponse, Boolean> sendNotification = new NotificationValidator()
-                    .andThen(new BlockWiseNotificationFilter(capabilities()))
-                    .then(messaging::send);
-
-            // INBOUND
-            Service<CoapRequest, CoapResponse> inboundService = new RescueFilter()
-                    .andThenIf(hasRoute(), new CriticalOptionVerifier())
-                    .andThenIf(hasRoute(), new ObservationSenderFilter(sendNotification))
-                    .andThenIf(hasRoute(), new BlockWiseIncomingFilter(capabilities(), maxIncomingBlockTransferSize))
-                    .then(route);
 
             // OUTBOUND
+            ExchangeFilter exchangeFilter = new ExchangeFilter();
+            RetransmissionFilter<CoapPacket, CoapPacket> retransmissionFilter = new RetransmissionFilter<>(timer, transmissionTimeout, CoapPacket::getMustAcknowledge);
+            PiggybackedExchangeFilter piggybackedExchangeFilter = new PiggybackedExchangeFilter();
+
             Service<CoapRequest, CoapResponse> outboundService = new ObserveRequestFilter(observationHandler)
                     .andThen(new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress))
                     .andThen(new BlockWiseOutgoingFilter(capabilities(), maxIncomingBlockTransferSize))
-                    .then(messaging::send);
+                    .andThen(new TimeoutFilter<>(timer, finalOutboundTimeout))
+                    .andThen(exchangeFilter)
+                    .andThen(Filter.of(CoapPacket::from, CoapPacket::toCoapResponse)) // convert coap packet
+                    .andThenMap(midSupplier::update)
+                    .andThen(retransmissionFilter)
+                    .andThen(piggybackedExchangeFilter)
+                    .then(sender);
 
-            Function<SeparateResponse, Boolean> inboundObservation = obs -> observationHandler.notify(obs, outboundService);
-            messaging.init(inboundObservation, inboundService);
 
-            return new CoapServer(coapTransport, messaging, outboundService);
+            // OBSERVATION
+            Service<SeparateResponse, Boolean> sendNotification = new NotificationValidator()
+                    .andThen(new BlockWiseNotificationFilter(capabilities()))
+                    .andThen(new TimeoutFilter<>(timer, finalOutboundTimeout))
+                    .andThen(Filter.of(CoapPacket::from, CoapPacket::isAck))
+                    .andThenMap(midSupplier::update)
+                    .andThen(retransmissionFilter)
+                    .andThen(piggybackedExchangeFilter)
+                    .then(sender);
+
+            // INBOUND
+            PutOnlyMap<CoapRequestId, CoapPacket> duplicateDetectorCache = getDuplicateDetectorCache();
+            DuplicateDetector duplicateDetector = new DuplicateDetector(duplicateDetectorCache, duplicatedCoapMessageCallback);
+            Service<CoapPacket, CoapPacket> inboundService = duplicateDetector
+                    .andThen(new CoapRequestConverter(midSupplier))
+                    .andThen(new RescueFilter())
+                    .andThen(new CriticalOptionVerifier())
+                    .andThen(new ObservationSenderFilter(sendNotification))
+                    .andThen(new BlockWiseIncomingFilter(capabilities(), maxIncomingBlockTransferSize))
+                    .then(route);
+
+
+            Service<CoapPacket, CoapPacket> inboundObservation = duplicateDetector
+                    .andThen(new ObservationMapper())
+                    .then(obs -> completedFuture(observationHandler.notify(obs, outboundService)));
+
+            CoapDispatcher dispatcher = new CoapDispatcher(sender, inboundObservation, inboundService,
+                    piggybackedExchangeFilter::handleResponse, exchangeFilter::handleResponse
+            );
+
+            return new CoapServer(coapTransport, dispatcher, outboundService, () -> {
+                piggybackedExchangeFilter.stop();
+                duplicateDetectorCache.stop();
+            });
+
         }
-
     }
-    
+
 }

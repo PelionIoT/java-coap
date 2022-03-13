@@ -392,20 +392,6 @@ public class CoapPacketTest {
     }
 
     @Test
-    void fromSeparateResponse() {
-        SeparateResponse response = ok("<dupa>", MediaTypes.CT_APPLICATION_XML).toSeparate(Opaque.of("100"), LOCAL_1_5683);
-
-        CoapPacket packet = CoapPacket.from(response);
-
-        CoapPacket expected = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, LOCAL_1_5683);
-        expected.setToken(Opaque.of("100"));
-        expected.setPayload("<dupa>");
-        expected.headers().setContentFormat(MediaTypes.CT_APPLICATION_XML);
-
-        assertEquals(expected, packet);
-    }
-
-    @Test
     void ConCoapRequest() {
         CoapPacket packet = new CoapPacket(Method.GET, MessageType.Confirmable, "/12", null);
 
@@ -444,4 +430,31 @@ public class CoapPacketTest {
         assertFalse(packet.isEmptyAck());
         assertFalse(packet.isRequest());
     }
+
+    @Test
+    void toCoapPacket() {
+        SeparateResponse response = ok("<dupa>", MediaTypes.CT_APPLICATION_XML).toSeparate(Opaque.of("100"), LOCAL_1_5683);
+
+        CoapPacket packet = CoapPacket.from(response);
+
+        CoapPacket expected = new CoapPacket(Code.C205_CONTENT, MessageType.Confirmable, LOCAL_1_5683);
+        expected.setToken(Opaque.of("100"));
+        expected.setPayload("<dupa>");
+        expected.headers().setContentFormat(MediaTypes.CT_APPLICATION_XML);
+
+        assertEquals(expected, packet);
+    }
+
+    @Test
+    public void convertToSeparateResponse() {
+        CoapPacket packet = newCoapPacket(LOCAL_5683).mid(13).token(918).ack(Code.C201_CREATED).payload("OK").etag(99).build();
+
+        SeparateResponse separateResponse = packet.toSeparateResponse();
+
+        assertEquals(
+                CoapResponse.of(Code.C201_CREATED).payload(Opaque.of("OK")).etag(Opaque.ofBytes(99)).toSeparate(Opaque.variableUInt(918), LOCAL_5683),
+                separateResponse
+        );
+    }
+
 }

@@ -19,4 +19,6 @@ public interface PutOnlyMap<K, V> {
     V putIfAbsent(K key, V value);
 
     void put(K key, V value);
+
+    void stop();
 }

@@ -139,17 +139,6 @@ public class CoapTcpDispatcher implements CoapTcpReceiver {
         removeConnection(CoapResponse.of(Code.C705_ABORT).toSeparate(Opaque.EMPTY, remoteAddress));
     }
 
-    @Override
-    public void start() {
-        // nothing to start
-    }
-
-    @Override
-    public void stop() {
-        // nothing to stop
-    }
-
-
     private void removeConnection(SeparateResponse abortResp) {
         csmStorage.remove(abortResp.getPeerAddress());
 

@@ -33,11 +33,14 @@ public class CoapServer {
     private final CoapTransport transport;
     private final CoapReceiver dispatcher;
     private final Service<CoapRequest, CoapResponse> inboundService;
+    private final Runnable stopAll;
 
-    public CoapServer(CoapTransport transport, CoapReceiver dispatcher, Service<CoapRequest, CoapResponse> inboundService) {
+    public CoapServer(CoapTransport transport, CoapReceiver dispatcher, Service<CoapRequest, CoapResponse> inboundService,
+            Runnable stopAll) {
         this.transport = transport;
         this.dispatcher = dispatcher;
         this.inboundService = inboundService;
+        this.stopAll = stopAll;
     }
 
     public static CoapServerBuilder.CoapServerBuilderForUdp builder() {
@@ -54,7 +57,6 @@ public class CoapServer {
     public synchronized CoapServer start() throws IOException, IllegalStateException {
         assume(!isRunning, "CoapServer is running");
         transport.start(dispatcher);
-        dispatcher.start();
         isRunning = true;
         return this;
     }
@@ -64,13 +66,13 @@ public class CoapServer {
      *
      * @throws IllegalStateException if server is already stopped
      */
-    public final synchronized void stop() throws IllegalStateException {
+    public final synchronized void stop() {
         assume(isRunning, "CoapServer is not running");
 
         isRunning = false;
         LOGGER.trace("Stopping CoAP server..");
-        dispatcher.stop();
         transport.stop();
+        stopAll.run();
 
         LOGGER.debug("CoAP Server stopped");
     }

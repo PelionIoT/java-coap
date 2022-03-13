@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
- * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server.messaging;
+package com.mbed.coap.utils;
 
-import nl.jqno.equalsverifier.EqualsVerifier;
-import nl.jqno.equalsverifier.Warning;
-import org.junit.jupiter.api.Test;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
+public class MockTimer implements Timer {
 
-public class CoapTransactionIdTest {
+    private final List<Runnable> tasks = new ArrayList<>();
 
-    @Test
-    public void equalsAndHashTest() throws Exception {
-        EqualsVerifier.forClass(CoapTransactionId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+    @Override
+    public Runnable schedule(Duration delay, Runnable task) {
+        tasks.add(task);
+        return () -> tasks.removeIf(entry -> task == entry);
+    }
 
-        EqualsVerifier.forClass(DelayedTransactionId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+    public void runAll() {
+        List<Runnable> tmp = new ArrayList<>(tasks);
+        tasks.clear();
+        tmp.forEach(Runnable::run);
+    }
 
-        EqualsVerifier.forClass(CoapRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+    public int size() {
+        return tasks.size();
+    }
+
+    public boolean isEmpty() {
+        return tasks.isEmpty();
     }
 }

@@ -16,12 +16,12 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.BlockSize.*;
 import static com.mbed.coap.packet.CoapRequest.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
-import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
@@ -32,22 +32,23 @@ import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import protocolTests.utils.TransportConnectorMock;
+import protocolTests.utils.MockCoapTransport;
 
 public class SeparateResponseTest {
     private static final InetSocketAddress SERVER_ADDRESS = new InetSocketAddress("127.0.0.1", 5683);
-    private TransportConnectorMock transport;
     private CoapClient client;
+    private MockCoapTransport.MockClient server;
 
     @BeforeEach
     public void setUp() throws Exception {
-        transport = new TransportConnectorMock();
+        MockCoapTransport serverTransport = new MockCoapTransport();
+        server = serverTransport.client();
 
-        CoapServer coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
+        CoapServer coapServer = CoapServer.builder().transport(serverTransport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(S_32)
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();
 
-        client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);
+        this.client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);
     }
 
     @AfterEach
@@ -57,15 +58,16 @@ public class SeparateResponseTest {
 
     @Test
     public void shouldResponseWithEmptyAckAndSeparateResponse() throws Exception {
-        //empty ack
-        transport.when(newCoapPacket(1).token(123).get().uriPath("/path1").build())
-                .then(newCoapPacket(1).ack(null).build());
-
         CompletableFuture<CoapResponse> futResp = client.send(get("/path1").token(123));
+        server.verifyReceived(newCoapPacket(SERVER_ADDRESS).mid(1).token(123).get().uriPath("/path1"));
 
-        //separate response
-        transport.receive(newCoapPacket(2).token(123).non(Code.C205_CONTENT).payload("dupa").build(), SERVER_ADDRESS);
+        // when, send empty ack
+        server.send(newCoapPacket(SERVER_ADDRESS).emptyAck(1));
 
+        // and, separate response
+        server.send(newCoapPacket(SERVER_ADDRESS).mid(321).token(123).non(Code.C205_CONTENT).payload("dupa"));
+
+        // then
         assertEquals("dupa", futResp.get().getPayloadString());
     }
 
@@ -74,7 +76,8 @@ public class SeparateResponseTest {
         CompletableFuture<CoapResponse> futResp = client.send(get("/path1").token(123));
 
         //separate response, no empty ack
-        transport.receive(newCoapPacket(2).token(123).con(Code.C205_CONTENT).payload("dupa").build(), SERVER_ADDRESS);
+        server.send(newCoapPacket(SERVER_ADDRESS).mid(917).token(123).con(Code.C205_CONTENT).payload("dupa"));
+
         assertEquals("dupa", futResp.get().getPayloadString());
     }
 
@@ -82,17 +85,19 @@ public class SeparateResponseTest {
     public void shouldResponseWithSeparateResponseBlock1_withoutEmptyAck() throws Exception {
         //given
         CompletableFuture<CoapResponse> futResp = client.send(post("/path1").token(123).payload("aaaaaaaaa|aaaaaaaaa|aaaaaaaaa|aaaaaaaaa|"));
+        server.verifyReceived(newCoapPacket(SERVER_ADDRESS).mid(1).token(123).post().uriPath("/path1").block1Req(0, S_32, true).size1(40).payload("aaaaaaaaa|aaaaaaaaa|aaaaaaaaa|aa"));
 
         //when
-        transport.receive(newCoapPacket(1).token(123).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_32, true).build(), SERVER_ADDRESS);
+        server.send(newCoapPacket(SERVER_ADDRESS).mid(1).token(123).ack(Code.C231_CONTINUE).block1Req(0, S_32, true));
+        server.verifyReceived(newCoapPacket(SERVER_ADDRESS).mid(2).token(123).post().uriPath("/path1").block1Req(1, S_32, false).payload("aaaaaaa|"));
 
         //and, separate response
-        transport.receive(newCoapPacket(2).emptyAck(2), SERVER_ADDRESS);
-        transport.receive(newCoapPacket(3).token(123).con(Code.C201_CREATED).block1Req(1, BlockSize.S_32, false).payload("ok").build(), SERVER_ADDRESS);
+        server.send(newCoapPacket(SERVER_ADDRESS).emptyAck(2));
+        server.send(newCoapPacket(SERVER_ADDRESS).mid(3).token(123).con(Code.C201_CREATED).block1Req(1, S_32, false).payload("ok"));
 
         //then
         assertEquals("ok", futResp.get().getPayloadString());
         //and ACK response should be sent
-        assertEquals(newCoapPacket(SERVER_ADDRESS).emptyAck(3), transport.getLastOutgoingMessage());
+        server.verifyReceived(newCoapPacket(SERVER_ADDRESS).emptyAck(3));
     }
 }

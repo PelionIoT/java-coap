@@ -14,9 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server.messaging;
+package com.mbed.coap.server;
 
 import java.net.InetSocketAddress;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
 
 public class CoapRequestIdTest {
@@ -42,19 +44,7 @@ public class CoapRequestIdTest {
     }
 
     @Test
-    public void testTestEquals() {
-        assert (requestId.equals(requestId));
-        assert (requestId.equals(requestId2));
-        assert (!requestId.equals(requestId3));
-        assert (!requestId.equals(requestId4));
-    }
-
-
-    @Test
-    public void testTestHashCode() {
-        assert (requestId.hashCode() == requestId.hashCode());
-        assert (requestId.hashCode() == requestId2.hashCode());
-        assert (requestId.hashCode() != requestId3.hashCode());
-        assert (requestId.hashCode() != requestId4.hashCode());
+    public void equalsAndHashTest() throws Exception {
+        EqualsVerifier.forClass(CoapRequestId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
     }
 }

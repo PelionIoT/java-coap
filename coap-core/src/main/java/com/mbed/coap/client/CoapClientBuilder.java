@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 
 public abstract class CoapClientBuilder<T extends CoapServerBuilder<?>> {
@@ -128,8 +129,8 @@ public abstract class CoapClientBuilder<T extends CoapServerBuilder<?>> {
             return this;
         }
 
-        public CoapClientBuilderForUdp delayedTransTimeout(int delayedTransactionTimeout) {
-            coapServerBuilderForUdp.delayedTimeout(delayedTransactionTimeout);
+        public CoapClientBuilderForUdp finalTimeout(Duration timeout) {
+            coapServerBuilderForUdp.finalTimeout(timeout);
             return this;
         }
 

@@ -25,10 +25,6 @@ public interface CoapReceiver {
 
     void handle(CoapPacket packet);
 
-    void start();
-
-    void stop();
-
     static void logReceived(CoapPacket packet) {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("CoAP received [{}]", packet.toString(true));

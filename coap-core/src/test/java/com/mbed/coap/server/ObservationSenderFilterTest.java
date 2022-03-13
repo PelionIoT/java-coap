@@ -109,7 +109,7 @@ public class ObservationSenderFilterTest {
     public void terminateWhenTimeoutException() {
         // given
         inServiceResponse(CoapResponse.ok("test").nextSupplier(next));
-        given(sendNotification.apply(any())).willReturn(failedFuture(new CoapTimeoutException("")));
+        given(sendNotification.apply(any())).willReturn(failedFuture(new CoapTimeoutException()));
 
 
         // when

@@ -27,7 +27,6 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.server.messaging.CoapUdpMessaging;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.io.IOException;
@@ -62,7 +61,6 @@ public class TimeoutTest {
         //assertEquals("Wrong number of transactions", 1, cnn.getNumberOfTransactions());
         assertThatThrownBy(callback::get)
                 .hasCauseExactlyInstanceOf(CoapTimeoutException.class);
-        assertEquals(0, ((CoapUdpMessaging) cnn.getDispatcher()).getNumberOfTransactions(), "Wrong number of transactions");
         cnn.stop();
 
     }

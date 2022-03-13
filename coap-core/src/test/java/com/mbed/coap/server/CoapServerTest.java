@@ -25,38 +25,38 @@ import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.reset;
 import static org.mockito.BDDMockito.verify;
 import static org.mockito.Mockito.*;
-import com.mbed.coap.server.messaging.CoapMessaging;
+import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class CoapServerTest {
 
-    private CoapMessaging msg = mock(CoapMessaging.class);
+    private CoapReceiver msg = mock(CoapReceiver.class);
     private CoapTransport transport = mock(CoapTransport.class);
+    private Runnable stop = mock(Runnable.class);
     private CoapServer server;
 
     @BeforeEach
     public void setUp() throws Exception {
-        reset(msg);
-        server = new CoapServer(transport, msg, __ -> completedFuture(ok("OK"))).start();
+        reset(msg, transport, stop);
+        server = new CoapServer(transport, msg, __ -> completedFuture(ok("OK")), stop).start();
     }
 
     @Test
     public void shouldStartAndStop() throws Exception {
-        verify(msg).start();
         verify(transport).start(eq(msg));
         assertTrue(server.isRunning());
 
         server.stop();
-        verify(msg).stop();
         verify(transport).stop();
+        verify(stop).run();
         assertFalse(server.isRunning());
     }
 
     @Test
     public void shouldFailWhenAttemptToStopWhenNotRunning() throws Exception {
-        final CoapServer nonStartedServer = new CoapServer(transport, msg, __ -> completedFuture(ok("OK")));
+        final CoapServer nonStartedServer = new CoapServer(transport, msg, __ -> completedFuture(ok("OK")), stop);
 
         assertThatThrownBy(nonStartedServer::stop).isInstanceOf(IllegalStateException.class);
     }

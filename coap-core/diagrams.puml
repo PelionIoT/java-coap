@@ -6,14 +6,14 @@ box "OS"
 end box
 participant DatagramSocketTransport as udp <<(C,#ADD1B2)>>
 participant Executor as exec <<(I,#ADD1B2)>>
-participant CoapServer as server <<(C,#ADD1B2)>>
-participant CoapResource as CoapResource <<(C,#ADD1B2)>>
+participant CoapDispatcher as server <<(C,#ADD1B2)>>
+participant InboundService as inbound <<(C,#ADD1B2)>>
 
 
 loop
-udp -> sock+ #LightGreen: socket.receive
+udp -> sock++ #LightGreen: socket.receive
 --> sock: Datagram
-udp <-- sock-
+udp <-- sock--
 udp -> exec: execute
 end
 
@@ -23,11 +23,8 @@ exec -> udp++ #LightBlue: run
     note left: parse to CoapPacket
 
     udp -> server++: handle(coapPacket)
-        server -> server: handleRequest
-        server -> server: findHandler
-        server -> CoapResource++: handle
-        CoapResource -> CoapResource: post()
-        CoapResource -> server--: exchange.sendResponse
+        server -> inbound++
+        inbound --> server--:
     server -> udp--: sendPacket
 
     udp -> udp: coapPacket.writeTo
@@ -37,5 +34,57 @@ exec -> udp++ #LightBlue: run
 exec <-- udp--
 end
 
+
+@enduml
+
+@startuml
+Title: Chain of message flow
+skinparam componentStyle rectangle
+
+component "Dispatcher" as disp
+interface "Transport" as trans
+component "PiggybackedExchange"
+
+frame "Outbound service" {
+    component "TimeoutFilter" as outTimeout
+    component "toCoapPacket" as outToCoapPacket
+    component "RetransmissionFilter" as outRetr
+
+    [ObserveRequest] --> [CongestionControl]
+    [CongestionControl] --> [BlockWiseOutgoing]
+    [BlockWiseOutgoing] --> outTimeout
+    outTimeout --> outToCoapPacket
+    outToCoapPacket --> [UpdateMID]
+    [UpdateMID] --> [ExchangeFilter]
+    [ExchangeFilter] --> outRetr
+    outRetr --> [PiggybackedExchange]
+    [PiggybackedExchange] --> trans: sendPacket()
+
+    [ExchangeFilter] <. disp: separate\nresponse
+    [PiggybackedExchange] <. disp: piggybacked\nresponse
+}
+
+frame "Outbound observations" {
+    [RetransmissionFilter] -left--> [PiggybackedExchange]
+    [RetransmissionFilter] <-- [toCoapPacket]
+    [toCoapPacket] <-- [TimeoutFilter]
+    [TimeoutFilter] <-- [BlockWiseNotification]
+    [BlockWiseNotification] <-- [NotificationValidator]
+}
+
+frame "Inbound" {
+    disp -down..> [DuplicateFilter]: request
+    [DuplicateFilter] --> [toCoapRequest]
+    [toCoapRequest] --> [CatchExceptions]
+    [CatchExceptions] --> [CriticalOptionVerifier]
+    [CriticalOptionVerifier] --> [ObservationSender]
+    [ObservationSender] --> [BlockWiseIncoming]
+
+    [ObservationSender] -right.> [NotificationValidator]: send next\nobservation
+}
+
+send --> [ObserveRequest]: CoapRequest
+[BlockWiseIncoming] --> [RouterService]
+disp <-- trans
 
 @enduml

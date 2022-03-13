@@ -14,28 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.utils;
+package com.mbed.coap.server.messaging;
 
-/**
- * Minor utilities for Protocol CoAP servers
- */
-public class Validations {
-    public static void assume(boolean assumeCondition, String errorMessage) {
-        if (!assumeCondition) {
-            throw new IllegalStateException(errorMessage);
-        }
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
+import org.junit.jupiter.api.Test;
+
+
+public class PiggybackedCorrelationTest {
+
+    @Test
+    public void equalsAndHashTest() throws Exception {
+        EqualsVerifier.forClass(PiggybackedCorrelation.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+
+        EqualsVerifier.forClass(TransactionId.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
     }
-
-    public static void assume(boolean assumeCondition) {
-        if (!assumeCondition) {
-            throw new IllegalStateException();
-        }
-    }
-
-    public static void require(boolean requireCondition) {
-        if (!requireCondition) {
-            throw new IllegalArgumentException();
-        }
-    }
-
 }

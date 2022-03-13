@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
- * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +15,22 @@
  */
 package com.mbed.coap.utils;
 
-/**
- * Minor utilities for Protocol CoAP servers
+import java.time.Duration;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+/*
+Simple timer interface, helps with testing
  */
-public class Validations {
-    public static void assume(boolean assumeCondition, String errorMessage) {
-        if (!assumeCondition) {
-            throw new IllegalStateException(errorMessage);
-        }
-    }
+@FunctionalInterface
+public interface Timer {
+    Runnable schedule(Duration delay, Runnable task);
 
-    public static void assume(boolean assumeCondition) {
-        if (!assumeCondition) {
-            throw new IllegalStateException();
-        }
+    static Timer toTimer(ScheduledExecutorService executorService) {
+        return (delay, task) -> {
+            ScheduledFuture<?> scheduled = executorService.schedule(task, delay.toMillis(), TimeUnit.MILLISECONDS);
+            return () -> scheduled.cancel(true);
+        };
     }
-
-    public static void require(boolean requireCondition) {
-        if (!requireCondition) {
-            throw new IllegalArgumentException();
-        }
-    }
-
 }

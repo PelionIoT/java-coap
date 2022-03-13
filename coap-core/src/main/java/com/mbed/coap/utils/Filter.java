@@ -79,4 +79,11 @@ public interface Filter<REQ, RES, IN_REQ, IN_RES> extends BiFunction<REQ, Servic
             }
         };
     }
+
+    static <REQ, RES, IN_REQ, IN_RES> Filter<REQ, RES, IN_REQ, IN_RES> of(Function<REQ, IN_REQ> nextFunc, Function<IN_RES, RES> respMapFunc) {
+        return (request, service) -> service
+                .apply(nextFunc.apply(request))
+                .thenApply(respMapFunc);
+    }
+
 }
