@@ -102,7 +102,7 @@ public class CoapCli {
 
     public CoapCli(CoapSchemes providers, TransportProvider transportProvider, String keystoreFile, BlockSize blockSize, String proxyUri, String method, URI uri, String payload) throws IOException, InterruptedException, CoapException {
 
-        CoapServer cliServer = providers.create(transportProvider, keystoreFile, uri).build().start();
+        CoapServer cliServer = providers.create(transportProvider, keystoreFile, uri).blockSize(blockSize).build().start();
 
         InetSocketAddress destination = new InetSocketAddress(uri.getHost(), uri.getPort());
         CoapClient cli = CoapClientBuilder.clientFor(destination, cliServer);
@@ -110,18 +110,22 @@ public class CoapCli {
         Thread.sleep(200);
 
         String uriPath = uri.getPath().isEmpty() ? CoapConstants.WELL_KNOWN_CORE : uri.getPath();
-        CoapResponse resp = cli.sendSync(CoapRequest.of(destination, Method.valueOf(method), uriPath)
-                .proxy(proxyUri)
-                .blockSize(blockSize)
-                .payload(payload)
-        );
+        try {
+            CoapResponse resp = cli.sendSync(CoapRequest.of(destination, Method.valueOf(method), uriPath)
+                    .token(System.currentTimeMillis() % 0xFFFF)
+                    .proxy(proxyUri)
+                    .blockSize(blockSize)
+                    .payload(payload)
+            );
 
-        if (resp.getPayload().size() > 0) {
-            System.out.println();
-            System.out.println(resp.getPayloadString());
+            if (resp.getPayload().size() > 0) {
+                System.out.println();
+                System.out.println(resp.getPayloadString());
+            }
+        } finally {
+            cliServer.stop();
         }
 
-        cliServer.stop();
     }
 
 

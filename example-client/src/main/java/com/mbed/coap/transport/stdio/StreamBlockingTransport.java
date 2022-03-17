@@ -91,8 +91,6 @@ public class StreamBlockingTransport extends BlockingCoapTransport {
         } catch (Exception e) {
             LOGGER.error(e.toString(), e);
             isRunning = false;
-        } finally {
-            isRunning = false;
         }
         return isRunning;
     }
