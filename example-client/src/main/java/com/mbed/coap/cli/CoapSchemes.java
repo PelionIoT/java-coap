@@ -17,6 +17,7 @@
 package com.mbed.coap.cli;
 
 import com.mbed.coap.cli.providers.JdkProvider;
+import com.mbed.coap.cli.providers.MbedtlsProvider;
 import com.mbed.coap.cli.providers.OpensslProvider;
 import com.mbed.coap.cli.providers.Pair;
 import com.mbed.coap.cli.providers.PlainTextProvider;
@@ -106,6 +107,8 @@ public class CoapSchemes {
                 return new OpensslProvider();
             case "stdio":
                 return new StandardIoProvider();
+            case "mbedtls":
+                return new MbedtlsProvider();
             default:
                 throw new IllegalArgumentException("Not supported transport: " + transport);
         }
