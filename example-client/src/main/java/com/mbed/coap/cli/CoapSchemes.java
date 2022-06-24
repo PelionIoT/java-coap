@@ -32,12 +32,16 @@ import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.List;
 
 public class CoapSchemes {
     public static char[] secret() {
-        return "secret".toCharArray();
+        return "".toCharArray();
     }
 
     public final CoapServerBuilder create(TransportProvider transportProvider, String keystoreFile, Pair<String, Opaque> psk, URI uri) {
@@ -127,6 +131,19 @@ public class CoapSchemes {
             }
         }
         return null;
+    }
+
+    public static List<X509Certificate> readCAs(KeyStore ks) throws KeyStoreException {
+        List<X509Certificate> certs = new LinkedList<>();
+        Enumeration<String> aliases = ks.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            if (!ks.isKeyEntry(alias)) {
+                certs.add((X509Certificate) ks.getCertificate(alias));
+            }
+        }
+
+        return certs;
     }
 
 }

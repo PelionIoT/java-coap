@@ -56,7 +56,7 @@ public class DeviceEmulator {
             System.out.println("     -s <ssl provider>  jdk <default>,");
             System.out.println("                        openssl (requires installed openssl that supports dtls),");
             System.out.println("                        stdio (standard IO)");
-            System.out.println("     -k <file>          KeyStore file");
+            System.out.println("     -k <file>          KeyStore file (with empty passphrase)");
             System.out.println("Schemes: " + deviceEmulator.providers.supportedSchemes().replaceAll("\n", "\n         "));
             System.out.println();
             System.out.println("Examples:");

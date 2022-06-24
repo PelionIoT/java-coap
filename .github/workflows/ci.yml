@@ -29,5 +29,6 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: build jacocoTestReport -i
+          cache-read-only: false
       - uses: codecov/codecov-action@v2
         if: matrix.java == '11'

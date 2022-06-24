@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.cli.providers;
 
+import static com.mbed.coap.cli.CoapSchemes.*;
 import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
@@ -24,17 +25,19 @@ import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.javassl.CoapSerializer;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.DatagramChannel;
+import java.nio.channels.ClosedSelectorException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.time.Duration;
 import java.util.Collections;
-import java.util.concurrent.CompletionException;
-import org.opencoap.ssl.DatagramChannelTransport;
 import org.opencoap.ssl.SslConfig;
-import org.opencoap.ssl.SslHandshakeContext;
 import org.opencoap.ssl.SslSession;
+import org.opencoap.ssl.transport.DtlsTransmitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,71 +52,100 @@ public class MbedtlsProvider extends TransportProvider {
 
     @Override
     public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException {
-        if (psk == null) {
-            throw new IllegalArgumentException("Only PSK authentication is supported");
+        SslConfig config;
+        File fileSession;
+        if (psk != null) {
+            config = SslConfig.client(psk.key.getBytes(), psk.value.getBytes(), Collections.emptyList());
+            fileSession = new File(psk.key + ".session");
+        } else if (ks != null) {
+            config = SslConfig.client(readCAs(ks));
+            fileSession = new File(destAdr.getHostName() + ".session");
+        } else {
+            throw new IllegalArgumentException();
         }
 
-        SslConfig config = SslConfig.Companion.client(psk.key.getBytes(), psk.value.getBytes(), Collections.emptyList());
-        DatagramChannel channel = DatagramChannel.open().connect(destAdr);
-        DatagramChannelTransport transport = new DatagramChannelTransport(channel, destAdr);
+        byte[] sessionBytes = readBytes(fileSession);
 
-        SslHandshakeContext sslHandshake = config.newContext(transport);
+        DtlsTransmitter transport;
+        if (sessionBytes.length > 0) {
+            SslSession session = config.loadSession(new byte[0], sessionBytes, destAdr);
+            transport = DtlsTransmitter.Companion.create(destAdr, session, 0);
+        } else {
+            transport = DtlsTransmitter.Companion.connect(destAdr, config, 0).join();
+        }
 
-        long beforeTs = System.currentTimeMillis();
-        SslSession session = sslHandshake.handshake().join();
-        LOGGER.info("[{}] Connected in {}ms [cipher-suite:{}]", destAdr, System.currentTimeMillis() - beforeTs, session.getCipherSuite());
+        return new MbedtlsCoapTransport(transport, destAdr) {
+            @Override
+            public void stop() {
+                try {
+                    writeBytes(fileSession, transport.saveSession());
+                    LOGGER.info("Stored DTLS session into: {}", fileSession);
+                } catch (IOException e) {
+                    LOGGER.error("Failed to store DTLS session");
+                }
 
-        return new MbedtlsCoapTransport(session, destAdr, channel);
+                super.stop();
+            }
+        };
+    }
+
+    private static void writeBytes(File fileSession, byte[] bytes) throws IOException {
+        FileOutputStream fileOutputStream = new FileOutputStream(fileSession, false);
+        fileOutputStream.write(bytes);
+        fileOutputStream.close();
+    }
+
+    private static byte[] readBytes(File fileSession) throws IOException {
+        if (!fileSession.exists() || fileSession.length() <= 0) {
+            return new byte[0];
+        }
+
+        FileInputStream fileInputStream = new FileInputStream(fileSession);
+        byte[] sessionBytes = new byte[((int) fileSession.length())];
+        fileInputStream.read(sessionBytes);
+        return sessionBytes;
     }
 
     static class MbedtlsCoapTransport extends BlockingCoapTransport {
 
-        private volatile CoapReceiver receiver;
-        private final SslSession session;
         private final InetSocketAddress destAdr;
-        private final DatagramChannel channel;
+        private final DtlsTransmitter transmitter;
 
-        MbedtlsCoapTransport(SslSession session, InetSocketAddress destAdr, DatagramChannel channel) {
-            this.session = session;
+        MbedtlsCoapTransport(DtlsTransmitter transmitter, InetSocketAddress destAdr) {
+            this.transmitter = transmitter;
             this.destAdr = destAdr;
-            this.channel = channel;
-
-            // keep reading in async loop
-            readNext();
-        }
-
-        private void readNext() {
-            session.read()
-                    .thenApply(bytes -> {
-                        try {
-                            return CoapPacket.read(destAdr, bytes);
-                        } catch (CoapException e) {
-                            throw new CompletionException(e);
-                        }
-                    })
-                    .thenAccept(coap -> {
-                        receiver.handle(coap, TransportContext.EMPTY);
-                        readNext();
-                    });
         }
 
         @Override
         public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
-            session.send(coapPacket.toByteArray());
+            transmitter.send(coapPacket.toByteArray());
         }
 
         @Override
-        public void start(CoapReceiver coapReceiver) throws IOException {
-            receiver = coapReceiver;
+        public void start(CoapReceiver receiver) {
+            new Thread(() -> read(receiver))
+                    .start();
+        }
+
+        private void read(CoapReceiver receiver) {
+            try {
+                while (true) {
+                    byte[] buf = transmitter.receive(Duration.ofSeconds(30));
+                    if (buf.length == 0) {
+                        continue;
+                    }
+                    receiver.handle(CoapPacket.read(destAdr, buf), TransportContext.EMPTY);
+                }
+            } catch (CoapException e) {
+                LOGGER.warn("Can not parse coap packet: " + e.getMessage());
+            } catch (ClosedSelectorException ex) {
+                // closing
+            }
         }
 
         @Override
         public void stop() {
-            try {
-                channel.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            transmitter.close();
         }
 
         @Override

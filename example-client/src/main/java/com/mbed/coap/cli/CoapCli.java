@@ -51,7 +51,7 @@ public class CoapCli {
             System.out.println("     -s <ssl provider>  jdk <default>,");
             System.out.println("                        openssl (requires installed openssl that supports dtls),");
             System.out.println("                        stdio (standard IO)");
-            System.out.println("     -k <file>          KeyStore file");
+            System.out.println("     -k <file>          KeyStore file (with empty passphrase)");
             System.out.println("     --psk <id:hex-secret>  Pre shared key pair");
             System.out.println("     --cipher <name>    Cipher suite");
             System.out.println("     -b <block size>    Block size, one of: 16, 32, 64, 128, 256, 512, 1024");
