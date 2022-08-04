@@ -17,27 +17,21 @@ package com.mbed.coap.cli.providers;
 
 import static com.mbed.coap.cli.CoapSchemes.*;
 import com.mbed.coap.cli.TransportProvider;
-import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.transport.BlockingCoapTransport;
-import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.ClosedSelectorException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.time.Duration;
 import java.util.Collections;
 import org.opencoap.ssl.SslConfig;
 import org.opencoap.ssl.SslSession;
 import org.opencoap.ssl.transport.DtlsTransmitter;
+import org.opencoap.transport.mbedtls.MbedtlsCoapTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,12 +63,12 @@ public class MbedtlsProvider extends TransportProvider {
         DtlsTransmitter transport;
         if (sessionBytes.length > 0) {
             SslSession session = config.loadSession(new byte[0], sessionBytes, destAdr);
-            transport = DtlsTransmitter.Companion.create(destAdr, session, 0);
+            transport = DtlsTransmitter.create(destAdr, session, 0);
         } else {
-            transport = DtlsTransmitter.Companion.connect(destAdr, config, 0).join();
+            transport = DtlsTransmitter.connect(destAdr, config, 0).join();
         }
 
-        return new MbedtlsCoapTransport(transport, destAdr) {
+        return new MbedtlsCoapTransport(transport) {
             @Override
             public void stop() {
                 try {
@@ -106,51 +100,4 @@ public class MbedtlsProvider extends TransportProvider {
         return sessionBytes;
     }
 
-    static class MbedtlsCoapTransport extends BlockingCoapTransport {
-
-        private final InetSocketAddress destAdr;
-        private final DtlsTransmitter transmitter;
-
-        MbedtlsCoapTransport(DtlsTransmitter transmitter, InetSocketAddress destAdr) {
-            this.transmitter = transmitter;
-            this.destAdr = destAdr;
-        }
-
-        @Override
-        public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
-            transmitter.send(coapPacket.toByteArray());
-        }
-
-        @Override
-        public void start(CoapReceiver receiver) {
-            new Thread(() -> read(receiver))
-                    .start();
-        }
-
-        private void read(CoapReceiver receiver) {
-            try {
-                while (true) {
-                    byte[] buf = transmitter.receive(Duration.ofSeconds(30));
-                    if (buf.length == 0) {
-                        continue;
-                    }
-                    receiver.handle(CoapPacket.read(destAdr, buf), TransportContext.EMPTY);
-                }
-            } catch (CoapException e) {
-                LOGGER.warn("Can not parse coap packet: " + e.getMessage());
-            } catch (ClosedSelectorException ex) {
-                // closing
-            }
-        }
-
-        @Override
-        public void stop() {
-            transmitter.close();
-        }
-
-        @Override
-        public InetSocketAddress getLocalSocketAddress() {
-            return destAdr;
-        }
-    }
 }

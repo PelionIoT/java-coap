@@ -15,6 +15,7 @@ kewtVersioning.groovyConfigurationDsl {
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 compileJava {
