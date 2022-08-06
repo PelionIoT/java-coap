@@ -4,13 +4,18 @@ plugins {
     id 'pmd'
     id "com.github.spotbugs"
     id 'maven-publish'
+    id 'com.github.mfarsikov.kewt-versioning'
+}
+
+version = kewtVersioning.version
+
+kewtVersioning.groovyConfigurationDsl {
+    separator = ''
 }
 
 repositories {
     mavenCentral()
 }
-
-version = '5.2.0-SNAPSHOT'
 
 compileJava {
     sourceCompatibility = '1.8'
@@ -85,22 +90,5 @@ publishing {
             artifact tasks.sourceJar
             from(components.java)
         }
-    }
-}
-
-def evaluateVersion() {
-    String gitVer = 'git describe --tags --exact-match'.execute().getText().trim().replaceAll('"', '')
-
-    if (gitVer == "") {
-        return version
-    } else if (gitVer.startsWith("v")) {
-        return gitVer.substring(1)
-    }
-    return gitVer
-}
-
-tasks.register('versionFromGit') {
-    doLast {
-        version = evaluateVersion()
     }
 }
