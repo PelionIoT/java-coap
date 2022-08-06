@@ -1,7 +1,7 @@
 CoAP's library for JVM
 ======================
 
-[![GitHub version](https://badge.fury.io/gh/open-coap%2Fjava-coap.svg)](https://badge.fury.io/gh/open-coap%2Fjava-coap)
+[![](https://jitpack.io/v/open-coap/java-coap.svg)](https://jitpack.io/#open-coap/java-coap)
 [![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)](LICENSE)
 ![Status:Production](https://img.shields.io/badge/Project%20status-Production-brightgreen.svg)
 [![codecov](https://codecov.io/gh/open-coap/java-coap/branch/master/graph/badge.svg?token=8XE69RTQIZ)](https://codecov.io/gh/open-coap/java-coap)
@@ -52,55 +52,35 @@ Add to your `build.gradle`
 ```groovy
 repositories {
   ...
-  maven {
-    url = uri("https://maven.pkg.github.com/open-coap/java-coap")
-    credentials {
-      username = "token" // seems anything works
-      password = "PERSONAL_ACCESS_TOKEN" // personal access token with the read:packages scope
-    }
-  }
+  maven { url 'https://jitpack.io' }
 }
 
-...
-
 dependencies {
+  ...
   implementation 'com.github.open-coap.java-coap:coap-core:VERSION'
 }
 ```
 
 ### Maven
 
-Add repository to build file:
+Add repository to build file (or `pom.xml`):
 
 ```xml
-
 <repositories>
-  <repository>
-    <id>github-opencoap</id>
-    <url>https://maven.pkg.github.com/open-coap/java-coap</url>
-  </repository>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
 </repositories>
-```    
-
-Add credentials to `~/.m2/settings.xml`:
-```xml
-<servers>
-  <server>
-    <id>github-opencoap</id>
-    <username>token</username> <!-- seems anything works -->
-    <password>PERSONAL_ACCESS_TOKEN</password> <!-- personal access token with the read:packages scope -->
-  </server>
-</servers>
 ```
 
 Add dependency into your `pom.xml`:
 
 ```xml
-
 <dependency>
-  <groupId>com.github.open-coap.java-coap</groupId>
-  <artifactId>coap-core</artifactId>
-  <version>{VERSION}</version>
+    <groupId>com.github.open-coap.java-coap</groupId>
+    <artifactId>coap-core</artifactId>
+    <version>{VERSION}</version>
 </dependency>
 ```
 
