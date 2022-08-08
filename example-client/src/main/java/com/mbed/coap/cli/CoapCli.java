@@ -121,6 +121,7 @@ public class CoapCli {
         String uriPath = uri.getPath().isEmpty() ? CoapConstants.WELL_KNOWN_CORE : uri.getPath();
         try {
             CoapResponse resp = cli.sendSync(CoapRequest.of(destination, Method.valueOf(method), uriPath)
+                    .query(uri.getQuery() == null ? "" : uri.getQuery())
                     .token(System.currentTimeMillis() % 0xFFFF)
                     .proxy(proxyUri)
                     .blockSize(blockSize)

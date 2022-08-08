@@ -20,7 +20,6 @@ dependencies {
     implementation project(':mbedtls-transport')
     implementation 'org.slf4j:slf4j-api:1.7.26'
     implementation 'ch.qos.logback:logback-classic:1.2.7'
-    implementation 'com.github.open-coap:kotlin-mbedtls:1.5.2'
 
     testImplementation 'org.mockito:mockito-core:4.3.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
