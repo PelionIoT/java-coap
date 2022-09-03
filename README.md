@@ -178,13 +178,10 @@ This [example client](example-client) demonstrates how to build coap client.
 Development
 -----------
 
-### Build
-
-    ./gradlew build
-
-### Publish to local maven
-
-    ./gradlew publishToMavenLocal
+- `./gradlew build`                             build
+- `./gradlew publishToMavenLocal`               publish to local maven
+- `./gradlew dependencyUpdates`                 determine which dependencies have updates
+- `./gradlew useLatestVersions`                 update dependencies to the latest available versions
 
 Contributions
 -------------
