@@ -84,9 +84,9 @@ public class MbedtlsProvider extends TransportProvider {
     }
 
     private static void writeBytes(File fileSession, byte[] bytes) throws IOException {
-        FileOutputStream fileOutputStream = new FileOutputStream(fileSession, false);
-        fileOutputStream.write(bytes);
-        fileOutputStream.close();
+        try (FileOutputStream fileOutputStream = new FileOutputStream(fileSession, false)) {
+            fileOutputStream.write(bytes);
+        }
     }
 
     private static byte[] readBytes(File fileSession) throws IOException {
@@ -94,10 +94,11 @@ public class MbedtlsProvider extends TransportProvider {
             return new byte[0];
         }
 
-        FileInputStream fileInputStream = new FileInputStream(fileSession);
-        byte[] sessionBytes = new byte[((int) fileSession.length())];
-        fileInputStream.read(sessionBytes);
-        return sessionBytes;
+        try (FileInputStream fileInputStream = new FileInputStream(fileSession)) {
+            byte[] sessionBytes = new byte[((int) fileSession.length())];
+            fileInputStream.read(sessionBytes);
+            return sessionBytes;
+        }
     }
 
 }
