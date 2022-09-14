@@ -30,6 +30,7 @@ import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.server.PutOnlyMap;
 import com.mbed.coap.server.RouterService;
@@ -41,7 +42,6 @@ import com.mbed.coap.server.messaging.DefaultDuplicateDetectorCache;
 import com.mbed.coap.server.messaging.MessageIdSupplier;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.util.Objects;
@@ -79,9 +79,9 @@ public class CoapServerBlocksTest {
 
     @BeforeEach
     public void setUp() {
-        protoServer = new CoapUdpMessaging(coapTransport);
-        server = CoapServer.create(protoServer, capabilities, 10000000, route, Filter.identity());
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(null));
+        server = CoapServerBuilder.newBuilder().transport(coapTransport).maxIncomingBlockTransferSize(10000000).route(route).csmStorage(capabilities).build();
+        protoServer = (CoapUdpMessaging) server.getDispatcher();
+        given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(true));
     }
 
     @Test
@@ -125,8 +125,9 @@ public class CoapServerBlocksTest {
     @Test
     public void block1_request_shouldFailIfTooBigPayload() throws Exception {
         capabilities.put(LOCAL_5683, new CoapTcpCSM(5000, true));
+        server = CoapServerBuilder.newBuilder().transport(coapTransport).maxIncomingBlockTransferSize(10000).route(route).csmStorage(capabilities).build();
+        protoServer = (CoapUdpMessaging) server.getDispatcher();
         protoServerInit(10, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
-        server = CoapServer.create(protoServer, capabilities, 10000, route, Filter.identity());
         server.start();
 
         blockResource = alwaysFailService;

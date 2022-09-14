@@ -62,7 +62,7 @@ public class TimeoutTest {
         //assertEquals("Wrong number of transactions", 1, cnn.getNumberOfTransactions());
         assertThatThrownBy(callback::get)
                 .hasCauseExactlyInstanceOf(CoapTimeoutException.class);
-        assertEquals(0, ((CoapUdpMessaging) cnn.getCoapMessaging()).getNumberOfTransactions(), "Wrong number of transactions");
+        assertEquals(0, ((CoapUdpMessaging) cnn.getDispatcher()).getNumberOfTransactions(), "Wrong number of transactions");
         cnn.stop();
 
     }

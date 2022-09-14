@@ -40,9 +40,7 @@ import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +60,8 @@ public class CoapTcpMessagingTest {
         reset(observationHandler);
         given(observationHandler.apply(any())).willReturn(true);
 
-        tcpMessaging.start(observationHandler, requestService);
+        tcpMessaging.init(observationHandler, requestService);
+        tcpMessaging.start();
         given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(true));
     }
 
@@ -218,7 +217,8 @@ public class CoapTcpMessagingTest {
     @Test
     public void shouldSendCapabilities_whenConnected_withBlocking() throws CoapException, IOException {
         tcpMessaging = new CoapTcpMessaging(coapTransport, csmStorage, true, 10501);
-        tcpMessaging.start(observationHandler, requestService);
+        tcpMessaging.init(observationHandler, requestService);
+        tcpMessaging.start();
         SignalingOptions signOpt = new SignalingOptions();
         signOpt.setMaxMessageSize(10501);
         signOpt.setBlockWiseTransfer(true);
@@ -236,18 +236,6 @@ public class CoapTcpMessagingTest {
 
         assertTrue(resp.isCompletedExceptionally());
         assertThatThrownBy(resp::get).hasCauseExactlyInstanceOf(CoapException.class);
-    }
-
-    @Test
-    public void should_call_handler_when_connected() {
-        Consumer<InetSocketAddress> handler = mock(Consumer.class);
-        tcpMessaging.setConnectHandler(handler);
-
-        tcpMessaging.onConnected(LOCAL_1_5683);
-        verify(handler).accept(eq(LOCAL_1_5683));
-
-        tcpMessaging.onConnected(LOCAL_5683);
-        verify(handler).accept(eq(LOCAL_5683));
     }
 
     @Test

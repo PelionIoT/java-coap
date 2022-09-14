@@ -26,4 +26,7 @@ public interface CoapReceiver {
 
     void onConnected(InetSocketAddress remoteAddress);
 
+    void start();
+
+    void stop();
 }

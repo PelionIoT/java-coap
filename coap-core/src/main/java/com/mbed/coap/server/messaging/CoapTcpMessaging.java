@@ -178,7 +178,7 @@ public class CoapTcpMessaging extends CoapMessaging {
                 SignalingOptions.capabilities(ownCapability.getMaxMessageSizeInt(), ownCapability.isBlockTransferEnabled())
         );
         LOGGER.info("[" + remoteAddress + "] CoAP sent [" + packet.toString(false, false, false, true) + "]");
-        coapTransporter.sendPacket(packet, remoteAddress, TransportContext.EMPTY);
+        transport.sendPacket(packet, remoteAddress, TransportContext.EMPTY);
 
         super.onConnected(remoteAddress);
     }

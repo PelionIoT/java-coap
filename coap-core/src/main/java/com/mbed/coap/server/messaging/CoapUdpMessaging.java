@@ -30,8 +30,6 @@ import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import com.mbed.coap.utils.Service;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Optional;
@@ -40,7 +38,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +78,7 @@ public class CoapUdpMessaging extends CoapMessaging {
             DuplicatedCoapMessageCallback duplicatedCoapMessageCallback,
             ScheduledExecutorService scheduledExecutor
     ) {
-        if (coapTransporter == null || scheduledExecutor == null || idContext == null || duplicatedCoapMessageCallback == null || cache == null) {
+        if (transport == null || scheduledExecutor == null || idContext == null || duplicatedCoapMessageCallback == null || cache == null) {
             throw new NullPointerException();
         }
         if (cache instanceof DefaultDuplicateDetectorCache) {
@@ -104,12 +101,12 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
     @Override
-    public synchronized void start(Function<SeparateResponse, Boolean> observationHandler, Service<CoapRequest, CoapResponse> requestService) throws IOException, IllegalStateException {
+    public synchronized void start() throws IllegalStateException {
         if (cache != null) {
             cache.start();
         }
         startTransactionTimeoutWorker();
-        super.start(observationHandler, requestService);
+        super.start();
     }
 
     private void startTransactionTimeoutWorker() {

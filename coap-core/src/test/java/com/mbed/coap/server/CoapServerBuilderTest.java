@@ -36,7 +36,7 @@ public class CoapServerBuilderTest {
 
         CoapServer server = newBuilder().transport(0).scheduledExecutor(scheduledExecutorService).build();
 
-        assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getCoapMessaging()).getScheduledExecutor());
+        assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getDispatcher()).getScheduledExecutor());
     }
 
     @Test
@@ -45,7 +45,7 @@ public class CoapServerBuilderTest {
 
         CoapServer server = newBuilder().transport(InetAddress.getByName("localhost"), 0).scheduledExecutor(scheduledExecutorService).build();
 
-        assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getCoapMessaging()).getScheduledExecutor());
+        assertEquals(scheduledExecutorService, ((CoapUdpMessaging) server.getDispatcher()).getScheduledExecutor());
     }
 
     @Test

@@ -134,8 +134,8 @@ public class CoapServerDuplicateTest {
         server.start();
 
         CoapPacket req = new CoapPacket(Method.PUT, MessageType.Confirmable, "/test", REMOTE_ADDRESS);
-        server.getCoapMessaging().handle(req, TransportContext.EMPTY);
-        server.getCoapMessaging().handle(req, TransportContext.EMPTY);
+        server.getDispatcher().handle(req, TransportContext.EMPTY);
+        server.getDispatcher().handle(req, TransportContext.EMPTY);
 
         server.stop();
     }

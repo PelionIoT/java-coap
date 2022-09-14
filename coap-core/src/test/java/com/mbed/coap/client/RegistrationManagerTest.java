@@ -207,38 +207,9 @@ public class RegistrationManagerTest {
         );
     }
 
-    @Test
-    public void reRegister_after_disconnection() throws IOException {
-        //given
-        RegistrationManager reg = tcpRegistered();
-
-        //when, disconnected
-        trnsport.when(newCoapPacket().post().uriPath("/stub/0001"))
-                .then(newCoapPacket().ack(Code.C204_CHANGED).maxAge(130));
-
-        trnsport.mockOnConnected();
-
-        //then
-        assertTrue(reg.isRegistered());
-        verifyScheduledInSec(100L);
-    }
-
     private RegistrationManager registered() {
         trnsport.when(newCoapPacket(1).post().uriPath("/rd").uriQuery("ep=stub-device-01&lt=100").contFormat(CT_APPLICATION_LINK__FORMAT))
                 .then(newCoapPacket(1).ack(Code.C201_CREATED).locPath("/stub/0001").maxAge(100));
-        RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), "", scheduledExecutor);
-
-        reg.register();
-        assertTrue(reg.isRegistered());
-
-        return reg;
-    }
-
-    private RegistrationManager tcpRegistered() throws IOException {
-        deviceSrv = CoapServerBuilder.newBuilderForTcp().transport(trnsport).build().start();
-
-        trnsport.when(newCoapPacket(0).post().uriPath("/rd").uriQuery("ep=stub-device-01&lt=100").contFormat(CT_APPLICATION_LINK__FORMAT))
-                .then(newCoapPacket(0).ack(Code.C201_CREATED).locPath("/stub/0001").maxAge(100));
         RegistrationManager reg = new RegistrationManager(deviceSrv, URI.create("coap://localhost:5683/rd?ep=stub-device-01&lt=100"), "", scheduledExecutor);
 
         reg.register();

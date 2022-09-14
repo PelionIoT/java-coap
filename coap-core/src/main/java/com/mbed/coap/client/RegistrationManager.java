@@ -58,11 +58,6 @@ public class RegistrationManager {
         this.registrationLinks = Objects.requireNonNull(registrationLinks);
         this.minRetryDelay = minRetryDelay;
         this.maxRetryDelay = maxRetryDelay;
-
-        server.setConnectHandler(address -> {
-            LOGGER.info("Reconnected, updating registration...");
-            updateRegistration();
-        });
     }
 
     private String epNameFrom(URI registrationUri) {

@@ -20,6 +20,10 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
+import com.mbed.coap.packet.SeparateResponse;
+import com.mbed.coap.server.block.BlockWiseIncomingFilter;
+import com.mbed.coap.server.block.BlockWiseNotificationFilter;
+import com.mbed.coap.server.block.BlockWiseOutgoingFilter;
 import com.mbed.coap.server.filter.CongestionControlFilter;
 import com.mbed.coap.server.messaging.CoapMessaging;
 import com.mbed.coap.server.messaging.CoapRequestId;
@@ -40,6 +44,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Function;
 
 
 public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
@@ -67,14 +72,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
 
     public static CoapServerBuilderForTcp newBuilderForTcp() {
         return CoapServerBuilderForTcp.create();
-    }
-
-    public static CoapServer newCoapServer(CoapTransport transport) {
-        return CoapServerBuilderForUdp.create().transport(transport).build();
-    }
-
-    public static CoapServer newCoapServerForTcp(CoapTransport transport) {
-        return CoapServerBuilderForTcp.create().transport(transport).build();
     }
 
     public final T blockSize(BlockSize blockSize) {
@@ -109,9 +106,30 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
     }
 
     public CoapServer build() {
-        CongestionControlFilter<InetSocketAddress, CoapRequest, CoapResponse> congestionFilter = new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress);
+        CoapMessaging messaging = buildCoapMessaging();
 
-        return CoapServer.create(buildCoapMessaging(), capabilities(), maxIncomingBlockTransferSize, route, congestionFilter);
+        // NOTIFICATION
+        ObservationHandler observationHandler = new ObservationHandler();
+        Service<SeparateResponse, Boolean> sendNotification = new NotificationValidator()
+                .andThen(new BlockWiseNotificationFilter(capabilities()))
+                .then(messaging::send);
+
+        // INBOUND
+        Service<CoapRequest, CoapResponse> inboundService = new RescueFilter()
+                .andThen(new CriticalOptionVerifier())
+                .andThen(new ObservationSenderFilter(sendNotification))
+                .then(new BlockWiseIncomingFilter(capabilities(), maxIncomingBlockTransferSize).then(route));
+
+        // OUTBOUND
+        Service<CoapRequest, CoapResponse> outboundService = new ObserveRequestFilter(observationHandler)
+                .andThen(new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress))
+                .andThen(new BlockWiseOutgoingFilter(capabilities(), maxIncomingBlockTransferSize))
+                .then(messaging::send);
+
+        Function<SeparateResponse, Boolean> inboundObservation = obs -> observationHandler.notify(obs, outboundService);
+        messaging.init(inboundObservation, inboundService);
+
+        return new CoapServer(coapTransport, messaging, outboundService);
     }
 
     protected abstract CoapMessaging buildCoapMessaging();

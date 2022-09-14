@@ -18,6 +18,7 @@ package com.mbed.coap.server.messaging;
 
 import static com.mbed.coap.utils.CoapServerUtils.*;
 import static com.mbed.coap.utils.FutureHelpers.*;
+import static java.util.Objects.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -27,10 +28,8 @@ import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +40,10 @@ import org.slf4j.LoggerFactory;
 public abstract class CoapMessaging implements CoapReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapMessaging.class);
 
-    final CoapTransport coapTransporter;
+    final CoapTransport transport;
 
     protected Function<SeparateResponse, Boolean> observationHandler;
-    private Service<CoapRequest, CoapResponse> requestHandler;
-    private Consumer<InetSocketAddress> connectedHandler;
+    private Service<CoapRequest, CoapResponse> inboundService;
 
     private boolean isRunning;
 
@@ -57,14 +55,19 @@ public abstract class CoapMessaging implements CoapReceiver {
 
 
     public CoapMessaging(CoapTransport coapTransport) {
-        this.coapTransporter = coapTransport;
+        this.transport = coapTransport;
     }
 
-    public synchronized void start(Function<SeparateResponse, Boolean> observationHandler, Service<CoapRequest, CoapResponse> requestHandler) throws IllegalStateException, IOException {
-        assertNotRunning();
+    public void init(Function<SeparateResponse, Boolean> observationHandler, Service<CoapRequest, CoapResponse> inboundService) {
         this.observationHandler = observationHandler;
-        this.requestHandler = requestHandler;
-        coapTransporter.start(this);
+        this.inboundService = inboundService;
+    }
+
+    @Override
+    public synchronized void start() throws IllegalStateException {
+        requireNonNull(observationHandler);
+        requireNonNull(inboundService);
+        assertNotRunning();
         isRunning = true;
     }
 
@@ -77,6 +80,7 @@ public abstract class CoapMessaging implements CoapReceiver {
      *
      * @throws IllegalStateException if server is already stopped
      */
+    @Override
     public synchronized void stop() throws IllegalStateException {
         if (!isRunning) {
             throw new IllegalStateException("CoapServer is not running");
@@ -85,8 +89,7 @@ public abstract class CoapMessaging implements CoapReceiver {
         isRunning = false;
         LOGGER.trace("Stopping CoapMessaging: {}", this);
         stop0();
-        coapTransporter.stop();
-        requestHandler = null;
+        inboundService = null;
         observationHandler = null;
 
         LOGGER.debug("CoapMessaging stopped: {}", this);
@@ -95,7 +98,7 @@ public abstract class CoapMessaging implements CoapReceiver {
     protected abstract void stop0();
 
     protected final CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
-        return coapTransporter
+        return transport
                 .sendPacket(coapPacket, adr, tranContext)
                 .whenComplete((__, throwable) -> logCoapSent(coapPacket, throwable));
     }
@@ -163,10 +166,6 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     protected abstract void handleNotProcessedMessage(CoapPacket packet);
 
-    public void setConnectHandler(Consumer<InetSocketAddress> connectHandler) {
-        this.connectedHandler = connectHandler;
-    }
-
     @Override
     public void onDisconnected(InetSocketAddress remoteAddress) {
         LOGGER.debug("[{}] Disconnected", remoteAddress);
@@ -174,14 +173,7 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     @Override
     public void onConnected(InetSocketAddress remoteAddress) {
-        if (connectedHandler != null) {
-            connectedHandler.accept(remoteAddress);
-        }
         LOGGER.debug("[{}] Connected", remoteAddress);
-    }
-
-    public InetSocketAddress getLocalSocketAddress() {
-        return coapTransporter.getLocalSocketAddress();
     }
 
     protected abstract boolean handleDelayedResponse(CoapPacket packet);
@@ -189,7 +181,7 @@ public abstract class CoapMessaging implements CoapReceiver {
     protected abstract boolean handleResponse(CoapPacket packet);
 
     protected void handleRequest(CoapPacket packet, TransportContext transContext) {
-        requestHandler.apply(packet.toCoapRequest(transContext))
+        inboundService.apply(packet.toCoapRequest(transContext))
                 .thenAccept(resp ->
                         sendResponse(packet, packet.createResponseFrom(resp), transContext)
                 ).exceptionally(logError(LOGGER));
