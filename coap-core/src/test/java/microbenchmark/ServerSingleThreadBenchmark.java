@@ -16,8 +16,9 @@
 package microbenchmark;
 
 import java.util.concurrent.Executors;
+import org.junit.jupiter.api.Tag;
 
-
+@Tag("Benchmark")
 public class ServerSingleThreadBenchmark extends ServerBenchmarkBase {
 
     public ServerSingleThreadBenchmark() {

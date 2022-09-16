@@ -16,8 +16,9 @@
 package microbenchmark;
 
 import java.util.concurrent.Executors;
+import org.junit.jupiter.api.Disabled;
 
-
+@Disabled()
 public class ServerMultiThreadBenchmarkIgn extends ServerBenchmarkBase {
 
     public ServerMultiThreadBenchmarkIgn() {

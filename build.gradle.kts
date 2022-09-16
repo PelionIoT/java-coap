@@ -50,7 +50,9 @@ subprojects {
 
     tasks {
         withType<Test> {
-            useJUnitPlatform()
+            useJUnitPlatform {
+                excludeTags("Benchmark")
+            }
         }
 
         withType<JavaCompile> {

@@ -36,10 +36,11 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-
+@Tag("Benchmark")
 public class ServerBenchmark {
 
     private byte[] reqData;

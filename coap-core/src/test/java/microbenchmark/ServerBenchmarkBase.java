@@ -39,10 +39,11 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-
+@Tag("Benchmark")
 public abstract class ServerBenchmarkBase {
 
     FloodTransportStub trans;
