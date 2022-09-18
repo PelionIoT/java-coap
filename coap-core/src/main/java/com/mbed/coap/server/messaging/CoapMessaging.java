@@ -16,6 +16,8 @@
  */
 package com.mbed.coap.server.messaging;
 
+import static com.mbed.coap.transport.CoapReceiver.*;
+import static com.mbed.coap.transport.CoapTransport.*;
 import static com.mbed.coap.utils.CoapServerUtils.*;
 import static com.mbed.coap.utils.FutureHelpers.*;
 import static java.util.Objects.*;
@@ -100,34 +102,12 @@ public abstract class CoapMessaging implements CoapReceiver {
     protected final CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
         return transport
                 .sendPacket(coapPacket, adr, tranContext)
-                .whenComplete((__, throwable) -> logCoapSent(coapPacket, throwable));
-    }
-
-    private void logCoapSent(CoapPacket coapPacket, Throwable maybeError) {
-        if (maybeError != null) {
-            LOGGER.warn("[{}] CoAP sent failed [{}] {}", coapPacket.getRemoteAddrString(), coapPacket.toString(false, false, false, true), maybeError.toString());
-            return;
-        }
-
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("CoAP sent [{}]", coapPacket.toString(true));
-        } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("CoAP sent [{}]", coapPacket.toString(false));
-        } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("[{}] CoAP sent [{}]", coapPacket.getRemoteAddrString(), coapPacket.toString(false, false, false, true));
-        }
+                .whenComplete((__, throwable) -> logSent(coapPacket, throwable));
     }
 
     @Override
     public void handle(CoapPacket packet, TransportContext transportContext) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("CoAP received [" + packet.toString(true) + "]");
-        } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[" + packet.getRemoteAddrString() + "] CoAP received [" + packet.toString(false) + "]");
-        } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("[" + packet.getRemoteAddrString() + "] CoAP received [" + packet.toString(false, false, false, true) + "]");
-        }
-
+        logReceived(packet);
         if (handlePing(packet)) {
             return;
         }

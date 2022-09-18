@@ -19,6 +19,7 @@ package protocolTests;
 import static com.mbed.coap.packet.CoapRequest.*;
 import static com.mbed.coap.packet.Opaque.of;
 import static com.mbed.coap.packet.Opaque.*;
+import static com.mbed.coap.utils.Bytes.*;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.awaitility.Awaitility.*;
@@ -193,12 +194,11 @@ public class TcpIntegrationTest {
 
         //notify 2
         await().until(() ->
-                obsResource.putPayload(of("duupa2"))
+                obsResource.putPayload(opaqueOfSize(1300))
         );
 
         packet = obsListener.take();
-        assertEquals("duupa2", packet.getPayloadString());
-        assertEquals(Integer.valueOf(2), packet.options().getObserve());
+        assertEquals(1300, packet.getPayload().size());
 
         //refresh observation
         await().untilAsserted(() ->

@@ -17,6 +17,7 @@ package com.mbed.coap.utils;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /*
 Filter is a transformer of a 'service' that may intercept and transform inputs and outputs
@@ -31,6 +32,12 @@ public interface Filter<REQ, RES, IN_REQ, IN_RES> extends BiFunction<REQ, Servic
             Service<IN_REQ, IN_RES> nextService = request2 -> next.apply(request2, service);
             return apply(request, nextService);
         };
+    }
+
+    default <REQ2> Filter<REQ, RES, REQ2, IN_RES> andThenMap(Function<IN_REQ, REQ2> nextFunc) {
+        return this.andThen((request, service) ->
+                service.apply(nextFunc.apply(request))
+        );
     }
 
     default Service<REQ, RES> then(Service<IN_REQ, IN_RES> function) {

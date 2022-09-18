@@ -17,8 +17,11 @@ package com.mbed.coap.transport;
 
 import com.mbed.coap.packet.CoapPacket;
 import java.net.InetSocketAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public interface CoapReceiver {
+    Logger LOGGER = LoggerFactory.getLogger(CoapReceiver.class);
 
     void handle(CoapPacket packet, TransportContext transportContext);
 
@@ -29,4 +32,14 @@ public interface CoapReceiver {
     void start();
 
     void stop();
+
+    static void logReceived(CoapPacket packet) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("CoAP received [{}]", packet.toString(true));
+        } else if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[{}] CoAP received [{}]", packet.getRemoteAddrString(), packet.toString(false));
+        } else if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("[{}] CoAP received [{}]", packet.getRemoteAddrString(), packet.toString(false, false, false, true));
+        }
+    }
 }

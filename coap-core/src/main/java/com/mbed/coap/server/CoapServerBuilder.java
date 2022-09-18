@@ -16,10 +16,12 @@
  */
 package com.mbed.coap.server;
 
+import static com.mbed.coap.transport.CoapTransport.*;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
+import com.mbed.coap.packet.CoapTcpPacketConverter;
 import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.server.block.BlockWiseIncomingFilter;
 import com.mbed.coap.server.block.BlockWiseNotificationFilter;
@@ -30,13 +32,16 @@ import com.mbed.coap.server.messaging.CoapRequestId;
 import com.mbed.coap.server.messaging.CoapTcpCSM;
 import com.mbed.coap.server.messaging.CoapTcpCSMStorage;
 import com.mbed.coap.server.messaging.CoapTcpCSMStorageImpl;
-import com.mbed.coap.server.messaging.CoapTcpMessaging;
+import com.mbed.coap.server.messaging.CoapTcpDispatcher;
 import com.mbed.coap.server.messaging.CoapUdpMessaging;
 import com.mbed.coap.server.messaging.DefaultDuplicateDetectorCache;
 import com.mbed.coap.server.messaging.MessageIdSupplier;
 import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
+import com.mbed.coap.server.messaging.PayloadSizeVerifier;
+import com.mbed.coap.server.messaging.TcpExchangeFilter;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
+import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
@@ -47,7 +52,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 
-public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
+public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
     private static final int DEFAULT_MAX_DUPLICATION_LIST_SIZE = 10000;
     private static final int DEFAULT_DUPLICATE_DETECTOR_CLEAN_INTERVAL_MILLIS = 10000;
     private static final int DEFAULT_DUPLICATE_DETECTOR_WARNING_INTERVAL_MILLIS = 10000;
@@ -105,34 +110,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
         return coapServer;
     }
 
-    public CoapServer build() {
-        CoapMessaging messaging = buildCoapMessaging();
-
-        // NOTIFICATION
-        ObservationHandler observationHandler = new ObservationHandler();
-        Service<SeparateResponse, Boolean> sendNotification = new NotificationValidator()
-                .andThen(new BlockWiseNotificationFilter(capabilities()))
-                .then(messaging::send);
-
-        // INBOUND
-        Service<CoapRequest, CoapResponse> inboundService = new RescueFilter()
-                .andThen(new CriticalOptionVerifier())
-                .andThen(new ObservationSenderFilter(sendNotification))
-                .then(new BlockWiseIncomingFilter(capabilities(), maxIncomingBlockTransferSize).then(route));
-
-        // OUTBOUND
-        Service<CoapRequest, CoapResponse> outboundService = new ObserveRequestFilter(observationHandler)
-                .andThen(new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress))
-                .andThen(new BlockWiseOutgoingFilter(capabilities(), maxIncomingBlockTransferSize))
-                .then(messaging::send);
-
-        Function<SeparateResponse, Boolean> inboundObservation = obs -> observationHandler.notify(obs, outboundService);
-        messaging.init(inboundObservation, inboundService);
-
-        return new CoapServer(coapTransport, messaging, outboundService);
-    }
-
-    protected abstract CoapMessaging buildCoapMessaging();
+    public abstract CoapServer build();
 
     protected abstract CoapTcpCSMStorage capabilities();
 
@@ -190,8 +168,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             return this;
         }
 
-        @Override
-        protected CoapUdpMessaging buildCoapMessaging() {
+        private CoapUdpMessaging buildCoapMessaging() {
             boolean isSelfCreatedExecutor = false;
             if (scheduledExecutorService == null) {
                 scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
@@ -322,6 +299,34 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             return this;
         }
 
+        @Override
+        public CoapServer build() {
+            CoapMessaging messaging = buildCoapMessaging();
+
+            // NOTIFICATION
+            ObservationHandler observationHandler = new ObservationHandler();
+            Service<SeparateResponse, Boolean> sendNotification = new NotificationValidator()
+                    .andThen(new BlockWiseNotificationFilter(capabilities()))
+                    .then(messaging::send);
+
+            // INBOUND
+            Service<CoapRequest, CoapResponse> inboundService = new RescueFilter()
+                    .andThen(new CriticalOptionVerifier())
+                    .andThen(new ObservationSenderFilter(sendNotification))
+                    .then(new BlockWiseIncomingFilter(capabilities(), maxIncomingBlockTransferSize).then(route));
+
+            // OUTBOUND
+            Service<CoapRequest, CoapResponse> outboundService = new ObserveRequestFilter(observationHandler)
+                    .andThen(new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress))
+                    .andThen(new BlockWiseOutgoingFilter(capabilities(), maxIncomingBlockTransferSize))
+                    .then(messaging::send);
+
+            Function<SeparateResponse, Boolean> inboundObservation = obs -> observationHandler.notify(obs, outboundService);
+            messaging.init(inboundObservation, inboundService);
+
+            return new CoapServer(coapTransport, messaging, outboundService);
+        }
+
     }
 
     public static class CoapServerBuilderForTcp extends CoapServerBuilder<CoapServerBuilderForTcp> {
@@ -337,11 +342,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
         @Override
         protected CoapServerBuilderForTcp me() {
             return this;
-        }
-
-        @Override
-        protected CoapMessaging buildCoapMessaging() {
-            return new CoapTcpMessaging(getCoapTransport(), csmStorage, blockSize != null, maxMessageSize);
         }
 
         @Override
@@ -365,6 +365,47 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder> {
             return csmStorage(csmStorage);
         }
 
+        @Override
+        public CoapServer build() {
+            Service<CoapPacket, Boolean> sender = packet -> getCoapTransport()
+                    .sendPacket(packet, packet.getRemoteAddress(), TransportContext.EMPTY)
+                    .whenComplete((__, throwable) -> logSent(packet, throwable));
+
+            // NOTIFICATION
+            ObservationHandler observationHandler = new ObservationHandler();
+            Service<SeparateResponse, Boolean> sendNotification = new NotificationValidator()
+                    .andThen(new BlockWiseNotificationFilter(capabilities()))
+                    .andThenMap(CoapTcpPacketConverter::toCoapPacket)
+                    .andThen(new PayloadSizeVerifier<>(csmStorage))
+                    .then(sender);
+
+            // INBOUND
+            Service<CoapRequest, CoapResponse> inboundService = new RescueFilter()
+                    .andThen(new CriticalOptionVerifier())
+                    .andThen(new ObservationSenderFilter(sendNotification))
+                    .then(new BlockWiseIncomingFilter(capabilities(), maxIncomingBlockTransferSize).then(route));
+
+            // OUTBOUND
+            TcpExchangeFilter exchangeFilter = new TcpExchangeFilter();
+            Service<CoapRequest, CoapResponse> outboundService = new ObserveRequestFilter(observationHandler)
+                    .andThen(new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress))
+                    .andThen(new BlockWiseOutgoingFilter(capabilities(), maxIncomingBlockTransferSize))
+                    .andThen(exchangeFilter)
+                    .andThenMap(CoapTcpPacketConverter::toCoapPacket)
+                    .then(sender);
+
+            Function<SeparateResponse, Boolean> inboundObservation = obs -> observationHandler.notify(obs, outboundService);
+            CoapTcpDispatcher dispatcher = new CoapTcpDispatcher(
+                    sender,
+                    csmStorage,
+                    new CoapTcpCSM(maxMessageSize, blockSize != null),
+                    inboundService,
+                    exchangeFilter::handleResponse,
+                    inboundObservation
+            );
+
+            return new CoapServer(coapTransport, dispatcher, outboundService);
+        }
 
     }
 

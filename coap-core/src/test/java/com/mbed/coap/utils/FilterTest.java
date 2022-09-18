@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.utils;
 
+import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.utils.Filter.UnaryFilter;
 import java.util.concurrent.CompletableFuture;
@@ -24,7 +25,7 @@ import org.junit.jupiter.api.Test;
 
 public class FilterTest {
 
-    private final Service<String, String> srv = request -> CompletableFuture.completedFuture("S:" + request);
+    private final Service<String, String> srv = request -> completedFuture("S:" + request);
     private final UnaryFilter<String> filter = (request, service) -> service
             .apply(request)
             .thenApply(resp -> "F(" + resp + ")");
@@ -32,7 +33,7 @@ public class FilterTest {
     private final Filter<Integer, String, Integer, String> sumFilter = (request, service) -> service.apply(request + 1);
     private final Filter<Integer, String, Integer, String> multiplyFilter = (request, service) -> service.apply(request * 2);
 
-    private final Service<Integer, String> numToStringSrv = request -> CompletableFuture.completedFuture(request.toString());
+    private final Service<Integer, String> numToStringSrv = request -> completedFuture(request.toString());
 
     @Test
     public void testService() throws ExecutionException, InterruptedException {
@@ -77,9 +78,9 @@ public class FilterTest {
     public void name() throws ExecutionException, InterruptedException {
         Filter<String, String, String, Integer> f = (request, service) -> service
                 .apply(request)
-                .thenCompose(integer -> CompletableFuture.completedFuture(Integer.toString(integer + 1)));
+                .thenCompose(integer -> completedFuture(Integer.toString(integer + 1)));
 
-        Function<String, CompletableFuture<String>> srv = f.then(s -> CompletableFuture.completedFuture(Integer.parseInt(s)));
+        Function<String, CompletableFuture<String>> srv = f.then(s -> completedFuture(Integer.parseInt(s)));
 
         assertEquals("3", srv.apply("2").get());
     }
@@ -90,5 +91,14 @@ public class FilterTest {
 
         assertEquals(srv, identity.then(srv));
         assertEquals(filter, identity.andThen(filter));
+    }
+
+    @Test
+    void andThenApply() {
+        Service<String, Integer> service = Filter.<String, Integer>identity()
+                .andThenMap(Integer::parseInt)
+                .then(CompletableFuture::completedFuture);
+
+        assertEquals(123, service.apply("123").join());
     }
 }
