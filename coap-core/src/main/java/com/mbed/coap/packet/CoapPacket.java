@@ -609,7 +609,7 @@ public class CoapPacket {
     }
 
     public boolean isSeparateResponse() {
-        return isResponse() && (messageType == MessageType.Confirmable || messageType == MessageType.NonConfirmable);
+        return isResponse() && (messageType == null || messageType == MessageType.Confirmable || messageType == MessageType.NonConfirmable);
     }
 
     @Override

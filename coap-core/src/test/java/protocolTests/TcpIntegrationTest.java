@@ -17,6 +17,7 @@
 package protocolTests;
 
 import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.Opaque.of;
 import static com.mbed.coap.packet.Opaque.*;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
@@ -30,6 +31,7 @@ import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.ObservableResourceService;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.javassl.SingleConnectionSocketServerTransport;
@@ -48,6 +50,7 @@ public class TcpIntegrationTest {
     private CoapServer server;
     private InetSocketAddress serverAddress;
     private CoapClient client;
+    private ObservableResourceService obsResource;
 
     private void initClient() throws IOException {
         initClient(b -> {
@@ -66,6 +69,7 @@ public class TcpIntegrationTest {
     }
 
     private void initServer(int port) throws IOException {
+        obsResource = new ObservableResourceService(CoapResponse.ok(EMPTY));
         server = CoapServerBuilder
                 .newBuilderForTcp()
                 .route(RouterService.builder()
@@ -80,6 +84,7 @@ public class TcpIntegrationTest {
                                     return CoapResponse.ok(EMPTY);
                                 }
                         ))
+                        .get("/obs", obsResource)
                 )
                 .transport(new SingleConnectionSocketServerTransport(port, CoapSerializer.TCP))
                 .blockSize(BlockSize.S_1024_BERT)
@@ -171,4 +176,36 @@ public class TcpIntegrationTest {
         assertThatThrownBy(resp::get).hasCauseInstanceOf(IOException.class);
     }
 
+    @Test
+    public void observationTest() throws Exception {
+        initServer(0);
+        initClient();
+
+        ObservationTest.SyncObservationListener obsListener = new ObservationTest.SyncObservationListener();
+        assertEquals(Code.C205_CONTENT, client.observe("/obs", obsListener).get().getCode());
+
+        //notify 1
+        assertTrue(obsResource.putPayload(of("duupa")));
+
+        CoapResponse packet = obsListener.take();
+        assertEquals("duupa", packet.getPayloadString());
+        assertEquals(Integer.valueOf(1), packet.options().getObserve());
+
+        //notify 2
+        await().until(() ->
+                obsResource.putPayload(of("duupa2"))
+        );
+
+        packet = obsListener.take();
+        assertEquals("duupa2", packet.getPayloadString());
+        assertEquals(Integer.valueOf(2), packet.options().getObserve());
+
+        //refresh observation
+        await().untilAsserted(() ->
+                assertEquals(1, obsResource.observationRelations())
+        );
+        client.observe("/obs", obsListener).get();
+
+        assertEquals(1, obsResource.observationRelations());
+    }
 }
