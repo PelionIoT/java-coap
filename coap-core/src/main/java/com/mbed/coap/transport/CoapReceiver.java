@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +17,6 @@
 package com.mbed.coap.transport;
 
 import com.mbed.coap.packet.CoapPacket;
-import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,10 +24,6 @@ public interface CoapReceiver {
     Logger LOGGER = LoggerFactory.getLogger(CoapReceiver.class);
 
     void handle(CoapPacket packet);
-
-    void onDisconnected(InetSocketAddress remoteAddress);
-
-    void onConnected(InetSocketAddress remoteAddress);
 
     void start();
 

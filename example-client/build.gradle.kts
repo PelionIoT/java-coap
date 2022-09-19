@@ -6,6 +6,7 @@ description = "example-client"
 
 dependencies {
     implementation(project(":coap-core"))
+    implementation(project(":coap-tcp"))
     implementation(project(":lwm2m"))
     implementation(project(":mbedtls-transport"))
     implementation("org.slf4j:slf4j-api:2.0.0")

@@ -24,7 +24,7 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
+import com.mbed.coap.server.messaging.Capabilities;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import org.slf4j.Logger;
@@ -35,9 +35,9 @@ class BlockWiseIncomingTransaction {
 
     private final ByteArrayOutputStream payload;
     private final int maxIncomingBlockTransferSize;
-    private final CoapTcpCSM csm;
+    private final Capabilities csm;
 
-    BlockWiseIncomingTransaction(CoapRequest request, int maxIncomingBlockTransferSize, CoapTcpCSM csm) {
+    BlockWiseIncomingTransaction(CoapRequest request, int maxIncomingBlockTransferSize, Capabilities csm) {
         this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
         this.csm = csm;
         Integer expectedPayloadSize = request.options().getSize1();

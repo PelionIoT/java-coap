@@ -27,14 +27,14 @@ import com.mbed.coap.exception.CoapRequestEntityTooLarge;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
+import com.mbed.coap.server.messaging.Capabilities;
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.Test;
 
 
 public class BlockWiseIncomingTransactionTest {
 
-    BlockWiseIncomingTransaction bwReq = new BlockWiseIncomingTransaction(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)), 10_000, new CoapTcpCSM(4096, true));
+    BlockWiseIncomingTransaction bwReq = new BlockWiseIncomingTransaction(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)), 10_000, new Capabilities(4096, true));
 
     @Test
     public void should_appendBlock() throws Exception {
@@ -200,21 +200,21 @@ public class BlockWiseIncomingTransactionTest {
 
         //no blocks allowed
         bwReq = new BlockWiseIncomingTransaction(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)), 10_000,
-                new CoapTcpCSM(4096, false));
+                new Capabilities(4096, false));
         assertCodeException(Code.C402_BAD_OPTION, () ->
                 bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2048)))
         );
 
         //blocks but not bert
         bwReq = new BlockWiseIncomingTransaction(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)), 10_000,
-                new CoapTcpCSM(512, true));
+                new Capabilities(512, true));
         assertCodeException(Code.C402_BAD_OPTION, () ->
                 bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(2048)))
         );
 
         //payload size does not match block size
         bwReq = new BlockWiseIncomingTransaction(put(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(1024)), 10_000,
-                new CoapTcpCSM(10_000, true));
+                new Capabilities(10_000, true));
         assertCodeException(Code.C400_BAD_REQUEST, () ->
                 bwReq.appendBlock(get(LOCAL_5683, "/").block1Req(0, BlockSize.S_1024_BERT, true).payload(opaqueOfSize(100)))
         );

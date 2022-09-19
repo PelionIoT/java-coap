@@ -27,7 +27,7 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.packet.SeparateResponse;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
+import com.mbed.coap.server.messaging.Capabilities;
 import org.junit.jupiter.api.Test;
 
 
@@ -35,7 +35,7 @@ public class BlockWiseTransferTest {
 
     @Test
     public void should_set_first_block_header_for_request() {
-        CoapTcpCSM csm = new CoapTcpCSM(512, true);
+        Capabilities csm = new Capabilities(512, true);
         CoapRequest req = CoapRequest.post(LOCAL_5683, "/").payload(opaqueOfSize(2000));
 
         assertEquals(512, BlockWiseTransfer.updateWithFirstBlock(req, csm).size());
@@ -48,7 +48,7 @@ public class BlockWiseTransferTest {
 
     @Test
     public void should_set_first_block_header_for_request_bert() {
-        CoapTcpCSM csm = new CoapTcpCSM(3300, true);
+        Capabilities csm = new Capabilities(3300, true);
         CoapRequest req = CoapRequest.post(LOCAL_5683, "/").payload(opaqueOfSize(5000));
 
         assertEquals(2048, BlockWiseTransfer.updateWithFirstBlock(req, csm).size());
@@ -61,7 +61,7 @@ public class BlockWiseTransferTest {
 
     @Test
     public void should_set_first_block_header_for_observation() {
-        CoapTcpCSM csm = new CoapTcpCSM(512, true);
+        Capabilities csm = new Capabilities(512, true);
         SeparateResponse obs = CoapResponse.ok(opaqueOfSize(2000)).toSeparate(Opaque.EMPTY, null);
 
         Opaque newPayload = updateWithFirstBlock(obs, csm);

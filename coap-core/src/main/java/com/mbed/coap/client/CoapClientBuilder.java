@@ -19,36 +19,31 @@ package com.mbed.coap.client;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorage;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.javassl.CoapSerializer;
-import com.mbed.coap.transport.javassl.SocketClientTransport;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ScheduledExecutorService;
-import javax.net.SocketFactory;
 
-public abstract class CoapClientBuilder {
+public abstract class CoapClientBuilder<T extends CoapServerBuilder<?>> {
 
     protected InetSocketAddress destination;
-    private final CoapServerBuilder coapServerBuilder;
+    protected final T coapServerBuilder;
     protected boolean isTransportDefined;
 
-    CoapClientBuilder(CoapServerBuilder builder) {
-        // nothing to initialize
+    CoapClientBuilder(T builder) {
         this.coapServerBuilder = builder;
     }
 
-    CoapClientBuilder(CoapServerBuilder builder, int localPort) {
+    CoapClientBuilder(T builder, int localPort) {
         this(builder);
         setTarget(localPort);
     }
 
-    CoapClientBuilder(CoapServerBuilder builder, InetSocketAddress destination) {
+    CoapClientBuilder(T builder, InetSocketAddress destination) {
         this(builder);
         setTarget(destination);
     }
@@ -65,16 +60,6 @@ public abstract class CoapClientBuilder {
     }
 
     /**
-     * Creates CoAP client builder with target on localhost.
-     *
-     * @param localPort local port number
-     * @return CoAP client builder instance
-     */
-    public static CoapClientBuilderForTcp newBuilderForTcp(int localPort) {
-        return new CoapClientBuilderForTcp(CoapServerBuilder.newBuilderForTcp(), localPort);
-    }
-
-    /**
      * Creates CoAP client builder with target socket address.
      *
      * @param destination target address
@@ -84,29 +69,12 @@ public abstract class CoapClientBuilder {
         return new CoapClientBuilderForUdp(CoapServerBuilder.newBuilder(), destination);
     }
 
-    /**
-     * Creates CoAP client builder with target socket address.
-     *
-     * @param destination target address
-     * @return CoAP client builder instance
-     */
-    public static CoapClientBuilderForTcp newBuilderForTcp(InetSocketAddress destination) {
-        return new CoapClientBuilderForTcp(CoapServerBuilder.newBuilderForTcp(), destination);
-    }
-
 
     public static CoapClient clientFor(InetSocketAddress target, CoapServer server) {
         return new CoapClient(target, server.clientService(), server::stop);
     }
 
     public CoapClient build() throws IOException {
-        if (!isTransportDefined) {
-            if (coapServerBuilder instanceof CoapServerBuilder.CoapServerBuilderForUdp) {
-                ((CoapServerBuilder.CoapServerBuilderForUdp) coapServerBuilder).transport(0);
-            } else if (coapServerBuilder instanceof CoapServerBuilder.CoapServerBuilderForTcp) {
-                ((CoapServerBuilder.CoapServerBuilderForTcp) coapServerBuilder).transport(new SocketClientTransport(destination, SocketFactory.getDefault(), CoapSerializer.TCP, false));
-            }
-        }
         CoapServer server = coapServerBuilder.build();
         return new CoapClient(destination, server.start().clientService(), server::stop);
     }
@@ -115,16 +83,15 @@ public abstract class CoapClientBuilder {
         this.destination = destination;
     }
 
-    protected final CoapClientBuilder setTarget(int localPort) {
+    protected final void setTarget(int localPort) {
         try {
             this.destination = new InetSocketAddress(InetAddress.getLocalHost(), localPort);
         } catch (UnknownHostException ex) {
             throw new RuntimeException(ex);
         }
-        return this;
     }
 
-    public static class CoapClientBuilderForUdp extends CoapClientBuilder {
+    public static class CoapClientBuilderForUdp extends CoapClientBuilder<CoapServerBuilder.CoapServerBuilderForUdp> {
         private final CoapServerBuilder.CoapServerBuilderForUdp coapServerBuilderForUdp;
 
         CoapClientBuilderForUdp(CoapServerBuilder.CoapServerBuilderForUdp builder, int localPort) {
@@ -135,6 +102,14 @@ public abstract class CoapClientBuilder {
         CoapClientBuilderForUdp(CoapServerBuilder.CoapServerBuilderForUdp builder, InetSocketAddress destination) {
             super(builder, destination);
             this.coapServerBuilderForUdp = builder;
+        }
+
+        @Override
+        public CoapClient build() throws IOException {
+            if (!isTransportDefined) {
+                coapServerBuilder.transport(0);
+            }
+            return super.build();
         }
 
         public CoapClientBuilderForUdp transport(CoapTransport trans) {
@@ -181,49 +156,4 @@ public abstract class CoapClientBuilder {
 
     }
 
-    public static class CoapClientBuilderForTcp extends CoapClientBuilder {
-        private final CoapServerBuilder.CoapServerBuilderForTcp coapServerBuilderForTcp;
-
-        CoapClientBuilderForTcp(CoapServerBuilder.CoapServerBuilderForTcp builder, int localPort) {
-            super(builder, localPort);
-            this.coapServerBuilderForTcp = builder;
-        }
-
-        CoapClientBuilderForTcp(CoapServerBuilder.CoapServerBuilderForTcp builder, InetSocketAddress destination) {
-            super(builder, destination);
-            this.coapServerBuilderForTcp = builder;
-        }
-
-        public CoapClientBuilderForTcp transport(CoapTransport trans) {
-            coapServerBuilderForTcp.transport(trans);
-            isTransportDefined = true;
-            return this;
-        }
-
-        public CoapClientBuilderForTcp maxMessageSize(int maxOwnMessageSize) {
-            coapServerBuilderForTcp.maxMessageSize(maxOwnMessageSize);
-            return this;
-        }
-
-        public CoapClientBuilderForTcp csmStorage(CoapTcpCSMStorage csmStorage) {
-            coapServerBuilderForTcp.csmStorage(csmStorage);
-            return this;
-        }
-
-        @Deprecated
-        public CoapClientBuilderForTcp setCsmStorage(CoapTcpCSMStorage csmStorage) {
-            return csmStorage(csmStorage);
-        }
-
-        public CoapClientBuilderForTcp blockSize(BlockSize blockSize) {
-            coapServerBuilderForTcp.blockSize(blockSize);
-            return this;
-        }
-
-        public CoapClientBuilderForTcp maxIncomingBlockTransferSize(int maxSize) {
-            coapServerBuilderForTcp.maxIncomingBlockTransferSize(maxSize);
-            return this;
-        }
-
-    }
 }

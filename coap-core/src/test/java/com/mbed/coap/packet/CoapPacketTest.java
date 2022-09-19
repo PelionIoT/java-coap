@@ -17,6 +17,7 @@
 package com.mbed.coap.packet;
 
 import static com.mbed.coap.packet.CoapResponse.*;
+import static com.mbed.coap.utils.CoapPacketAssertion.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
@@ -39,7 +40,7 @@ import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
 
 
-public class CoapPacketTest extends CoapPacketTestBase {
+public class CoapPacketTest {
 
     @Test
     public void linkFormat() throws ParseException {

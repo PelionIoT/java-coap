@@ -16,7 +16,7 @@
  */
 package com.mbed.coap.server;
 
-import static com.mbed.coap.utils.CoapServerUtils.*;
+import static com.mbed.coap.utils.Validations.*;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.transport.CoapReceiver;

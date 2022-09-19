@@ -25,7 +25,7 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorage;
+import com.mbed.coap.server.messaging.CapabilitiesResolver;
 import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
 import java.net.InetSocketAddress;
@@ -38,10 +38,10 @@ import org.slf4j.LoggerFactory;
 public class BlockWiseIncomingFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockWiseIncomingFilter.class.getName());
     private final Map<BlockRequestId, BlockWiseIncomingTransaction> blockReqMap = new ConcurrentHashMap<>();
-    private final CoapTcpCSMStorage capabilities;
+    private final CapabilitiesResolver capabilities;
     private final int maxIncomingBlockTransferSize;
 
-    public BlockWiseIncomingFilter(CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize) {
+    public BlockWiseIncomingFilter(CapabilitiesResolver capabilities, int maxIncomingBlockTransferSize) {
         this.capabilities = capabilities;
         this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
     }

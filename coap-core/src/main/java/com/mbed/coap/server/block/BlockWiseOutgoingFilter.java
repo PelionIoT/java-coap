@@ -20,16 +20,16 @@ import static com.mbed.coap.utils.FutureHelpers.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorage;
+import com.mbed.coap.server.messaging.CapabilitiesResolver;
 import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
 import java.util.concurrent.CompletableFuture;
 
 public class BlockWiseOutgoingFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
-    private final CoapTcpCSMStorage capabilities;
+    private final CapabilitiesResolver capabilities;
     private final int maxIncomingBlockTransferSize;
 
-    public BlockWiseOutgoingFilter(CoapTcpCSMStorage capabilities, int maxIncomingBlockTransferSize) {
+    public BlockWiseOutgoingFilter(CapabilitiesResolver capabilities, int maxIncomingBlockTransferSize) {
         this.capabilities = capabilities;
         this.maxIncomingBlockTransferSize = maxIncomingBlockTransferSize;
     }

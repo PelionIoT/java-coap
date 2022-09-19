@@ -20,11 +20,11 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.packet.SeparateResponse;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
+import com.mbed.coap.server.messaging.Capabilities;
 
 class BlockWiseTransfer {
 
-    static Opaque updateWithFirstBlock(SeparateResponse resp, CoapTcpCSM csm) {
+    static Opaque updateWithFirstBlock(SeparateResponse resp, Capabilities csm) {
         BlockOption blockOption = new BlockOption(0, csm.getBlockSize(), true);
 
         resp.options().setBlock1Req(null);
@@ -36,7 +36,7 @@ class BlockWiseTransfer {
         return createBlockPart(blockOption, resp.getPayload(), maxBlockPayload);
     }
 
-    static Opaque updateWithFirstBlock(CoapRequest request, CoapTcpCSM csm) {
+    static Opaque updateWithFirstBlock(CoapRequest request, Capabilities csm) {
         BlockOption blockOption = new BlockOption(0, csm.getBlockSize(), true);
         int payloadSize = request.getPayload().size();
 

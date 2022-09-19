@@ -100,20 +100,4 @@ public class CoapPacketToStringTest {
         assertEquals("CON GET MID:0 URI:/test", cp.toString());
     }
 
-    @Test
-    public void toString_withCapabilities() {
-        CoapPacket cp = new CoapPacket(Code.C701_CSM, null, null);
-
-        cp.headers().putSignallingOptions(SignalingOptions.capabilities(2000, true));
-        assertEquals("701 MID:0 MaxMsgSz:2000 Blocks", cp.toString());
-
-        cp.headers().putSignallingOptions(SignalingOptions.capabilities(2000, false));
-        assertEquals("701 MID:0 MaxMsgSz:2000", cp.toString());
-
-
-        SignalingOptions signalingOptions = new SignalingOptions();
-        signalingOptions.setBlockWiseTransfer(true);
-        cp.headers().putSignallingOptions(signalingOptions);
-        assertEquals("701 MID:0 Blocks", cp.toString());
-    }
 }

@@ -23,12 +23,9 @@ import java.util.Objects;
  * Implements CoAP additional header options from
  * - RFC 7959 (Block-Wise Transfers)
  * - draft-ietf-core-observe-09
- * - draft-ietf-core-coap-tcp-tls-09
  */
 public class HeaderOptions extends BasicHeaderOptions {
 
-    private static final byte SIGN_OPTION_2 = 2;
-    private static final byte SIGN_OPTION_4 = 4;
     private static final byte OBSERVE = 6;
     private static final byte BLOCK_1_REQ = 27;
     private static final byte BLOCK_2_RES = 23;
@@ -37,11 +34,9 @@ public class HeaderOptions extends BasicHeaderOptions {
     private BlockOption block1Req;
     private BlockOption block2Res;
     private Integer size2Res;
-    private Opaque signallingOption2;
-    private Opaque signallingOption4;
 
     @Override
-    public boolean parseOption(int type, Opaque data, Code code) {
+    public boolean parseOption(int type, Opaque data) {
         switch (type) {
             case OBSERVE:
                 setObserve(data.toInt());
@@ -55,19 +50,8 @@ public class HeaderOptions extends BasicHeaderOptions {
             case SIZE_2_RES:
                 setSize2Res(data.toInt());
                 break;
-            case SIGN_OPTION_2:
-                signallingOption2 = data;
-                break;
-            case SIGN_OPTION_4:
-                //clashing option number with etag
-                if (code != null && code.isSignaling()) {
-                    signallingOption4 = data;
-                    break;
-                } else {
-                    return super.parseOption(type, data, code);
-                }
             default:
-                return super.parseOption(type, data, code);
+                return super.parseOption(type, data);
 
         }
         return true;
@@ -92,12 +76,6 @@ public class HeaderOptions extends BasicHeaderOptions {
         if (size2Res != null) {
             l.add(RawOption.fromUint(SIZE_2_RES, size2Res.longValue()));
         }
-        if (signallingOption2 != null) {
-            l.add(new RawOption(SIGN_OPTION_2, signallingOption2));
-        }
-        if (signallingOption4 != null) {
-            l.add(new RawOption(SIGN_OPTION_4, signallingOption4));
-        }
 
         return l;
     }
@@ -119,16 +97,6 @@ public class HeaderOptions extends BasicHeaderOptions {
             sb.append(" sz2:").append(size2Res);
         }
 
-        if (signallingOption2 != null || signallingOption4 != null) {
-            SignalingOptions signOpt = new SignalingOptions();
-            if (signallingOption2 != null) {
-                signOpt.parse(2, signallingOption2, code);
-            }
-            if (signallingOption4 != null) {
-                signOpt.parse(4, signallingOption4, code);
-            }
-            sb.append(signOpt.toString());
-        }
     }
 
     /**
@@ -180,26 +148,6 @@ public class HeaderOptions extends BasicHeaderOptions {
         this.size2Res = size2Res;
     }
 
-    public SignalingOptions toSignallingOptions(Code code) {
-        if (signallingOption2 == null && signallingOption4 == null) {
-            return null;
-        } else {
-            SignalingOptions signalingOptions = new SignalingOptions();
-            if (signallingOption2 != null) {
-                signalingOptions.parse(SIGN_OPTION_2, signallingOption2, code);
-            }
-            if (signallingOption4 != null) {
-                signalingOptions.parse(SIGN_OPTION_4, signallingOption4, code);
-            }
-            return signalingOptions;
-        }
-    }
-
-    public void putSignallingOptions(SignalingOptions signalingOptions) {
-        this.signallingOption2 = signalingOptions.serializeOption2();
-        this.signallingOption4 = signalingOptions.serializeOption4();
-    }
-
     public HeaderOptions duplicate() {
         HeaderOptions opts = new HeaderOptions();
         super.duplicate(opts);
@@ -208,8 +156,6 @@ public class HeaderOptions extends BasicHeaderOptions {
         opts.block1Req = block1Req;
         opts.block2Res = block2Res;
         opts.size2Res = size2Res;
-        opts.signallingOption2 = signallingOption2;
-        opts.signallingOption4 = signallingOption4;
 
         return opts;
     }
@@ -237,13 +183,7 @@ public class HeaderOptions extends BasicHeaderOptions {
         if (block2Res != null ? !block2Res.equals(that.block2Res) : that.block2Res != null) {
             return false;
         }
-        if (size2Res != null ? !size2Res.equals(that.size2Res) : that.size2Res != null) {
-            return false;
-        }
-        if (!Objects.equals(signallingOption2, that.signallingOption2)) {
-            return false;
-        }
-        return Objects.equals(signallingOption4, that.signallingOption4);
+        return Objects.equals(size2Res, that.size2Res);
     }
 
     @Override
@@ -253,8 +193,6 @@ public class HeaderOptions extends BasicHeaderOptions {
         result = 31 * result + (block1Req != null ? block1Req.hashCode() : 0);
         result = 31 * result + (block2Res != null ? block2Res.hashCode() : 0);
         result = 31 * result + (size2Res != null ? size2Res.hashCode() : 0);
-        result = 31 * result + Objects.hashCode(signallingOption2);
-        result = 31 * result + Objects.hashCode(signallingOption4);
         return result;
     }
 }

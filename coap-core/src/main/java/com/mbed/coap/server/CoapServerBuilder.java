@@ -16,29 +16,23 @@
  */
 package com.mbed.coap.server;
 
-import static com.mbed.coap.transport.CoapTransport.*;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
-import com.mbed.coap.packet.CoapTcpPacketConverter;
 import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.server.block.BlockWiseIncomingFilter;
 import com.mbed.coap.server.block.BlockWiseNotificationFilter;
 import com.mbed.coap.server.block.BlockWiseOutgoingFilter;
 import com.mbed.coap.server.filter.CongestionControlFilter;
+import com.mbed.coap.server.messaging.Capabilities;
+import com.mbed.coap.server.messaging.CapabilitiesResolver;
 import com.mbed.coap.server.messaging.CoapMessaging;
 import com.mbed.coap.server.messaging.CoapRequestId;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorage;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorageImpl;
-import com.mbed.coap.server.messaging.CoapTcpDispatcher;
 import com.mbed.coap.server.messaging.CoapUdpMessaging;
 import com.mbed.coap.server.messaging.DefaultDuplicateDetectorCache;
 import com.mbed.coap.server.messaging.MessageIdSupplier;
 import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
-import com.mbed.coap.server.messaging.PayloadSizeVerifier;
-import com.mbed.coap.server.messaging.TcpExchangeFilter;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
@@ -63,7 +57,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
     protected int maxIncomingBlockTransferSize = 10_000_000; //default to 10 MB
     protected BlockSize blockSize;
     protected int maxMessageSize = 1152; //default
-    protected CoapTcpCSMStorage csmStorage;
     protected Service<CoapRequest, CoapResponse> route = RouterService.NOT_FOUND_SERVICE;
     protected int maxQueueSize = 100;
 
@@ -72,10 +65,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
 
     public static CoapServerBuilderForUdp newBuilder() {
         return CoapServerBuilderForUdp.create();
-    }
-
-    public static CoapServerBuilderForTcp newBuilderForTcp() {
-        return CoapServerBuilderForTcp.create();
     }
 
     public final T blockSize(BlockSize blockSize) {
@@ -88,11 +77,6 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
         return me();
     }
 
-    public T csmStorage(CoapTcpCSMStorage csmStorage) {
-        this.csmStorage = csmStorage;
-        return me();
-    }
-
     public T route(Service<CoapRequest, CoapResponse> route) {
         this.route = route;
         return me();
@@ -102,16 +86,17 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
         return route(routeBuilder.build());
     }
 
+    protected boolean hasRoute() {
+        return route != RouterService.NOT_FOUND_SERVICE;
+    }
 
     public CoapServer start() throws IOException {
-        CoapServer coapServer = build();
-        coapServer.start();
-        return coapServer;
+        return build().start();
     }
 
     public abstract CoapServer build();
 
-    protected abstract CoapTcpCSMStorage capabilities();
+    protected abstract CapabilitiesResolver capabilities();
 
     protected CoapTransport getCoapTransport() {
         if (coapTransport == null) {
@@ -202,16 +187,15 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
         }
 
         @Override
-        protected CoapTcpCSMStorage capabilities() {
-            if (csmStorage == null) {
-                if (blockSize != null) {
-                    csmStorage = new CoapTcpCSMStorageImpl(new CoapTcpCSM(blockSize.getSize() + 1, true));
-                } else {
-                    csmStorage = new CoapTcpCSMStorageImpl(new CoapTcpCSM(maxMessageSize, false));
-                }
+        protected CapabilitiesResolver capabilities() {
+            Capabilities defaultCapability;
+            if (blockSize != null) {
+                defaultCapability = new Capabilities(blockSize.getSize() + 1, true);
+            } else {
+                defaultCapability = new Capabilities(maxMessageSize, false);
             }
 
-            return csmStorage;
+            return __ -> defaultCapability;
         }
 
         public CoapServerBuilderForUdp scheduledExecutor(ScheduledExecutorService scheduledExecutorService) {
@@ -310,9 +294,10 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
 
             // INBOUND
             Service<CoapRequest, CoapResponse> inboundService = new RescueFilter()
-                    .andThen(new CriticalOptionVerifier())
-                    .andThen(new ObservationSenderFilter(sendNotification))
-                    .then(new BlockWiseIncomingFilter(capabilities(), maxIncomingBlockTransferSize).then(route));
+                    .andThenIf(hasRoute(), new CriticalOptionVerifier())
+                    .andThenIf(hasRoute(), new ObservationSenderFilter(sendNotification))
+                    .andThenIf(hasRoute(), new BlockWiseIncomingFilter(capabilities(), maxIncomingBlockTransferSize))
+                    .then(route);
 
             // OUTBOUND
             Service<CoapRequest, CoapResponse> outboundService = new ObserveRequestFilter(observationHandler)
@@ -327,85 +312,5 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
         }
 
     }
-
-    public static class CoapServerBuilderForTcp extends CoapServerBuilder<CoapServerBuilderForTcp> {
-
-        private CoapServerBuilderForTcp() {
-            csmStorage = new CoapTcpCSMStorageImpl();
-        }
-
-        private static CoapServerBuilderForTcp create() {
-            return new CoapServerBuilderForTcp();
-        }
-
-        @Override
-        protected CoapServerBuilderForTcp me() {
-            return this;
-        }
-
-        @Override
-        protected CoapTcpCSMStorage capabilities() {
-            return csmStorage;
-        }
-
-        public CoapServerBuilderForTcp maxMessageSize(int maxMessageSize) {
-            this.maxMessageSize = maxMessageSize;
-            return this;
-        }
-
-        public CoapServerBuilderForTcp maxIncomingBlockTransferSize(int size) {
-            this.maxIncomingBlockTransferSize = size;
-            return this;
-        }
-
-
-        @Deprecated
-        public CoapServerBuilderForTcp setCsmStorage(CoapTcpCSMStorage csmStorage) {
-            return csmStorage(csmStorage);
-        }
-
-        @Override
-        public CoapServer build() {
-            Service<CoapPacket, Boolean> sender = packet -> getCoapTransport()
-                    .sendPacket(packet)
-                    .whenComplete((__, throwable) -> logSent(packet, throwable));
-
-            // NOTIFICATION
-            ObservationHandler observationHandler = new ObservationHandler();
-            Service<SeparateResponse, Boolean> sendNotification = new NotificationValidator()
-                    .andThen(new BlockWiseNotificationFilter(capabilities()))
-                    .andThenMap(CoapTcpPacketConverter::toCoapPacket)
-                    .andThen(new PayloadSizeVerifier<>(csmStorage))
-                    .then(sender);
-
-            // INBOUND
-            Service<CoapRequest, CoapResponse> inboundService = new RescueFilter()
-                    .andThen(new CriticalOptionVerifier())
-                    .andThen(new ObservationSenderFilter(sendNotification))
-                    .then(new BlockWiseIncomingFilter(capabilities(), maxIncomingBlockTransferSize).then(route));
-
-            // OUTBOUND
-            TcpExchangeFilter exchangeFilter = new TcpExchangeFilter();
-            Service<CoapRequest, CoapResponse> outboundService = new ObserveRequestFilter(observationHandler)
-                    .andThen(new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress))
-                    .andThen(new BlockWiseOutgoingFilter(capabilities(), maxIncomingBlockTransferSize))
-                    .andThen(exchangeFilter)
-                    .andThenMap(CoapTcpPacketConverter::toCoapPacket)
-                    .then(sender);
-
-            Function<SeparateResponse, Boolean> inboundObservation = obs -> observationHandler.notify(obs, outboundService);
-            CoapTcpDispatcher dispatcher = new CoapTcpDispatcher(
-                    sender,
-                    csmStorage,
-                    new CoapTcpCSM(maxMessageSize, blockSize != null),
-                    inboundService,
-                    exchangeFilter::handleResponse,
-                    inboundObservation
-            );
-
-            return new CoapServer(coapTransport, dispatcher, outboundService);
-        }
-
-    }
-
+    
 }

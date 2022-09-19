@@ -72,7 +72,7 @@ public class BasicHeaderOptions {
     private Integer size1;
     private Map<Integer, RawOption> unrecognizedOptions;
 
-    protected boolean parseOption(int type, Opaque data, Code code) {
+    protected boolean parseOption(int type, Opaque data) {
         switch (type) {
             case CONTENT_FORMAT:
                 setContentFormat(((short) data.toLong()));
@@ -169,8 +169,8 @@ public class BasicHeaderOptions {
      * @param data option value as byte array
      * @return true if header type is a known, false for unknown header option
      */
-    public final boolean put(int optionNumber, Opaque data, Code code) {
-        if (parseOption(optionNumber, data, code)) {
+    public final boolean put(int optionNumber, Opaque data) {
+        if (parseOption(optionNumber, data)) {
             return true;
         }
         //unrecognizeg option header
@@ -179,10 +179,6 @@ public class BasicHeaderOptions {
         }
         unrecognizedOptions.put(optionNumber, new RawOption(optionNumber, data));
         return true;
-    }
-
-    public final boolean put(int optionNumber, Opaque data) {
-        return put(optionNumber, data, null);
     }
 
     /**
@@ -627,9 +623,9 @@ public class BasicHeaderOptions {
         }
     }
 
-    boolean deserialize(InputStream inputStream, Code code) throws IOException, CoapMessageFormatException {
+    boolean deserialize(InputStream inputStream) throws IOException, CoapMessageFormatException {
         try {
-            return deserialize(inputStream, code, true, Optional.empty()) != 0;
+            return deserialize(inputStream, true, Optional.empty()) != 0;
         } catch (NotEnoughDataException e) {
             // should never happen
             throw new IOException(e);
@@ -641,7 +637,7 @@ public class BasicHeaderOptions {
      * found or zero if no payload present.
      * If no payload marker found but still data present - CoapMessageException is thrown.
      */
-    int deserialize(InputStream inputStream, Code code, boolean orBlock, Optional<Integer> optionsAndPayloadLen) throws IOException, CoapMessageFormatException, NotEnoughDataException {
+    int deserialize(InputStream inputStream, boolean orBlock, Optional<Integer> optionsAndPayloadLen) throws IOException, CoapMessageFormatException, NotEnoughDataException {
 
         StrictInputStream is = null;
         if (inputStream instanceof StrictInputStream) {
@@ -695,7 +691,7 @@ public class BasicHeaderOptions {
             headerOptNum += delta;
             Opaque headerOptData = new Opaque(readN(is, len, orBlock));
             availableInternal -= len;
-            put(headerOptNum, headerOptData, code);
+            put(headerOptNum, headerOptData);
         }
         if (availableInternal < 0) {
             throw new CoapMessageFormatException("No payload marker found and options read more that were available");
@@ -720,6 +716,7 @@ public class BasicHeaderOptions {
         opts.proxyScheme = proxyScheme;
         opts.uriPort = uriPort;
         opts.size1 = size1;
+        opts.unrecognizedOptions = unrecognizedOptions;
     }
 
     @Override

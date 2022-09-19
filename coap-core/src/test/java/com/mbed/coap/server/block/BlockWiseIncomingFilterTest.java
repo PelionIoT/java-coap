@@ -31,8 +31,7 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorageImpl;
+import com.mbed.coap.server.messaging.Capabilities;
 import com.mbed.coap.utils.Service;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -40,8 +39,8 @@ import org.junit.jupiter.api.Test;
 
 class BlockWiseIncomingFilterTest {
     private static final InetSocketAddress LOCAL_5683 = new InetSocketAddress("localhost", 5683);
-    private final CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
-    private final BlockWiseIncomingFilter blockingFilter = new BlockWiseIncomingFilter(capabilities, 10000000);
+    private Capabilities capability = Capabilities.BASE;
+    private final BlockWiseIncomingFilter blockingFilter = new BlockWiseIncomingFilter(__ -> capability, 10000000);
     private CoapRequest lastRequest = null;
     private Service<CoapRequest, CoapResponse> service;
 
@@ -117,7 +116,7 @@ class BlockWiseIncomingFilterTest {
     public void shouldSendBlockingResponse_2k_with_BERT() {
         service = blockingFilter
                 .then(__ -> completedFuture(ok(opaqueOfSize(2000))));
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(1200, true));
+        capability = new Capabilities(1200, true);
         CompletableFuture<CoapResponse> resp;
 
         //BLOCK 0
@@ -133,7 +132,7 @@ class BlockWiseIncomingFilterTest {
     public void shouldSendBlockingResponse_2k_no_BERT_needed() {
         service = blockingFilter
                 .then(__ -> completedFuture(ok(opaqueOfSize(2000))));
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(4000, true));
+        capability = new Capabilities(4000, true);
 
         //when
         CompletableFuture<CoapResponse> resp = service.apply(get(LOCAL_5683, "/large"));
@@ -146,7 +145,7 @@ class BlockWiseIncomingFilterTest {
     public void shouldSendBlockingResponse_10k_with_BERT() {
         service = blockingFilter
                 .then(__ -> completedFuture(ok(opaqueOfSize(10000))));
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(6000, true));
+        capability = new Capabilities(6000, true);
         CompletableFuture<CoapResponse> resp;
 
         //BLOCK 0

@@ -206,7 +206,7 @@ public class CoapPacket {
 
             //read headers
             options = new HeaderOptions();
-            boolean hasPayloadMarker = options.deserialize(inputStream, code);
+            boolean hasPayloadMarker = options.deserialize(inputStream);
 
             //read payload
             if (hasPayloadMarker) {

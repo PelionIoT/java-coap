@@ -27,7 +27,7 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
+import com.mbed.coap.server.messaging.Capabilities;
 import com.mbed.coap.utils.Service;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -43,12 +43,12 @@ class BlockWiseCallback {
     private final Opaque requestPayload;
     private int resourceChanged;
     private final int numberOfBertBlocks;
-    private final CoapTcpCSM csm;
+    private final Capabilities csm;
     private final int maxIncomingBlockTransferSize;
     private final Service<CoapRequest, CoapResponse> sendService;
 
 
-    BlockWiseCallback(Service<CoapRequest, CoapResponse> sendService, CoapTcpCSM csm, CoapRequest request, int maxIncomingBlockTransferSize) throws CoapException {
+    BlockWiseCallback(Service<CoapRequest, CoapResponse> sendService, Capabilities csm, CoapRequest request, int maxIncomingBlockTransferSize) throws CoapException {
         this.request = request;
         this.requestPayload = request.getPayload();
         this.csm = csm;

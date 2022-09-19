@@ -16,7 +16,7 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static com.mbed.coap.utils.CoapServerUtils.*;
+import static com.mbed.coap.utils.Validations.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.packet.CoapPacket;

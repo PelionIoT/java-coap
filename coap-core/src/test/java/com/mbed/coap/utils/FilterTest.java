@@ -101,4 +101,17 @@ public class FilterTest {
 
         assertEquals(123, service.apply("123").join());
     }
+
+    @Test
+    void andThenIf() {
+        Filter.SimpleFilter<Integer, Integer> multipleFilter = (request, service) -> service.apply(request * 2);
+
+        Service<Integer, Integer> service = Filter.<Integer, Integer>identity()
+                .andThenIf(false, multipleFilter)
+                .andThenIf(true, multipleFilter)
+                .then(num -> completedFuture(num + 10));
+
+        assertEquals(14, service.apply(2).join());
+        assertEquals(0, service.apply(-5).join());
+    }
 }

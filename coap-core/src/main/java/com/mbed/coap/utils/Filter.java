@@ -34,6 +34,14 @@ public interface Filter<REQ, RES, IN_REQ, IN_RES> extends BiFunction<REQ, Servic
         };
     }
 
+    default Filter<REQ, RES, IN_REQ, IN_RES> andThenIf(boolean condition, Filter<IN_REQ, IN_RES, IN_REQ, IN_RES> next) {
+        if (condition) {
+            return andThen(next);
+        } else {
+            return this;
+        }
+    }
+
     default <REQ2> Filter<REQ, RES, REQ2, IN_RES> andThenMap(Function<IN_REQ, REQ2> nextFunc) {
         return this.andThen((request, service) ->
                 service.apply(nextFunc.apply(request))

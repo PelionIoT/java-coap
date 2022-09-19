@@ -33,4 +33,16 @@ public class BlockSizeTest {
 
         assertEquals(9, BlockSize.S_1024_BERT.numberOfBlocksPerMessage(10_000));
     }
+
+    @Test
+    void serializeSize() {
+        assertEquals(0, BlockSize.S_16.toRawSzx());
+        assertEquals(1, BlockSize.S_32.toRawSzx());
+        assertEquals(2, BlockSize.S_64.toRawSzx());
+        assertEquals(3, BlockSize.S_128.toRawSzx());
+        assertEquals(4, BlockSize.S_256.toRawSzx());
+        assertEquals(5, BlockSize.S_512.toRawSzx());
+        assertEquals(6, BlockSize.S_1024.toRawSzx());
+        assertEquals(7, BlockSize.S_1024_BERT.toRawSzx());
+    }
 }

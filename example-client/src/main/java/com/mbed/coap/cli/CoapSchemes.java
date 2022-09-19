@@ -24,6 +24,7 @@ import com.mbed.coap.cli.providers.PlainTextProvider;
 import com.mbed.coap.cli.providers.StandardIoProvider;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.CoapServerBuilderForTcp;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -66,7 +67,7 @@ public class CoapSchemes {
                         .transport(new PlainTextProvider().createUDP(CoapSerializer.UDP, destAdr, ks, psk));
 
             case "coap+tcp":
-                return CoapServerBuilder.newBuilderForTcp()
+                return CoapServerBuilderForTcp.newBuilderForTcp()
                         .transport(new PlainTextProvider().createTCP(CoapSerializer.TCP, destAdr, ks));
 
             case "coaps":
@@ -74,7 +75,7 @@ public class CoapSchemes {
                         .transport(transportProvider.createUDP(CoapSerializer.UDP, destAdr, ks, psk));
 
             case "coaps+tcp":
-                return CoapServerBuilder.newBuilderForTcp()
+                return CoapServerBuilderForTcp.newBuilderForTcp()
                         .transport(transportProvider.createTCP(CoapSerializer.TCP, destAdr, ks));
 
             case "coaps+tcp-d2":

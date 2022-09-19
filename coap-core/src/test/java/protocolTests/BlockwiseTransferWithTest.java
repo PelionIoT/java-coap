@@ -21,13 +21,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
-import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorage;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorageImpl;
 import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
 import com.mbed.coap.transmission.SingleTimeout;
 import java.io.IOException;
@@ -44,14 +40,12 @@ public class BlockwiseTransferWithTest {
     private CoapClient client;
 
     private String payload = "123456789012345|123456789012345|dupa";
-    private CoapTcpCSMStorage capabilitiesStorage = new CoapTcpCSMStorageImpl(new CoapTcpCSM(1024, true));
 
     @BeforeEach
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
         CoapServer coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0))
-                .csmStorage(capabilitiesStorage)
                 .timeout(new SingleTimeout(500)).build();
         coapServer.start();
 
@@ -73,20 +67,5 @@ public class BlockwiseTransferWithTest {
         assertEquals(Code.C204_CHANGED, client.sendSync(put("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN)).getCode());
 
     }
-
-    @Test
-    public void block1_custom_size_per_remote_ip() throws Exception {
-        capabilitiesStorage.put(SERVER_ADDRESS, new CoapTcpCSM(32, true));
-
-        transport.when(newCoapPacket(1).put().block1Req(0, BlockSize.S_32, true).size1(payload.length()).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("123456789012345|123456789012345|").build())
-                .then(newCoapPacket(1).ack(Code.C231_CONTINUE).block1Req(0, BlockSize.S_32, true).build());
-
-        transport.when(newCoapPacket(2).put().block1Req(1, BlockSize.S_32, false).uriPath("/path1").contFormat(MediaTypes.CT_TEXT_PLAIN).payload("dupa").build())
-                .then(newCoapPacket(2).ack(Code.C204_CHANGED).block1Req(1, BlockSize.S_32, false).build());
-
-        assertEquals(Code.C204_CHANGED, client.sendSync(put("/path1").payload(payload, MediaTypes.CT_TEXT_PLAIN)).getCode());
-
-    }
-
 
 }

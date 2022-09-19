@@ -31,7 +31,7 @@ import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
+import com.mbed.coap.server.messaging.Capabilities;
 import com.mbed.coap.utils.Service;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +56,7 @@ public class BlockWiseCallbackTest {
 
     @Test
     public void should_send_payload_in_blocks() throws CoapException {
-        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(512, true),
+        bwc = new BlockWiseCallback(makeRequestFunc, new Capabilities(512, true),
                 put("/9").payload(opaqueOfSize(1500)), 10_000);
 
         //BLOCK 1
@@ -114,7 +114,7 @@ public class BlockWiseCallbackTest {
 
     @Test
     public void should_send_payload_in_bert_blocks() throws CoapException {
-        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(3500, true),
+        bwc = new BlockWiseCallback(makeRequestFunc, new Capabilities(3500, true),
                 put("/9").payload(opaqueOfSize(4196)), 10_000);
 
         assertEquals(put("/9").block1Req(0, S_1024_BERT, true).size1(4196).payload(opaqueOfSize(2048)), bwc.request);
@@ -138,7 +138,7 @@ public class BlockWiseCallbackTest {
 
     @Test
     public void should_receive_payload_in_bert_blocks() throws CoapException {
-        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(4096, true), get("/9"), 10_000);
+        bwc = new BlockWiseCallback(makeRequestFunc, new Capabilities(4096, true), get("/9"), 10_000);
 
         assertEquals(get("/9"), bwc.request);
 
@@ -262,7 +262,7 @@ public class BlockWiseCallbackTest {
 
     @Test
     public void should_fail_transfer_when_too_large_total_response_payload() throws CoapException {
-        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(1024, true), get("/9"), 1000);
+        bwc = new BlockWiseCallback(makeRequestFunc, new Capabilities(1024, true), get("/9"), 1000);
 
         receiveFirst(ok(opaqueOfSize(512)).block2Res(0, S_512, true));
         assertSent(get("/9").block2Res(1, S_512, false));
@@ -329,7 +329,7 @@ public class BlockWiseCallbackTest {
     @Test
     public void should_fail_when_too_large_payload() throws CoapException {
         assertThrows(CoapException.class, () ->
-                new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(2000, false),
+                new BlockWiseCallback(makeRequestFunc, new Capabilities(2000, false),
                         put("/9").payload(opaqueOfSize(2010)), 10_000)
         );
     }
@@ -354,12 +354,12 @@ public class BlockWiseCallbackTest {
     }
 
     private void givenPutRequest(int payloadSize) throws CoapException {
-        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(1024, true),
+        bwc = new BlockWiseCallback(makeRequestFunc, new Capabilities(1024, true),
                 put("/9").payload(opaqueOfSize(payloadSize)), 10_000);
     }
 
     private void givenGetRequest() throws CoapException {
-        bwc = new BlockWiseCallback(makeRequestFunc, new CoapTcpCSM(1024, true), get("/9"), 10_000);
+        bwc = new BlockWiseCallback(makeRequestFunc, new Capabilities(1024, true), get("/9"), 10_000);
 
         assertEquals(get("/9"), bwc.request);
     }

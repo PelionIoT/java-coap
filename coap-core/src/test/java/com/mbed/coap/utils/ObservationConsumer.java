@@ -16,6 +16,7 @@
 package com.mbed.coap.utils;
 
 import static com.mbed.coap.utils.Exceptions.*;
+import static com.mbed.coap.utils.Validations.*;
 import com.mbed.coap.packet.CoapResponse;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -28,7 +29,7 @@ public class ObservationConsumer implements Function<CoapResponse, Boolean> {
 
     @Override
     public Boolean apply(CoapResponse obs) {
-        assert queue.offer(obs);
+        assume(queue.offer(obs));
         return true;
     }
 

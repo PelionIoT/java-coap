@@ -18,8 +18,8 @@ package com.mbed.coap.server.messaging;
 
 import static com.mbed.coap.transport.CoapReceiver.*;
 import static com.mbed.coap.transport.CoapTransport.*;
-import static com.mbed.coap.utils.CoapServerUtils.*;
 import static com.mbed.coap.utils.FutureHelpers.*;
+import static com.mbed.coap.utils.Validations.*;
 import static java.util.Objects.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
@@ -29,7 +29,6 @@ import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.utils.Service;
-import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -140,16 +139,6 @@ public abstract class CoapMessaging implements CoapReceiver {
     }
 
     protected abstract void handleNotProcessedMessage(CoapPacket packet);
-
-    @Override
-    public void onDisconnected(InetSocketAddress remoteAddress) {
-        LOGGER.debug("[{}] Disconnected", remoteAddress);
-    }
-
-    @Override
-    public void onConnected(InetSocketAddress remoteAddress) {
-        LOGGER.debug("[{}] Connected", remoteAddress);
-    }
 
     protected abstract boolean handleDelayedResponse(CoapPacket packet);
 

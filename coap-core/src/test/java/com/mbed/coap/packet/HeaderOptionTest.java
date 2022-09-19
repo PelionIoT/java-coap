@@ -54,13 +54,13 @@ public class HeaderOptionTest {
         byte[] expected = new byte[]{(byte) 0xD8, 0x16, '/', 't', 'e', 's', 't', 'u', 'r', 'i'};
         assertArrayEquals(expected, baos.toByteArray());
         BasicHeaderOptions hdr2 = new BasicHeaderOptions();
-        hdr2.deserialize(new ByteArrayInputStream(expected), null);
+        hdr2.deserialize(new ByteArrayInputStream(expected));
         assertEquals(hdr.getProxyUri(), hdr2.getProxyUri());
         assertEquals(hdr.getProxyScheme(), hdr2.getProxyScheme());
 
         //larger delta
         hdr = new BasicHeaderOptions();
-        hdr.put(300, Opaque.of("test"), null);
+        hdr.put(300, Opaque.of("test"));
 
         baos = new ByteArrayOutputStream();
         hdr.serialize(baos);
@@ -88,7 +88,7 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
 
         HeaderOptions hdr2 = new HeaderOptions();
-        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()), null);
+        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()));
 
         System.out.println(hdr);
         System.out.println(hdr2);
@@ -106,7 +106,7 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
 
         HeaderOptions hdr2 = new HeaderOptions();
-        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()), null);
+        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()));
 
         System.out.println(hdr);
         System.out.println(hdr2);
@@ -147,7 +147,7 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
 
         HeaderOptions hdr2 = new HeaderOptions();
-        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()), null);
+        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()));
 
         System.out.println(hdr);
         System.out.println(hdr2);
@@ -182,7 +182,7 @@ public class HeaderOptionTest {
 
         HeaderOptions hdr2 = new HeaderOptions();
         System.out.println(Arrays.toString(baos.toByteArray()));
-        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()), null);
+        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()));
     }
 
     @Test
@@ -217,7 +217,7 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
 
         BasicHeaderOptions hdr2 = new BasicHeaderOptions();
-        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()), null);
+        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()));
         System.out.println(hdr);
         System.out.println(hdr2);
         assertEquals(hdr, hdr2);
@@ -287,7 +287,7 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
         assertEquals(2 * 14, baos.size());
         HeaderOptions hdr2 = new HeaderOptions();
-        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()), null);
+        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()));
         assertEquals(hdr, hdr2);
 
         hdr.setUriPath("/1/2/3/4/5/6/7/8/9/0/1/2/3/4/5");
@@ -295,7 +295,7 @@ public class HeaderOptionTest {
         hdr.serialize(baos);
         assertEquals(2 * 15, baos.size());
         hdr2 = new HeaderOptions();
-        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()), null);
+        hdr2.deserialize(new ByteArrayInputStream(baos.toByteArray()));
         assertEquals(hdr, hdr2);
 
     }
@@ -363,7 +363,7 @@ public class HeaderOptionTest {
     public void malformedHeaderWithIllegalDelta() throws IOException, CoapMessageFormatException {
         BasicHeaderOptions hdr = new BasicHeaderOptions();
         assertThrows(CoapMessageFormatException.class, () ->
-                hdr.deserialize(new ByteArrayInputStream(new byte[]{(byte) 0xF3}), null)
+                hdr.deserialize(new ByteArrayInputStream(new byte[]{(byte) 0xF3}))
         );
     }
 
@@ -469,10 +469,10 @@ public class HeaderOptionTest {
     @Test
     public void failToDeserializeWithMalformedData() throws Exception {
 
-        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(new byte[]{(byte) 0xf2}), null))
+        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(new byte[]{(byte) 0xf2})))
                 .isExactlyInstanceOf(CoapMessageFormatException.class);
 
-        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(new byte[]{0x3f}), null))
+        assertThatThrownBy(() -> new HeaderOptions().deserialize(new ByteArrayInputStream(new byte[]{0x3f})))
                 .isExactlyInstanceOf(CoapMessageFormatException.class);
 
     }
@@ -492,7 +492,7 @@ public class HeaderOptionTest {
 
     private static HeaderOptions deserialize(byte[] rawData, byte optNumber) throws IOException, CoapException {
         HeaderOptions hdr2 = new HeaderOptions();
-        hdr2.deserialize(new ByteArrayInputStream(rawData), null);
+        hdr2.deserialize(new ByteArrayInputStream(rawData));
         return hdr2;
     }
 }

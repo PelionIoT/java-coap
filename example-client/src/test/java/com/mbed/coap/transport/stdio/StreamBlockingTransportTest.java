@@ -18,9 +18,9 @@ package com.mbed.coap.transport.stdio;
 
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
+import com.mbed.coap.client.CoapClientBuilderForTcp;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.CoapServerBuilderForTcp;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.IOException;
@@ -45,10 +45,10 @@ public class StreamBlockingTransportTest {
         serverOut.connect(clientIn);
         clientOut.connect(serverIn);
 
-        CoapServer server = CoapServerBuilder.newBuilderForTcp().transport(new StreamBlockingTransport(serverOut, serverIn, adr, CoapSerializer.TCP)).build();
+        CoapServer server = CoapServerBuilderForTcp.newBuilderForTcp().transport(new StreamBlockingTransport(serverOut, serverIn, adr, CoapSerializer.TCP)).build();
         server.start();
 
-        CoapClient client = CoapClientBuilder
+        CoapClient client = CoapClientBuilderForTcp
                 .newBuilderForTcp(adr)
                 .transport(new StreamBlockingTransport(clientOut, clientIn, adr, CoapSerializer.TCP))
                 .build();

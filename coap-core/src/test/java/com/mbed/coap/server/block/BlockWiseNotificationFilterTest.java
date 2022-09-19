@@ -23,9 +23,7 @@ import static org.mockito.BDDMockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.packet.SeparateResponse;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorage;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorageImpl;
+import com.mbed.coap.server.messaging.Capabilities;
 import com.mbed.coap.utils.Service;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,8 +32,8 @@ import org.mockito.Mockito;
 
 class BlockWiseNotificationFilterTest {
 
-    private final CoapTcpCSMStorage csmStorage = new CoapTcpCSMStorageImpl();
-    private final BlockWiseNotificationFilter filter = new BlockWiseNotificationFilter(csmStorage);
+    private Capabilities capability = Capabilities.BASE;
+    private final BlockWiseNotificationFilter filter = new BlockWiseNotificationFilter(__ -> capability);
     private final Service<SeparateResponse, Boolean> service = Mockito.mock(Service.class);
     private final Opaque token = Opaque.of("1");
 
@@ -44,7 +42,7 @@ class BlockWiseNotificationFilterTest {
         reset(service);
         given(service.apply(any())).willReturn(completedFuture(true));
 
-        csmStorage.put(LOCAL_1_5683, new CoapTcpCSM(16, true));
+        capability = new Capabilities(16, true);
     }
 
     @Test

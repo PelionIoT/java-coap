@@ -32,8 +32,7 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.server.messaging.CoapTcpCSM;
-import com.mbed.coap.server.messaging.CoapTcpCSMStorageImpl;
+import com.mbed.coap.server.messaging.Capabilities;
 import com.mbed.coap.utils.Service;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -41,10 +40,10 @@ import org.junit.jupiter.api.Test;
 
 class BlockWiseOutgoingFilterTest {
 
-    private final CoapTcpCSMStorageImpl capabilities = new CoapTcpCSMStorageImpl();
+    private Capabilities capability = Capabilities.BASE;
     private CompletableFuture<CoapResponse> promise;
     private CoapRequest lastReq;
-    private BlockWiseOutgoingFilter filter = new BlockWiseOutgoingFilter(capabilities, 100_000);
+    private BlockWiseOutgoingFilter filter = new BlockWiseOutgoingFilter(__ -> capability, 100_000);
     private Service<CoapRequest, CoapResponse> service = filter.then(this::newPromise);
 
     private CompletableFuture<CoapResponse> newPromise(CoapRequest req) {
@@ -79,7 +78,7 @@ class BlockWiseOutgoingFilterTest {
     @Test
     public void shouldMakeBlockingRequest_maxMsgSz20() throws Exception {
         CoapRequest req = post(LOCAL_5683, "/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_");
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(20, true));
+        capability = new Capabilities(20, true);
 
         CompletableFuture<CoapResponse> respFut = service.apply(req);
 
@@ -106,7 +105,7 @@ class BlockWiseOutgoingFilterTest {
 
     @Test
     public void shoudFail_toReceive_responseWithIncorrectLastBlockSize() {
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(20, true));
+        capability = new Capabilities(20, true);
 
         CoapRequest req = get(LOCAL_5683, "/test");
         CompletableFuture<CoapResponse> respFut = service.apply(req);
@@ -131,7 +130,7 @@ class BlockWiseOutgoingFilterTest {
 
     @Test
     public void shouldFail_toReceive_tooLarge_blockingResponse() throws Exception {
-        service = new BlockWiseOutgoingFilter(capabilities, 2000).then(this::newPromise);
+        service = new BlockWiseOutgoingFilter(__ -> capability, 2000).then(this::newPromise);
         CoapRequest req = get(LOCAL_5683, "/test");
         CompletableFuture<CoapResponse> respFut = service.apply(req);
 
@@ -207,7 +206,7 @@ class BlockWiseOutgoingFilterTest {
     @Test
     public void shouldSendBlockingRequest_with_BERT() throws Exception {
         //based on https://tools.ietf.org/html/draft-ietf-core-coap-tcp-tls-09#section-6.2
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(10000, true));
+        capability = new Capabilities(10000, true);
 
         CoapRequest req = put(LOCAL_5683, "/options").payload(opaqueOfSize(8192 + 8192 + 5683));
 
@@ -253,7 +252,7 @@ class BlockWiseOutgoingFilterTest {
     @Test
     public void should_continue_block_transfer_after_block_size_change() throws ExecutionException, InterruptedException {
         CoapRequest req = post(LOCAL_5683, "/test").payload("LARGE___PAYLOAD_LARGE___PAYLOAD_LARGE___PAYLOAD");
-        capabilities.put(LOCAL_5683, new CoapTcpCSM(40, true));
+        capability = new Capabilities(40, true);
 
         CompletableFuture<CoapResponse> respFut = service.apply(req);
 
