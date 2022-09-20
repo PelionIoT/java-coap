@@ -26,7 +26,6 @@ import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.transport.InMemoryCoapTransport;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -134,8 +133,8 @@ public class CoapServerDuplicateTest {
         server.start();
 
         CoapPacket req = new CoapPacket(Method.PUT, MessageType.Confirmable, "/test", REMOTE_ADDRESS);
-        server.getDispatcher().handle(req, TransportContext.EMPTY);
-        server.getDispatcher().handle(req, TransportContext.EMPTY);
+        server.getDispatcher().handle(req);
+        server.getDispatcher().handle(req);
 
         server.stop();
     }

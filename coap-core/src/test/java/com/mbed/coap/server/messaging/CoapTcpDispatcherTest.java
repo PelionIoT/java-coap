@@ -30,7 +30,6 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.packet.SignalingOptions;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.util.function.Function;
@@ -64,7 +63,7 @@ class CoapTcpDispatcherTest {
 
     @Test
     void ignoreEmptyMessage() {
-        dispatcher.handle(newCoapPacket(LOCAL_1_5683).build(), TransportContext.EMPTY);
+        dispatcher.handle(newCoapPacket(LOCAL_1_5683).build());
 
         verifyNoInteractions(sender);
     }
@@ -72,7 +71,7 @@ class CoapTcpDispatcherTest {
     @Test
     public void should_receive_response() {
         CoapPacket packet = newCoapPacket(LOCAL_1_5683).token(2001).code(Code.C205_CONTENT).build();
-        dispatcher.handle(packet, TransportContext.EMPTY);
+        dispatcher.handle(packet);
 
         verify(outboundHandler).apply(eq(CoapResponse.of(Code.C205_CONTENT).toSeparate(variableUInt(2001), LOCAL_1_5683)));
     }
@@ -80,7 +79,7 @@ class CoapTcpDispatcherTest {
     @Test
     public void should_receive_response_toObservation() {
         CoapPacket packet = newCoapPacket(LOCAL_1_5683).token(2001).code(Code.C205_CONTENT).obs(12).build();
-        dispatcher.handle(packet, TransportContext.EMPTY);
+        dispatcher.handle(packet);
 
         verify(outboundHandler).apply(eq(CoapResponse.of(Code.C205_CONTENT).observe(12).toSeparate(variableUInt(2001), LOCAL_1_5683)));
     }
@@ -171,7 +170,7 @@ class CoapTcpDispatcherTest {
     public void should_handle_pong() throws Exception {
         // when
         CoapPacket packet = newCoapPacket(LOCAL_5683).code(Code.C703_PONG).build();
-        dispatcher.handle(packet, TransportContext.EMPTY);
+        dispatcher.handle(packet);
 
         // then
         verify(outboundHandler).apply(eq(CoapResponse.of(Code.C703_PONG).toSeparate(Opaque.EMPTY, LOCAL_5683)));
@@ -216,7 +215,7 @@ class CoapTcpDispatcherTest {
 
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {
-        dispatcher.handle(coapPacketBuilder.build(), TransportContext.EMPTY);
+        dispatcher.handle(coapPacketBuilder.build());
     }
 
     private void assertSent(CoapPacketBuilder coapPacketBuilder) {

@@ -24,7 +24,6 @@ import com.mbed.coap.exception.TooManyRequestsForEndpointException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.transport.InMemoryCoapTransport;
-import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Optional;
@@ -47,10 +46,10 @@ public class TransactionManagerTest {
         CoapPacket request = newCoapPacket(REMOTE_ADR).mid(1).con().get().token(123).uriPath("/test").build();
         CoapPacket requestInactive = newCoapPacket(REMOTE_ADR2).mid(2).con().get().token(456).uriPath("/test").build();
         // active
-        CoapTransaction activeTrans = new CoapTransaction(request, mock(CoapUdpMessaging.class), TransportContext.EMPTY, mock(Consumer.class));
+        CoapTransaction activeTrans = new CoapTransaction(request, mock(CoapUdpMessaging.class), mock(Consumer.class));
         transMgr.put(activeTrans);
 
-        CoapTransaction inactiveTrans = new CoapTransaction(requestInactive, mock(CoapUdpMessaging.class), TransportContext.EMPTY, mock(Consumer.class));
+        CoapTransaction inactiveTrans = new CoapTransaction(requestInactive, mock(CoapUdpMessaging.class), mock(Consumer.class));
         transMgr.put(inactiveTrans);
 
         // active match
@@ -78,7 +77,7 @@ public class TransactionManagerTest {
     @Test
     public void test_findMatchForSeparateResponse_emptyToken() throws Exception {
         CoapPacket request = newCoapPacket(REMOTE_ADR).mid(1).con().get().uriPath("/test").build();
-        transMgr.put(new CoapTransaction(request, mock(CoapUdpMessaging.class), TransportContext.EMPTY, mock(Consumer.class)));
+        transMgr.put(new CoapTransaction(request, mock(CoapUdpMessaging.class), mock(Consumer.class)));
 
         assertNoMatch(newCoapPacket(REMOTE_ADR).mid(12).con(Code.C205_CONTENT).build());
     }
@@ -87,7 +86,7 @@ public class TransactionManagerTest {
     @Test
     public void test_removeExistingActiveTransactionNoOtherTransactionsOngoing() throws Exception {
         CoapPacket ep1Request1 = newCoapPacket(REMOTE_ADR).mid(11).con().get().uriPath("/test1").build();
-        CoapTransaction trans = new CoapTransaction(ep1Request1, mock(CoapUdpMessaging.class), TransportContext.EMPTY, mock(Consumer.class));
+        CoapTransaction trans = new CoapTransaction(ep1Request1, mock(CoapUdpMessaging.class), mock(Consumer.class));
 
         transMgr.put(trans);
         assertEquals(transMgr.getNumberOfTransactions(), 1);
@@ -108,16 +107,16 @@ public class TransactionManagerTest {
     @Test
     public void failWhenCallbackIsNull() throws Exception {
         assertThrows(NullPointerException.class, () ->
-                new CoapTransaction(null, mock(CoapUdpMessaging.class), TransportContext.EMPTY, mock(Consumer.class))
+                new CoapTransaction(null, mock(CoapUdpMessaging.class), mock(Consumer.class))
         );
     }
 
     @Test
     public void should_close_all_transactions_on_stop() throws TooManyRequestsForEndpointException {
         //given, two transactions
-        CoapTransaction trans1 = new CoapTransaction(newCoapPacket(REMOTE_ADR).mid(11).con().get().uriPath("/test1").build(), mock(CoapUdpMessaging.class), TransportContext.EMPTY, mock(Consumer.class));
+        CoapTransaction trans1 = new CoapTransaction(newCoapPacket(REMOTE_ADR).mid(11).con().get().uriPath("/test1").build(), mock(CoapUdpMessaging.class), mock(Consumer.class));
         transMgr.put(trans1);
-        CoapTransaction trans2 = new CoapTransaction(newCoapPacket(REMOTE_ADR2).mid(11).con().get().uriPath("/test2").build(), mock(CoapUdpMessaging.class), TransportContext.EMPTY, mock(Consumer.class));
+        CoapTransaction trans2 = new CoapTransaction(newCoapPacket(REMOTE_ADR2).mid(11).con().get().uriPath("/test2").build(), mock(CoapUdpMessaging.class), mock(Consumer.class));
         transMgr.put(trans2);
         assertEquals(2, transMgr.getNumberOfTransactions());
 
@@ -132,7 +131,7 @@ public class TransactionManagerTest {
 
     private CoapTransaction createTransaction(InetSocketAddress remote, int mid) {
         CoapPacket packet = newCoapPacket(remote).mid(mid).con().get().uriPath("/").build();
-        return new CoapTransaction(packet, mock(CoapUdpMessaging.class), TransportContext.EMPTY, mock(Consumer.class));
+        return new CoapTransaction(packet, mock(CoapUdpMessaging.class), mock(Consumer.class));
     }
 
     private void assertNoMatch(CoapPacket packet) {

@@ -18,17 +18,16 @@ package com.mbed.coap.transport;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class BlockingCoapTransport implements CoapTransport {
 
     @Override
-    public final CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
+    public final CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket) {
         CompletableFuture<Boolean> objectCompletableFuture = new CompletableFuture<>();
 
         try {
-            sendPacket0(coapPacket, adr, tranContext);
+            sendPacket0(coapPacket);
             objectCompletableFuture.complete(true);
         } catch (Exception ex) {
             objectCompletableFuture.completeExceptionally(ex);
@@ -37,6 +36,6 @@ public abstract class BlockingCoapTransport implements CoapTransport {
         return objectCompletableFuture;
     }
 
-    public abstract void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException;
+    public abstract void sendPacket0(CoapPacket coapPacket) throws CoapException, IOException;
 
 }

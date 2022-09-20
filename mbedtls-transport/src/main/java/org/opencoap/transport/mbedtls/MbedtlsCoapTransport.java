@@ -19,7 +19,6 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.TransportExecutors;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedSelectorException;
@@ -42,7 +41,7 @@ public class MbedtlsCoapTransport extends BlockingCoapTransport {
     }
 
     @Override
-    public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
+    public void sendPacket0(CoapPacket coapPacket) {
         transmitter.send(coapPacket.toByteArray());
     }
 
@@ -53,7 +52,7 @@ public class MbedtlsCoapTransport extends BlockingCoapTransport {
                 byte[] buf = transmitter.receive(Duration.ofSeconds(30));
                 if (buf.length > 0) {
                     CoapPacket coap = CoapPacket.read(destAdr, buf);
-                    receiver.handle(coap, TransportContext.EMPTY);
+                    receiver.handle(coap);
                 }
             } catch (CoapException e) {
                 LOGGER.warn("Can not parse coap packet: " + e.getMessage());

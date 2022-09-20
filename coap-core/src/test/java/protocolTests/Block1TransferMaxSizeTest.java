@@ -114,7 +114,7 @@ public class Block1TransferMaxSizeTest {
         assertEquals(Code.C413_REQUEST_ENTITY_TOO_LARGE, msg.getCode());
         assertEquals(ChangeableResource.INIT_DATA, changeableResource.data);
         // should report maximum allowed data size in Size1 header
-        assertEquals(new Integer(MAX_DATA), msg.options().getSize1());
+        assertEquals(Integer.valueOf(MAX_DATA), msg.options().getSize1());
     }
 
     @Test

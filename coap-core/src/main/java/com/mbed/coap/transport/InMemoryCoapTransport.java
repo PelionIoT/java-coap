@@ -100,8 +100,8 @@ public class InMemoryCoapTransport extends BlockingCoapTransport {
     }
 
     @Override
-    public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
-        InMemoryCoapTransport transport = BINDING_MANAGER.getQueueByAddress(adr);
+    public void sendPacket0(CoapPacket coapPacket) {
+        InMemoryCoapTransport transport = BINDING_MANAGER.getQueueByAddress(coapPacket.getRemoteAddress());
 
         if (transport != null) {
             transport.receive(new DatagramMessage(bindingAddress, coapPacket.toByteArray()));
@@ -111,7 +111,9 @@ public class InMemoryCoapTransport extends BlockingCoapTransport {
     public void receive(DatagramMessage msg) {
         executor.execute(() -> {
             try {
-                coapReceiver.handle(CoapPacket.read(msg.source.toInetSocketAddress(), msg.packetData, msg.packetData.length), transportContext);
+                CoapPacket packet = CoapPacket.read(msg.source.toInetSocketAddress(), msg.packetData, msg.packetData.length);
+                packet.setTransportContext(transportContext);
+                coapReceiver.handle(packet);
             } catch (CoapException e) {
                 LOGGER.error(e.getMessage(), e);
             }

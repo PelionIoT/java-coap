@@ -20,7 +20,6 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedHashMap;
@@ -46,12 +45,12 @@ public class TransportConnectorMock extends BlockingCoapTransport {
     }
 
     @Override
-    public void sendPacket0(CoapPacket request, InetSocketAddress destinationAddress, TransportContext tranContext) throws CoapException, IOException {
+    public void sendPacket0(CoapPacket request) throws IOException {
         CoapPacket[] resp = findResponse(request);
         if (resp != null) {
             for (CoapPacket r : resp) {
                 if (r != null) {
-                    receive(r, destinationAddress);
+                    receive(r, request.getRemoteAddress());
                 }
             }
         }
@@ -59,13 +58,13 @@ public class TransportConnectorMock extends BlockingCoapTransport {
     }
 
     public void receive(CoapPacket coapPacket) {
-        transReceiver.handle(coapPacket, TransportContext.EMPTY);
+        transReceiver.handle(coapPacket);
     }
 
     public void receive(CoapPacket coapPacket, InetSocketAddress sourceAddress) {
         try {
             coapPacket = CoapPacket.read(sourceAddress, coapPacket.toByteArray());
-            transReceiver.handle(coapPacket, TransportContext.EMPTY);
+            transReceiver.handle(coapPacket);
         } catch (CoapException e) {
             e.printStackTrace();
         }

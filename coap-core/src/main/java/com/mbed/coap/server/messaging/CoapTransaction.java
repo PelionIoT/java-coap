@@ -17,7 +17,6 @@
 package com.mbed.coap.server.messaging;
 
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.transport.TransportContext;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -32,16 +31,14 @@ class CoapTransaction {
     private CoapTransactionId transId;
     private DelayedTransactionId delayedTransId;
     private final CoapUdpMessaging coapServer;
-    private final TransportContext transContext;
     private final Consumer<CoapTransactionId> sendErrConsumer;
 
-    public CoapTransaction(CoapPacket coapRequest, final CoapUdpMessaging coapServer, TransportContext transContext, Consumer<CoapTransactionId> sendErrConsumer) {
+    public CoapTransaction(CoapPacket coapRequest, final CoapUdpMessaging coapServer, Consumer<CoapTransactionId> sendErrConsumer) {
         this.sendErrConsumer = sendErrConsumer;
         this.coapServer = coapServer;
         this.coapRequest = coapRequest;
         this.transId = new CoapTransactionId(coapRequest);
         this.retrAttempts = 0;
-        this.transContext = transContext;
     }
 
     public boolean isTimedOut(final long currentTimeMillis) {
@@ -78,7 +75,7 @@ class CoapTransaction {
         if (nextTimeout <= 0) {
             return false;
         }
-        coapServer.send(coapRequest, coapRequest.getRemoteAddress(), transContext)
+        coapServer.send(coapRequest)
                 .whenComplete((wasSent, maybeError) -> onSend(maybeError));
 
         this.timeout = currentTime + nextTimeout;

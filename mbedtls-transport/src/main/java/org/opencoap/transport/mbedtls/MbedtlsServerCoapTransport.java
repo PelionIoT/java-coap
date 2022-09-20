@@ -18,7 +18,6 @@ package org.opencoap.transport.mbedtls;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.TransportContext;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import org.opencoap.ssl.transport.DtlsServer;
@@ -34,7 +33,7 @@ public class MbedtlsServerCoapTransport implements CoapTransport {
     public void start(CoapReceiver receiver) {
         dtlsServer.listen((srcAddress, bytes) -> {
             CoapPacket coapPacket = CoapPacket.read(srcAddress, bytes);
-            receiver.handle(coapPacket, TransportContext.EMPTY);
+            receiver.handle(coapPacket);
         });
     }
 
@@ -44,8 +43,8 @@ public class MbedtlsServerCoapTransport implements CoapTransport {
     }
 
     @Override
-    public CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
-        return dtlsServer.send(coapPacket.toByteArray(), adr);
+    public CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket) {
+        return dtlsServer.send(coapPacket.toByteArray(), coapPacket.getRemoteAddress());
     }
 
     @Override

@@ -24,6 +24,7 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.packet.SignalingOptions;
+import com.mbed.coap.transport.TransportContext;
 import java.net.InetSocketAddress;
 
 
@@ -210,4 +211,10 @@ public class CoapPacketBuilder {
         coapPacket.headers().putSignallingOptions(signOpt);
         return this;
     }
+
+    public CoapPacketBuilder context(TransportContext transportContext) {
+        coapPacket.setTransportContext(transportContext);
+        return this;
+    }
+
 }

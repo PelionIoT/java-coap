@@ -18,13 +18,13 @@ package com.mbed.coap.transport.udp;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
@@ -34,7 +34,7 @@ import protocolTests.utils.CoapPacketBuilder;
 
 public class DatagramSocketTransportTest {
 
-    public static final CoapPacket COAP_PACKET = CoapPacketBuilder.newCoapPacket().get().uriPath("/test").mid(1).build();
+    public static final CoapPacket COAP_PACKET = CoapPacketBuilder.newCoapPacket(LOCAL_5683).get().uriPath("/test").mid(1).build();
 
     @Test
     public void clientServerTest() throws Exception {
@@ -56,7 +56,7 @@ public class DatagramSocketTransportTest {
         DatagramSocketTransport trans = createDatagramSocketTransport();
         try {
             try {
-                trans.sendPacket0(COAP_PACKET, new InetSocketAddress(5683), TransportContext.EMPTY);
+                trans.sendPacket0(COAP_PACKET);
                 fail();
             } catch (Exception e) {
                 assertTrue(e instanceof IllegalStateException);

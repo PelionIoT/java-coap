@@ -25,7 +25,6 @@ import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.packet.SignalingOptions;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.net.InetSocketAddress;
 import java.util.function.Function;
@@ -54,7 +53,7 @@ public class CoapTcpDispatcher implements CoapReceiver {
     }
 
     @Override
-    public void handle(CoapPacket packet, TransportContext transContext) {
+    public void handle(CoapPacket packet) {
         logReceived(packet);
 
         // EMPTY (healthcheck)
@@ -71,7 +70,7 @@ public class CoapTcpDispatcher implements CoapReceiver {
 
         // REQUEST
         if (packet.getMethod() != null) {
-            inboundService.apply(packet.toCoapRequest(transContext))
+            inboundService.apply(packet.toCoapRequest())
                     .thenAccept(resp -> sender.apply(packet.createResponseFrom(resp)))
                     .exceptionally(logError(LOGGER));
             return;
@@ -79,7 +78,7 @@ public class CoapTcpDispatcher implements CoapReceiver {
 
         // RESPONSE
         if (packet.getCode() != null) {
-            SeparateResponse resp = packet.toCoapResponse().toSeparate(packet.getToken(), packet.getRemoteAddress(), transContext);
+            SeparateResponse resp = packet.toCoapResponse().toSeparate(packet.getToken(), packet.getRemoteAddress(), packet.getTransportContext());
             if (outboundHandler.apply(resp)) {
                 return;
             }

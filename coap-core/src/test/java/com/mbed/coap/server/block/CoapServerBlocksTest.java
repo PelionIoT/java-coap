@@ -41,7 +41,6 @@ import com.mbed.coap.server.messaging.CoapUdpMessaging;
 import com.mbed.coap.server.messaging.DefaultDuplicateDetectorCache;
 import com.mbed.coap.server.messaging.MessageIdSupplier;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.util.Objects;
@@ -81,7 +80,7 @@ public class CoapServerBlocksTest {
     public void setUp() {
         server = CoapServerBuilder.newBuilder().transport(coapTransport).maxIncomingBlockTransferSize(10000000).route(route).csmStorage(capabilities).build();
         protoServer = (CoapUdpMessaging) server.getDispatcher();
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(true));
+        given(coapTransport.sendPacket(any())).willReturn(completedFuture(true));
     }
 
     @Test
@@ -295,15 +294,15 @@ public class CoapServerBlocksTest {
 
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {
-        protoServer.handle(coapPacketBuilder.build(), TransportContext.EMPTY);
+        protoServer.handle(coapPacketBuilder.build());
     }
 
     private void receive(CoapPacket coapPacket) {
-        protoServer.handle(coapPacket, TransportContext.EMPTY);
+        protoServer.handle(coapPacket);
     }
 
     private void assertSent(CoapPacketBuilder coapPacketBuilder) throws CoapException, IOException {
-        verify(coapTransport).sendPacket(eq(coapPacketBuilder.build()), any(), any());
+        verify(coapTransport).sendPacket(eq(coapPacketBuilder.build()));
     }
 
     private Opaque generatePayload(int startBlockNumber, int size16bRound) throws Exception {

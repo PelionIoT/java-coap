@@ -39,7 +39,6 @@ import com.mbed.coap.server.PutOnlyMap;
 import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -75,7 +74,7 @@ public class CoapUdpMessagingTest {
 
     private void resetCoapTransport() {
         reset(coapTransport);
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(completedFuture(null));
+        given(coapTransport.sendPacket(any())).willReturn(completedFuture(null));
     }
 
     @Test
@@ -155,10 +154,10 @@ public class CoapUdpMessagingTest {
         udpMessaging.start();
 
         receive(newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C203_VALID));
-        verify(coapTransport, never()).sendPacket(any(), any(), any());
+        verify(coapTransport, never()).sendPacket(any());
 
         receive(newCoapPacket(LOCAL_1_5683).reset(1));
-        verify(coapTransport, never()).sendPacket(any(), any(), any());
+        verify(coapTransport, never()).sendPacket(any());
     }
 
     @Test
@@ -200,7 +199,7 @@ public class CoapUdpMessagingTest {
         receive(req);
 
         CoapPacket expected = newCoapPacket(LOCAL_1_5683).mid(1).ack(Code.C205_CONTENT).payload("ABC0").build();
-        verify(coapTransport, times(2)).sendPacket(eq(expected), any(), any());
+        verify(coapTransport, times(2)).sendPacket(eq(expected));
     }
 
     @Test
@@ -210,7 +209,7 @@ public class CoapUdpMessagingTest {
 
         //request
         CompletableFuture<CoapResponse> resp = udpMessaging.send(get(LOCAL_5683, "/").token(1001).context(NON_CONFIRMABLE));
-        assertSent(newCoapPacket(LOCAL_5683).mid(100).token(1001).non().get());
+        assertSent(newCoapPacket(LOCAL_5683).context(NON_CONFIRMABLE).mid(100).token(1001).non().get());
 
         //response
         receive(newCoapPacket(LOCAL_5683).mid(2).token(1001).non(Code.C203_VALID));
@@ -249,7 +248,7 @@ public class CoapUdpMessagingTest {
         udpMessaging.resendTimeouts();
 
         CoapPacketBuilder req = newCoapPacket(LOCAL_5683).mid(100).get().uriPath("/10");
-        verify(coapTransport, times(2)).sendPacket(eq(req.build()), any(), any());
+        verify(coapTransport, times(2)).sendPacket(eq(req.build()));
 
         assertTrue(resp.isCompletedExceptionally());
         assertThatThrownBy(resp::get).hasCauseExactlyInstanceOf(CoapTimeoutException.class);
@@ -264,7 +263,7 @@ public class CoapUdpMessagingTest {
 
         Thread.sleep(1);
 
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(exceptionFuture());
+        given(coapTransport.sendPacket(any())).willReturn(exceptionFuture());
         udpMessaging.resendTimeouts();
 
         assertTrue(resp.isCompletedExceptionally());
@@ -276,7 +275,7 @@ public class CoapUdpMessagingTest {
     public void network_fail_when_sending_NON_request() throws Exception {
         initServer();
 
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(exceptionFuture());
+        given(coapTransport.sendPacket(any())).willReturn(exceptionFuture());
 
         CompletableFuture<CoapResponse> resp = udpMessaging.send(get(LOCAL_1_5683, "/test").context(NON_CONFIRMABLE));
 
@@ -304,7 +303,7 @@ public class CoapUdpMessagingTest {
         receive(newCoapPacket(LOCAL_5683).mid(3001).obs(2).con(Code.C203_VALID).token(33).payload("A"));
 
         // then
-        verify(coapTransport, times(2)).sendPacket(eq(newCoapPacket(LOCAL_5683).emptyAck(3001)), any(), any());
+        verify(coapTransport, times(2)).sendPacket(eq(newCoapPacket(LOCAL_5683).emptyAck(3001)));
         verify(observationHandler, times(1)).apply(any());
     }
 
@@ -323,7 +322,7 @@ public class CoapUdpMessagingTest {
         initServer();
         mid = 1000;
 
-        udpMessaging.sendResponse(newCoapPacket(LOCAL_5683).mid(0).build(), newCoapPacket(LOCAL_5683).mid(0).non(Code.C205_CONTENT).build(), TransportContext.EMPTY);
+        udpMessaging.sendResponse(newCoapPacket(LOCAL_5683).mid(0).build(), newCoapPacket(LOCAL_5683).mid(0).non(Code.C205_CONTENT).build());
 
         assertSent(newCoapPacket(LOCAL_5683).mid(1000).non(Code.C205_CONTENT));
     }
@@ -333,7 +332,7 @@ public class CoapUdpMessagingTest {
         initServer();
         mid = 1000;
 
-        udpMessaging.sendResponse(newCoapPacket(LOCAL_5683).mid(0).non().get().build(), newCoapPacket(LOCAL_5683).mid(0).reset().build(), TransportContext.EMPTY);
+        udpMessaging.sendResponse(newCoapPacket(LOCAL_5683).mid(0).non().get().build(), newCoapPacket(LOCAL_5683).mid(0).reset().build());
 
         assertSent(newCoapPacket(LOCAL_5683).mid(1000).reset());
     }
@@ -342,7 +341,7 @@ public class CoapUdpMessagingTest {
     public void shouldNotSetMessageId_onSendAckResponse() throws IOException, CoapException {
         initServer();
 
-        udpMessaging.sendResponse(newCoapPacket(LOCAL_5683).mid(2).build(), newCoapPacket(LOCAL_5683).mid(2).ack(Code.C205_CONTENT).build(), TransportContext.EMPTY);
+        udpMessaging.sendResponse(newCoapPacket(LOCAL_5683).mid(2).build(), newCoapPacket(LOCAL_5683).mid(2).ack(Code.C205_CONTENT).build());
 
         assertSent(newCoapPacket(LOCAL_5683).mid(2).ack(Code.C205_CONTENT));
     }
@@ -374,7 +373,7 @@ public class CoapUdpMessagingTest {
     @Test
     void shouldFailToSendObservation_when_transportFails() throws CoapException, IOException {
         udpMessagingInit(0, scheduledExecutor, false, midSupplier, 0, DuplicatedCoapMessageCallback.NULL);
-        given(coapTransport.sendPacket(any(), any(), any())).willReturn(failedFuture(new IOException()));
+        given(coapTransport.sendPacket(any())).willReturn(failedFuture(new IOException()));
 
         CompletableFuture<Boolean> ack = udpMessaging.send(ok("21C").observe(12).toSeparate(variableUInt(1003), LOCAL_1_5683));
 
@@ -382,15 +381,15 @@ public class CoapUdpMessagingTest {
     }
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {
-        udpMessaging.handle(coapPacketBuilder.build(), TransportContext.EMPTY);
+        udpMessaging.handle(coapPacketBuilder.build());
     }
 
     private void receive(CoapPacket coapPacket) {
-        udpMessaging.handle(coapPacket, TransportContext.EMPTY);
+        udpMessaging.handle(coapPacket);
     }
 
     private void assertSent(CoapPacket coapPacket) throws CoapException, IOException {
-        verify(coapTransport).sendPacket(eq(coapPacket), any(), any());
+        verify(coapTransport).sendPacket(eq(coapPacket));
     }
 
     private void assertSent(CoapPacketBuilder coapPacketBuilder) throws CoapException, IOException {

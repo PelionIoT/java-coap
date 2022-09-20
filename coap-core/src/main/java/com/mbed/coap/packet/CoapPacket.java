@@ -41,6 +41,7 @@ public class CoapPacket {
     private final InetSocketAddress remoteAddress;
     private HeaderOptions options = new HeaderOptions();
     private Opaque token = Opaque.EMPTY;
+    private TransportContext transportContext = TransportContext.EMPTY;
 
     /**
      * CoAP packet constructor.
@@ -109,6 +110,7 @@ public class CoapPacket {
 
     public static CoapPacket from(CoapRequest req) {
         CoapPacket packet = new CoapPacket(req.getMethod(), MessageType.Confirmable, null, req.getPeerAddress());
+        packet.setTransportContext(req.getTransContext());
         packet.setToken(req.getToken());
         packet.setHeaderOptions(req.options());
         packet.setPayload(req.getPayload());
@@ -119,6 +121,7 @@ public class CoapPacket {
     public static CoapPacket from(SeparateResponse resp) {
         MessageType messageType = resp.getTransContext().get(MessageType.NonConfirmable) == null ? MessageType.Confirmable : MessageType.NonConfirmable;
         CoapPacket packet = new CoapPacket(resp.getCode(), messageType, resp.getPeerAddress());
+        packet.setTransportContext(resp.getTransContext());
         packet.setToken(resp.getToken());
         packet.setHeaderOptions(resp.options().duplicate());
         packet.setPayload(resp.getPayload());
@@ -280,6 +283,7 @@ public class CoapPacket {
 
     public CoapPacket createResponseFrom(CoapResponse coapResponse) {
         CoapPacket response = new CoapPacket(this.getRemoteAddress());
+        response.setTransportContext(this.transportContext);
         response.setCode(coapResponse.getCode());
         response.setToken(getToken());
         response.setPayload(coapResponse.getPayload());
@@ -296,8 +300,8 @@ public class CoapPacket {
         return response;
     }
 
-    public CoapRequest toCoapRequest(TransportContext transContext) {
-        return new CoapRequest(method, token, options, payload, remoteAddress, transContext);
+    public CoapRequest toCoapRequest() {
+        return new CoapRequest(method, token, options, payload, remoteAddress, transportContext);
     }
 
     /**
@@ -612,6 +616,14 @@ public class CoapPacket {
         return isResponse() && (messageType == null || messageType == MessageType.Confirmable || messageType == MessageType.NonConfirmable);
     }
 
+    public void setTransportContext(TransportContext transportContext) {
+        this.transportContext = Objects.requireNonNull(transportContext);
+    }
+
+    public TransportContext getTransportContext() {
+        return transportContext;
+    }
+
     @Override
     public int hashCode() {
         int hash = 7;
@@ -624,6 +636,7 @@ public class CoapPacket {
         hash = 41 * hash + Objects.hashCode(this.remoteAddress);
         hash = 41 * hash + Objects.hashCode(this.options);
         hash = 41 * hash + Objects.hashCode(this.token);
+        hash = 41 * hash + Objects.hashCode(this.transportContext);
         return hash;
     }
 
@@ -661,6 +674,9 @@ public class CoapPacket {
             return false;
         }
         if (!Objects.equals(this.token, other.token)) {
+            return false;
+        }
+        if (!Objects.equals(this.transportContext, other.transportContext)) {
             return false;
         }
         return true;

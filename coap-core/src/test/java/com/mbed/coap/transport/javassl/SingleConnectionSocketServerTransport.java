@@ -20,7 +20,6 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportContext;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.EOFException;
@@ -70,7 +69,7 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
             while (!socket.isClosed()) {
                 try {
                     final CoapPacket coapPacket = serializer.deserialize(inputStream, remoteSocketAddress);
-                    coapReceiver.handle(coapPacket, TransportContext.EMPTY);
+                    coapReceiver.handle(coapPacket);
                 } catch (EOFException e) {
                     socket.close();
                 } catch (Exception e) {
@@ -116,7 +115,7 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
     }
 
     @Override
-    public synchronized void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+    public synchronized void sendPacket0(CoapPacket coapPacket) throws CoapException, IOException {
         serializer.serialize(outputStream, coapPacket);
         outputStream.flush();
     }

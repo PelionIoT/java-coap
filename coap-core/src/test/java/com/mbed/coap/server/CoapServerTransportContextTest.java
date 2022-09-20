@@ -24,7 +24,6 @@ import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
-import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
@@ -32,7 +31,6 @@ import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +69,9 @@ public class CoapServerTransportContextTest {
         srvTransport.setTransportContext(new TextTransportContext("dupa"));
         client.sendSync(get("/test").context(new TextTransportContext("client-sending")));
         assertEquals("dupa", ((TextTransportContext) coapResourceTest.transportContext).getText());
-        verify(cliTransport).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("client-sending")));
+        verify(cliTransport).sendPacket(argThat(cp ->
+                cp.getTransportContext().equals(new TextTransportContext("client-sending"))
+        ));
         // verify(srvTransport).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("get-response")));
 
         srvTransport.setTransportContext(new TextTransportContext("dupa2"));
@@ -94,7 +94,9 @@ public class CoapServerTransportContextTest {
         assertEquals("dupa", ((TextTransportContext) coapResourceTest.transportContext).getText());
 
         //for each block it sends same transport context
-        verify(cliTransport, times(3)).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("client-block")));
+        verify(cliTransport, times(3)).sendPacket(argThat(cp ->
+                cp.getTransportContext().equals(new TextTransportContext("client-block"))
+        ));
 
         client.close();
     }

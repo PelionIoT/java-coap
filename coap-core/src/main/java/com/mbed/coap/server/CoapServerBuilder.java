@@ -41,7 +41,6 @@ import com.mbed.coap.server.messaging.PayloadSizeVerifier;
 import com.mbed.coap.server.messaging.TcpExchangeFilter;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
@@ -368,7 +367,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
         @Override
         public CoapServer build() {
             Service<CoapPacket, Boolean> sender = packet -> getCoapTransport()
-                    .sendPacket(packet, packet.getRemoteAddress(), TransportContext.EMPTY)
+                    .sendPacket(packet)
                     .whenComplete((__, throwable) -> logSent(packet, throwable));
 
             // NOTIFICATION

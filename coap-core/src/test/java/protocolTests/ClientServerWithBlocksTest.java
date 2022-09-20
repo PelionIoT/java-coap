@@ -39,7 +39,6 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.InMemoryCoapTransport;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -172,12 +171,12 @@ public class ClientServerWithBlocksTest {
     public void blockRequest_size_negotiation() throws IOException, CoapException {
         CoapTransport limitedTransport = new InMemoryCoapTransport() {
             @Override
-            public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
+            public void sendPacket0(CoapPacket coapPacket) {
                 //emulate network that cuts data it larger that 40 bytes
                 if (coapPacket.getPayload().size() > 40) {
                     coapPacket.setPayload(coapPacket.getPayload().slice(0, 40));
                 }
-                super.sendPacket0(coapPacket, adr, tranContext);
+                super.sendPacket0(coapPacket);
             }
         };
 

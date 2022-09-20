@@ -20,7 +20,6 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.TransportExecutors;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -89,7 +88,7 @@ public class SocketClientTransport extends BlockingCoapTransport {
             if (!socket.isClosed()) {
                 try {
                     final CoapPacket coapPacket = serializer.deserialize(inputStream, ((InetSocketAddress) socket.getRemoteSocketAddress()));
-                    coapReceiver.handle(coapPacket, TransportContext.EMPTY);
+                    coapReceiver.handle(coapPacket);
                 } catch (CoapException e) {
                     if (e.getCause() != null && e.getCause() instanceof IOException) {
                         throw ((IOException) e.getCause());
@@ -119,7 +118,8 @@ public class SocketClientTransport extends BlockingCoapTransport {
     }
 
     @Override
-    public synchronized void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+    public synchronized void sendPacket0(CoapPacket coapPacket) throws CoapException, IOException {
+        InetSocketAddress adr = coapPacket.getRemoteAddress();
         if (!adr.equals(this.destination)) {
             throw new IllegalStateException("No connection with: " + adr);
         }

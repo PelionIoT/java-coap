@@ -40,7 +40,6 @@ import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import io.github.artsok.RepeatedIfExceptionsTest;
 import java.io.IOException;
@@ -232,14 +231,14 @@ public class ClientServerTest {
                     private boolean hasDropped = false;
 
                     @Override
-                    public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
+                    public void sendPacket0(CoapPacket coapPacket) {
                         //will drop only first packet
                         if (!hasDropped) {
                             hasDropped = true;
                             resValue.set("dropped");
                             System.out.println("dropped");
                         } else {
-                            super.sendPacket0(coapPacket, adr, tranContext);
+                            super.sendPacket0(coapPacket);
                         }
                     }
 

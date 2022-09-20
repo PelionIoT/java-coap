@@ -30,7 +30,6 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -135,7 +134,7 @@ public abstract class ServerBenchmarkBase {
         }
 
         @Override
-        public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws CoapException, IOException {
+        public void sendPacket0(CoapPacket coapPacket) {
             LATCH.countDown();
         }
 
@@ -153,7 +152,7 @@ public abstract class ServerBenchmarkBase {
 
             executor.execute(() -> {
                 try {
-                    udpReceiver.handle(CoapPacket.read(adr, packetData), TransportContext.EMPTY);
+                    udpReceiver.handle(CoapPacket.read(adr, packetData));
                 } catch (CoapException e) {
                     throw new RuntimeException(e);
                 }

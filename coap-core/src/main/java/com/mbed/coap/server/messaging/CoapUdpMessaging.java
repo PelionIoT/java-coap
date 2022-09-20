@@ -30,7 +30,6 @@ import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
-import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -166,14 +165,14 @@ public class CoapUdpMessaging extends CoapMessaging {
     }
 
     @Override
-    public void sendResponse(CoapPacket request, CoapPacket resp, TransportContext ctx) {
+    public void sendResponse(CoapPacket request, CoapPacket resp) {
         putToDuplicationDetector(request, resp);
 
         if (resp.getMessageType() == MessageType.NonConfirmable || request.getMessageType() == MessageType.NonConfirmable) {
             resp.setMessageId(getNextMID());
         }
 
-        send(resp, request.getRemoteAddress(), ctx);
+        send(resp);
     }
 
     private final void putToDuplicationDetector(CoapPacket request, CoapPacket response) {
@@ -184,22 +183,23 @@ public class CoapUdpMessaging extends CoapMessaging {
 
     @Override
     public CompletableFuture<CoapResponse> send(CoapRequest req) {
-        return makeRequest(CoapPacket.from(req), req.getTransContext())
+        return makeRequest(CoapPacket.from(req))
                 .thenApply(CoapPacket::toCoapResponse);
     }
 
-    private CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet, final TransportContext transContext) {
+    private CompletableFuture<CoapPacket> makeRequest(final CoapPacket packet) {
+        TransportContext transContext = packet.getTransportContext();
         if (transContext.get(MessageType.NonConfirmable) != null) {
             packet.setMessageType(MessageType.NonConfirmable);
         }
-        return makeRequestInternal(packet, transContext);
+        return makeRequestInternal(packet);
     }
 
     @Override
     public CompletableFuture<Boolean> send(final SeparateResponse resp) {
         CoapPacket packet = CoapPacket.from(resp);
 
-        return makeRequest(packet, resp.getTransContext())
+        return makeRequest(packet)
                 .thenApply(ack -> {
                     switch (ack.getMessageType()) {
                         case Reset:
@@ -219,9 +219,8 @@ public class CoapUdpMessaging extends CoapMessaging {
      * </p>
      *
      * @param packet request packet
-     * @param transContext transport context that will be passed to transport connector
      */
-    private CompletableFuture<CoapPacket> makeRequestInternal(final CoapPacket packet, final TransportContext transContext) {
+    private CompletableFuture<CoapPacket> makeRequestInternal(final CoapPacket packet) {
         if (packet == null || packet.getRemoteAddress() == null) {
             throw new NullPointerException();
         }
@@ -230,7 +229,7 @@ public class CoapUdpMessaging extends CoapMessaging {
         packet.setMessageId(getNextMID());
 
         if (packet.getMustAcknowledge()) {
-            CoapTransaction trans = new CoapTransaction(packet, this, transContext, transMgr::remove);
+            CoapTransaction trans = new CoapTransaction(packet, this, transMgr::remove);
             transMgr.put(trans);
             LOGGER.trace("Sending transaction: {}", trans);
             trans.send();
@@ -238,9 +237,9 @@ public class CoapUdpMessaging extends CoapMessaging {
         } else {
             //send NON message without waiting for piggy-backed response
             DelayedTransactionId delayedTransactionId = new DelayedTransactionId(packet.getToken(), packet.getRemoteAddress());
-            CoapTransaction trans = new CoapTransaction(packet, this, transContext, transMgr::remove);
+            CoapTransaction trans = new CoapTransaction(packet, this, transMgr::remove);
             delayedTransMagr.add(delayedTransactionId, trans);
-            this.send(packet, packet.getRemoteAddress(), transContext)
+            this.send(packet)
                     .whenComplete((wasSent, maybeError) -> {
                         if (maybeError != null) {
                             delayedTransMagr.remove(delayedTransactionId);
@@ -254,8 +253,8 @@ public class CoapUdpMessaging extends CoapMessaging {
         }
     }
 
-    CompletableFuture<Boolean> send(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
-        return sendPacket(coapPacket, adr, tranContext);
+    CompletableFuture<Boolean> send(CoapPacket coapPacket) {
+        return sendPacket(coapPacket);
     }
 
     /**
@@ -287,19 +286,19 @@ public class CoapUdpMessaging extends CoapMessaging {
 
 
     @Override
-    protected void handleRequest(CoapPacket packet, TransportContext transContext) {
+    protected void handleRequest(CoapPacket packet) {
         if (findDuplicate(packet, "CoAP request repeated")) {
             return;
         }
-        super.handleRequest(packet, transContext);
+        super.handleRequest(packet);
     }
 
     @Override
-    protected void handleObservation(CoapPacket obsPacket, TransportContext transportContext) {
+    protected void handleObservation(CoapPacket obsPacket) {
         if (findDuplicate(obsPacket, "CoAP notification repeated")) {
             return;
         }
-        SeparateResponse obs = obsPacket.toCoapResponse().toSeparate(obsPacket.getToken(), obsPacket.getRemoteAddress(), transportContext);
+        SeparateResponse obs = obsPacket.toCoapResponse().toSeparate(obsPacket.getToken(), obsPacket.getRemoteAddress(), obsPacket.getTransportContext());
         boolean ack = observationHandler.apply(obs);
         if (obsPacket.getMustAcknowledge()) {
             CoapPacket coapAck = new CoapPacket(null, MessageType.Acknowledgement, obsPacket.getRemoteAddress());
@@ -307,7 +306,7 @@ public class CoapUdpMessaging extends CoapMessaging {
             if (!ack) {
                 coapAck.setMessageType(MessageType.Reset);
             }
-            sendResponse(obsPacket, coapAck, transportContext);
+            sendResponse(obsPacket, coapAck);
         }
     }
 
@@ -370,7 +369,7 @@ public class CoapUdpMessaging extends CoapMessaging {
             CoapPacket duplResp = duplicationDetector.isMessageRepeated(request);
             if (duplResp != null) {
                 if (duplResp != DuplicationDetector.EMPTY_COAP_PACKET) {
-                    sendPacket(duplResp, request.getRemoteAddress(), TransportContext.EMPTY);
+                    sendPacket(duplResp);
                     LOGGER.debug("{}, resending response [{}]", message, request);
                 } else {
                     LOGGER.debug("{}, no response available [{}]", message, request);

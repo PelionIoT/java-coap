@@ -20,7 +20,6 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.TransportExecutors;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -100,7 +99,7 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     protected void receive(CoapReceiver coapReceiver, DatagramPacket datagramPacket) {
         try {
             final CoapPacket coapPacket = CoapPacket.read((InetSocketAddress) datagramPacket.getSocketAddress(), datagramPacket.getData(), datagramPacket.getLength());
-            coapReceiver.handle(coapPacket, TransportContext.EMPTY);
+            coapReceiver.handle(coapPacket);
         } catch (CoapException e) {
             LOGGER.warn(e.getMessage());
         }
@@ -123,13 +122,13 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     }
 
     @Override
-    public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext transContext) throws CoapException, IOException {
+    public void sendPacket0(CoapPacket coapPacket) throws CoapException, IOException {
         if (!socketCreated()) {
             throw new IllegalStateException();
         }
         byte[] data = coapPacket.toByteArray();
 
-        DatagramPacket datagramPacket = new DatagramPacket(data, data.length, adr);
+        DatagramPacket datagramPacket = new DatagramPacket(data, data.length, coapPacket.getRemoteAddress());
 
         socket.send(datagramPacket);
     }

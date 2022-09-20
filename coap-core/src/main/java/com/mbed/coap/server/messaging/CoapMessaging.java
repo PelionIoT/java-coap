@@ -28,7 +28,6 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -53,7 +52,7 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     public abstract CompletableFuture<Boolean> send(final SeparateResponse resp);
 
-    protected abstract void sendResponse(CoapPacket request, CoapPacket response, TransportContext transContext);
+    protected abstract void sendResponse(CoapPacket request, CoapPacket response);
 
 
     public CoapMessaging(CoapTransport coapTransport) {
@@ -99,21 +98,21 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     protected abstract void stop0();
 
-    protected final CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) {
+    protected final CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket) {
         return transport
-                .sendPacket(coapPacket, adr, tranContext)
+                .sendPacket(coapPacket)
                 .whenComplete((__, throwable) -> logSent(coapPacket, throwable));
     }
 
     @Override
-    public void handle(CoapPacket packet, TransportContext transportContext) {
+    public void handle(CoapPacket packet) {
         logReceived(packet);
         if (handlePing(packet)) {
             return;
         }
 
         if (packet.getMethod() != null && packet.getMessageType() != MessageType.Acknowledgement) {
-            handleRequest(packet, transportContext);
+            handleRequest(packet);
             return;
         } else {
             if (handleResponse(packet)) {
@@ -121,7 +120,7 @@ public abstract class CoapMessaging implements CoapReceiver {
             } else if (packet.isSeparateResponse() && handleDelayedResponse(packet)) {
                 return;
             } else if (packet.isSeparateResponse() && packet.headers().getObserve() != null) {
-                handleObservation(packet, transportContext);
+                handleObservation(packet);
                 return;
             }
         }
@@ -140,10 +139,6 @@ public abstract class CoapMessaging implements CoapReceiver {
         return false;
     }
 
-    protected void sendResponse(CoapPacket request, CoapPacket response) {
-        sendResponse(request, response, TransportContext.EMPTY);
-    }
-
     protected abstract void handleNotProcessedMessage(CoapPacket packet);
 
     @Override
@@ -160,13 +155,13 @@ public abstract class CoapMessaging implements CoapReceiver {
 
     protected abstract boolean handleResponse(CoapPacket packet);
 
-    protected void handleRequest(CoapPacket packet, TransportContext transContext) {
-        inboundService.apply(packet.toCoapRequest(transContext))
+    protected void handleRequest(CoapPacket packet) {
+        inboundService.apply(packet.toCoapRequest())
                 .thenAccept(resp ->
-                        sendResponse(packet, packet.createResponseFrom(resp), transContext)
+                        sendResponse(packet, packet.createResponseFrom(resp))
                 ).exceptionally(logError(LOGGER));
     }
 
-    protected abstract void handleObservation(CoapPacket packet, TransportContext transContext);
+    protected abstract void handleObservation(CoapPacket packet);
 
 }

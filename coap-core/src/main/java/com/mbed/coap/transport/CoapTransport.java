@@ -29,7 +29,7 @@ public interface CoapTransport {
 
     void stop();
 
-    CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext);
+    CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket);
 
     InetSocketAddress getLocalSocketAddress();
 

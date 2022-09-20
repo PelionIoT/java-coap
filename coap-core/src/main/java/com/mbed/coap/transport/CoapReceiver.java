@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 public interface CoapReceiver {
     Logger LOGGER = LoggerFactory.getLogger(CoapReceiver.class);
 
-    void handle(CoapPacket packet, TransportContext transportContext);
+    void handle(CoapPacket packet);
 
     void onDisconnected(InetSocketAddress remoteAddress);
 

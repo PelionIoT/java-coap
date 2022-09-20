@@ -20,7 +20,6 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.TransportExecutors;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.BufferedOutputStream;
@@ -60,7 +59,7 @@ public class StreamBlockingTransport extends BlockingCoapTransport {
     }
 
     @Override
-    public void sendPacket0(CoapPacket coapPacket, InetSocketAddress adr, TransportContext tranContext) throws IOException, CoapException {
+    public void sendPacket0(CoapPacket coapPacket) throws IOException, CoapException {
         serializer.serialize(outputStream, coapPacket);
         outputStream.flush();
     }
@@ -84,7 +83,7 @@ public class StreamBlockingTransport extends BlockingCoapTransport {
 
     private boolean readingLoop(CoapReceiver coapReceiver) {
         try {
-            coapReceiver.handle(serializer.deserialize(inputStream, destination), TransportContext.EMPTY);
+            coapReceiver.handle(serializer.deserialize(inputStream, destination));
         } catch (InterruptedIOException e) {
             //IGNORE
             isRunning = false;
