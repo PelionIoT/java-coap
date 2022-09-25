@@ -14,8 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package protocolTests.utils;
 
+import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
@@ -23,12 +24,13 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 
 public class MockCoapTransport extends BlockingCoapTransport {
 
     private volatile CoapReceiver coapReceiver = null;
-    public final BlockingQueue<CoapPacket> sentPackets = new ArrayBlockingQueue<CoapPacket>(100);
+    private final BlockingQueue<CoapPacket> sentPackets = new ArrayBlockingQueue<>(100);
 
     @Override
     public void start(CoapReceiver coapReceiver) throws IOException {
@@ -50,7 +52,34 @@ public class MockCoapTransport extends BlockingCoapTransport {
         return new InetSocketAddress(5683);
     }
 
-    public void receive(CoapPacket packet) {
-        coapReceiver.handle(packet);
+    public MockClient client() {
+        return new MockClient();
+    }
+
+    public class MockClient {
+        public void send(CoapPacket packet) {
+            coapReceiver.handle(packet);
+        }
+
+        public void send(CoapPacketBuilder packetBuilder) {
+            send(packetBuilder.build());
+        }
+
+        public CoapPacket receive() throws InterruptedException {
+            return sentPackets.poll(1, TimeUnit.SECONDS);
+        }
+
+        public CoapPacket peekReceived() throws InterruptedException {
+            return sentPackets.peek();
+        }
+
+        public void verifyReceived(CoapPacketBuilder packetBuilder) throws InterruptedException {
+            CoapPacket received = sentPackets.poll(1, TimeUnit.SECONDS);
+            assertEquals(packetBuilder.build(), received);
+        }
+
+        public boolean nothingReceived() {
+            return sentPackets.isEmpty();
+        }
     }
 }

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package protocolTests;
 
 import static com.mbed.coap.packet.CoapRequest.*;
 import static java.util.concurrent.CompletableFuture.*;
@@ -27,6 +27,10 @@ import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.ObservableResourceService;
+import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
@@ -37,7 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 
-public class CoapServerTransportContextTest {
+public class ForwardingTransportContextTest {
 
     private CoapServer server;
     private final CoapResourceTest coapResourceTest = new CoapResourceTest();

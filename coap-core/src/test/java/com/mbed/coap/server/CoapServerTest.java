@@ -61,4 +61,10 @@ public class CoapServerTest {
         assertThatThrownBy(nonStartedServer::stop).isInstanceOf(IllegalStateException.class);
     }
 
+    @Test
+    public void shouldFailWhenAttemptToStartWhenALreadyRunning() throws Exception {
+        assertThatThrownBy(server::start)
+                .isInstanceOf(IllegalStateException.class);
+    }
+
 }

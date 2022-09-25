@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.server;
+package protocolTests;
 
 import static com.mbed.coap.utils.FutureHelpers.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,24 +23,29 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.RouterService;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import protocolTests.utils.MockCoapTransport;
 
 /**
  * Test for deduplication of error requests
  */
-public class CoapServerDuplicateErrorsTest {
+public class DuplicateErrorsTest {
     private CountDownLatch latch;
     CoapServer server;
-    MockCoapTransport serverTransport;
+    private MockCoapTransport.MockClient client;
 
     @BeforeEach
     public void setUp() throws IOException {
-        serverTransport = new MockCoapTransport();
+        MockCoapTransport serverTransport = new MockCoapTransport();
+        client = serverTransport.client();
         server = CoapServerBuilder.newBuilder().transport(serverTransport)
                 .route(RouterService.builder()
                         .get("/failed", __ -> failedFuture(new NullPointerException("failed")))
@@ -141,12 +146,12 @@ public class CoapServerDuplicateErrorsTest {
     private void testIt(CoapPacket req, Code expectedRespCode, MessageType expectedRespType, boolean reqAndRespMsgIdMatch) throws IOException, CoapException, InterruptedException {
         latch = new CountDownLatch(1);
 
-        serverTransport.receive(req);
-        CoapPacket resp1 = serverTransport.sentPackets.poll(10, TimeUnit.SECONDS);
+        client.send(req);
+        CoapPacket resp1 = client.receive();
         System.out.println(resp1);
 
-        serverTransport.receive(req);
-        CoapPacket resp2 = serverTransport.sentPackets.poll(1, TimeUnit.SECONDS);
+        client.send(req);
+        CoapPacket resp2 = client.receive();
         System.out.println(resp2);
         assertEquals(resp1, resp2);
         if (reqAndRespMsgIdMatch) {

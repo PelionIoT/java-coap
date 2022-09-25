@@ -19,11 +19,7 @@ package com.mbed.coap.transport.udp;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
-import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transport.CoapReceiver;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -35,17 +31,6 @@ import protocolTests.utils.CoapPacketBuilder;
 public class DatagramSocketTransportTest {
 
     public static final CoapPacket COAP_PACKET = CoapPacketBuilder.newCoapPacket(LOCAL_5683).get().uriPath("/test").mid(1).build();
-
-    @Test
-    public void clientServerTest() throws Exception {
-        CoapServer server = CoapServerBuilder.newBuilder().transport(createDatagramSocketTransport()).build();
-        server.start();
-
-        CoapClient client = CoapClientBuilder.newBuilder(server.getLocalSocketAddress().getPort()).transport(createDatagramSocketTransport()).build();
-
-        assertNotNull(client.ping().get());
-        server.stop();
-    }
 
     private static DatagramSocketTransport createDatagramSocketTransport() {
         return new DatagramSocketTransport(0);

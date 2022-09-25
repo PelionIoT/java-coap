@@ -34,13 +34,10 @@ import com.mbed.coap.server.ObservableResourceService;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import protocolTests.utils.ObservationListener;
 
 
 public class ObservationTest {
@@ -74,7 +71,7 @@ public class ObservationTest {
     public void observationTest() throws Exception {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
-        SyncObservationListener obsListener = new SyncObservationListener();
+        ObservationListener obsListener = new ObservationListener();
         client.observe(RES_OBS_PATH1, token1001, obsListener).get();
 
         //notify 1
@@ -120,7 +117,7 @@ public class ObservationTest {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
-        SyncObservationListener obsListener = new SyncObservationListener();
+        ObservationListener obsListener = new ObservationListener();
         client.observe(RES_OBS_PATH1, token1001, obsListener).get();
 
         obsResource.putPayload(of("duupabb"));
@@ -143,7 +140,7 @@ public class ObservationTest {
         System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
-        SyncObservationListener obsListener = new SyncObservationListener();
+        ObservationListener obsListener = new ObservationListener();
         client.observe(RES_OBS_PATH1, token1001, obsListener).get();
         client.close();
 
@@ -161,7 +158,7 @@ public class ObservationTest {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         //register observation
-        SyncObservationListener obsListener = new SyncObservationListener();
+        ObservationListener obsListener = new ObservationListener();
         client.observe(RES_OBS_PATH1, token1001, obsListener).get();
 
         //notify
@@ -207,7 +204,7 @@ public class ObservationTest {
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).blockSize(BlockSize.S_128).build();
 
         //register observation
-        SyncObservationListener obsListener = new SyncObservationListener();
+        ObservationListener obsListener = new ObservationListener();
         CoapResponse msg = client.observe(RES_OBS_PATH1, obsListener).get();
         assertEquals(ClientServerWithBlocksTest.BIG_RESOURCE, msg.getPayload());
 
@@ -223,20 +220,4 @@ public class ObservationTest {
 
     }
 
-    public static class SyncObservationListener implements Function<CoapResponse, Boolean> {
-
-        BlockingQueue<CoapResponse> queue = new LinkedBlockingQueue<>();
-
-        @Override
-        public Boolean apply(CoapResponse obs) {
-            System.out.println("ADD");
-            queue.add(obs);
-            return true;
-        }
-
-        public CoapResponse take() throws InterruptedException {
-            System.out.println("TAKE");
-            return queue.poll(5, TimeUnit.SECONDS);
-        }
-    }
 }

@@ -16,196 +16,70 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static com.mbed.coap.packet.Opaque.of;
-import static com.mbed.coap.packet.Opaque.*;
-import static com.mbed.coap.utils.Bytes.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.assertj.core.api.Assertions.*;
 import static org.awaitility.Awaitility.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
-import com.mbed.coap.client.CoapClientBuilder.CoapClientBuilderForTcp;
 import com.mbed.coap.packet.BlockSize;
+import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
-import com.mbed.coap.server.ObservableResourceService;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.javassl.SingleConnectionSocketServerTransport;
 import com.mbed.coap.transport.javassl.SocketClientTransport;
+import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import javax.net.SocketFactory;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 
-public class TcpIntegrationTest {
+public class TcpIntegrationTest extends IntegrationTest {
 
-    private CoapServer server;
-    private InetSocketAddress serverAddress;
-    private CoapClient client;
-    private ObservableResourceService obsResource;
-
-    private void initClient() throws IOException {
-        initClient(b -> {
-        });
-    }
-
-    private void initClient(Consumer<CoapClientBuilderForTcp> b) throws IOException {
-        CoapClientBuilderForTcp builder = CoapClientBuilder.newBuilderForTcp(serverAddress)
-                .transport(new SocketClientTransport(serverAddress, SocketFactory.getDefault(), CoapSerializer.TCP, true))
-                .blockSize(BlockSize.S_1024_BERT)
-                .maxMessageSize(1_200);
-
-        b.accept(builder);
-
-        client = builder.build();
-    }
-
-    private void initServer(int port) throws IOException {
-        obsResource = new ObservableResourceService(CoapResponse.ok(EMPTY));
-        server = CoapServerBuilder
-                .newBuilderForTcp()
-                .route(RouterService.builder()
-                        .get("/test", __ -> completedFuture(CoapResponse.ok("1234567890")))
-                        .get("/test2", __ -> completedFuture(CoapResponse.ok("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789_")))
-                        .get("/slow", __ -> CompletableFuture.supplyAsync(() -> {
-                                    try {
-                                        Thread.sleep(2000);
-                                    } catch (InterruptedException e) {
-                                        //ignore
-                                    }
-                                    return CoapResponse.ok(EMPTY);
-                                }
-                        ))
-                        .get("/obs", obsResource)
-                )
+    @Override
+    protected CoapServer buildServer(int port, Service<CoapRequest, CoapResponse> route) throws IOException {
+        return CoapServerBuilder.CoapServerBuilderForTcp.newBuilderForTcp()
                 .transport(new SingleConnectionSocketServerTransport(port, CoapSerializer.TCP))
                 .blockSize(BlockSize.S_1024_BERT)
-                .maxMessageSize(10_000)
-                .start();
-
-        serverAddress = new InetSocketAddress("localhost", server.getLocalSocketAddress().getPort());
+                .maxMessageSize(100_000)
+                .route(route)
+                .build();
     }
 
-    @AfterEach
-    public void tearDown() throws IOException {
-        if (client != null) {
-            client.close();
-        }
-        server.stop();
+    @Override
+    protected CoapClient buildClient(int port) throws IOException {
+        InetSocketAddress serverAddress = new InetSocketAddress("localhost", port);
+
+        return CoapClientBuilder.CoapClientBuilderForTcp.newBuilderForTcp(serverAddress)
+                .transport(new SocketClientTransport(serverAddress, SocketFactory.getDefault(), CoapSerializer.TCP, true))
+                .blockSize(BlockSize.S_1024_BERT)
+                .maxMessageSize(2100)
+                .build();
     }
 
-    @Test
-    public void ping() throws Exception {
-        initServer(0);
-        initClient();
+    @Override
+    public void sendPing() throws Exception {
+        CoapResponse pingResp = client.ping().get();
 
-        assertEquals(client.ping().get().getCode(), Code.C703_PONG);
-    }
-
-    @Test
-    public void request() throws Exception {
-        initServer(0);
-        initClient();
-
-        CompletableFuture<CoapResponse> resp = client.send(get("/test"));
-
-        assertEquals("1234567890", resp.get().getPayloadString());
+        assertEquals(CoapResponse.of(Code.C703_PONG), pingResp);
     }
 
     @Test
     public void reconnect() throws Exception {
-        initServer(0);
-        initClient();
+        int port = server.getLocalSocketAddress().getPort();
         assertEquals(client.ping().get().getCode(), Code.C703_PONG);
 
         server.stop();
 
-        initServer(serverAddress.getPort());
+        server = buildServer(port, RouterService.builder().build()).start();
 
         await().ignoreExceptions().untilAsserted(() ->
                 assertEquals(client.ping().get().getCode(), Code.C703_PONG)
         );
     }
 
-    @Test
-    public void request_withLargePayloadInResponse_blocks() throws Exception {
-        initServer(0);
-        initClient();
 
-        await().untilAsserted(() -> {
-            CompletableFuture<CoapResponse> resp = client.send(get("/test2"));
-
-            assertEquals(1300, resp.get().getPayload().size());
-            //verify that blocks was used
-            assertNotNull(resp.get().options().getBlock2Res());
-        });
-    }
-
-    @Test
-    public void request_withLargePayloadInResponse_clientDoesNotSupportBlocks() throws Exception {
-        initServer(0);
-        initClient(builder -> builder
-                .blockSize(null)
-                .maxMessageSize(1300)
-        );
-
-        CompletableFuture<CoapResponse> resp = client.send(get("/test2"));
-
-        assertEquals(1300, resp.get().getPayload().size());
-        //block was not used
-        assertNull(resp.get().options().getBlock2Res());
-    }
-
-    @Test
-    public void stop_server() throws Exception {
-        initServer(0);
-        initClient();
-
-        CompletableFuture<CoapResponse> resp = client.send(get("/slow"));
-        client.close();
-        client = null;
-
-        assertThatThrownBy(resp::get).hasCauseInstanceOf(IOException.class);
-    }
-
-    @Test
-    public void observationTest() throws Exception {
-        initServer(0);
-        initClient();
-
-        ObservationTest.SyncObservationListener obsListener = new ObservationTest.SyncObservationListener();
-        assertEquals(Code.C205_CONTENT, client.observe("/obs", obsListener).get().getCode());
-
-        //notify 1
-        assertTrue(obsResource.putPayload(of("duupa")));
-
-        CoapResponse packet = obsListener.take();
-        assertEquals("duupa", packet.getPayloadString());
-        assertEquals(Integer.valueOf(1), packet.options().getObserve());
-
-        //notify 2
-        await().until(() ->
-                obsResource.putPayload(opaqueOfSize(1300))
-        );
-
-        packet = obsListener.take();
-        assertEquals(1300, packet.getPayload().size());
-
-        //refresh observation
-        await().untilAsserted(() ->
-                assertEquals(1, obsResource.observationRelations())
-        );
-        client.observe("/obs", obsListener).get();
-
-        assertEquals(1, obsResource.observationRelations());
-    }
 }

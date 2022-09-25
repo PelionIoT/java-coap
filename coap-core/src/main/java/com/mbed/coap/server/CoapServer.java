@@ -52,15 +52,11 @@ public class CoapServer {
      * @throws IllegalStateException if server is already running
      */
     public synchronized CoapServer start() throws IOException, IllegalStateException {
-        assertNotRunning();
+        assume(!isRunning, "CoapServer is running");
         transport.start(dispatcher);
         dispatcher.start();
         isRunning = true;
         return this;
-    }
-
-    private void assertNotRunning() {
-        assume(!isRunning, "CoapServer is running");
     }
 
     /**
@@ -69,9 +65,7 @@ public class CoapServer {
      * @throws IllegalStateException if server is already stopped
      */
     public final synchronized void stop() throws IllegalStateException {
-        if (!isRunning) {
-            throw new IllegalStateException("CoapServer is not running");
-        }
+        assume(isRunning, "CoapServer is not running");
 
         isRunning = false;
         LOGGER.trace("Stopping CoAP server..");
