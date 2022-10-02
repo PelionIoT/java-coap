@@ -106,6 +106,8 @@ subprojects {
             create<MavenPublication>("gpr") {
                 groupId = "com.github.open-coap.java-coap"
                 artifact(tasks["sourceJar"])
+                from(components["java"])
+
                 pom {
                     name.set("Java CoAP")
                     description.set("Java implementation of CoAP protocol")
