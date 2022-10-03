@@ -92,7 +92,7 @@ public class CoapPacket {
     public static CoapPacket read(InetSocketAddress remoteAddress, byte[] rawData, int length) throws CoapException {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(rawData, 0, length);
         CoapPacket cp = new CoapPacket(remoteAddress);
-        cp.readFrom(inputStream);
+        cp.readFrom(EofInputStream.wrap(inputStream));
         return cp;
     }
 
@@ -156,7 +156,7 @@ public class CoapPacket {
      */
     public static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream inputStream) throws CoapException {
         CoapPacket coapPacket = new CoapPacket(remoteAddress);
-        coapPacket.readFrom(inputStream);
+        coapPacket.readFrom(EofInputStream.wrap(inputStream));
         return coapPacket;
     }
 
@@ -174,7 +174,7 @@ public class CoapPacket {
         return outputStream.toByteArray();
     }
 
-    protected void readFrom(InputStream inputStream) throws CoapException {
+    private void readFrom(EofInputStream inputStream) throws CoapException {
         try {
             int tempByte = inputStream.read();      //first byte
 

@@ -21,15 +21,21 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 
-public class StrictInputStreamTest {
+public class EofInputStreamTest {
+
+    @Test
+    void shouldNotWrapWhenAlreadyStrictInputStream() {
+        EofInputStream in = EofInputStream.wrap(new ByteArrayInputStream(new byte[]{1, 2}));
+
+        assertSame(in, EofInputStream.wrap(in));
+    }
 
     @Test
     public void should_thrown_eof_when_end_of_stream() throws IOException {
-        StrictInputStream in = new StrictInputStream(new ByteArrayInputStream(new byte[]{1, 2}));
+        EofInputStream in = EofInputStream.wrap(new ByteArrayInputStream(new byte[]{1, 2}));
 
         assertEquals(1, in.read());
         assertEquals(1, in.available());
@@ -40,25 +46,13 @@ public class StrictInputStreamTest {
     }
 
     @Test
-    public void should_read_into_byte_array() throws IOException {
-        StrictInputStream in = new StrictInputStream(new ByteArrayInputStream(new byte[]{1, 2, 3, 4}));
+    public void should_thrown_eof_when_reading_bytes() throws IOException {
+        EofInputStream in = EofInputStream.wrap(new ByteArrayInputStream("testtest".getBytes()));
 
-        assertArrayEquals(new byte[]{1, 2, 3}, in.readBytes(3));
-        assertThatThrownBy(() -> in.readBytes(2)).isExactlyInstanceOf(EOFException.class);
+        assertEquals(5, in.read(new byte[6], 0, 5));
+        assertEquals(3, in.read(new byte[6], 0, 5));
+
+        assertThrows(EOFException.class, () -> in.read(new byte[6], 0, 5));
     }
 
-    @Test
-    public void should_thrown_eof_when_readBytes() throws IOException {
-
-        InputStream eofIn = new InputStream() {
-            @Override
-            public int read() throws IOException {
-                return -1;
-            }
-        };
-
-        StrictInputStream in = new StrictInputStream(eofIn);
-
-        assertThatThrownBy(() -> in.readBytes(2)).isExactlyInstanceOf(EOFException.class);
-    }
 }

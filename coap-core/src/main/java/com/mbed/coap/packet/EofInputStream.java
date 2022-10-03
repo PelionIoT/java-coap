@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,28 +21,22 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Extracted inner class, implements InputStream which throws EOFException if data can't be read.
+ * InputStream decorator that throws EOFException if data in not available.
  */
-class StrictInputStream extends InputStream {
+class EofInputStream extends InputStream {
     private final InputStream inputStream;
 
-    StrictInputStream(InputStream inputStream) {
+    private EofInputStream(InputStream inputStream) {
         this.inputStream = inputStream;
     }
 
-    public byte[] readBytes(int len) throws IOException {
-        byte[] bytes = new byte[len];
-        int totalRead = 0;
-
-        //loop until all data is read or EOF
-        while (totalRead < len) {
-            int r = inputStream.read(bytes, totalRead, len - totalRead);
-            if (r == -1) {
-                throw new EOFException();
-            }
-            totalRead += r;
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        int ret = inputStream.read(b, off, len);
+        if (ret == -1) {
+            throw new EOFException();
         }
-        return bytes;
+        return ret;
     }
 
     @Override
@@ -56,5 +51,13 @@ class StrictInputStream extends InputStream {
     @Override
     public int available() throws IOException {
         return inputStream.available();
+    }
+
+    static EofInputStream wrap(InputStream inputStream) {
+        if (inputStream instanceof EofInputStream) {
+            return ((EofInputStream) inputStream);
+        } else {
+            return new EofInputStream(inputStream);
+        }
     }
 }

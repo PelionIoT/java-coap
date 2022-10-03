@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Implements CoAP basic header options.
@@ -624,12 +623,7 @@ public class BasicHeaderOptions {
     }
 
     boolean deserialize(InputStream inputStream) throws IOException, CoapMessageFormatException {
-        try {
-            return deserialize(inputStream, true, Optional.empty()) != 0;
-        } catch (NotEnoughDataException e) {
-            // should never happen
-            throw new IOException(e);
-        }
+        return deserialize(inputStream, inputStream.available()) != 0;
     }
 
     /**
@@ -637,22 +631,7 @@ public class BasicHeaderOptions {
      * found or zero if no payload present.
      * If no payload marker found but still data present - CoapMessageException is thrown.
      */
-    int deserialize(InputStream inputStream, boolean orBlock, Optional<Integer> optionsAndPayloadLen) throws IOException, CoapMessageFormatException, NotEnoughDataException {
-
-        StrictInputStream is = null;
-        if (inputStream instanceof StrictInputStream) {
-            is = (StrictInputStream) inputStream;
-        } else {
-            is = new StrictInputStream(inputStream);
-        }
-
-        int streamAvailable = is.available();
-
-        // olesmi:
-        // trick to be able to work both with ByteArrayInputStream containing whole packet (UDP, DTLS, old CoAP over TCP + shim)
-        // and with continuous InputStream (CoAP over TCP or TLS)
-
-        int availableInternal = optionsAndPayloadLen.orElse(streamAvailable);
+    int deserialize(InputStream is, int availableInternal) throws IOException, CoapMessageFormatException {
 
         int headerOptNum = 0;
         // olesmi:
@@ -662,7 +641,7 @@ public class BasicHeaderOptions {
         // are waiting for more data. While querying is.available() if stream is closed, unfortunately IOException will be
         // thrown instead of EOFException (implementation for SocketInputStream)
         while (availableInternal > 0) {
-            int hdrByte = read8(is, orBlock);
+            int hdrByte = read8(is);
             availableInternal--;
 
             if (hdrByte == CoapPacket.PAYLOAD_MARKER) {
@@ -675,21 +654,21 @@ public class BasicHeaderOptions {
                 throw new CoapMessageFormatException("Unexpected delta or len value in option header after optNum: " + headerOptNum);
             }
             if (delta == 13) {
-                delta += read8(is, orBlock);
+                delta += read8(is);
                 availableInternal--;
             } else if (delta == 14) {
-                delta = read16(is, orBlock) + 269;
+                delta = read16(is) + 269;
                 availableInternal -= 2;
             }
             if (len == 13) {
-                len += read8(is, orBlock);
+                len += read8(is);
                 availableInternal--;
             } else if (len == 14) {
-                len = read16(is, orBlock) + 269;
+                len = read16(is) + 269;
                 availableInternal -= 2;
             }
             headerOptNum += delta;
-            Opaque headerOptData = new Opaque(readN(is, len, orBlock));
+            Opaque headerOptData = Opaque.read(is, len);
             availableInternal -= len;
             put(headerOptNum, headerOptData);
         }

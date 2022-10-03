@@ -19,8 +19,8 @@ package com.mbed.coap.packet;
 import static com.mbed.coap.packet.PacketUtils.*;
 import static com.mbed.coap.utils.Validations.*;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.exception.CoapMessageFormatException;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -43,7 +43,7 @@ public final class CoapTcpPacketSerializer {
      * @throws CoapException - and subclasses in case of CoAP parsing failed.
      */
     public static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream inputStream) throws IOException, CoapException {
-        return deserialize(remoteAddress, inputStream, true);
+        return deserialize0(remoteAddress, EofInputStream.wrap(inputStream));
     }
 
     /**
@@ -53,21 +53,20 @@ public final class CoapTcpPacketSerializer {
      * @param remoteAddress - remote addres from which packet is received
      * @param inputStream - stream to read data
      * @return CoapPacket wrapped to Optional if able to deserialize or empty Optional otherwise
-     * @throws IOException   - in case of EOF, closed stream or other low-level errors
+     * @throws IOException   - in case of closed stream or other low-level errors
      * @throws CoapException - and subclasses in case of CoAP parsing failed.
      */
 
     public static Optional<CoapPacket> deserializeIfEnoughData(InetSocketAddress remoteAddress, InputStream inputStream) throws IOException, CoapException {
         try {
-            return Optional.of(deserialize(remoteAddress, inputStream, false));
-        } catch (NotEnoughDataException ex) {
+            return Optional.of(deserialize0(remoteAddress, EofInputStream.wrap(inputStream)));
+        } catch (EOFException ex) {
             return Optional.empty();
         }
     }
 
-    private static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream inputStream, boolean orBlock) throws IOException, CoapException {
-        StrictInputStream is = new StrictInputStream(inputStream);
-        CoapPacketParsingContext pktContext = deserializeHeader(remoteAddress, is, orBlock);
+    private static CoapPacket deserialize0(InetSocketAddress remoteAddress, EofInputStream is) throws IOException, CoapException {
+        CoapPacketParsingContext pktContext = deserializeHeader(remoteAddress, is);
         CoapPacket pkt = pktContext.getCoapPacket();
 
         HeaderOptions options;
@@ -76,27 +75,27 @@ public final class CoapTcpPacketSerializer {
         } else {
             options = new HeaderOptions();
         }
-        int leftPayloadLen = options.deserialize(is, orBlock, Optional.of((int) pktContext.getLength()));
+        int leftPayloadLen = options.deserialize(is, (int) pktContext.getLength());
         pkt.setHeaderOptions(options);
 
         if (leftPayloadLen > 0) {
-            pkt.setPayload(Opaque.of(readN(is, leftPayloadLen, orBlock)));
+            pkt.setPayload(Opaque.read(is, leftPayloadLen));
         }
         return pkt;
     }
 
-    private static CoapPacketParsingContext deserializeHeader(InetSocketAddress remoteAddress, StrictInputStream is, boolean orBlock) throws IOException, CoapException {
+    private static CoapPacketParsingContext deserializeHeader(InetSocketAddress remoteAddress, EofInputStream is) throws IOException, CoapException {
 
-        int len1AndTKL = read8(is, orBlock);
+        int len1AndTKL = read8(is);
 
         int len1 = (len1AndTKL >> 4) & 0x0F;
         int tokenLength = len1AndTKL & 0x0F;
 
-        long len = readPacketLen(len1, is, orBlock);
+        long len = readPacketLen(len1, is);
 
-        int codeOrMethod = read8(is, orBlock);
+        int codeOrMethod = read8(is);
 
-        Opaque token = readToken(is, tokenLength, orBlock);
+        Opaque token = readToken(is, tokenLength);
 
         CoapPacket coapPacket = new CoapPacket(remoteAddress);
 
@@ -116,29 +115,23 @@ public final class CoapTcpPacketSerializer {
         }
     }
 
-    private static long readPacketLen(int len1, StrictInputStream is, boolean orBlock) throws IOException {
+    private static long readPacketLen(int len1, EofInputStream is) throws IOException {
         switch (len1) {
             case 15:
-                return read32(is, orBlock) + 65805;
+                return read32(is) + 65805;
             case 14:
-                return read16(is, orBlock) + 269;
+                return read16(is) + 269;
             case 13:
-                return read8(is, orBlock) + 13;
+                return read8(is) + 13;
 
             default:
                 return len1;
         }
     }
 
-    private static Opaque readToken(StrictInputStream is, int tokenLength, boolean orBlock) throws IOException, CoapException {
-        if (tokenLength == 0) {
-            return Opaque.EMPTY;
-        }
-        if (tokenLength > 8) {
-            throw new CoapMessageFormatException("Token length invalid, should be in range 0..8");
-        }
-
-        return new Opaque(readN(is, tokenLength, orBlock));
+    private static Opaque readToken(EofInputStream is, int tokenLength) throws IOException {
+        assume(tokenLength <= 8, "Token length invalid, should be in range 0..8");
+        return Opaque.read(is, tokenLength);
     }
 
 
@@ -257,12 +250,35 @@ public final class CoapTcpPacketSerializer {
         os.write(headerOptionsStream.toByteArray());
 
         //Payload
-        if (coapPacket.getPayload() != null && coapPacket.getPayload().size() > 0) {
+        if (coapPacket.getPayload().size() > 0) {
             os.write(CoapPacket.PAYLOAD_MARKER);
             coapPacket.getPayload().writeTo(os);
         }
 
     }
 
+    static long read32(InputStream is) throws IOException {
+        long ret = is.read() << 24;
+        ret |= is.read() << 16;
+        ret |= is.read() << 8;
+        ret |= is.read();
 
+        return ret;
+    }
+
+    static void write8(OutputStream os, int data) throws IOException {
+        os.write(data);
+    }
+
+    static void write16(OutputStream os, int data) throws IOException {
+        os.write((data >> 8) & 0xFF);
+        os.write((data >> 0) & 0xFF);
+    }
+
+    static void write32(OutputStream os, long data) throws IOException {
+        os.write((int) ((data >> 24) & 0xFF));
+        os.write((int) ((data >> 16) & 0xFF));
+        os.write((int) ((data >> 8) & 0xFF));
+        os.write((int) ((data >> 0) & 0xFF));
+    }
 }

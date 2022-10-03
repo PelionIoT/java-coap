@@ -1,5 +1,6 @@
-/**
- * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+/*
+ * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,66 +18,20 @@ package com.mbed.coap.packet;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * Minor CoapPacket binary read/write utility methods with specific optional checks.
  */
 class PacketUtils {
 
-    static byte[] readN(StrictInputStream is, int bytesCount, boolean orBlock) throws IOException {
-        assertEnoughData(is, bytesCount, orBlock);
-        return is.readBytes(bytesCount);
-    }
-
-
-    static long read32(InputStream is, boolean orBlock) throws IOException {
-        assertEnoughData(is, 4, orBlock);
-        long ret = is.read() << 24;
-        ret |= is.read() << 16;
-        ret |= is.read() << 8;
-        ret |= is.read();
-
-        return ret;
-    }
-
-    static int read16(InputStream is, boolean orBlock) throws IOException {
-        assertEnoughData(is, 2, orBlock);
+    static int read16(InputStream is) throws IOException {
         int ret = is.read() << 8;
         ret |= is.read();
         return ret;
     }
 
-    static int read8(InputStream is, boolean orBlock) throws IOException {
-        assertEnoughData(is, 1, orBlock);
+    static int read8(InputStream is) throws IOException {
         return is.read();
     }
 
-    private static void assertEnoughData(InputStream is, int expectedMinimum, boolean orBlock) throws IOException {
-        if (orBlock) {
-            return;
-        }
-        if (is.available() < expectedMinimum) {
-            throw new NotEnoughDataException();
-        }
-    }
-
-    static class NotEnoughDataException extends IOException {
-    }
-
-    static void write8(OutputStream os, int data) throws IOException {
-        os.write(data);
-    }
-
-    static void write16(OutputStream os, int data) throws IOException {
-        os.write((data >> 8) & 0xFF);
-        os.write((data >> 0) & 0xFF);
-    }
-
-    static void write32(OutputStream os, long data) throws IOException {
-        os.write((int) ((data >> 24) & 0xFF));
-        os.write((int) ((data >> 16) & 0xFF));
-        os.write((int) ((data >> 8) & 0xFF));
-        os.write((int) ((data >> 0) & 0xFF));
-    }
 }

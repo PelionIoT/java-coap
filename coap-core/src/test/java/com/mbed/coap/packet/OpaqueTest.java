@@ -17,6 +17,9 @@
 package com.mbed.coap.packet;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.IOException;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
@@ -137,6 +140,17 @@ public class OpaqueTest {
         assertEquals(text, text.fragment(0, 30, 2));
 
         // should return same object instance
-        assertTrue(text == text.fragment(0, 30, 2));
+        assertSame(text, text.fragment(0, 30, 2));
+    }
+
+    @Test
+    void readFromInputStream() throws IOException {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream("test".getBytes());
+
+        assertSame(Opaque.EMPTY, Opaque.read(inputStream, 0));
+        assertEquals(Opaque.of("t"), Opaque.read(inputStream, 1));
+        assertEquals(Opaque.of("es"), Opaque.read(inputStream, 2));
+
+        assertThrows(EOFException.class, () -> Opaque.read(inputStream, 3));
     }
 }

@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.exception.CoapException;
-import com.mbed.coap.exception.CoapMessageFormatException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -346,7 +345,7 @@ public class CoapTcpPacketSerializerTest {
         assertThatThrownBy(() ->
                 CoapTcpPacketSerializer.deserialize(null, new ByteArrayInputStream(rawData))
         )
-                .isExactlyInstanceOf(CoapMessageFormatException.class)
+                .isExactlyInstanceOf(IllegalStateException.class)
                 .hasMessage("Token length invalid, should be in range 0..8");
     }
 

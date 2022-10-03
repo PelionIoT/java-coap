@@ -336,7 +336,7 @@ public class CoapPacketTest {
         when(inputStream.read()).thenThrow(new IOException());
 
         assertThrows(CoapException.class, () ->
-                new CoapPacket(null).readFrom(inputStream)
+                CoapPacket.deserialize(null, inputStream)
         );
     }
 

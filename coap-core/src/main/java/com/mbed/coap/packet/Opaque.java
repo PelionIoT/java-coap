@@ -17,6 +17,7 @@
 package com.mbed.coap.packet;
 
 import com.mbed.coap.CoapConstants;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -95,8 +96,19 @@ public final class Opaque {
     }
 
     public static Opaque read(InputStream inputStream, int len) throws IOException {
+        if (len == 0) {
+            return Opaque.EMPTY;
+        }
         byte[] data = new byte[len];
-        inputStream.read(data);
+        int totalRead = 0;
+        while (totalRead < len) {
+            int r = inputStream.read(data, totalRead, len - totalRead);
+            if (r == -1) {
+                throw new EOFException();
+            }
+            totalRead += r;
+        }
+
         return new Opaque(data);
     }
 
