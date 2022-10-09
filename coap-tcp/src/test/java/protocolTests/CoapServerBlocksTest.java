@@ -21,7 +21,6 @@ import static com.mbed.coap.server.CoapServerBuilderForTcp.*;
 import static com.mbed.coap.utils.FutureHelpers.failedFuture;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
@@ -34,20 +33,18 @@ import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.server.messaging.Capabilities;
 import com.mbed.coap.server.messaging.CapabilitiesStorageImpl;
-import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.utils.Service;
-import java.io.IOException;
 import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import protocolTests.utils.CoapPacketBuilder;
+import protocolTests.utils.MockCoapTcpTransport;
+import protocolTests.utils.MockCoapTransport;
 
 public class CoapServerBlocksTest {
 
-    private final CoapTransport coapTransport = mock(CoapTransport.class);
     private CoapServer server;
-    private CoapReceiver protoServer;
+    private MockCoapTransport.MockClient client;
     private CapabilitiesStorageImpl capabilities = new CapabilitiesStorageImpl();
 
     private Service<CoapRequest, CoapResponse> blockResource = null;
@@ -64,9 +61,11 @@ public class CoapServerBlocksTest {
 
     @BeforeEach
     public void setUp() {
-        server = newBuilderForTcp().transport(coapTransport).maxIncomingBlockTransferSize(10000000).route(route).csmStorage(capabilities).build();
-        protoServer = server.getDispatcher();
-        given(coapTransport.sendPacket(any())).willReturn(completedFuture(true));
+        MockCoapTransport transport = new MockCoapTcpTransport();
+
+        server = newBuilderForTcp().transport(transport).maxIncomingBlockTransferSize(10000000).route(route).csmStorage(capabilities).build();
+
+        client = transport.client();
     }
 
     @Test
@@ -108,8 +107,11 @@ public class CoapServerBlocksTest {
     @Test
     public void block1_request_shouldFailIfTooBigPayload() throws Exception {
         capabilities.put(LOCAL_5683, new Capabilities(5000, true));
-        server = newBuilderForTcp().transport(coapTransport).maxIncomingBlockTransferSize(10000).route(route).csmStorage(capabilities).build();
-        protoServer = server.getDispatcher();
+
+        MockCoapTransport transport = new MockCoapTcpTransport();
+        server = newBuilderForTcp().transport(transport).maxIncomingBlockTransferSize(10000).route(route).csmStorage(capabilities).build();
+        client = transport.client();
+
         server.start();
 
         blockResource = alwaysFailService;
@@ -140,7 +142,7 @@ public class CoapServerBlocksTest {
     }
 
     @Test
-    public void block1_incorrectIntermediateBlockSize() throws CoapException, IOException {
+    public void block1_incorrectIntermediateBlockSize() throws Exception {
         server.start();
 
         blockResource = alwaysFailService;
@@ -265,15 +267,15 @@ public class CoapServerBlocksTest {
 
 
     private void receive(CoapPacketBuilder coapPacketBuilder) {
-        protoServer.handle(coapPacketBuilder.build());
+        client.send(coapPacketBuilder);
     }
 
     private void receive(CoapPacket coapPacket) {
-        protoServer.handle(coapPacket);
+        client.send(coapPacket);
     }
 
-    private void assertSent(CoapPacketBuilder coapPacketBuilder) throws CoapException, IOException {
-        verify(coapTransport).sendPacket(eq(coapPacketBuilder.build()));
+    private void assertSent(CoapPacketBuilder coapPacketBuilder) throws InterruptedException {
+        client.verifyReceived(coapPacketBuilder);
     }
 
     private Opaque generatePayload(int startBlockNumber, int size16bRound) throws Exception {

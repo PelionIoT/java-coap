@@ -17,13 +17,14 @@
 package com.mbed.coap.server;
 
 import static com.mbed.coap.utils.Validations.*;
+import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
-import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,11 +32,11 @@ public class CoapServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServer.class);
     private boolean isRunning;
     private final CoapTransport transport;
-    private final CoapReceiver dispatcher;
+    private final Consumer<CoapPacket> dispatcher;
     private final Service<CoapRequest, CoapResponse> inboundService;
     private final Runnable stopAll;
 
-    public CoapServer(CoapTransport transport, CoapReceiver dispatcher, Service<CoapRequest, CoapResponse> inboundService,
+    public CoapServer(CoapTransport transport, Consumer<CoapPacket> dispatcher, Service<CoapRequest, CoapResponse> inboundService,
             Runnable stopAll) {
         this.transport = transport;
         this.dispatcher = dispatcher;
@@ -56,9 +57,27 @@ public class CoapServer {
      */
     public synchronized CoapServer start() throws IOException, IllegalStateException {
         assume(!isRunning, "CoapServer is running");
-        transport.start(dispatcher);
+        transport.start();
         isRunning = true;
+
+        transport.receive().whenComplete(this::handle);
         return this;
+    }
+
+    private void handle(CoapPacket packet, Throwable error) {
+        if (error != null) {
+            stopWithError(error);
+            return;
+        }
+        dispatcher.accept(packet);
+        transport.receive().whenComplete(this::handle);
+    }
+
+    private synchronized void stopWithError(Throwable error) {
+        if (isRunning) {
+            LOGGER.error("CoapServer got error while receiving: {}", error, error);
+            stop();
+        }
     }
 
     /**
@@ -67,12 +86,14 @@ public class CoapServer {
      * @throws IllegalStateException if server is already stopped
      */
     public final synchronized void stop() {
-        assume(isRunning, "CoapServer is not running");
+        if (!isRunning) {
+            return;
+        }
 
         isRunning = false;
         LOGGER.trace("Stopping CoAP server..");
-        transport.stop();
         stopAll.run();
+        transport.stop();
 
         LOGGER.debug("CoAP Server stopped");
     }
@@ -82,7 +103,7 @@ public class CoapServer {
      *
      * @return true if running
      */
-    public boolean isRunning() {
+    public synchronized boolean isRunning() {
         return isRunning;
     }
 
@@ -99,10 +120,6 @@ public class CoapServer {
 
     public final Service<CoapRequest, CoapResponse> clientService() {
         return inboundService;
-    }
-
-    public CoapReceiver getDispatcher() {
-        return dispatcher;
     }
 
 }

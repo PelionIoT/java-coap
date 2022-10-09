@@ -25,11 +25,13 @@ import org.slf4j.LoggerFactory;
 public interface CoapTransport {
     Logger LOGGER = LoggerFactory.getLogger(CoapTransport.class);
 
-    void start(CoapReceiver coapReceiver) throws IOException;
+    void start() throws IOException;
 
     void stop();
 
     CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket);
+
+    CompletableFuture<CoapPacket> receive();
 
     InetSocketAddress getLocalSocketAddress();
 
@@ -45,6 +47,16 @@ public interface CoapTransport {
             LOGGER.debug("CoAP sent [{}]", packet.toString(false));
         } else if (LOGGER.isInfoEnabled()) {
             LOGGER.info("[{}] CoAP sent [{}]", packet.getRemoteAddrString(), packet.toString(false, false, false, true));
+        }
+    }
+
+    static void logReceived(CoapPacket packet) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("CoAP received [{}]", packet.toString(true));
+        } else if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[{}] CoAP received [{}]", packet.getRemoteAddrString(), packet.toString(false));
+        } else if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("[{}] CoAP received [{}]", packet.getRemoteAddrString(), packet.toString(false, false, false, true));
         }
     }
 

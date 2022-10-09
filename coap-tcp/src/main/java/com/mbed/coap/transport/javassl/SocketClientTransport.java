@@ -16,11 +16,13 @@
  */
 package com.mbed.coap.transport.javassl;
 
+import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
-import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportExecutors;
+import com.mbed.coap.transport.CoapTcpListener;
+import com.mbed.coap.transport.CoapTcpTransport;
+import com.mbed.coap.utils.ExecutorHelpers;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.EOFException;
@@ -30,28 +32,32 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 import javax.net.SocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SocketClientTransport extends BlockingCoapTransport {
+public class SocketClientTransport extends BlockingCoapTransport implements CoapTcpTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SSLSocketClientTransport.class);
 
     protected final InetSocketAddress destination;
     protected OutputStream outputStream;
     protected InputStream inputStream;
     protected Socket socket;
-    private final Executor readingWorker;
+    protected CoapTcpListener listener;
+    private final ExecutorService readingWorker;
     protected final SocketFactory socketFactory;
     private final CoapSerializer serializer;
     private final boolean autoReconnect;
+    private volatile boolean isRunning;
 
     public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect) {
-        this(destination, socketFactory, serializer, autoReconnect, TransportExecutors.newWorker("client-reader"));
+        this(destination, socketFactory, serializer, autoReconnect, ExecutorHelpers.newSingleThreadExecutor("client-reader"));
     }
 
-    public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect, Executor readingWorker) {
+    public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect, ExecutorService readingWorker) {
         this.destination = destination;
         this.socketFactory = socketFactory;
         this.serializer = serializer;
@@ -60,17 +66,17 @@ public class SocketClientTransport extends BlockingCoapTransport {
     }
 
     @Override
-    public void start(CoapReceiver coapReceiver) throws IOException {
-        start((CoapTcpReceiver) coapReceiver);
+    public void start() throws IOException {
+        isRunning = true;
+        connect();
     }
 
-    private void start(CoapTcpReceiver coapReceiver) throws IOException {
-        connect(coapReceiver);
-
-        TransportExecutors.loop(readingWorker, () -> loopReading(coapReceiver));
+    @Override
+    public void setListener(CoapTcpListener listener) {
+        this.listener = listener;
     }
 
-    protected void connect(CoapTcpReceiver coapReceiver) throws IOException {
+    protected void connect() throws IOException {
         socket = socketFactory.createSocket(destination.getAddress(), destination.getPort());
 
         synchronized (this) {
@@ -78,21 +84,28 @@ public class SocketClientTransport extends BlockingCoapTransport {
         }
         inputStream = new BufferedInputStream(socket.getInputStream(), 2048);
 
-        coapReceiver.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());
+        listener.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());
     }
 
-    private boolean loopReading(CoapTcpReceiver coapReceiver) {
+    @Override
+    public CompletableFuture<CoapPacket> receive() {
+        return supplyAsync(this::read, readingWorker)
+                .thenCompose(it -> (it == null) ? receive() : completedFuture(it));
+    }
+
+
+    private CoapPacket read() {
         try {
-            if (socket.isClosed()) {
+            if (socket.isClosed() && autoReconnect && isRunning) {
                 waitBeforeReconnection();
                 LOGGER.debug("reconnecting to " + destination);
-                connect(coapReceiver);
+                connect();
             }
 
             if (!socket.isClosed()) {
                 try {
                     final CoapPacket coapPacket = serializer.deserialize(inputStream, ((InetSocketAddress) socket.getRemoteSocketAddress()));
-                    coapReceiver.handle(coapPacket);
+                    return coapPacket;
                 } catch (CoapException e) {
                     if (e.getCause() != null && e.getCause() instanceof IOException) {
                         throw ((IOException) e.getCause());
@@ -104,17 +117,21 @@ public class SocketClientTransport extends BlockingCoapTransport {
                 }
             }
         } catch (SocketTimeoutException ex) {
-            return true;
+            return null;
         } catch (Exception ex) {
             if (!(ex.getMessage() != null && ex.getMessage().startsWith("Socket closed"))) {
                 LOGGER.error(ex.toString());
             }
         }
         if (socket.isClosed()) {
-            coapReceiver.onDisconnected(destination);
+            listener.onDisconnected(destination);
         }
 
-        return autoReconnect || !socket.isClosed();
+        if (!autoReconnect && socket.isClosed()) {
+            throw new CompletionException(new IOException("Socket closed"));
+        } else {
+            return null;
+        }
     }
 
     protected void waitBeforeReconnection() throws InterruptedException {
@@ -138,12 +155,14 @@ public class SocketClientTransport extends BlockingCoapTransport {
 
     @Override
     public void stop() {
+        isRunning = false;
         try {
+            listener.onDisconnected(destination);
             socket.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            TransportExecutors.shutdown(readingWorker);
+            readingWorker.shutdown();
         }
     }
 }

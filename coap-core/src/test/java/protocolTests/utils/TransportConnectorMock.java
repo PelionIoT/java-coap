@@ -19,29 +19,30 @@ package protocolTests.utils;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
-import com.mbed.coap.transport.CoapReceiver;
+import com.mbed.coap.utils.AsyncQueue;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 
 public class TransportConnectorMock extends BlockingCoapTransport {
 
-    private CoapReceiver transReceiver;
     private final Map<CoapPacket, CoapPacket[]> conversationMap = new LinkedHashMap<>(); //order is important
     private final Map<CoapPacket, IOException> conversationMapToException = new LinkedHashMap<>(); //order is important
+    private final AsyncQueue<CoapPacket> receiveQueue = new AsyncQueue<>();
     private CoapPacket lastOutgoingMessage = null;
 
     @Override
-    public void start(CoapReceiver transReceiver) throws IOException {
-        this.transReceiver = transReceiver;
+    public void start() throws IOException {
+        // do nothing
     }
 
     @Override
     public void stop() {
-
+        receiveQueue.removeAll();
     }
 
     @Override
@@ -57,18 +58,22 @@ public class TransportConnectorMock extends BlockingCoapTransport {
         lastOutgoingMessage = request;
     }
 
-    public void receive(CoapPacket coapPacket) {
-        transReceiver.handle(coapPacket);
+    public void receive(CoapPacket coapPacket) throws InterruptedException {
+        receiveQueue.add(coapPacket);
     }
 
     public void receive(CoapPacket coapPacket, InetSocketAddress sourceAddress) {
         try {
-            coapPacket = CoapPacket.read(sourceAddress, coapPacket.toByteArray());
-            transReceiver.handle(coapPacket);
-        } catch (CoapException e) {
+            receive(CoapPacket.read(sourceAddress, coapPacket.toByteArray()));
+        } catch (CoapException | InterruptedException e) {
             e.printStackTrace();
         }
 
+    }
+
+    @Override
+    public CompletableFuture<CoapPacket> receive() {
+        return receiveQueue.poll();
     }
 
     public CoapPacket getLastOutgoingMessage() {

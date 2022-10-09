@@ -16,29 +16,32 @@
  */
 package com.mbed.coap.transport.udp;
 
+import static com.mbed.coap.transport.InMemoryCoapTransport.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.transport.CoapReceiver;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
-import protocolTests.utils.CoapPacketBuilder;
 
 
 public class DatagramSocketTransportTest {
 
-    public static final CoapPacket COAP_PACKET = CoapPacketBuilder.newCoapPacket(LOCAL_5683).get().uriPath("/test").mid(1).build();
+    public static final CoapPacket COAP_PACKET = newCoapPacket(LOCAL_5683).get().uriPath("/test").mid(1).build();
 
-    private static DatagramSocketTransport createDatagramSocketTransport() {
-        return new DatagramSocketTransport(0);
+    private static DatagramSocketTransport createDatagramSocketTransport() throws IOException {
+        DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(0);
+        datagramSocketTransport.start();
+        return datagramSocketTransport;
     }
 
     @Test
     public void initializingWithStateException() throws IOException {
-        DatagramSocketTransport trans = createDatagramSocketTransport();
+        DatagramSocketTransport trans = new DatagramSocketTransport(0);
         try {
             try {
                 trans.sendPacket0(COAP_PACKET);
@@ -47,7 +50,7 @@ public class DatagramSocketTransportTest {
                 assertTrue(e instanceof IllegalStateException);
             }
 
-            trans.start(mock(CoapReceiver.class));
+            trans.start();
 
         } finally {
             trans.stop();
@@ -60,7 +63,7 @@ public class DatagramSocketTransportTest {
         DatagramSocketAdapter udpSocket = new DatagramSocketAdapter(0);
         DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(udpSocket, null);
 
-        datagramSocketTransport.start(mock(CoapReceiver.class));
+        datagramSocketTransport.start();
         assertTrue(udpSocket.isBound());
         assertFalse(udpSocket.isClosed());
 
@@ -71,16 +74,36 @@ public class DatagramSocketTransportTest {
     }
 
     @Test
-    public void continueReadingWhenAfterReadingTimeout() throws Exception {
-        DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(new InetSocketAddress(0), mock(Executor.class));
+    public void sendAndReceive() throws IOException, ExecutionException, InterruptedException, TimeoutException {
+        DatagramSocketTransport trans1 = createDatagramSocketTransport();
+        DatagramSocketTransport trans2 = createDatagramSocketTransport();
+        InetSocketAddress trans2Addr = localAddressFrom(trans2.getLocalSocketAddress());
 
-        //start
-        datagramSocketTransport.start(mock(CoapReceiver.class));
-        assertTrue(datagramSocketTransport.readingLoop(mock(CoapReceiver.class)));
-        assertTrue(datagramSocketTransport.readingLoop(mock(CoapReceiver.class)));
+        // #1
+        CompletableFuture<CoapPacket> receive = trans2.receive();
+        assertFalse(receive.isDone());
+        trans1.sendPacket(newCoapPacket(trans2Addr).get().uriPath("/test").mid(1).build());
+        assertNotNull(receive.get(1, TimeUnit.SECONDS));
 
-        //stop
-        datagramSocketTransport.stop();
-        assertFalse(datagramSocketTransport.readingLoop(mock(CoapReceiver.class)));
+        // #2
+        trans1.sendPacket(newCoapPacket(trans2Addr).get().uriPath("/test").mid(1).build());
+        receive = trans2.receive();
+        assertNotNull(receive.get(1, TimeUnit.SECONDS));
+
+        // #5
+        trans1.sendPacket(newCoapPacket(trans2Addr).get().uriPath("/test").mid(1).build());
+        trans1.sendPacket(newCoapPacket(trans2Addr).get().uriPath("/test").mid(1).build());
+        trans1.sendPacket(newCoapPacket(trans2Addr).get().uriPath("/test").mid(1).build());
+
+        assertNotNull(trans2.receive().get(1, TimeUnit.SECONDS));
+        assertNotNull(trans2.receive().get(1, TimeUnit.SECONDS));
+        assertNotNull(trans2.receive().get(1, TimeUnit.SECONDS));
+
+        // #4
+        assertFalse(trans2.receive().isDone());
+
+        trans1.stop();
+        trans2.stop();
+        assertThrows(Exception.class, trans2::receive);
     }
 }

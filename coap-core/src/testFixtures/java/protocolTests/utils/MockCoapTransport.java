@@ -19,28 +19,33 @@ package protocolTests.utils;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
-import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.TransportContext;
+import com.mbed.coap.utils.AsyncQueue;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 
 public class MockCoapTransport extends BlockingCoapTransport {
 
-    private volatile CoapReceiver coapReceiver = null;
     private final BlockingQueue<CoapPacket> sentPackets = new ArrayBlockingQueue<>(100);
+    private final AsyncQueue<CoapPacket> receiveQueue = new AsyncQueue<>();
 
     @Override
-    public void start(CoapReceiver coapReceiver) throws IOException {
-        this.coapReceiver = coapReceiver;
+    public void start() throws IOException {
     }
 
     @Override
     public void stop() {
-        coapReceiver = null;
+        receiveQueue.removeAll();
+    }
+
+    @Override
+    public CompletableFuture<CoapPacket> receive() {
+        return receiveQueue.poll();
     }
 
     @Override
@@ -59,7 +64,7 @@ public class MockCoapTransport extends BlockingCoapTransport {
 
     public class MockClient {
         public void send(CoapPacket packet) {
-            coapReceiver.handle(packet);
+            receiveQueue.add(packet);
         }
 
         public void send(CoapPacketBuilder packetBuilder) {
@@ -80,6 +85,11 @@ public class MockCoapTransport extends BlockingCoapTransport {
             received.setTransportContext(TransportContext.EMPTY);
 
             assertEquals(packet, received);
+        }
+
+        public void verifyReceived() throws InterruptedException {
+            CoapPacket received = sentPackets.poll(1, TimeUnit.SECONDS);
+            assertNotNull(received);
         }
 
         public boolean nothingReceived() {

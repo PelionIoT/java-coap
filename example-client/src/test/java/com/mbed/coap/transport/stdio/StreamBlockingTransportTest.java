@@ -16,19 +16,18 @@
  */
 package com.mbed.coap.transport.stdio;
 
+import static org.awaitility.Awaitility.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilderForTcp;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilderForTcp;
-import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.InetSocketAddress;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 
 public class StreamBlockingTransportTest {
@@ -66,20 +65,18 @@ public class StreamBlockingTransportTest {
 
         //given
         StreamBlockingTransport streamBlockingTransport = new StreamBlockingTransport(clientOut, clientIn, adr, CoapSerializer.UDP);
-        streamBlockingTransport.start(Mockito.mock(CoapReceiver.class));
+        streamBlockingTransport.start();
 
-        while (!streamBlockingTransport.isRunning()) {
-            Thread.sleep(10);
-        }
+        await().until(streamBlockingTransport::isRunning);
 
         //when
         outputStream.write("123456".getBytes());
         outputStream.flush();
 
         //then
-        while (streamBlockingTransport.isRunning()) {
-            Thread.sleep(10);
-        }
+        streamBlockingTransport.receive();
+
+        await().until(() -> !streamBlockingTransport.isRunning());
         assertFalse(streamBlockingTransport.isRunning());
     }
 }

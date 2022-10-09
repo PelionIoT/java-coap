@@ -29,10 +29,11 @@ import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.BlockingCoapTransport;
-import com.mbed.coap.transport.CoapReceiver;
+import com.mbed.coap.utils.AsyncQueue;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -93,18 +94,17 @@ public class ServerBenchmark {
 
     private static class SynchTransportStub extends BlockingCoapTransport {
 
-        private CoapReceiver udpReceiver;
         private final InetSocketAddress addr = new InetSocketAddress("localhost", 5683);
+        private final AsyncQueue<CoapPacket> receiveQueue = new AsyncQueue<>();
         private boolean sendCalled = false;
 
         @Override
-        public void start(CoapReceiver coapReceiver) throws IOException {
-            this.udpReceiver = coapReceiver;
+        public void start() throws IOException {
         }
 
         @Override
         public void stop() {
-            this.udpReceiver = null;
+            receiveQueue.removeAll();
         }
 
         @Override
@@ -120,13 +120,18 @@ public class ServerBenchmark {
 
         public synchronized void receive(ByteBuffer data) throws InterruptedException {
             try {
-                udpReceiver.handle(CoapPacket.read(addr, data.array(), data.position()));
+                receiveQueue.add(CoapPacket.read(addr, data.array(), data.position()));
             } catch (CoapException e) {
                 throw new RuntimeException(e);
             }
             while (!sendCalled) {
                 this.wait();
             }
+        }
+
+        @Override
+        public CompletableFuture<CoapPacket> receive() {
+            return receiveQueue.poll();
         }
     }
 }

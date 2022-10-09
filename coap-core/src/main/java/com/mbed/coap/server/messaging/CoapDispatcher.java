@@ -15,19 +15,18 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static com.mbed.coap.transport.CoapReceiver.*;
+import static com.mbed.coap.transport.CoapTransport.*;
 import static com.mbed.coap.utils.FutureHelpers.*;
 import static java.util.Objects.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.SeparateResponse;
-import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.utils.Service;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class CoapDispatcher implements CoapReceiver {
+public final class CoapDispatcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapDispatcher.class);
     private final Service<CoapPacket, Boolean> sender;
@@ -41,15 +40,13 @@ public final class CoapDispatcher implements CoapReceiver {
             Service<CoapPacket, CoapPacket> observationHandler, Service<CoapPacket, CoapPacket> inboundService,
             Function<CoapPacket, Boolean> handleResponse, Function<SeparateResponse, Boolean> handleSeparateResponse) {
 
-        this.sender = requireNonNull(sender);
+        this.sender = sender;
         this.observationHandler = requireNonNull(observationHandler);
         this.inboundService = requireNonNull(inboundService);
         this.handleResponse = requireNonNull(handleResponse);
         this.handleSeparateResponse = requireNonNull(handleSeparateResponse);
     }
 
-
-    @Override
     public void handle(CoapPacket packet) {
         logReceived(packet);
         if (handlePing(packet)) {

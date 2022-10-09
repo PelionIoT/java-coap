@@ -17,6 +17,7 @@
 package com.mbed.coap.server;
 
 import static com.mbed.coap.transport.CoapTransport.*;
+import static com.mbed.coap.utils.Validations.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -32,6 +33,8 @@ import com.mbed.coap.server.messaging.CapabilitiesStorageImpl;
 import com.mbed.coap.server.messaging.CoapTcpDispatcher;
 import com.mbed.coap.server.messaging.PayloadSizeVerifier;
 import com.mbed.coap.server.messaging.TcpExchangeFilter;
+import com.mbed.coap.transport.CoapTcpTransport;
+import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.utils.Service;
 import java.util.function.Function;
 
@@ -76,6 +79,12 @@ public class CoapServerBuilderForTcp extends CoapServerBuilder<CoapServerBuilder
     }
 
     @Override
+    public CoapServerBuilderForTcp transport(CoapTransport coapTransport) {
+        require(coapTransport instanceof CoapTcpTransport);
+        return super.transport(coapTransport);
+    }
+
+    @Override
     public CoapServer build() {
         Service<CoapPacket, Boolean> sender = packet -> coapTransport
                 .sendPacket(packet)
@@ -115,7 +124,9 @@ public class CoapServerBuilderForTcp extends CoapServerBuilder<CoapServerBuilder
                 inboundObservation
         );
 
-        return new CoapServer(coapTransport, dispatcher, outboundService, Function::identity);
+        ((CoapTcpTransport) coapTransport).setListener(dispatcher);
+
+        return new CoapServer(coapTransport, dispatcher::handle, outboundService, Function::identity);
     }
 
 }

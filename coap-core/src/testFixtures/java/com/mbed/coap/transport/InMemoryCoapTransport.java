@@ -16,8 +16,9 @@
  */
 package com.mbed.coap.transport;
 
-import com.mbed.coap.exception.CoapException;
+import static com.mbed.coap.utils.FutureHelpers.*;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.utils.AsyncQueue;
 import com.mbed.coap.utils.IpPortAddress;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -25,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import org.slf4j.Logger;
@@ -47,7 +49,7 @@ public class InMemoryCoapTransport extends BlockingCoapTransport {
         }
     }
 
-    private CoapReceiver coapReceiver;
+    private final AsyncQueue<DatagramMessage> receiveQueue = new AsyncQueue<>();
     private final static BindingManager BINDING_MANAGER = new BindingManager();
     private final IpPortAddress bindingAddress;
     private final Executor executor;
@@ -56,6 +58,10 @@ public class InMemoryCoapTransport extends BlockingCoapTransport {
 
     public static InetSocketAddress createAddress(int port) {
         return BINDING_MANAGER.createAddress(port);
+    }
+
+    public static InetSocketAddress localAddressFrom(InetSocketAddress socketAddress) {
+        return BINDING_MANAGER.createAddress(socketAddress.getPort());
     }
 
     public static CoapTransport create(int port) {
@@ -89,9 +95,8 @@ public class InMemoryCoapTransport extends BlockingCoapTransport {
 
 
     @Override
-    public void start(CoapReceiver coapReceiver) throws IOException {
+    public void start() throws IOException {
         BINDING_MANAGER.bind(bindingAddress, this);
-        this.coapReceiver = coapReceiver;
     }
 
     @Override
@@ -109,15 +114,17 @@ public class InMemoryCoapTransport extends BlockingCoapTransport {
     }
 
     public void receive(DatagramMessage msg) {
-        executor.execute(() -> {
-            try {
-                CoapPacket packet = CoapPacket.read(msg.source.toInetSocketAddress(), msg.packetData, msg.packetData.length);
-                packet.setTransportContext(transportContext);
-                coapReceiver.handle(packet);
-            } catch (CoapException e) {
-                LOGGER.error(e.getMessage(), e);
-            }
-        });
+        receiveQueue.add(msg);
+    }
+
+    @Override
+    public CompletableFuture<CoapPacket> receive() {
+        return receiveQueue.poll()
+                .thenApplyAsync(msg -> wrapExceptions(() -> {
+                    CoapPacket packet = CoapPacket.read(msg.source.toInetSocketAddress(), msg.packetData, msg.packetData.length);
+                    packet.setTransportContext(transportContext);
+                    return packet;
+                }), executor);
     }
 
     @Override

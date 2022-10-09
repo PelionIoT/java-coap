@@ -43,6 +43,7 @@ import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -237,7 +238,7 @@ abstract class IntegrationTestBase {
         client.close();
         client = null;
 
-        assertThatThrownBy(resp::get).hasCauseInstanceOf(IOException.class);
+        assertThatThrownBy(() -> resp.get(5, TimeUnit.SECONDS)).hasCauseInstanceOf(IOException.class);
     }
 
     private static class TestResource implements Service<CoapRequest, CoapResponse> {

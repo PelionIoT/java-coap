@@ -21,31 +21,36 @@ import static com.mbed.coap.packet.CoapResponse.*;
 import static java.util.concurrent.CompletableFuture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.mock;
-import static org.mockito.BDDMockito.reset;
-import static org.mockito.BDDMockito.verify;
-import static org.mockito.Mockito.*;
-import com.mbed.coap.transport.CoapReceiver;
+import static org.mockito.BDDMockito.*;
+import static protocolTests.utils.CoapPacketBuilder.*;
+import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.CoapTransport;
+import com.mbed.coap.utils.AsyncQueue;
+import java.io.IOException;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class CoapServerTest {
 
-    private CoapReceiver msg = mock(CoapReceiver.class);
+    private Consumer<CoapPacket> dispatcher = mock(Consumer.class);
     private CoapTransport transport = mock(CoapTransport.class);
     private Runnable stop = mock(Runnable.class);
     private CoapServer server;
+    private final AsyncQueue<CoapPacket> receiveQueue = new AsyncQueue<>();
 
     @BeforeEach
     public void setUp() throws Exception {
-        reset(msg, transport, stop);
-        server = new CoapServer(transport, msg, __ -> completedFuture(ok("OK")), stop).start();
+        reset(dispatcher, transport, stop);
+        given(transport.receive()).willAnswer(__ -> receiveQueue.poll());
+        receiveQueue.removeAll();
+
+        server = new CoapServer(transport, dispatcher, __ -> completedFuture(ok("OK")), stop).start();
     }
 
     @Test
     public void shouldStartAndStop() throws Exception {
-        verify(transport).start(eq(msg));
+        verify(transport).start();
         assertTrue(server.isRunning());
 
         server.stop();
@@ -55,10 +60,10 @@ public class CoapServerTest {
     }
 
     @Test
-    public void shouldFailWhenAttemptToStopWhenNotRunning() throws Exception {
-        final CoapServer nonStartedServer = new CoapServer(transport, msg, __ -> completedFuture(ok("OK")), stop);
+    public void shouldDoNothingWhenAttemptToStopWhenNotRunning() throws Exception {
+        final CoapServer nonStartedServer = new CoapServer(transport, dispatcher, __ -> completedFuture(ok("OK")), stop);
 
-        assertThatThrownBy(nonStartedServer::stop).isInstanceOf(IllegalStateException.class);
+        nonStartedServer.stop();
     }
 
     @Test
@@ -67,4 +72,34 @@ public class CoapServerTest {
                 .isInstanceOf(IllegalStateException.class);
     }
 
+    @Test
+    public void shouldReadPacketAndPassItToDispatcher() {
+        CoapPacket coapPacket1 = newCoapPacket(1).get().uriPath("/test").build();
+        CoapPacket coapPacket2 = newCoapPacket(2).get().uriPath("/test").build();
+        CoapPacket coapPacket3 = newCoapPacket(3).get().uriPath("/test").build();
+
+        receiveQueue.add(coapPacket1);
+        verify(dispatcher).accept(eq(coapPacket1));
+
+        receiveQueue.add(coapPacket2);
+        verify(dispatcher).accept(eq(coapPacket2));
+
+        receiveQueue.add(coapPacket3);
+        verify(dispatcher).accept(eq(coapPacket3));
+    }
+
+    @Test
+    public void shouldStopWhenReadingFails() {
+        assertTrue(server.isRunning());
+
+        // when
+        receiveQueue.addException(new IOException());
+        receiveQueue.add(newCoapPacket(1).get().uriPath("/test").build());
+
+        // then
+        verify(transport).stop();
+        verify(stop).run();
+        assertFalse(server.isRunning());
+
+    }
 }

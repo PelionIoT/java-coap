@@ -82,7 +82,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
         return me();
     }
 
-    public final T transport(CoapTransport coapTransport) {
+    public T transport(CoapTransport coapTransport) {
         this.coapTransport = requireNonNull(coapTransport);
         return me();
     }
@@ -306,7 +306,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
                     piggybackedExchangeFilter::handleResponse, exchangeFilter::handleResponse
             );
 
-            return new CoapServer(coapTransport, dispatcher, outboundService, () -> {
+            return new CoapServer(coapTransport, dispatcher::handle, outboundService, () -> {
                 piggybackedExchangeFilter.stop();
                 duplicateDetectorCache.stop();
             });

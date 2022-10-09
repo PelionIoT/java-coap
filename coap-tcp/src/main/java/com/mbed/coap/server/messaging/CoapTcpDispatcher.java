@@ -15,7 +15,7 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static com.mbed.coap.transport.CoapReceiver.*;
+import static com.mbed.coap.transport.CoapTransport.*;
 import static com.mbed.coap.utils.FutureHelpers.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
@@ -25,14 +25,14 @@ import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.packet.SignalingOptions;
 import com.mbed.coap.packet.SignallingHeaderOptions;
-import com.mbed.coap.transport.javassl.CoapTcpReceiver;
+import com.mbed.coap.transport.CoapTcpListener;
 import com.mbed.coap.utils.Service;
 import java.net.InetSocketAddress;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CoapTcpDispatcher implements CoapTcpReceiver {
+public class CoapTcpDispatcher implements CoapTcpListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapTcpDispatcher.class);
 
     private final CapabilitiesStorage csmStorage;
@@ -53,7 +53,6 @@ public class CoapTcpDispatcher implements CoapTcpReceiver {
         this.observationHandler = observationHandler;
     }
 
-    @Override
     public void handle(CoapPacket packet) {
         logReceived(packet);
 

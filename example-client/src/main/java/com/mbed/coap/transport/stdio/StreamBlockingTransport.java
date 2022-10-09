@@ -16,29 +16,29 @@
  */
 package com.mbed.coap.transport.stdio;
 
+import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
-import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportExecutors;
+import com.mbed.coap.transport.CoapTcpListener;
+import com.mbed.coap.transport.CoapTcpTransport;
 import com.mbed.coap.transport.javassl.CoapSerializer;
+import com.mbed.coap.utils.ExecutorHelpers;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 
 
-public class StreamBlockingTransport extends BlockingCoapTransport {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StreamBlockingTransport.class);
+public class StreamBlockingTransport extends BlockingCoapTransport implements CoapTcpTransport {
     private final OutputStream outputStream;
     private final InputStream inputStream;
     protected final InetSocketAddress destination;
-    private final Executor readingWorker = TransportExecutors.newWorker("stream-reader");
+    private final ExecutorService readingWorker = ExecutorHelpers.newSingleThreadExecutor("stream-reader");
     private volatile Boolean isRunning = false;
     private final CoapSerializer serializer;
 
@@ -65,15 +65,21 @@ public class StreamBlockingTransport extends BlockingCoapTransport {
     }
 
     @Override
-    public void start(CoapReceiver coapReceiver) {
+    public void start() {
         isRunning = true;
-        TransportExecutors.loop(readingWorker, () -> readingLoop(coapReceiver));
     }
 
     @Override
     public void stop() {
         isRunning = false;
-        TransportExecutors.shutdown(readingWorker);
+        readingWorker.shutdown();
+    }
+
+    @Override
+    public CompletableFuture<CoapPacket> receive() {
+        return supplyAsync(this::read, readingWorker)
+                .thenCompose(it -> (it == null) ? receive() : completedFuture(it));
+
     }
 
     @Override
@@ -81,20 +87,21 @@ public class StreamBlockingTransport extends BlockingCoapTransport {
         return null;
     }
 
-    private boolean readingLoop(CoapReceiver coapReceiver) {
+    private CoapPacket read() {
         try {
-            coapReceiver.handle(serializer.deserialize(inputStream, destination));
-        } catch (InterruptedIOException e) {
-            //IGNORE
+            return serializer.deserialize(inputStream, destination);
+        } catch (CoapException | IOException e) {
             isRunning = false;
-        } catch (Exception e) {
-            LOGGER.error(e.toString(), e);
-            isRunning = false;
+            throw new CompletionException(e);
         }
-        return isRunning;
     }
 
     boolean isRunning() {
         return isRunning;
+    }
+
+    @Override
+    public void setListener(CoapTcpListener listener) {
+        // do nothing
     }
 }

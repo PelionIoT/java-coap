@@ -17,6 +17,7 @@ package com.mbed.coap.utils;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -53,5 +54,19 @@ public class FutureHelpers {
                 promise.complete(v);
             }
         });
+    }
+
+    public static <T> T wrapExceptions(WrapSupplier<T> f) {
+        try {
+            return f.invoke();
+        } catch (Exception e) {
+            throw new CompletionException(e);
+        }
+    }
+
+    @FunctionalInterface
+    public interface WrapSupplier<T> {
+        @SuppressWarnings({"PMD.SignatureDeclareThrowsException"})
+        T invoke() throws Exception;
     }
 }

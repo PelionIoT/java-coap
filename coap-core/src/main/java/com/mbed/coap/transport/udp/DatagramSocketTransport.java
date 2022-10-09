@@ -16,17 +16,19 @@
  */
 package com.mbed.coap.transport.udp;
 
+import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
-import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportExecutors;
+import com.mbed.coap.utils.ExecutorHelpers;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,27 +40,27 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatagramSocketTransport.class.getName());
     private final InetSocketAddress bindAddress;
     protected BlockingSocket socket;
-    private final Executor readingWorker;
+    private final ExecutorService readingWorker;
 
     public DatagramSocketTransport(InetSocketAddress bindAddress) {
         this(null, bindAddress, null);
     }
 
-    public DatagramSocketTransport(InetSocketAddress bindAddress, Executor readingWorker) {
+    public DatagramSocketTransport(InetSocketAddress bindAddress, ExecutorService readingWorker) {
         this(null, bindAddress, readingWorker);
     }
 
-    public DatagramSocketTransport(BlockingSocket datagramSocket, Executor readingWorker) {
+    public DatagramSocketTransport(BlockingSocket datagramSocket, ExecutorService readingWorker) {
         this(datagramSocket, datagramSocket.getBoundAddress(), readingWorker);
     }
 
-    private DatagramSocketTransport(BlockingSocket datagramSocket, InetSocketAddress bindAddress, Executor readingWorker) {
+    private DatagramSocketTransport(BlockingSocket datagramSocket, InetSocketAddress bindAddress, ExecutorService readingWorker) {
         this.socket = datagramSocket;
         this.bindAddress = bindAddress;
         if (readingWorker != null) {
             this.readingWorker = readingWorker;
         } else {
-            this.readingWorker = TransportExecutors.newWorker("udp-reader");
+            this.readingWorker = ExecutorHelpers.newSingleThreadExecutor("udp-reader");
         }
     }
 
@@ -67,42 +69,33 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     }
 
     @Override
-    public void start(CoapReceiver coapReceiver) throws IOException {
+    public void start() throws IOException {
         if (!socketCreated()) {
             createSocket();
         }
-
-        TransportExecutors.loop(readingWorker, () -> readingLoop(coapReceiver));
     }
 
-    protected boolean readingLoop(CoapReceiver coapReceiver) {
-        byte[] readBuffer = new byte[2048];
+    @Override
+    public CompletableFuture<CoapPacket> receive() {
+        return supplyAsync(this::blockingReceive, readingWorker)
+                .thenCompose(it -> (it == null) ? receive() : completedFuture(it));
+    }
 
+    private CoapPacket blockingReceive() {
+        byte[] readBuffer = new byte[2048];
+        CoapPacket packet = null;
         try {
             DatagramPacket datagramPacket = new DatagramPacket(readBuffer, readBuffer.length);
             socket.receive(datagramPacket);
-
-            receive(coapReceiver, datagramPacket);
-            return true;
-        } catch (SocketTimeoutException ex) {
-            return true;
-        } catch (IOException ex) {
-            if (!ex.getMessage().startsWith("Socket closed")&&!ex.getMessage().startsWith("socket closed")) {
-                LOGGER.warn(ex.getMessage(), ex);
-            }
-        } catch (Exception ex) {
-            LOGGER.warn(ex.getMessage());
-        }
-        return false;
-    }
-
-    protected void receive(CoapReceiver coapReceiver, DatagramPacket datagramPacket) {
-        try {
-            final CoapPacket coapPacket = CoapPacket.read((InetSocketAddress) datagramPacket.getSocketAddress(), datagramPacket.getData(), datagramPacket.getLength());
-            coapReceiver.handle(coapPacket);
+            packet = CoapPacket.read((InetSocketAddress) datagramPacket.getSocketAddress(), datagramPacket.getData(), datagramPacket.getLength());
         } catch (CoapException e) {
-            LOGGER.warn(e.getMessage());
+            LOGGER.warn(e.toString(), e);
+        } catch (SocketTimeoutException ex) {
+            // do nothing
+        } catch (IOException e) {
+            throw new CompletionException(e);
         }
+        return packet;
     }
 
     protected void createSocket() throws SocketException {
@@ -118,7 +111,7 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
                 LOGGER.error(e.getMessage(), e);
             }
         }
-        TransportExecutors.shutdown(readingWorker);
+        readingWorker.shutdown();
     }
 
     @Override

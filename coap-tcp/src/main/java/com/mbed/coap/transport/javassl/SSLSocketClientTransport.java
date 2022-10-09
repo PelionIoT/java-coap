@@ -34,7 +34,7 @@ public class SSLSocketClientTransport extends SocketClientTransport {
     }
 
     @Override
-    protected void connect(CoapTcpReceiver coapReceiver) throws IOException {
+    protected void connect() throws IOException {
         SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(destination.getAddress(), destination.getPort());
 
         sslSocket.addHandshakeCompletedListener(handshakeCompletedEvent -> {
@@ -43,7 +43,7 @@ public class SSLSocketClientTransport extends SocketClientTransport {
                     } catch (SSLPeerUnverifiedException e) {
                         LOGGER.warn(e.getMessage(), e);
                     }
-                    coapReceiver.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());
+                    listener.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());
                 }
         );
         sslSocket.startHandshake();

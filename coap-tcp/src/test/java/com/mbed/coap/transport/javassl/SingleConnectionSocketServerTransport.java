@@ -16,31 +16,37 @@
  */
 package com.mbed.coap.transport.javassl;
 
+import static com.mbed.coap.utils.FutureHelpers.*;
+import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
-import com.mbed.coap.transport.CoapReceiver;
-import java.io.BufferedInputStream;
+import com.mbed.coap.transport.CoapTcpListener;
+import com.mbed.coap.transport.CoapTcpTransport;
 import java.io.BufferedOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class SingleConnectionSocketServerTransport extends BlockingCoapTransport {
+public class SingleConnectionSocketServerTransport extends BlockingCoapTransport implements CoapTcpTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleConnectionSSLSocketServerTransport.class);
 
-    private Thread serverThread;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     final ServerSocket serverSocket;
     private OutputStream outputStream;
     private final CoapSerializer serializer;
     private Socket socket;
+    private CoapTcpListener listener;
 
     SingleConnectionSocketServerTransport(ServerSocket serverSocket, CoapSerializer serializer) {
         this.serverSocket = serverSocket;
@@ -52,7 +58,13 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
     }
 
 
-    private void serverLoop(CoapTcpReceiver coapReceiver) {
+    @Override
+    public CompletableFuture<CoapPacket> receive() {
+        return CompletableFuture.supplyAsync(() -> wrapExceptions(this::read), executor)
+                .thenCompose(it -> (it == null) ? receive() : completedFuture(it));
+    }
+
+    private void connect() {
         try {
             LOGGER.debug("SSLSocketServer is listening on " + serverSocket.getLocalSocketAddress());
             socket = serverSocket.accept();
@@ -61,44 +73,56 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
             synchronized (this) {
                 outputStream = new BufferedOutputStream(socket.getOutputStream());
             }
-            final InputStream inputStream = new BufferedInputStream(socket.getInputStream());
             InetSocketAddress remoteSocketAddress = (InetSocketAddress) socket.getRemoteSocketAddress();
 
-            coapReceiver.onConnected(remoteSocketAddress);
-
-            while (!socket.isClosed()) {
-                try {
-                    final CoapPacket coapPacket = serializer.deserialize(inputStream, remoteSocketAddress);
-                    coapReceiver.handle(coapPacket);
-                } catch (EOFException e) {
-                    socket.close();
-                } catch (Exception e) {
-                    if ("Connection reset".equals(e.getMessage())) {
-                        socket.close();
-                    }
-                    if (e.getCause() != null && e.getCause() instanceof IOException) {
-                        if (e.getCause().getMessage().startsWith("Socket is closed")) {
-                            LOGGER.warn(e.getCause().getMessage());
-                        } else {
-                            throw ((IOException) e.getCause());
-                        }
-                    }
-                    //LOGGER.warn("Closing socket connection, due to parsing error: " + e.getMessage());
-                    //sslSocket.close();
-                }
-            }
-            coapReceiver.onDisconnected(remoteSocketAddress);
-
+            listener.onConnected(remoteSocketAddress);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    private CoapPacket read() throws IOException, CoapException {
+        if (!socket.isClosed()) {
+            try {
+                final CoapPacket coapPacket = serializer.deserialize(socket.getInputStream(), ((InetSocketAddress) socket.getRemoteSocketAddress()));
+                return coapPacket;
+            } catch (EOFException e) {
+                closeSocket();
+                throw e;
+            } catch (Exception e) {
+                if ("Connection reset".equals(e.getMessage())) {
+                    closeSocket();
+                }
+                if (e.getCause() != null && e.getCause() instanceof IOException) {
+                    if (e.getCause().getMessage().startsWith("Socket is closed")) {
+                        LOGGER.warn(e.getCause().getMessage());
+                    }
+                }
+                throw e;
+            }
+        } else {
+            listener.onDisconnected(((InetSocketAddress) socket.getRemoteSocketAddress()));
+            throw new CompletionException(new IOException("Socket is closed"));
+        }
+    }
+
+    private void closeSocket() {
+        try {
+            socket.close();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     @Override
-    public void start(CoapReceiver coapReceiver) {
-        serverThread = new Thread(() -> serverLoop((CoapTcpReceiver) coapReceiver), "sslsocket-server");
-        serverThread.start();
+    public void setListener(CoapTcpListener listener) {
+        this.listener = listener;
+    }
+
+    @Override
+    public void start() {
+        executor.execute(this::connect);
     }
 
     @Override
@@ -111,7 +135,7 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        serverThread.interrupt();
+        executor.shutdown();
     }
 
     @Override

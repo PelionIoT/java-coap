@@ -15,19 +15,22 @@
  */
 package org.opencoap.transport.mbedtls;
 
+import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapTransport;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import org.opencoap.ssl.transport.DtlsTransmitter;
 import org.opencoap.ssl.transport.Packet;
 import org.opencoap.ssl.transport.Transport;
-import org.opencoap.ssl.transport.TransportKt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MbedtlsCoapTransport implements CoapTransport {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MbedtlsCoapTransport.class);
     private final Transport<Packet<byte[]>> dtlsTransport;
 
     public MbedtlsCoapTransport(Transport<Packet<byte[]>> dtlsTransport) {
@@ -44,16 +47,8 @@ public class MbedtlsCoapTransport implements CoapTransport {
     }
 
     @Override
-    public void start(CoapReceiver receiver) {
-        TransportKt.listen(dtlsTransport, packet -> {
-            try {
-                if (packet.getBuffer().length > 0) {
-                    receiver.handle(CoapPacket.read(packet.getPeerAddress(), packet.getBuffer()));
-                }
-            } catch (CoapException e) {
-                throw new RuntimeException(e);
-            }
-        });
+    public void start() {
+        // do nothing
     }
 
     @Override
@@ -68,6 +63,24 @@ public class MbedtlsCoapTransport implements CoapTransport {
     @Override
     public CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket) {
         return dtlsTransport.send(new Packet<>(coapPacket.toByteArray(), coapPacket.getRemoteAddress()));
+    }
+
+    @Override
+    public CompletableFuture<CoapPacket> receive() {
+        return dtlsTransport.receive(Duration.ofSeconds(1)).thenCompose(this::deserialize);
+    }
+
+    private CompletableFuture<CoapPacket> deserialize(Packet<byte[]> packet) {
+        if (packet.getBuffer().length > 0) {
+            try {
+                return completedFuture(CoapPacket.read(packet.getPeerAddress(), packet.getBuffer()));
+            } catch (CoapException e) {
+                LOGGER.warn("[{}] Received malformed coap. {}", packet.getPeerAddress(), e.toString());
+            }
+        }
+
+        // keep waiting
+        return receive();
     }
 
     @Override

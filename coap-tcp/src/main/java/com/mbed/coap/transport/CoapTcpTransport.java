@@ -13,13 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mbed.coap.transport.javassl;
+package com.mbed.coap.transport;
 
-import com.mbed.coap.transport.CoapReceiver;
-import java.net.InetSocketAddress;
-
-public interface CoapTcpReceiver extends CoapReceiver {
-    void onDisconnected(InetSocketAddress remoteAddress);
-
-    void onConnected(InetSocketAddress remoteAddress);
+public interface CoapTcpTransport extends CoapTransport {
+    void setListener(CoapTcpListener listener);
 }
