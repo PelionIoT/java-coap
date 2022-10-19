@@ -17,61 +17,61 @@ package org.opencoap.transport.mbedtls;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
-import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
-import com.mbed.coap.transport.TransportExecutors;
+import com.mbed.coap.transport.CoapTransport;
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.ClosedSelectorException;
-import java.time.Duration;
-import java.util.concurrent.Executor;
+import java.util.concurrent.CompletableFuture;
 import org.opencoap.ssl.transport.DtlsTransmitter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opencoap.ssl.transport.Packet;
+import org.opencoap.ssl.transport.Transport;
+import org.opencoap.ssl.transport.TransportKt;
 
-public class MbedtlsCoapTransport extends BlockingCoapTransport {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MbedtlsCoapTransport.class);
-    private final Executor readingWorker = TransportExecutors.newWorker("mbedtls-client");
+public class MbedtlsCoapTransport implements CoapTransport {
+    private final Transport<Packet<byte[]>> dtlsTransport;
 
-    private final InetSocketAddress destAdr;
-    private final DtlsTransmitter transmitter;
-
-    public MbedtlsCoapTransport(DtlsTransmitter transmitter) {
-        this.transmitter = transmitter;
-        this.destAdr = transmitter.getRemoteAddress();
+    public MbedtlsCoapTransport(Transport<Packet<byte[]>> dtlsTransport) {
+        this.dtlsTransport = dtlsTransport;
     }
 
-    @Override
-    public void sendPacket0(CoapPacket coapPacket) {
-        transmitter.send(coapPacket.toByteArray());
+    public MbedtlsCoapTransport(DtlsTransmitter dtlsTransmitter) {
+        InetSocketAddress adr = dtlsTransmitter.getRemoteAddress();
+
+        this.dtlsTransport = dtlsTransmitter.map(
+                bytes -> new Packet<>(bytes, adr),
+                Packet<byte[]>::getBuffer
+        );
     }
 
     @Override
     public void start(CoapReceiver receiver) {
-        TransportExecutors.loop(readingWorker, () -> {
+        TransportKt.listen(dtlsTransport, packet -> {
             try {
-                byte[] buf = transmitter.receive(Duration.ofSeconds(30));
-                if (buf.length > 0) {
-                    CoapPacket coap = CoapPacket.read(destAdr, buf);
-                    receiver.handle(coap);
+                if (packet.getBuffer().length > 0) {
+                    receiver.handle(CoapPacket.read(packet.getPeerAddress(), packet.getBuffer()));
                 }
             } catch (CoapException e) {
-                LOGGER.warn("Can not parse coap packet: " + e.getMessage());
-            } catch (ClosedSelectorException ex) {
-                return false;
+                throw new RuntimeException(e);
             }
-
-            return true;
         });
     }
 
     @Override
     public void stop() {
-        TransportExecutors.shutdown(readingWorker);
-        transmitter.close();
+        try {
+            dtlsTransport.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket) {
+        return dtlsTransport.send(new Packet<>(coapPacket.toByteArray(), coapPacket.getRemoteAddress()));
     }
 
     @Override
     public InetSocketAddress getLocalSocketAddress() {
-        return destAdr;
+        return new InetSocketAddress("0.0." + "0.0", dtlsTransport.localPort());
     }
 }

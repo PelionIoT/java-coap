@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.opencoap.ssl.SslConfig;
 import org.opencoap.ssl.transport.DtlsServer;
 import org.opencoap.ssl.transport.DtlsTransmitter;
+import org.opencoap.ssl.transport.Packet;
 
 class MbedtlsCoapTransportTest {
 
@@ -51,11 +52,11 @@ class MbedtlsCoapTransportTest {
     void setUp() throws IOException {
         dtlsServer = DtlsServer.create(serverConf);
         coapServer = CoapServerBuilder.newBuilder()
-                .transport(new MbedtlsServerCoapTransport(dtlsServer))
+                .transport(new MbedtlsCoapTransport(dtlsServer))
                 .route(new RouterService.RouteBuilder()
                         .get("/test", it -> completedFuture(ok("OK!")))
                         .post("/send-malformed", it -> {
-                            dtlsServer.send("acghfh".getBytes(), it.getPeerAddress());
+                            dtlsServer.send(new Packet<>("acghfh", it.getPeerAddress()).map(String::getBytes));
                             return completedFuture(CoapResponse.of(Code.C201_CREATED));
                         })
                 )
@@ -76,7 +77,6 @@ class MbedtlsCoapTransportTest {
         CoapClient coapClient = CoapClientBuilder.newBuilder(srvAddress)
                 .transport(clientTrans)
                 .build();
-
 
         // when
         CoapResponse resp = coapClient.sendSync(get("/test"));
