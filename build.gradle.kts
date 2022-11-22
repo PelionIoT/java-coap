@@ -6,9 +6,9 @@ plugins {
     id("maven-publish")
     id("com.github.mfarsikov.kewt-versioning") version "1.0.0"
     id("se.patrikerdes.use-latest-versions") version "0.2.18"
-    id("com.github.ben-manes.versions") version "0.42.0"
+    id("com.github.ben-manes.versions") version "0.44.0"
     id("pmd")
-    id("com.github.spotbugs") version "5.0.3"
+    id("com.github.spotbugs") version "5.0.13"
 }
 
 allprojects {
