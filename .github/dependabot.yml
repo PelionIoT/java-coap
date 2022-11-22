@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    ignore:
+      - dependency-name: "logback-classic"
+        # newer version of logback-classic is not java8 compatible
+        versions: [ "1.4.x" ]
