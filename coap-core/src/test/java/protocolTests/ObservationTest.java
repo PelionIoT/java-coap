@@ -20,6 +20,8 @@ import static com.mbed.coap.packet.CoapRequest.get;
 import static com.mbed.coap.packet.Opaque.EMPTY;
 import static com.mbed.coap.packet.Opaque.of;
 import static com.mbed.coap.transport.udp.DatagramSocketTransport.udp;
+import static com.mbed.coap.transmission.RetransmissionBackOff.ofFixed;
+import static java.time.Duration.ofMillis;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,7 +35,6 @@ import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.ObservableResourceService;
 import com.mbed.coap.server.RouterService;
-import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +58,7 @@ public class ObservationTest {
                         .get("/path1", __ -> completedFuture(CoapResponse.ok("content1")))
                         .get(RES_OBS_PATH1, obsResource)
                 )
-                .retransmission(new SingleTimeout(500)).blockSize(BlockSize.S_128).build();
+                .retransmission(ofFixed(ofMillis(500))).blockSize(BlockSize.S_128).build();
 
         server.start();
         SERVER_ADDRESS = new InetSocketAddress("127.0.0.1", server.getLocalSocketAddress().getPort());

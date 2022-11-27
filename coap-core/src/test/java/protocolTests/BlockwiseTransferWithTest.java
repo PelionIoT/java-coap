@@ -17,6 +17,8 @@
 package protocolTests;
 
 import static com.mbed.coap.packet.CoapRequest.put;
+import static com.mbed.coap.transmission.RetransmissionBackOff.ofFixed;
+import static java.time.Duration.ofMillis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.client.CoapClient;
@@ -24,7 +26,6 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
-import com.mbed.coap.transmission.SingleTimeout;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.junit.jupiter.api.AfterEach;
@@ -45,7 +46,7 @@ public class BlockwiseTransferWithTest {
         transport = new TransportConnectorMock();
 
         client = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0))
-                .retransmission(new SingleTimeout(500))
+                .retransmission(ofFixed(ofMillis(500)))
                 .buildClient(SERVER_ADDRESS);
     }
 

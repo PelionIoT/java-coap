@@ -19,6 +19,8 @@ package protocolTests;
 import static com.mbed.coap.packet.BlockSize.S_32;
 import static com.mbed.coap.packet.CoapRequest.get;
 import static com.mbed.coap.packet.CoapRequest.post;
+import static com.mbed.coap.transmission.RetransmissionBackOff.ofFixed;
+import static java.time.Duration.ofMillis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.client.CoapClient;
@@ -26,7 +28,6 @@ import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
-import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
@@ -45,7 +46,7 @@ public class SeparateResponseTest {
         server = serverTransport.client();
 
         client = CoapServer.builder().transport(serverTransport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(S_32)
-                .retransmission(new SingleTimeout(500))
+                .retransmission(ofFixed(ofMillis(500)))
                 .buildClient(SERVER_ADDRESS);
     }
 

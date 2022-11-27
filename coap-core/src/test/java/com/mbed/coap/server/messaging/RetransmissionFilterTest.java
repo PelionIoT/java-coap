@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,24 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
+import static java.time.Duration.ZERO;
+import static java.time.Duration.ofSeconds;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.BDDMockito.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.reset;
+import static org.mockito.BDDMockito.times;
+import static org.mockito.BDDMockito.verify;
+import static org.mockito.BDDMockito.verifyNoMoreInteractions;
 import com.mbed.coap.exception.CoapTimeoutException;
-import com.mbed.coap.transmission.TransmissionTimeout;
+import com.mbed.coap.transmission.RetransmissionBackOff;
 import com.mbed.coap.utils.MockTimer;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +42,7 @@ import org.mockito.Mockito;
 class RetransmissionFilterTest {
 
     private final MockTimer timer = new MockTimer();
-    private final TransmissionTimeout backoff = new DoubleTransmissionTimeout();
+    private final RetransmissionBackOff backoff = new DoubleRetransmissionBackOff();
 
     private final RetransmissionFilter<String, String> filter = new RetransmissionFilter<>(timer, backoff, r -> !r.startsWith("NON"));
     private final Service<String, String> service = Mockito.mock(Service.class);
@@ -127,18 +137,18 @@ class RetransmissionFilterTest {
 
     // - non-retryable message
 
-    static class DoubleTransmissionTimeout implements TransmissionTimeout {
+    static class DoubleRetransmissionBackOff implements RetransmissionBackOff {
         @Override
-        public long getTimeout(int attemptCounter) {
+        public Duration next(int attemptCounter) {
             switch (attemptCounter) {
                 case 1:
-                    return 1000;
+                    return ofSeconds(1);
                 case 2:
-                    return 2000;
+                    return ofSeconds(2);
                 case 3:
-                    return 3000;
+                    return ofSeconds(3);
                 default:
-                    return -1;
+                    return ZERO;
             }
         }
     }

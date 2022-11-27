@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 package com.mbed.coap.utils;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 import java.time.Duration;
 import java.util.concurrent.Executors;
 import org.junit.jupiter.api.Test;
@@ -34,7 +36,7 @@ class TimerTest {
         timer.schedule(Duration.ofMillis(1), task2);
 
         verify(task, timeout(100)).run();
-        verify(task2).run();
+        verify(task2, timeout(100)).run();
     }
 
     @Test

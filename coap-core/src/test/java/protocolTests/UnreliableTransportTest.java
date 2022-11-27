@@ -19,6 +19,9 @@ package protocolTests;
 import static com.mbed.coap.packet.CoapRequest.get;
 import static com.mbed.coap.packet.CoapResponse.ok;
 import static com.mbed.coap.transport.InMemoryCoapTransport.createAddress;
+import static com.mbed.coap.transmission.RetransmissionBackOff.ofExponential;
+import static com.mbed.coap.transport.InMemoryCoapTransport.createAddress;
+import static java.time.Duration.ofMillis;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,11 +34,11 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.RouterService;
-import com.mbed.coap.transmission.CoapTimeout;
-import com.mbed.coap.transmission.SingleTimeout;
+import com.mbed.coap.transmission.RetransmissionBackOff;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -86,7 +89,7 @@ public class UnreliableTransportTest {
                     }
 
                 })
-                .retransmission(new CoapTimeout(100))
+                .retransmission(ofExponential(Duration.ofMillis(100), 4))
                 .buildClient(InMemoryCoapTransport.createAddress(5683))
         ) {
             CoapResponse resp = cnn.sendSync(get("/dropping"));
@@ -124,7 +127,7 @@ public class UnreliableTransportTest {
                 .start();
 
         CoapClient cnn = CoapServer.builder()
-                .transport(InMemoryCoapTransport.create()).retransmission(new SingleTimeout(100))
+                .transport(InMemoryCoapTransport.create()).retransmission(RetransmissionBackOff.ofFixed(ofMillis(100)))
                 .buildClient(InMemoryCoapTransport.createAddress(CoapConstants.DEFAULT_PORT));
 
         assertThrows(CoapTimeoutException.class, () ->

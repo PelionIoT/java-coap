@@ -17,6 +17,8 @@
 package protocolTests;
 
 import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.transmission.RetransmissionBackOff.ofFixed;
+import static java.time.Duration.ofMillis;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.mbed.coap.client.CoapClient;
@@ -25,7 +27,6 @@ import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -38,7 +39,7 @@ public class TimeoutTest {
     public void testTimeout() throws IOException, CoapException {
         CoapClient client = CoapServer.builder()
                 .transport(InMemoryCoapTransport.create())
-                .retransmission(new SingleTimeout(100))
+                .retransmission(ofFixed(ofMillis(100)))
                 .buildClient(InMemoryCoapTransport.createAddress(0));
 
         assertThrows(CoapTimeoutException.class, () ->
@@ -49,7 +50,7 @@ public class TimeoutTest {
 
     @Test
     public void timeoutTest() throws Exception {
-        CoapServer cnn = CoapServer.builder().transport(InMemoryCoapTransport.create()).retransmission(new SingleTimeout(100)).build();
+        CoapServer cnn = CoapServer.builder().transport(InMemoryCoapTransport.create()).retransmission(ofFixed(ofMillis(100))).build();
         cnn.start();
 
         CoapRequest request = get(InMemoryCoapTransport.createAddress(0), "/test/1");

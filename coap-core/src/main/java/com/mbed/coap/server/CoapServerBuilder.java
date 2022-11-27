@@ -44,8 +44,7 @@ import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
 import com.mbed.coap.server.messaging.ObservationMapper;
 import com.mbed.coap.server.messaging.PiggybackedExchangeFilter;
 import com.mbed.coap.server.messaging.RetransmissionFilter;
-import com.mbed.coap.transmission.CoapTimeout;
-import com.mbed.coap.transmission.TransmissionTimeout;
+import com.mbed.coap.transmission.RetransmissionBackOff;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
@@ -66,7 +65,7 @@ public final class CoapServerBuilder {
     private MessageIdSupplier midSupplier = new MessageIdSupplierImpl();
     private Duration responseTimeout = Duration.ofMillis(DELAYED_TRANSACTION_TIMEOUT_MS);
     private DuplicatedCoapMessageCallback duplicatedCoapMessageCallback = DuplicatedCoapMessageCallback.NULL;
-    private TransmissionTimeout transmissionTimeout = new CoapTimeout();
+    private RetransmissionBackOff retransmissionBackOff = RetransmissionBackOff.ofDefault();
     private int maxIncomingBlockTransferSize = 10_000_000; //default to 10 MB
     private BlockSize blockSize;
     private int maxMessageSize = 1152; //default
@@ -141,8 +140,8 @@ public final class CoapServerBuilder {
         return this;
     }
 
-    public CoapServerBuilder retransmission(TransmissionTimeout timeout) {
-        transmissionTimeout = timeout;
+    public CoapServerBuilder retransmission(RetransmissionBackOff retransmissionBackOff) {
+        this.retransmissionBackOff = retransmissionBackOff;
         return this;
     }
 
@@ -192,7 +191,7 @@ public final class CoapServerBuilder {
 
         // OUTBOUND
         ExchangeFilter exchangeFilter = new ExchangeFilter();
-        RetransmissionFilter<CoapPacket, CoapPacket> retransmissionFilter = new RetransmissionFilter<>(timer, transmissionTimeout, CoapPacket::isConfirmable);
+        RetransmissionFilter<CoapPacket, CoapPacket> retransmissionFilter = new RetransmissionFilter<>(timer, retransmissionBackOff, CoapPacket::isConfirmable);
         PiggybackedExchangeFilter piggybackedExchangeFilter = new PiggybackedExchangeFilter();
 
         Service<CoapRequest, CoapResponse> outboundService = outboundFilter

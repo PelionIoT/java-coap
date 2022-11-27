@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static com.mbed.coap.utils.FutureHelpers.*;
-import static java.util.Objects.*;
+import static com.mbed.coap.utils.FutureHelpers.become;
+import static java.util.Objects.requireNonNull;
 import com.mbed.coap.exception.CoapTimeoutException;
-import com.mbed.coap.transmission.TransmissionTimeout;
+import com.mbed.coap.transmission.RetransmissionBackOff;
 import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
 import com.mbed.coap.utils.Timer;
@@ -30,10 +30,10 @@ import java.util.function.Supplier;
 public class RetransmissionFilter<REQ, RES> implements Filter.SimpleFilter<REQ, RES> {
 
     private final Timer timer;
-    private final TransmissionTimeout backoff;
+    private final RetransmissionBackOff backoff;
     private final Predicate<REQ> doRetransmit;
 
-    public RetransmissionFilter(Timer timer, TransmissionTimeout backoff, Predicate<REQ> doRetransmit) {
+    public RetransmissionFilter(Timer timer, RetransmissionBackOff backoff, Predicate<REQ> doRetransmit) {
         this.timer = requireNonNull(timer);
         this.backoff = requireNonNull(backoff);
         this.doRetransmit = requireNonNull(doRetransmit);
@@ -47,17 +47,17 @@ public class RetransmissionFilter<REQ, RES> implements Filter.SimpleFilter<REQ, 
             return promise;
         }
 
-        Runnable cancel = timer.schedule(Duration.ofMillis(backoff.getTimeout(1)), () -> next(promise, 2, () -> service.apply(request)));
+        Runnable cancel = timer.schedule(backoff.next(1), () -> next(promise, 2, () -> service.apply(request)));
         promise.whenComplete((__, ex) -> cancel.run());
 
         return promise;
     }
 
     private void next(CompletableFuture<RES> promise, int attempt, Supplier<CompletableFuture<RES>> retryFunc) {
-        long timeoutMs = backoff.getTimeout(attempt);
-        if (timeoutMs > 0) {
+        Duration delay = backoff.next(attempt);
+        if (!delay.isZero()) {
             become(promise, retryFunc.get());
-            Runnable cancel = timer.schedule(Duration.ofMillis(timeoutMs), () -> next(promise, attempt + 1, retryFunc));
+            Runnable cancel = timer.schedule(delay, () -> next(promise, attempt + 1, retryFunc));
 
             promise.whenComplete((__, err) -> cancel.run());
         } else {

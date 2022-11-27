@@ -17,6 +17,8 @@
 package protocolTests;
 
 import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.transmission.RetransmissionBackOff.ofFixed;
+import static java.time.Duration.ofMillis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,7 +31,6 @@ import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
-import com.mbed.coap.transmission.SingleTimeout;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
@@ -53,7 +54,7 @@ public class QueueRequestsTest {
                 .blockSize(BlockSize.S_32)
                 .noDuplicateCheck()
                 .queueMaxSize(2)
-                .retransmission(new SingleTimeout(500))
+                .retransmission(ofFixed(ofMillis(500)))
                 .buildClient(SERVER_ADDRESS);
 
         server = transport.client();
