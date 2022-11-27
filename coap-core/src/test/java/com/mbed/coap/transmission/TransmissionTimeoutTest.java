@@ -54,8 +54,6 @@ public class TransmissionTimeoutTest {
             assertTrue(coapTimeout.getTimeout(2) <= 75000);
         }
         assertTrue(coapTimeout.getTimeout(1246) < 0);
-        assertTrue(coapTimeout.getMulticastTimeout(1246) < 0);
-        assertTrue(coapTimeout.getMulticastTimeout(1) == CoapTimeout.MULTICAST_TIMEOUT);
 
         try {
             coapTimeout.getTimeout(-1);
@@ -100,9 +98,8 @@ public class TransmissionTimeoutTest {
     @Test()
     public void singleTimeoutTest() {
         final int TIMEOUT = 10000;
-        final int MULT_TIMEOUT = 20000;
 
-        SingleTimeout singleTimeout = new SingleTimeout(TIMEOUT, MULT_TIMEOUT);
+        SingleTimeout singleTimeout = new SingleTimeout(TIMEOUT);
 
         assertEquals(TIMEOUT, singleTimeout.getTimeout(1));
         assertEquals(-1, singleTimeout.getTimeout(2));
@@ -123,13 +120,5 @@ public class TransmissionTimeoutTest {
         } catch (IllegalArgumentException ex) {
             //expected
         }
-
-        assertEquals(-1, singleTimeout.getMulticastTimeout(-1));
-        assertEquals(-1, singleTimeout.getMulticastTimeout(0));
-        assertEquals(MULT_TIMEOUT, singleTimeout.getMulticastTimeout(1));
-        assertEquals(-1, singleTimeout.getMulticastTimeout(2));
-        assertEquals(-1, singleTimeout.getMulticastTimeout(3));
-        assertEquals(-1, singleTimeout.getMulticastTimeout(10));
-
     }
 }

@@ -26,7 +26,4 @@ public interface TransmissionTimeout {
      * @return timeout in milliseconds
      */
     long getTimeout(int attemptCounter);
-
-    long getMulticastTimeout(int attempt);
-
 }

@@ -19,15 +19,9 @@ package com.mbed.coap.transmission;
 public class SingleTimeout implements TransmissionTimeout {
 
     long timeout;
-    long multicastTimeout = 2000;
 
     public SingleTimeout(long timeoutMili) {
         this.timeout = timeoutMili;
-    }
-
-    public SingleTimeout(long timeoutMili, long multicastTimeout) {
-        this.timeout = timeoutMili;
-        this.multicastTimeout = multicastTimeout;
     }
 
     @Override
@@ -40,13 +34,4 @@ public class SingleTimeout implements TransmissionTimeout {
         }
         return timeout;
     }
-
-    @Override
-    public long getMulticastTimeout(int attempt) {
-        if (attempt == 1) {
-            return multicastTimeout;
-        }
-        return -1;
-    }
-
 }

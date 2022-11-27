@@ -141,10 +141,5 @@ class RetransmissionFilterTest {
                     return -1;
             }
         }
-
-        @Override
-        public long getMulticastTimeout(int attempt) {
-            return 0;
-        }
     }
 }

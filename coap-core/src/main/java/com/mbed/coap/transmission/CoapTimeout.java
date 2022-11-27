@@ -21,7 +21,6 @@ import java.util.Random;
 
 public class CoapTimeout implements TransmissionTimeout {
 
-    public static final int MULTICAST_TIMEOUT = 2000;
     private final Random rnd = new Random();
     private final long timeoutBase;
     private final int maxRetransmit;
@@ -49,14 +48,6 @@ public class CoapTimeout implements TransmissionTimeout {
         }
         float rndFactor = 1 + (CoapConstants.ACK_RANDOM_FACTOR - 1) * rnd.nextFloat();
         return (long) (timeoutBase * rndFactor * (1 << (attemptCounter - 1)));
-    }
-
-    @Override
-    public long getMulticastTimeout(int attempt) {
-        if (attempt == 1) {
-            return MULTICAST_TIMEOUT;
-        }
-        return -1;
     }
 
     @Override
