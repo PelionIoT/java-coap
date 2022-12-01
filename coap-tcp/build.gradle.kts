@@ -15,6 +15,6 @@ dependencies {
     testImplementation("ch.qos.logback:logback-classic:1.3.0")
     testImplementation("org.mockito:mockito-core:4.9.0")
     testImplementation("org.assertj:assertj-core:3.23.1")
-    testImplementation("nl.jqno.equalsverifier:equalsverifier:3.11.1")
+    testImplementation("nl.jqno.equalsverifier:equalsverifier:3.12")
     testImplementation("org.awaitility:awaitility:4.2.0")
 }

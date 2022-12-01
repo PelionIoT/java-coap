@@ -14,5 +14,5 @@ dependencies {
     testImplementation("ch.qos.logback:logback-classic:1.4.0")
     testImplementation("org.mockito:mockito-core:4.9.0")
     testImplementation("org.hamcrest:hamcrest-all:1.3")
-    testImplementation("nl.jqno.equalsverifier:equalsverifier:3.11.1")
+    testImplementation("nl.jqno.equalsverifier:equalsverifier:3.12")
 }
