@@ -10,7 +10,7 @@ dependencies {
     implementation(project(":lwm2m"))
     implementation(project(":mbedtls-transport"))
     implementation("org.slf4j:slf4j-api:2.0.5")
-    implementation("ch.qos.logback:logback-classic:1.3.0")
+    implementation("ch.qos.logback:logback-classic:1.3.5")
 
     testImplementation("org.mockito:mockito-core:4.9.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.1")
