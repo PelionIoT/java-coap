@@ -6,7 +6,7 @@ description = "coap-tcp"
 
 dependencies {
     api(project(":coap-core"))
-    api("org.slf4j:slf4j-api:2.0.4")
+    api("org.slf4j:slf4j-api:2.0.5")
 
     testImplementation(testFixtures(project(":coap-core")))
 
