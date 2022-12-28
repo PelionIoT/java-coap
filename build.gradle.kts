@@ -9,6 +9,8 @@ plugins {
     id("com.github.ben-manes.versions") version "0.44.0"
     id("pmd")
     id("com.github.spotbugs") version "5.0.13"
+    id("org.gradle.signing")
+    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
 
 allprojects {
@@ -26,6 +28,7 @@ allprojects {
         separator = ""
     }
     version = kewtVersioning.version
+    group = "io.github.open-coap"
 
     tasks.withType<DependencyUpdatesTask> {
         rejectVersionIf {
@@ -43,6 +46,7 @@ subprojects {
         plugin("com.github.spotbugs")
         plugin("jacoco")
         plugin("maven-publish")
+        plugin("org.gradle.signing")
     }
 
     val projSourceSets = extensions.getByName("sourceSets") as SourceSetContainer
@@ -72,6 +76,11 @@ subprojects {
             from(projSourceSets["main"].allSource)
         }
 
+        create<Jar>("javadocJar") {
+            archiveClassifier.set("javadoc")
+            from(javadoc)
+        }
+
         named("pmdTest").get().enabled = false
         named("spotbugsTest").get().enabled = false
     }
@@ -91,34 +100,59 @@ subprojects {
     }
 
     publishing {
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/" + System.getenv("GITHUB_REPOSITORY"))
-                credentials {
-                    username = System.getenv("GITHUB_ACTOR")
-                    password = System.getenv("GITHUB_TOKEN")
-                }
-            }
-        }
         publications {
-            create<MavenPublication>("gpr") {
-                groupId = "com.github.open-coap.java-coap"
-                artifact(tasks["sourceJar"])
+            create<MavenPublication>("OSSRH") {
                 from(components["java"])
+                groupId = "io.github.open-coap"
+                artifact(tasks["sourceJar"])
+                artifact(tasks["javadocJar"])
 
                 pom {
                     name.set("Java CoAP")
                     description.set("Java implementation of CoAP protocol")
                     url.set("https://github.com/open-coap/java-coap")
+                    scm {
+                        url.set("https://github.com/open-coap/java-coap")
+                    }
                     licenses {
                         license {
                             name.set("Apache License, Version 2.0")
                             url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
                         }
                     }
+                    developers {
+                        developer {
+                            name.set("Szymon Sasin")
+                            email.set("szymon.sasin@gmail.com")
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    signing {
+        val signingKeyId: String? by project
+        val signingKey: String? by project
+        val signingPassword: String? by project
+
+        if (signingKey != null) {
+            useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+            sign(publishing.publications["OSSRH"])
+        }
+    }
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            val ossrhUserName: String? by project
+            val ossrhPassword: String? by project
+
+            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+            username.set(ossrhUserName)
+            password.set(ossrhPassword)
         }
     }
 }

@@ -433,7 +433,6 @@ public class CoapPacket {
      * Writes serialized CoAP packet to given OutputStream.
      *
      * @param outputStream output stream
-     * @throws CoapException serialization exception
      */
     public void writeTo(OutputStream outputStream) {
         try {
@@ -486,7 +485,6 @@ public class CoapPacket {
      * Creates a CoAP packet and Returns array of bytes.
      *
      * @return serialized CoAP packet
-     * @throws CoapException serialization exception
      */
     public byte[] toByteArray() {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
