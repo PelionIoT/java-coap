@@ -1,7 +1,7 @@
 CoAP's library for JVM
 ======================
 
-[![](https://jitpack.io/v/open-coap/java-coap.svg)](https://jitpack.io/#open-coap/java-coap)
+![Maven Central](https://img.shields.io/maven-central/v/io.github.open-coap/coap-core)
 [![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)](LICENSE)
 ![Status:Production](https://img.shields.io/badge/Project%20status-Production-brightgreen.svg)
 [![codecov](https://codecov.io/gh/open-coap/java-coap/branch/master/graph/badge.svg?token=8XE69RTQIZ)](https://codecov.io/gh/open-coap/java-coap)
@@ -51,37 +51,22 @@ Using the Library
 
 Add to your `build.gradle`
 
-```groovy
-repositories {
-  ...
-  maven { url 'https://jitpack.io' }
-}
-
+```kotlin
 dependencies {
   ...
-  implementation 'com.github.open-coap.java-coap:coap-core:VERSION'
+  implementation("io.github.open-coap:coap-core:VERSION")
 }
 ```
 
 ### Maven
 
-Add repository to build file (or `pom.xml`):
-
-```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-```
-
 Add dependency into your `pom.xml`:
 
 ```xml
+
 <dependency>
-    <groupId>com.github.open-coap.java-coap</groupId>
-    <artifactId>coap-core</artifactId>
+  <groupId>io.github.open-coap</groupId>
+  <artifactId>coap-core</artifactId>
     <version>{VERSION}</version>
 </dependency>
 ```
