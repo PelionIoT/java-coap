@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,7 +48,7 @@ public class CoapTimeout implements TransmissionTimeout {
             throw new IllegalArgumentException("attempt can not be less than 0");
         }
         float rndFactor = 1 + (CoapConstants.ACK_RANDOM_FACTOR - 1) * rnd.nextFloat();
-        return (long) (timeoutBase * rndFactor * (1 << (attemptCounter - 1)));
+        return (long) (timeoutBase * rndFactor * (1L << (attemptCounter - 1)));
     }
 
     @Override
@@ -64,11 +65,7 @@ public class CoapTimeout implements TransmissionTimeout {
         if (maxRetransmit != that.maxRetransmit) {
             return false;
         }
-        if (timeoutBase != that.timeoutBase) {
-            return false;
-        }
-
-        return true;
+        return timeoutBase == that.timeoutBase;
     }
 
     @Override

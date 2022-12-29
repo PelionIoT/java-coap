@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +19,7 @@ package com.mbed.lwm2m;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class LWM2MObject {
 
@@ -25,12 +27,8 @@ public class LWM2MObject {
     private final List<LWM2MObjectInstance> instances;
 
     public LWM2MObject (LWM2MID id, List<LWM2MObjectInstance> instances) {
-        if (id != null) {
-            this.id = id;
-            this.instances = new ArrayList<>(instances);
-        } else {
-            throw new NullPointerException("LWM2MID");
-        }
+        this.id = Objects.requireNonNull(id);
+        this.instances = new ArrayList<>(instances);
     }
 
     public LWM2MObject (LWM2MID id, LWM2MObjectInstance... instances) {

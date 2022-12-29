@@ -15,7 +15,7 @@
  */
 package com.mbed.coap.cli.providers;
 
-import static com.mbed.coap.cli.CoapSchemes.*;
+import static com.mbed.coap.cli.CoapSchemes.readCAs;
 import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTransport;
@@ -97,7 +97,7 @@ public class MbedtlsProvider extends TransportProvider {
         }
 
         try (FileInputStream fileInputStream = new FileInputStream(fileSession)) {
-            byte[] sessionBytes = new byte[((int) fileSession.length())];
+            byte[] sessionBytes = new byte[(int) fileSession.length()];
             fileInputStream.read(sessionBytes);
             return sessionBytes;
         }

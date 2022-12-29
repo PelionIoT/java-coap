@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,11 @@
  */
 package com.mbed.coap.server;
 
-import static com.mbed.coap.transport.CoapTransport.*;
-import static com.mbed.coap.utils.Timer.*;
-import static com.mbed.coap.utils.Validations.*;
-import static java.util.Objects.*;
-import static java.util.concurrent.CompletableFuture.*;
+import static com.mbed.coap.transport.CoapTransport.logSent;
+import static com.mbed.coap.utils.Timer.toTimer;
+import static com.mbed.coap.utils.Validations.require;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
@@ -96,6 +96,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
         return route(routeBuilder.build());
     }
 
+    @SuppressWarnings("PMD.CompareObjectsWithEquals")
     protected boolean hasRoute() {
         return route != RouterService.NOT_FOUND_SERVICE;
     }
@@ -261,7 +262,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
 
             // OUTBOUND
             ExchangeFilter exchangeFilter = new ExchangeFilter();
-            RetransmissionFilter<CoapPacket, CoapPacket> retransmissionFilter = new RetransmissionFilter<>(timer, transmissionTimeout, CoapPacket::getMustAcknowledge);
+            RetransmissionFilter<CoapPacket, CoapPacket> retransmissionFilter = new RetransmissionFilter<>(timer, transmissionTimeout, CoapPacket::isConfirmable);
             PiggybackedExchangeFilter piggybackedExchangeFilter = new PiggybackedExchangeFilter();
 
             Service<CoapRequest, CoapResponse> outboundService = new ObserveRequestFilter(observationHandler)

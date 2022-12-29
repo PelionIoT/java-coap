@@ -15,9 +15,10 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static com.mbed.coap.transport.CoapTransport.*;
-import static com.mbed.coap.utils.FutureHelpers.*;
-import static java.util.Objects.*;
+import static com.mbed.coap.transport.CoapTransport.logReceived;
+import static com.mbed.coap.utils.FutureHelpers.logError;
+import static com.mbed.coap.utils.FutureHelpers.logErrorIgnoreCancelled;
+import static java.util.Objects.requireNonNull;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.SeparateResponse;
@@ -83,7 +84,7 @@ public final class CoapDispatcher {
 
     private boolean handleSeparateResponse(CoapPacket packet) {
         if (handleSeparateResponse.apply(packet.toSeparateResponse())) {
-            if (packet.getMustAcknowledge()) {
+            if (packet.isConfirmable()) {
                 sender.apply(packet.createResponse());
             }
             return true;

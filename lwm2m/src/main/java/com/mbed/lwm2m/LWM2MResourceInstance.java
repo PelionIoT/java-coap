@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +19,7 @@ package com.mbed.lwm2m;
 import com.mbed.lwm2m.utils.HexArray;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 public class LWM2MResourceInstance {
 
@@ -29,11 +31,7 @@ public class LWM2MResourceInstance {
     private LWM2MResourceType repType;
 
     protected LWM2MResourceInstance(LWM2MID id) {
-        if (id != null) {
-            this.id = id;
-        } else {
-            throw new NullPointerException("LWM2MID");
-        }
+        this.id = Objects.requireNonNull(id);
     }
 
     public LWM2MResourceInstance(LWM2MID id, byte[] value) {
@@ -80,8 +78,8 @@ public class LWM2MResourceInstance {
     public String getStringValue() {
         if (repType == LWM2MResourceType.INTEGER) {
             long longValue = 0L;
-            for (int i = 0; i < value.length; i++) {
-                longValue = (longValue << 8) + (value[i] & 0xFF);
+            for (byte b : value) {
+                longValue = (longValue << 8) + (b & 0xFF);
             }
             return String.valueOf(longValue);
         } else {

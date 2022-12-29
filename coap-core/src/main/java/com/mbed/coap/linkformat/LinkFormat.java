@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,12 @@
  */
 package com.mbed.coap.linkformat;
 
+import static com.mbed.coap.utils.Validations.require;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Implements CoRE Link Format defined in RFC 6690
@@ -72,10 +74,6 @@ public class LinkFormat implements Serializable {
                 }
             }
             parse(paramName, lf, val);
-        } catch (NumberFormatException ex) {
-            throw new ParseException(ex.getMessage(), 0);
-        } catch (IllegalArgumentException ex) {
-            throw new ParseException(ex.getMessage(), 0);
         } catch (ClassCastException ex) {
             throw new ParseException("Expected ptoken value (without quotes)", 0);
         } catch (NullPointerException ex) {     //NOPMD
@@ -86,36 +84,40 @@ public class LinkFormat implements Serializable {
     }
 
     private static void parse(String paramName, LinkFormat lf, CharSequence val) throws ParseException, NumberFormatException {
-        if (paramName.equals(LINK_MAXIMUM_SIZE)) {
+        if (LINK_MAXIMUM_SIZE.equals(paramName)) {
             lf.setMaximumSize(Integer.parseInt(val.toString()));
-        } else if (paramName.equals(LINK_CONTENT_TYPE)) {
+        } else if (LINK_CONTENT_TYPE.equals(paramName)) {
             lf.setContentType(Short.parseShort(val.toString().split(" ")[0]));
-        } else if (paramName.equals(LINK_HREFLANG)) {
+        } else if (LINK_HREFLANG.equals(paramName)) {
             lf.setHRefLang(((PToken) val).toString());
-        } else if (paramName.equals(LINK_RELATIONS)) {
-            lf.set(LINK_RELATIONS, ((String) val));
-        } else if (paramName.equals(LINK_TITLE)) {
-            lf.setTitle(((String) val).toString());
-        } else if (paramName.equals(LINK_ANCHOR)) {
-            lf.setAnchor(((String) val).toString());
-        } else if (paramName.equals(LINK_REV)) {
-            lf.set(LINK_REV, ((String) val).toString());
-        } else if (paramName.equals(LINK_RESOURCE_TYPE)) {
-            lf.set(LINK_RESOURCE_TYPE, ((String) val).toString());
-        } else if (paramName.equals(LINK_INTERFACE_DESCRIPTION)) {
-            lf.set(LINK_INTERFACE_DESCRIPTION, ((String) val).toString());
-        } else if (paramName.equals(LINK_OBSERVABLE)) {
-            if (val != null) {
-                throw new ParseException("Parameter 'obs' is a flag, not expected value", 0);
-            }
+        } else if (LINK_RELATIONS.equals(paramName)) {
+            lf.set(LINK_RELATIONS, (String) val);
+        } else if (LINK_TITLE.equals(paramName)) {
+            require(val instanceof String);
+            lf.setTitle(val.toString());
+        } else if (LINK_ANCHOR.equals(paramName)) {
+            require(val instanceof String);
+            lf.setAnchor(val.toString());
+        } else if (LINK_REV.equals(paramName)) {
+            require(val instanceof String);
+            lf.set(LINK_REV, val.toString());
+        } else if (LINK_RESOURCE_TYPE.equals(paramName)) {
+            require(val instanceof String);
+            lf.set(LINK_RESOURCE_TYPE, val.toString());
+        } else if (LINK_INTERFACE_DESCRIPTION.equals(paramName)) {
+            require(val instanceof String);
+            lf.set(LINK_INTERFACE_DESCRIPTION, val.toString());
+        } else if (LINK_OBSERVABLE.equals(paramName)) {
+            require(val == null);
             lf.setObservable(Boolean.TRUE);
-        } else if (paramName.equals(LINK_MEDIA)) {
+        } else if (LINK_MEDIA.equals(paramName)) {
             lf.setMedia(val.toString()); //expects quoted or ptoken
-        } else if (paramName.equals(LINK_TYPE)) {
+        } else if (LINK_TYPE.equals(paramName)) {
             lf.setType(val.toString()); //expects quoted or ptoken
-        } else if (paramName.equals(LINK_RESOURCE_INSTANCE)) {
-            lf.setResourceInstance(((String) val).toString());
-        } else if (paramName.equals(LINK_EXPORT)) {
+        } else if (LINK_RESOURCE_INSTANCE.equals(paramName)) {
+            require(val instanceof String);
+            lf.setResourceInstance(val.toString());
+        } else if (LINK_EXPORT.equals(paramName)) {
             if (val != null) {
                 throw new ParseException("Parameter 'exp' is a flag, not expected value", 0);
             }
@@ -359,11 +361,11 @@ public class LinkFormat implements Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        toString(sb);
+        buildToString(sb);
         return sb.toString();
     }
 
-    void toString(StringBuilder sb) {
+    void buildToString(StringBuilder sb) {
         sb.append('<').append(uri).append('>');
         for (Map.Entry<String, Object> entry : params.entrySet()) {
             Object val = entry.getValue();
@@ -372,11 +374,11 @@ public class LinkFormat implements Serializable {
             }
             sb.append(';').append(entry.getKey());
             if (val instanceof Integer) {
-                sb.append('=').append(val.toString());
+                sb.append('=').append(val);
             } else if (val instanceof PToken) {
                 sb.append('=').append(val);
             } else if (!(val instanceof Boolean)) {
-                sb.append("=\"").append(val.toString()).append('\"');
+                sb.append("=\"").append(val).append('\"');
             }
         }
     }
@@ -565,12 +567,9 @@ public class LinkFormat implements Serializable {
             return false;
         }
         final LinkFormat other = (LinkFormat) obj;
-        if ((this.uri == null) ? (other.uri != null) : !this.uri.equals(other.uri)) {
+        if (!Objects.equals(this.uri, other.uri)) {
             return false;
         }
-        if (this.params != other.params && (this.params == null || !this.params.equals(other.params))) {
-            return false;
-        }
-        return true;
+        return this.params == other.params || this.params != null && this.params.equals(other.params);
     }
 }

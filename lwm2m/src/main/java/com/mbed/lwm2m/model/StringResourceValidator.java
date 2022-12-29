@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,8 +44,8 @@ import java.util.Set;
      
      private static class StringLengthValidator extends StringValidator {
 
-        private int lengthMin;
-        private int lengthMax;
+        private final int lengthMin;
+        private final int lengthMax;
          
         public StringLengthValidator (String range) {
             String[] length = range.split(",");
@@ -56,6 +57,9 @@ import java.util.Set;
             } else if (length.length > 1) {
                 lengthMin = Integer.parseInt(length[0]);
                 lengthMax = Integer.parseInt(length[1]);
+            } else {
+                lengthMin = 0;
+                lengthMax = 0;
             }
         } 
 

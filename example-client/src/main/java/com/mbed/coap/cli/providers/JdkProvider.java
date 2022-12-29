@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
  */
 package com.mbed.coap.cli.providers;
 
-import static com.mbed.coap.cli.CoapSchemes.*;
+import static com.mbed.coap.cli.CoapSchemes.secret;
 import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTransport;
@@ -37,12 +37,14 @@ public class JdkProvider extends TransportProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdkProvider.class);
 
+    @Override
     public CoapTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException {
         SSLContext sslContext = sslContextFromKeystore(ks);
 
         return new SSLSocketClientTransport(destAdr, sslContext.getSocketFactory(), coapSerializer, true);
     }
 
+    @Override
     public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) {
         throw new IllegalArgumentException("DTLS not supported by Jdk secure provider");
     }

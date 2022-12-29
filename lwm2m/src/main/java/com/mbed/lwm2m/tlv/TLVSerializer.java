@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +16,14 @@
  */
 package com.mbed.lwm2m.tlv;
 
-import static com.mbed.lwm2m.tlv.TLV.*;
+import static com.mbed.lwm2m.tlv.TLV.ID16;
+import static com.mbed.lwm2m.tlv.TLV.LENGTH16;
+import static com.mbed.lwm2m.tlv.TLV.LENGTH24;
+import static com.mbed.lwm2m.tlv.TLV.LENGTH8;
+import static com.mbed.lwm2m.tlv.TLV.TYPE_MULTIPLE_RESOURCE;
+import static com.mbed.lwm2m.tlv.TLV.TYPE_OBJECT_INSTANCE;
+import static com.mbed.lwm2m.tlv.TLV.TYPE_RESOURCE;
+import static com.mbed.lwm2m.tlv.TLV.TYPE_RESOURCE_INSTANCE;
 import com.mbed.lwm2m.LWM2MObjectInstance;
 import com.mbed.lwm2m.LWM2MResource;
 import com.mbed.lwm2m.LWM2MResourceInstance;
@@ -170,10 +178,10 @@ public class TLVSerializer {
         return serializeTILV(TYPE_RESOURCE_INSTANCE, id, resource.getValue(), stream);
     }
     
-    private static ByteArrayOutputStream serializeTILV (byte type, int id, byte[] value, ByteArrayOutputStream stream) {
+    private static ByteArrayOutputStream serializeTILV(byte givenType, int id, byte[] value, ByteArrayOutputStream stream) {
         int length = value.length;
 
-        type += id < 256 ? 0 : ID16;
+        int type = givenType + (id < 256 ? 0 : ID16);
         type += length < 8 ? length : 
                 length < 256 ? LENGTH8 : 
                 length < 65536 ? LENGTH16 : LENGTH24;

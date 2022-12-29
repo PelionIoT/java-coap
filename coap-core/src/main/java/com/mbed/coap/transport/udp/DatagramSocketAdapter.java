@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +36,7 @@ public class DatagramSocketAdapter extends DatagramSocket implements BlockingSoc
         return (InetSocketAddress) getLocalSocketAddress();
     }
 
-    private final void initialize() throws SocketException {
+    private void initialize() throws SocketException {
         setSoTimeout(200);
     }
 

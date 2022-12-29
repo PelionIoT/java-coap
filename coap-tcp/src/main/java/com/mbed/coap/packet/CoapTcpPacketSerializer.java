@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,9 @@
  */
 package com.mbed.coap.packet;
 
-import static com.mbed.coap.packet.PacketUtils.*;
-import static com.mbed.coap.utils.Validations.*;
+import static com.mbed.coap.packet.PacketUtils.read16;
+import static com.mbed.coap.packet.PacketUtils.read8;
+import static com.mbed.coap.utils.Validations.assume;
 import com.mbed.coap.exception.CoapException;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -71,7 +72,7 @@ public final class CoapTcpPacketSerializer {
 
         HeaderOptions options;
         if (pkt.getCode() != null && pkt.getCode().isSignaling()) {
-            options = new SignallingHeaderOptions();
+            options = new SignallingHeaderOptions(pkt.getCode());
         } else {
             options = new HeaderOptions();
         }

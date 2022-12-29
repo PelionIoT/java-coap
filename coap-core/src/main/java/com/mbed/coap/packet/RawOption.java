@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,12 +63,12 @@ final class RawOption implements Comparable<RawOption> {
     }
 
     Opaque getFirstValue() {
-        return (optValues.length > 0) ? optValues[0] : null;
+        return optValues.length > 0 ? optValues[0] : null;
     }
 
     @Override
     public int compareTo(RawOption o) {
-        return (Integer.compare(optNumber, o.optNumber));
+        return Integer.compare(optNumber, o.optNumber);
     }
 
     @Override
@@ -91,9 +91,6 @@ final class RawOption implements Comparable<RawOption> {
         if (this.optNumber != other.optNumber) {
             return false;
         }
-        if (!Arrays.equals(this.optValues, other.optValues)) {
-            return false;
-        }
-        return true;
+        return Arrays.equals(this.optValues, other.optValues);
     }
 }

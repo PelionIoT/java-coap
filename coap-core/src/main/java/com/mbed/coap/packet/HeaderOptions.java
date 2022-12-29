@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,8 +81,8 @@ public class HeaderOptions extends BasicHeaderOptions {
     }
 
     @Override
-    public void toString(StringBuilder sb, Code code) {
-        super.toString(sb, code);
+    public void buildToString(StringBuilder sb) {
+        super.buildToString(sb);
 
         if (block1Req != null) {
             sb.append(" block1:").append(block1Req);
@@ -174,13 +174,13 @@ public class HeaderOptions extends BasicHeaderOptions {
 
         HeaderOptions that = (HeaderOptions) o;
 
-        if (observe != null ? !observe.equals(that.observe) : that.observe != null) {
+        if (!Objects.equals(observe, that.observe)) {
             return false;
         }
-        if (block1Req != null ? !block1Req.equals(that.block1Req) : that.block1Req != null) {
+        if (!Objects.equals(block1Req, that.block1Req)) {
             return false;
         }
-        if (block2Res != null ? !block2Res.equals(that.block2Res) : that.block2Res != null) {
+        if (!Objects.equals(block2Res, that.block2Res)) {
             return false;
         }
         return Objects.equals(size2Res, that.size2Res);

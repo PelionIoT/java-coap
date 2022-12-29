@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static com.mbed.coap.transport.CoapTransport.*;
-import static com.mbed.coap.utils.FutureHelpers.*;
+import static com.mbed.coap.transport.CoapTransport.logReceived;
+import static com.mbed.coap.utils.FutureHelpers.logError;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -124,7 +124,7 @@ public class CoapTcpDispatcher implements CoapTcpListener {
         packet.setMessageType(null);
         packet.setCode(Code.C701_CSM);
 
-        SignallingHeaderOptions headers = new SignallingHeaderOptions();
+        SignallingHeaderOptions headers = new SignallingHeaderOptions(packet.getCode());
         headers.putSignallingOptions(
                 SignalingOptions.capabilities(ownCapability.getMaxMessageSizeInt(), ownCapability.isBlockTransferEnabled())
         );

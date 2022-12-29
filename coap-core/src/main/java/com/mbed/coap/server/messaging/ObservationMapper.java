@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static com.mbed.coap.packet.MessageType.*;
+import static com.mbed.coap.packet.MessageType.Acknowledgement;
+import static com.mbed.coap.packet.MessageType.Reset;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.SeparateResponse;
 import com.mbed.coap.utils.Filter;
@@ -29,7 +30,7 @@ public class ObservationMapper implements Filter<CoapPacket, CoapPacket, Separat
         SeparateResponse obs = obsPacket.toSeparateResponse();
 
         return service.apply(obs).thenApply(ack -> {
-            if (obsPacket.getMustAcknowledge()) {
+            if (obsPacket.isConfirmable()) {
                 CoapPacket coapAck = new CoapPacket(obsPacket.getRemoteAddress());
                 coapAck.setMessageType(ack ? Acknowledgement : Reset);
                 coapAck.setMessageId(obsPacket.getMessageId());

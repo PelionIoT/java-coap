@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,13 +18,14 @@ package com.mbed.coap.linkformat;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
 
 
 public class PToken implements CharSequence, Serializable {
 
-    private static int validRangeStart = 33; //'!'
-    private static int validRangeStop = 126; //'~'
-    private static char[] nonValidInRange = new char[]{',', ';', '\\'};
+    private static final int validRangeStart = 33; //'!'
+    private static final int validRangeStop = 126; //'~'
+    private static final char[] nonValidInRange = {',', ';', '\\'};
     private final String val;
 
     public PToken(String val) throws IllegalArgumentException {
@@ -79,10 +81,7 @@ public class PToken implements CharSequence, Serializable {
             return false;
         }
         final PToken other = (PToken) obj;
-        if ((this.val == null) ? (other.val != null) : !this.val.equals(other.val)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.val, other.val);
     }
 
 }

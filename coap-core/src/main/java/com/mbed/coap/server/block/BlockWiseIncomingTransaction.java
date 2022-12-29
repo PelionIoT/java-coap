@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -78,7 +78,7 @@ class BlockWiseIncomingTransaction {
         int requestPayloadLength = request.getPayload().size();
 
         if (isTooBigPayloadSize(requestPayloadLength + payload.size())) {
-            LOGGER.warn("Assembled block-transfer payload is too large: " + request.toString());
+            LOGGER.warn("Assembled block-transfer payload is too large: " + request);
             throw new CoapRequestEntityTooLarge(maxIncomingBlockTransferSize, "");
         }
     }
@@ -112,7 +112,7 @@ class BlockWiseIncomingTransaction {
         }
 
         if (request.options().getSize1() != null && isTooBigPayloadSize(request.options().getSize1())) {
-            LOGGER.warn("Received request with too large size1 option: " + request.toString());
+            LOGGER.warn("Received request with too large size1 option: " + request);
             throw new CoapRequestEntityTooLarge(maxIncomingBlockTransferSize, "Entity too large");
         }
     }

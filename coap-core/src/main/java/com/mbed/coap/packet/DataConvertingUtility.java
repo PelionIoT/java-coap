@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,8 +53,8 @@ public final class DataConvertingUtility {
             return new String[]{val};
         }
 
-        list.add(val.substring(offset, val.length()));
-        return list.toArray(new String[list.size()]);
+        list.add(val.substring(offset));
+        return list.toArray(new String[0]);
     }
 
     public static Map<String, String> parseUriQuery(String uriQuery) throws ParseException {

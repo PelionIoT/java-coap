@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,8 +27,8 @@ class IntegerResourceValidator {
         public boolean isValid(byte[] value) {
             if (value != null && value.length > 0 && value.length < 5) {
                 int intValue = 0;
-                for (int i=0; i<value.length; i++) {
-                    intValue = (intValue << 8) + (value[i] & 0xFF);
+                for (byte b : value) {
+                    intValue = (intValue << 8) + (b & 0xFF);
                 }
                 return isValid(intValue);
             }

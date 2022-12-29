@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -511,11 +511,11 @@ public class CoapPacket {
     }
 
     /**
-     * Indicates if this CoAP packet must be acknowledged.
+     * Indicates if this CoAP packet is Confirmable and must be acknowledged.
      *
      * @return true if this message must be acknowledged
      */
-    public boolean getMustAcknowledge() {
+    public boolean isConfirmable() {
         return this.messageType == MessageType.Confirmable;
     }
 
@@ -543,7 +543,7 @@ public class CoapPacket {
             sb.append(getMessageType().toString());
         }
         if (method != null) {
-            sb.append(' ').append(method.toString());
+            sb.append(' ').append(method);
         }
         if (code != null) {
             if (sb.length() > 0) {
@@ -558,7 +558,7 @@ public class CoapPacket {
             sb.append(" Token:0x").append(this.token);
         }
 
-        options.toString(sb, code);
+        options.buildToString(sb);
 
         payloadToString(printFullPayload, printPayloadOnlyAsHex, doNotPrintPayload, sb);
 
@@ -582,7 +582,7 @@ public class CoapPacket {
             if (decodedPayload.length() < 46 || printFullPayload) {
                 sb.append(" pl:'").append(decodedPayload).append('\'');
             } else {
-                sb.append(" pl(").append(payload.size()).append("):'").append(decodedPayload.substring(0, 44)).append("..'");
+                sb.append(" pl(").append(payload.size()).append("):'").append(decodedPayload, 0, 44).append("..'");
             }
         } else {
             if (!printFullPayload) {
@@ -684,10 +684,7 @@ public class CoapPacket {
         if (!Objects.equals(this.token, other.token)) {
             return false;
         }
-        if (!Objects.equals(this.transportContext, other.transportContext)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.transportContext, other.transportContext);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,17 +29,17 @@ import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 
-public abstract class CoapClientBuilder<T extends CoapServerBuilder<?>> {
+public class CoapClientBuilder<T extends CoapServerBuilder<?>> {
 
     protected InetSocketAddress destination;
     protected final T coapServerBuilder;
     protected boolean isTransportDefined;
 
-    CoapClientBuilder(T builder) {
+    private CoapClientBuilder(T builder) {
         this.coapServerBuilder = builder;
     }
 
-    CoapClientBuilder(T builder, int localPort) {
+    private CoapClientBuilder(T builder, int localPort) {
         this(builder);
         setTarget(localPort);
     }

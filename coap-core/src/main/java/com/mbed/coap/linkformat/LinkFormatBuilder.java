@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@ public class LinkFormatBuilder {
     public static String toString(Collection<LinkFormat> links) {
         StringBuilder sb = new StringBuilder();
         for (LinkFormat lf : links) {
-            lf.toString(sb);
+            lf.buildToString(sb);
             sb.append(',');
         }
         //remove last unnecessary comma
@@ -49,7 +49,7 @@ public class LinkFormatBuilder {
      */
     public static LinkFormat[] parseList(String linkValueList) throws ParseException {
         List<LinkFormat> linkFormats = parseLinkAsList(linkValueList);
-        return linkFormats.toArray(new LinkFormat[linkFormats.size()]);
+        return linkFormats.toArray(new LinkFormat[0]);
     }
 
     /**

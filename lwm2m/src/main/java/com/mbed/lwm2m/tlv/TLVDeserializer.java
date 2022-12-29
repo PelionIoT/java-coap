@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +16,14 @@
  */
 package com.mbed.lwm2m.tlv;
 
-import static com.mbed.lwm2m.tlv.TLV.*;
+import static com.mbed.lwm2m.tlv.TLV.ID16;
+import static com.mbed.lwm2m.tlv.TLV.LENGTH16;
+import static com.mbed.lwm2m.tlv.TLV.LENGTH24;
+import static com.mbed.lwm2m.tlv.TLV.LENGTH8;
+import static com.mbed.lwm2m.tlv.TLV.TYPE_MULTIPLE_RESOURCE;
+import static com.mbed.lwm2m.tlv.TLV.TYPE_OBJECT_INSTANCE;
+import static com.mbed.lwm2m.tlv.TLV.TYPE_RESOURCE;
+import static com.mbed.lwm2m.tlv.TLV.TYPE_RESOURCE_INSTANCE;
 import com.mbed.lwm2m.LWM2MID;
 import com.mbed.lwm2m.LWM2MObjectInstance;
 import com.mbed.lwm2m.LWM2MResource;
@@ -163,23 +171,23 @@ public class TLVDeserializer {
      *         or it encodes a structure other than object instances.
      * @see #deserializeResources(byte[])
      */
-    public static List<LWM2MResource> deserializeResources (byte[] tlv) {
+    public static List<LWM2MResource> deserializeResources(byte[] tlv) {
         if (!isResource(tlv) && !isMultipleResource(tlv)) {
             throw new IllegalArgumentException("Resource or multiple resource not found.");
         }
 
-        return deserializeResources (tlv, 0, new ArrayList<LWM2MResource>() );
+        return deserializeResources(tlv, 0, new ArrayList<LWM2MResource>());
     }
 
-    private static List<LWM2MObjectInstance> deserializeObjectInstances(byte[] tlv, int offset, List<LWM2MObjectInstance> list) {
-        TypeIdLength til = TypeIdLength.createTypeIdLength(tlv, offset).deserialize();
-        offset = til.offset;
+    private static List<LWM2MObjectInstance> deserializeObjectInstances(byte[] tlv, int givenOffset, List<LWM2MObjectInstance> list) {
+        TypeIdLength til = TypeIdLength.createTypeIdLength(tlv, givenOffset).deserialize();
+        int offset = til.offset;
 
         if (til.type == TYPE_OBJECT_INSTANCE) {
             List<LWM2MResource> instances = new ArrayList<>();
             byte[] nested = Arrays.copyOfRange(tlv, offset, offset + til.length);
             deserializeResources(nested, 0, instances);
-            list.add (new LWM2MObjectInstance(LWM2MID.from(til.id), instances));
+            list.add(new LWM2MObjectInstance(LWM2MID.from(til.id), instances));
         } else {
             throw new IllegalArgumentException("Object instance is expected at index:" + offset);
         }
@@ -189,18 +197,18 @@ public class TLVDeserializer {
         return offset < tlv.length ? deserializeObjectInstances(tlv, offset, list) : list;
     }
 
-    private static List<LWM2MResource> deserializeResources (byte[] tlv, int offset, List<LWM2MResource> list) {
-        TypeIdLength til = TypeIdLength.createTypeIdLength(tlv, offset).deserialize();
-        offset = til.offset;
+    private static List<LWM2MResource> deserializeResources(byte[] tlv, int givenOffset, List<LWM2MResource> list) {
+        TypeIdLength til = TypeIdLength.createTypeIdLength(tlv, givenOffset).deserialize();
+        int offset = til.offset;
 
         if (til.type == TYPE_RESOURCE || til.type == TYPE_RESOURCE_INSTANCE) {
             byte[] value = til.length > 0 ? Arrays.copyOfRange(tlv, offset, offset + til.length) : new byte[0];
-            list.add (new LWM2MResource(LWM2MID.from(til.id), value));
+            list.add(new LWM2MResource(LWM2MID.from(til.id), value));
         } else if (til.type == TYPE_MULTIPLE_RESOURCE) {
             List<LWM2MResourceInstance> instances = new ArrayList<>();
             byte[] nested = Arrays.copyOfRange(tlv, offset, offset + til.length);
-            deserializeResourceInstances (nested, 0, instances);
-            list.add (new LWM2MResource(LWM2MID.from(til.id), instances));
+            deserializeResourceInstances(nested, 0, instances);
+            list.add(new LWM2MResource(LWM2MID.from(til.id), instances));
         } else {
             throw new IllegalArgumentException("Resource is expected at index:" + offset);
         }
@@ -210,13 +218,13 @@ public class TLVDeserializer {
         return offset < tlv.length ? deserializeResources(tlv, offset, list) : list;
     }
 
-    private static List<LWM2MResourceInstance> deserializeResourceInstances (byte[] tlv, int offset, List<LWM2MResourceInstance> list) {
-        TypeIdLength til = TypeIdLength.createTypeIdLength(tlv, offset).deserialize();
-        offset = til.offset;
+    private static List<LWM2MResourceInstance> deserializeResourceInstances(byte[] tlv, int givenOffset, List<LWM2MResourceInstance> list) {
+        TypeIdLength til = TypeIdLength.createTypeIdLength(tlv, givenOffset).deserialize();
+        int offset = til.offset;
 
         if (til.type == TYPE_RESOURCE_INSTANCE) {
             byte[] value = til.length > 0 ? Arrays.copyOfRange(tlv, offset, offset + til.length) : new byte[0];
-            list.add (new LWM2MResourceInstance(LWM2MID.from(til.id), value));
+            list.add(new LWM2MResourceInstance(LWM2MID.from(til.id), value));
         } else {
             throw new IllegalArgumentException("Resource instance is expected at index:" + offset);
         }

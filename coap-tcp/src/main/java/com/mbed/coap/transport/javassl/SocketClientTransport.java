@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,8 @@
  */
 package com.mbed.coap.transport.javassl;
 
-import static java.util.concurrent.CompletableFuture.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
@@ -104,11 +105,10 @@ public class SocketClientTransport extends BlockingCoapTransport implements Coap
 
             if (!socket.isClosed()) {
                 try {
-                    final CoapPacket coapPacket = serializer.deserialize(inputStream, ((InetSocketAddress) socket.getRemoteSocketAddress()));
-                    return coapPacket;
+                    return serializer.deserialize(inputStream, (InetSocketAddress) socket.getRemoteSocketAddress());
                 } catch (CoapException e) {
                     if (e.getCause() != null && e.getCause() instanceof IOException) {
-                        throw ((IOException) e.getCause());
+                        throw (IOException) e.getCause();
                     }
                     LOGGER.warn("Closing socket connection, due to parsing error: " + e.getMessage());
                     socket.close();
@@ -150,7 +150,7 @@ public class SocketClientTransport extends BlockingCoapTransport implements Coap
 
     @Override
     public InetSocketAddress getLocalSocketAddress() {
-        return ((InetSocketAddress) socket.getLocalSocketAddress());
+        return (InetSocketAddress) socket.getLocalSocketAddress();
     }
 
     @Override

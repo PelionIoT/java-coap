@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ package com.mbed.coap.server.messaging;
 
 import com.mbed.coap.packet.CoapPacket;
 import java.net.InetSocketAddress;
+import java.util.Objects;
 
 class PiggybackedCorrelation {
 
@@ -49,10 +50,7 @@ class PiggybackedCorrelation {
         if (this.messageId != other.messageId) {
             return false;
         }
-        if (this.address != other.address && (this.address == null || !this.address.equals(other.address))) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.address, other.address);
     }
 
     @Override

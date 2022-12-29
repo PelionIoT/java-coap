@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.mbed.coap.packet;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 
@@ -24,7 +24,7 @@ public class CoapPacketWithSignToStringTest {
     @Test
     public void toString_withCapabilities() {
         CoapPacket cp = new CoapPacket(Code.C701_CSM, null, null);
-        SignallingHeaderOptions headers = new SignallingHeaderOptions();
+        SignallingHeaderOptions headers = new SignallingHeaderOptions(cp.getCode());
         cp.setHeaderOptions(headers);
 
         headers.putSignallingOptions(SignalingOptions.capabilities(2000, true));

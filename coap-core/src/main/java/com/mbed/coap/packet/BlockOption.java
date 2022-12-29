@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -103,9 +103,10 @@ public final class BlockOption implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.blockNr);
-        sb.append('|').append(more ? "more" : "last");
+        StringBuilder sb = new StringBuilder()
+                .append(this.blockNr)
+                .append('|')
+                .append(more ? "more" : "last");
         if (isBert()) {
             sb.append("|BERT");
         } else {

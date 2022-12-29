@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,8 @@
  */
 package com.mbed.coap.packet;
 
-import static com.mbed.coap.packet.PacketUtils.*;
+import static com.mbed.coap.packet.PacketUtils.read16;
+import static com.mbed.coap.packet.PacketUtils.read8;
 import com.mbed.coap.exception.CoapMessageFormatException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Implements CoAP basic header options.
@@ -74,7 +76,7 @@ public class BasicHeaderOptions {
     protected boolean parseOption(int type, Opaque data) {
         switch (type) {
             case CONTENT_FORMAT:
-                setContentFormat(((short) data.toLong()));
+                setContentFormat((short) data.toLong());
                 break;
             case MAX_AGE:
                 setMaxAge(data.toLong());
@@ -258,11 +260,11 @@ public class BasicHeaderOptions {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        toString(sb, null);
+        buildToString(sb);
         return sb.toString();
     }
 
-    public void toString(StringBuilder sb, Code code) {
+    public void buildToString(StringBuilder sb) {
         if (uriPath != null) {
             sb.append(" URI:").append(uriPath);
         }
@@ -399,8 +401,8 @@ public class BasicHeaderOptions {
 
     public void setEtag(Opaque[] etag) {
         //test etag
-        for (int i = 0; i < etag.length; i++) {
-            if (etag[i].size() == 0 || etag[i].size() > 8) {
+        for (Opaque opaque : etag) {
+            if (opaque.size() == 0 || opaque.size() > 8) {
                 throw new IllegalArgumentException("Wrong ETAG option value, should be in range 1-8");
             }
         }
@@ -488,7 +490,7 @@ public class BasicHeaderOptions {
     }
 
     public void setAccept(short accept) {
-        setAccept(((int) accept));
+        setAccept((int) accept);
     }
 
     public void setAccept(Integer accept) {
@@ -631,8 +633,9 @@ public class BasicHeaderOptions {
      * found or zero if no payload present.
      * If no payload marker found but still data present - CoapMessageException is thrown.
      */
-    int deserialize(InputStream is, int availableInternal) throws IOException, CoapMessageFormatException {
+    int deserialize(InputStream is, int availableBytes) throws IOException, CoapMessageFormatException {
 
+        int availableInternal = availableBytes;
         int headerOptNum = 0;
         // olesmi:
         // if we have whole packet (UDP, DTLS) we should read till end of stream, expecting whole packet contained in stream
@@ -729,55 +732,52 @@ public class BasicHeaderOptions {
             return false;
         }
         final BasicHeaderOptions other = (BasicHeaderOptions) obj;
-        if (this.contentFormat != other.contentFormat && (this.contentFormat == null || !this.contentFormat.equals(other.contentFormat))) {
+        if (!Objects.equals(this.contentFormat, other.contentFormat)) {
             return false;
         }
-        if (this.maxAge != other.maxAge && (this.maxAge == null || !this.maxAge.equals(other.maxAge))) {
+        if (!Objects.equals(this.maxAge, other.maxAge)) {
             return false;
         }
         if (!Arrays.deepEquals(this.etag, other.etag)) {
             return false;
         }
-        if ((this.uriHost == null) ? (other.uriHost != null) : !this.uriHost.equals(other.uriHost)) {
+        if (!Objects.equals(this.uriHost, other.uriHost)) {
             return false;
         }
-        if ((this.locationPath == null) ? (other.locationPath != null) : !this.locationPath.equals(other.locationPath)) {
+        if (!Objects.equals(this.locationPath, other.locationPath)) {
             return false;
         }
-        if ((this.locationQuery == null) ? (other.locationQuery != null) : !this.locationQuery.equals(other.locationQuery)) {
+        if (!Objects.equals(this.locationQuery, other.locationQuery)) {
             return false;
         }
-        if ((this.uriPath == null) ? (other.uriPath != null) : !this.uriPath.equals(other.uriPath)) {
+        if (!Objects.equals(this.uriPath, other.uriPath)) {
             return false;
         }
-        if ((this.uriQuery == null) ? (other.uriQuery != null) : !this.uriQuery.equals(other.uriQuery)) {
+        if (!Objects.equals(this.uriQuery, other.uriQuery)) {
             return false;
         }
-        if ((this.accept == null) ? (other.accept != null) : !this.accept.equals(other.accept)) {
+        if (!Objects.equals(this.accept, other.accept)) {
             return false;
         }
         if (!Arrays.deepEquals(this.ifMatch, other.ifMatch)) {
             return false;
         }
-        if (this.ifNonMatch != other.ifNonMatch && (this.ifNonMatch == null || !this.ifNonMatch.equals(other.ifNonMatch))) {
+        if (!Objects.equals(this.ifNonMatch, other.ifNonMatch)) {
             return false;
         }
-        if ((this.proxyUri == null) ? (other.proxyUri != null) : !this.proxyUri.equals(other.proxyUri)) {
+        if (!Objects.equals(this.proxyUri, other.proxyUri)) {
             return false;
         }
-        if ((this.uriPort == null) ? (other.uriPort != null) : !this.uriPort.equals(other.uriPort)) {
+        if (!Objects.equals(this.uriPort, other.uriPort)) {
             return false;
         }
-        if ((this.size1 == null) ? (other.size1 != null) : !this.size1.equals(other.size1)) {
+        if (!Objects.equals(this.size1, other.size1)) {
             return false;
         }
-        if ((this.proxyScheme == null) ? (other.proxyScheme != null) : !this.proxyScheme.equals(other.proxyScheme)) {
+        if (!Objects.equals(this.proxyScheme, other.proxyScheme)) {
             return false;
         }
-        if (this.unrecognizedOptions != other.unrecognizedOptions && (this.unrecognizedOptions == null || !this.unrecognizedOptions.equals(other.unrecognizedOptions))) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.unrecognizedOptions, other.unrecognizedOptions);
     }
 
 }

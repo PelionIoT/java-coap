@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -94,7 +95,7 @@ public class ObjectRegistry {
 
     public ObjectModel getObjectModel(String id) throws NotFoundException {
         if (id.charAt(0) == '/') {
-            id = id.substring(1);
+            return getObjectModel(id.substring(1));
         }
         
         ObjectModel result = objectMap.get(id);

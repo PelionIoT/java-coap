@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.mbed.coap.server;
 
-import static java.util.concurrent.CompletableFuture.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Method;
@@ -34,11 +34,11 @@ public class RouterService implements Service<CoapRequest, CoapResponse> {
     private final Map<RequestMatcher, Service<CoapRequest, CoapResponse>> handlers;
     private final List<Entry<RequestMatcher, Service<CoapRequest, CoapResponse>>> prefixedHandlers;
 
+    public final static Service<CoapRequest, CoapResponse> NOT_FOUND_SERVICE = request -> completedFuture(CoapResponse.notFound());
+
     public static RouteBuilder builder() {
         return new RouteBuilder();
     }
-
-    public final static Service<CoapRequest, CoapResponse> NOT_FOUND_SERVICE = request -> completedFuture(CoapResponse.notFound());
 
     RouterService(Map<RequestMatcher, Service<CoapRequest, CoapResponse>> handlers) {
 
@@ -107,15 +107,17 @@ public class RouterService implements Service<CoapRequest, CoapResponse> {
         private transient final boolean isPrefixed;
 
         RequestMatcher(Method method, String uriPath) {
-            if (uriPath == null) {
-                uriPath = "/";
-            }
             this.method = method;
-            this.isPrefixed = uriPath.endsWith("*");
-            if (isPrefixed) {
-                this.uriPath = uriPath.substring(0, uriPath.length() - 1);
+            if (uriPath == null) {
+                this.isPrefixed = false;
+                this.uriPath = "/";
             } else {
-                this.uriPath = uriPath;
+                this.isPrefixed = uriPath.endsWith("*");
+                if (isPrefixed) {
+                    this.uriPath = uriPath.substring(0, uriPath.length() - 1);
+                } else {
+                    this.uriPath = uriPath;
+                }
             }
         }
 
@@ -124,7 +126,7 @@ public class RouterService implements Service<CoapRequest, CoapResponse> {
         }
 
         public boolean matches(RequestMatcher other) {
-            return (other.method == method && other.uriPath.startsWith(uriPath));
+            return other.method == method && other.uriPath.startsWith(uriPath);
         }
 
         @Override

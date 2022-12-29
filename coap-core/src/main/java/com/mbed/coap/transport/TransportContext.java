@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 package com.mbed.coap.transport;
 
 import com.mbed.coap.packet.MessageType;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -39,9 +40,7 @@ public interface TransportContext {
     }
 
     default TransportContext add(Object key, Supplier func) {
-        if (key == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(key);
 
         return k -> {
             if (key.equals(k)) {

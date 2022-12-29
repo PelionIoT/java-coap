@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,8 @@
  */
 package com.mbed.coap.server;
 
-import static com.mbed.coap.transport.CoapTransport.*;
-import static com.mbed.coap.utils.Validations.*;
+import static com.mbed.coap.transport.CoapTransport.logSent;
+import static com.mbed.coap.utils.Validations.require;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -39,11 +39,11 @@ import com.mbed.coap.utils.Service;
 import java.util.function.Function;
 
 public class CoapServerBuilderForTcp extends CoapServerBuilder<CoapServerBuilderForTcp> {
+    protected CapabilitiesStorage csmStorage;
+
     public static CoapServerBuilderForTcp newBuilderForTcp() {
         return CoapServerBuilderForTcp.create();
     }
-
-    protected CapabilitiesStorage csmStorage;
 
     private CoapServerBuilderForTcp() {
         csmStorage = new CapabilitiesStorageImpl();

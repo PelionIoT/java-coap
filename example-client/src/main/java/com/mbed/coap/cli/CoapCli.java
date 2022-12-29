@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+@SuppressWarnings({"PMD.SystemPrintln", "PMD.AvoidPrintStackTrace"})
 public class CoapCli {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapCli.class);
@@ -83,20 +84,22 @@ public class CoapCli {
             Pair<String, Opaque> psk = null;
             int i;
             for (i = 0; i < args.length; i++) {
-                if (args[i].equals("-k")) {
-                    keystoreFile = args[++i];
-                } else if (args[i].equals("-p")) {
-                    proxyUri = args[++i];
-                } else if (args[i].equals("-b")) {
-                    blockSize = BlockSize.valueOf("S_" + args[++i]);
-                } else if (args[i].equals("-s")) {
-                    transportProvider = providers.transportProviderFor(args[++i]);
-                } else if (args[i].equals("--cipher")) {
-                    cipherSuite = args[++i];
-                } else if (args[i].equals("--psk")) {
-                    psk = Pair.split(args[++i], ':').mapValue(Opaque::decodeHex);
-                } else if (args[i].charAt(0) == '-') {
+                if ('-' == args[i].charAt(0)) {
                     throw new IllegalArgumentException("Unrecognised flag: " + args[i]);
+                }
+
+                if ("-k".equals(args[i])) {
+                    keystoreFile = args[++i];
+                } else if ("-p".equals(args[i])) {
+                    proxyUri = args[++i];
+                } else if ("-b".equals(args[i])) {
+                    blockSize = BlockSize.valueOf("S_" + args[++i]);
+                } else if ("-s".equals(args[i])) {
+                    transportProvider = providers.transportProviderFor(args[++i]);
+                } else if ("--cipher".equals(args[i])) {
+                    cipherSuite = args[++i];
+                } else if ("--psk".equals(args[i])) {
+                    psk = Pair.split(args[++i], ':').mapValue(Opaque::decodeHex);
                 } else {
                     break;
                 }
@@ -105,11 +108,11 @@ public class CoapCli {
             String method = args[i++];
             URI uri = URI.create(args[i++]);
             if (transportProvider == null) {
-                transportProvider = ("coaps".equals(uri.getScheme())) ? new MbedtlsProvider() : providers.defaultProvider();
+                transportProvider = "coaps".equals(uri.getScheme()) ? new MbedtlsProvider() : providers.defaultProvider();
             }
             transportProvider.setCipherSuite(cipherSuite);
 
-            Opaque payload = (args.length > i) ? Opaque.of(args[i]) : Opaque.EMPTY;
+            Opaque payload = args.length > i ? Opaque.of(args[i]) : Opaque.EMPTY;
 
             new CoapCli(providers, transportProvider, keystoreFile, psk, blockSize, proxyUri, method, uri, payload);
         } catch (IllegalArgumentException ex) {
@@ -117,7 +120,6 @@ public class CoapCli {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        System.exit(0);
     }
 
     public CoapCli(CoapSchemes providers, TransportProvider transportProvider, String keystoreFile, Pair<String, Opaque> psk, BlockSize blockSize, String proxyUri, String method, URI uri, Opaque payload) throws IOException, InterruptedException, CoapException {

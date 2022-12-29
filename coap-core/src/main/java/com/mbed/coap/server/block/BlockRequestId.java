@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 package com.mbed.coap.server.block;
 
 import java.net.InetSocketAddress;
+import java.util.Objects;
 
 class BlockRequestId {
 
@@ -45,13 +46,10 @@ class BlockRequestId {
             return false;
         }
         final BlockRequestId other = (BlockRequestId) obj;
-        if ((this.uriPath == null) ? (other.uriPath != null) : !this.uriPath.equals(other.uriPath)) {
+        if (!Objects.equals(this.uriPath, other.uriPath)) {
             return false;
         }
-        if (this.sourceAddress != other.sourceAddress && (this.sourceAddress == null || !this.sourceAddress.equals(other.sourceAddress))) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.sourceAddress, other.sourceAddress);
     }
 
 }

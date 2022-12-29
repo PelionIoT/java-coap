@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,17 @@
  */
 package com.mbed.coap.packet;
 
-import static com.mbed.coap.utils.Bytes.*;
-import static com.mbed.coap.utils.CoapPacketAssertion.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static com.mbed.coap.utils.Bytes.opaqueOfRandom;
+import static com.mbed.coap.utils.CoapPacketAssertion.assertSimilar;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import com.mbed.coap.exception.CoapException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -157,11 +163,11 @@ public class CoapTcpPacketSerializerTest {
     @Test
     public void coapOverTcpSignaling() throws CoapException, IOException {
         CoapPacket cp = new CoapPacket(null);
+        cp.setCode(Code.C701_CSM);
         cp.setMessageType(null);
-        SignallingHeaderOptions headers = new SignallingHeaderOptions();
+        SignallingHeaderOptions headers = new SignallingHeaderOptions(cp.getCode());
         cp.setHeaderOptions(headers);
 
-        cp.setCode(Code.C701_CSM);
         SignalingOptions sign = new SignalingOptions();
         sign.setMaxMessageSize(7);
         sign.setBlockWiseTransfer(true);

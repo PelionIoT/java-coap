@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,10 +46,7 @@ public class TransactionId {
         if (!Objects.equals(this.token, other.token)) {
             return false;
         }
-        if (this.source != other.source && (this.source == null || !this.source.equals(other.source))) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.source, other.source);
     }
 
     @Override

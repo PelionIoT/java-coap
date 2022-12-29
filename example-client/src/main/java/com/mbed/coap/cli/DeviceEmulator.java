@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
  */
 package com.mbed.coap.cli;
 
-import static java.util.concurrent.CompletableFuture.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import com.mbed.coap.client.RegistrationManager;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+@SuppressWarnings({"PMD.SystemPrintln", "PMD.AvoidPrintStackTrace", "PMD.AvoidReassigningLoopVariables"})
 public class DeviceEmulator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DeviceEmulator.class);
@@ -70,11 +70,11 @@ public class DeviceEmulator {
         TransportProvider transportProvider = deviceEmulator.providers.defaultProvider();
         String cipherSuite = null;
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-k")) {
+            if ("-k".equals(args[i])) {
                 keystoreFile = args[++i];
-            } else if (args[i].equals("-s")) {
+            } else if ("-s".equals(args[i])) {
                 transportProvider = deviceEmulator.providers.transportProviderFor(args[++i]);
-            } else if (args[i].equals("--cipher")) {
+            } else if ("--cipher".equals(args[i])) {
                 cipherSuite = args[++i];
             }
         }

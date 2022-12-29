@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.packet;
 
+import static com.mbed.coap.utils.Validations.require;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,8 +28,14 @@ public class SignallingHeaderOptions extends HeaderOptions {
 
     private static final byte SIGN_OPTION_2 = 2;
     private static final byte SIGN_OPTION_4 = 4;
+    private final Code code;
     private Opaque signallingOption2;
     private Opaque signallingOption4;
+
+    public SignallingHeaderOptions(Code code) {
+        require(code.isSignaling());
+        this.code = code;
+    }
 
     @Override
     public boolean parseOption(int type, Opaque data) {
@@ -60,8 +67,8 @@ public class SignallingHeaderOptions extends HeaderOptions {
     }
 
     @Override
-    public void toString(StringBuilder sb, Code code) {
-        super.toString(sb, code);
+    public void buildToString(StringBuilder sb) {
+        super.buildToString(sb);
 
         if (signallingOption2 != null || signallingOption4 != null) {
             SignalingOptions signOpt = new SignalingOptions();
@@ -95,8 +102,9 @@ public class SignallingHeaderOptions extends HeaderOptions {
         this.signallingOption4 = signalingOptions.serializeOption4();
     }
 
+    @Override
     public HeaderOptions duplicate() {
-        SignallingHeaderOptions opts = new SignallingHeaderOptions();
+        SignallingHeaderOptions opts = new SignallingHeaderOptions(code);
         super.duplicate(opts);
 
         opts.signallingOption2 = signallingOption2;
@@ -118,18 +126,11 @@ public class SignallingHeaderOptions extends HeaderOptions {
         }
 
         SignallingHeaderOptions that = (SignallingHeaderOptions) o;
-
-        if (!Objects.equals(signallingOption2, that.signallingOption2)) {
-            return false;
-        }
-        return Objects.equals(signallingOption4, that.signallingOption4);
+        return code == that.code && Objects.equals(signallingOption2, that.signallingOption2) && Objects.equals(signallingOption4, that.signallingOption4);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + Objects.hashCode(signallingOption2);
-        result = 31 * result + Objects.hashCode(signallingOption4);
-        return result;
+        return Objects.hash(super.hashCode(), code, signallingOption2, signallingOption4);
     }
 }

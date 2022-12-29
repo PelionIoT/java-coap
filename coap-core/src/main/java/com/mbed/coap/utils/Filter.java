@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ Filter is a transformer of a 'service' that may intercept and transform inputs a
 @FunctionalInterface
 public interface Filter<REQ, RES, IN_REQ, IN_RES> extends BiFunction<REQ, Service<IN_REQ, IN_RES>, CompletableFuture<RES>> {
 
+    @Override
     CompletableFuture<RES> apply(REQ request, Service<IN_REQ, IN_RES> service);
 
     default <REQ2, RES2> Filter<REQ, RES, REQ2, RES2> andThen(Filter<IN_REQ, IN_RES, REQ2, RES2> next) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -153,18 +153,19 @@ public final class CoapRequest {
         return result;
     }
 
+    @Override
     public String toString() {
         if (method == null) {
             return "CoapRequest[PING]";
         }
         if (payload.isEmpty() && token.isEmpty()) {
-            return String.format("CoapRequest[%s%s]", method.toString(), options);
+            return String.format("CoapRequest[%s%s]", method, options);
         } else if (payload.isEmpty()) {
-            return String.format("CoapRequest[%s%s,Token:%s]", method.toString(), options, token.toHex());
+            return String.format("CoapRequest[%s%s,Token:%s]", method, options, token.toHex());
         } else if (token.isEmpty()) {
-            return String.format("CoapRequest[%s%s, pl(%d):%s]", method.toString(), options, payload.size(), payload.toHexShort(20));
+            return String.format("CoapRequest[%s%s, pl(%d):%s]", method, options, payload.size(), payload.toHexShort(20));
         }
-        return String.format("CoapRequest[%s%s,Token:%s, pl(%d):%s]", method.toString(), options, token.toHex(), payload.size(), payload.toHexShort(20));
+        return String.format("CoapRequest[%s%s,Token:%s, pl(%d):%s]", method, options, token.toHex(), payload.size(), payload.toHexShort(20));
     }
 
 

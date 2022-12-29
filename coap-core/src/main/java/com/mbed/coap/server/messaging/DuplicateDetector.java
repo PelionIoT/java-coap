@@ -16,7 +16,7 @@
 package com.mbed.coap.server.messaging;
 
 import static com.mbed.coap.utils.FutureHelpers.failedFuture;
-import static java.util.concurrent.CompletableFuture.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.CoapRequestId;
 import com.mbed.coap.server.DuplicatedCoapMessageCallback;
@@ -42,11 +42,11 @@ public class DuplicateDetector implements Filter.SimpleFilter<CoapPacket, CoapPa
 
     @Override
     public CompletableFuture<CoapPacket> apply(CoapPacket request, Service<CoapPacket, CoapPacket> service) {
-        CoapPacket duplResp = isMessageRepeated(request);
+        CoapPacket duplResp = getResponseForRepeatedRequest(request);
 
         if (duplResp != null) {
             duplicatedCoapMessageCallback.duplicated(request);
-            if (duplResp != DuplicateDetector.EMPTY_COAP_PACKET) {
+            if (duplResp != DuplicateDetector.EMPTY_COAP_PACKET) { // NOPMD
                 LOGGER.debug("CoAP request repeated, resending response [{}]", request);
                 return completedFuture(duplResp);
             } else {
@@ -61,7 +61,7 @@ public class DuplicateDetector implements Filter.SimpleFilter<CoapPacket, CoapPa
         });
     }
 
-    private CoapPacket isMessageRepeated(CoapPacket request) {
+    private CoapPacket getResponseForRepeatedRequest(CoapPacket request) {
         CoapRequestId requestId = new CoapRequestId(request.getMessageId(), request.getRemoteAddress());
 
         return requestMap.putIfAbsent(requestId, EMPTY_COAP_PACKET);

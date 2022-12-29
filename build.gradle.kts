@@ -86,10 +86,8 @@ subprojects {
     }
 
     pmd {
-        toolVersion = "5.6.1"
+        toolVersion = "6.53.0"
         isConsoleOutput = true
-        sourceSets = listOf(projSourceSets["main"])
-        incrementalAnalysis.set(false)
         ruleSets = emptyList()
         ruleSetFiles = files(rootProject.file("pmd-rules.xml"))
     }

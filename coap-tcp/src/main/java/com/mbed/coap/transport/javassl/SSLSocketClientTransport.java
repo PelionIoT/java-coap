@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -39,7 +40,7 @@ public class SSLSocketClientTransport extends SocketClientTransport {
 
         sslSocket.addHandshakeCompletedListener(handshakeCompletedEvent -> {
                     try {
-                        LOGGER.debug("Connected [" + handshakeCompletedEvent.getSource() + ", " + sslSocket.getSession().getPeerCertificateChain()[0].getSubjectDN() + "]");
+                        LOGGER.debug("Connected [{}, {}]", handshakeCompletedEvent.getSource(), ((X509Certificate) sslSocket.getSession().getPeerCertificates()[0]).getSubjectX500Principal());
                     } catch (SSLPeerUnverifiedException e) {
                         LOGGER.warn(e.getMessage(), e);
                     }
@@ -57,7 +58,7 @@ public class SSLSocketClientTransport extends SocketClientTransport {
     }
 
     public SSLSocket getSslSocket() {
-        return ((SSLSocket) socket);
+        return (SSLSocket) socket;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
 package com.mbed.coap.server.block;
 
 import static com.mbed.coap.utils.FutureHelpers.failedFuture;
-import static java.util.concurrent.CompletableFuture.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
@@ -79,14 +79,13 @@ public class BlockWiseIncomingFilter implements Filter.SimpleFilter<CoapRequest,
         }
 
         if (!reqBlock.hasMore()) {
-            //last block received
-            request = request.payload(blockRequest.getCombinedPayload());
-
             //remove from map
             removeBlockRequest(blockRequestId);
-            final CoapRequest coapRequest = request;
+
+            //last block received
+            final CoapRequest coapRequest = request.payload(blockRequest.getCombinedPayload());
             return service
-                    .apply(request)
+                    .apply(coapRequest)
                     .thenApply(resp -> adjustPayloadSize(coapRequest, resp));
         } else {
             //more block available, send C231_CONTINUE
@@ -135,7 +134,7 @@ public class BlockWiseIncomingFilter implements Filter.SimpleFilter<CoapRequest,
         BlockOption block2Res = block2Response;
         int blFrom = block2Res.getNr() * block2Res.getSize();
 
-        int maxMessageSize = (!block2Res.isBert()) ? block2Res.getSize() : capabilities.getOrDefault(req.getPeerAddress()).getMaxOutboundPayloadSize();
+        int maxMessageSize = !block2Res.isBert() ? block2Res.getSize() : capabilities.getOrDefault(req.getPeerAddress()).getMaxOutboundPayloadSize();
 
         int blTo = blFrom + maxMessageSize;
 

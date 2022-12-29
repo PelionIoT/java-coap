@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,7 +44,7 @@ public final class Opaque {
             if (unsignedBytes[i] < 0 || unsignedBytes[i] > 255) {
                 throw new IllegalArgumentException("Not a byte: " + unsignedBytes[i]);
             }
-            data[i] = ((byte) unsignedBytes[i]);
+            data[i] = (byte) unsignedBytes[i];
         }
         return new Opaque(data);
     }
@@ -158,7 +158,7 @@ public final class Opaque {
         long val = 0L;
         for (byte b : data) {
             val <<= 8;
-            val += (b & 0xFF);
+            val += b & 0xFF;
         }
         return val;
     }
@@ -167,7 +167,7 @@ public final class Opaque {
         if (data.length > 4) {
             throw new IllegalArgumentException();
         }
-        return ((int) toLong());
+        return (int) toLong();
     }
 
     public String toUtf8String() {

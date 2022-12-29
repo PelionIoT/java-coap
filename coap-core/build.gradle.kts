@@ -18,3 +18,7 @@ dependencies {
     testImplementation("nl.jqno.equalsverifier:equalsverifier:3.12.3")
     testImplementation("io.github.artsok:rerunner-jupiter:2.1.6")
 }
+
+tasks {
+    named("pmdTestFixtures").get().enabled = false
+}
