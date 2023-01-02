@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 package com.mbed.coap.cli;
 
 import com.mbed.coap.CoapConstants;
+import com.mbed.coap.cli.providers.MbedtlsProvider;
 import com.mbed.coap.cli.providers.Pair;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
@@ -42,34 +43,42 @@ public class CoapCli {
         main(args, new CoapSchemes());
     }
 
+    private static void printUsage(CoapSchemes providers) {
+        System.out.println("Usage: [options...] <method> <scheme>://<host>:<port>/<uri-path> [<payload>]");
+        System.out.println("Method: GET | POST | PUT | DELETE");
+        System.out.println("Schemes: " + providers.supportedSchemes().replaceAll("\n", "\n         "));
+        System.out.println("Options:");
+        System.out.println("     -s <ssl provider>  jdk (default),");
+        System.out.println("                        mbedtls (default for DTLS),");
+        System.out.println("                        openssl (requires installed openssl that supports dtls),");
+        System.out.println("                        stdio (standard IO)");
+        System.out.println("     -k <file>          KeyStore file (with empty passphrase)");
+        System.out.println("     --psk <id:hex-secret>  Pre shared key pair");
+        System.out.println("     --cipher <name>    Cipher suite");
+        System.out.println("     -b <block size>    Block size, one of: 16, 32, 64, 128, 256, 512, 1024");
+        System.out.println("     -p <proxy>         Proxy-Uri");
+        System.out.println("");
+        System.out.println("Environments variables:");
+        System.out.println("     COAPCLI_OPENSSL    openssl command, default: 'openssl'");
+        System.out.println("");
+        System.out.println("Example: GET coap://localhost:5683/small");
+        System.out.println("");
+    }
+
     public static void main(String[] args, CoapSchemes providers) {
         if (args.length < 2) {
-            System.out.println("Usage: [options...] <method> <scheme>://<host>:<port>/<uri-path> [<payload>]");
-            System.out.println("Method: GET | POST | PUT | DELETE");
-            System.out.println("Schemes: " + providers.supportedSchemes().replaceAll("\n", "\n         "));
-            System.out.println("Options:");
-            System.out.println("     -s <ssl provider>  jdk <default>,");
-            System.out.println("                        openssl (requires installed openssl that supports dtls),");
-            System.out.println("                        stdio (standard IO)");
-            System.out.println("     -k <file>          KeyStore file (with empty passphrase)");
-            System.out.println("     --psk <id:hex-secret>  Pre shared key pair");
-            System.out.println("     --cipher <name>    Cipher suite");
-            System.out.println("     -b <block size>    Block size, one of: 16, 32, 64, 128, 256, 512, 1024");
-            System.out.println("     -p <proxy>         Proxy-Uri");
-            System.out.println("");
-            System.out.println("Environments variables:");
-            System.out.println("     COAPCLI_OPENSSL    openssl command, default: 'openssl'");
-            System.out.println("");
-            System.out.println("Example: GET coap://localhost:5683/small");
-            System.out.println("");
+            printUsage(providers);
             return;
         }
-        try {
+        main0(args, providers);
+    }
 
+    private static void main0(String[] args, CoapSchemes providers) {
+        try {
             String keystoreFile = null;
             String proxyUri = null;
             BlockSize blockSize = null;
-            TransportProvider transportProvider = providers.defaultProvider();
+            TransportProvider transportProvider = null;
             String cipherSuite = null;
             Pair<String, Opaque> psk = null;
             int i;
@@ -93,10 +102,12 @@ public class CoapCli {
                 }
             }
 
-            transportProvider.setCipherSuite(cipherSuite);
-
             String method = args[i++];
             URI uri = URI.create(args[i++]);
+            if (transportProvider == null) {
+                transportProvider = ("coaps".equals(uri.getScheme())) ? new MbedtlsProvider() : providers.defaultProvider();
+            }
+            transportProvider.setCipherSuite(cipherSuite);
 
             Opaque payload = (args.length > i) ? Opaque.of(args[i]) : Opaque.EMPTY;
 
