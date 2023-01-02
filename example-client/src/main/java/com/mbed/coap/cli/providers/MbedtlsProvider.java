@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.util.Collections;
 import org.opencoap.ssl.CertificateAuth;
 import org.opencoap.ssl.PskAuth;
 import org.opencoap.ssl.SslConfig;
@@ -48,16 +49,14 @@ public class MbedtlsProvider extends TransportProvider {
     @Override
     public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException {
         SslConfig config;
-        File fileSession;
         if (psk != null) {
-            config = SslConfig.client(new PskAuth(psk.key.getBytes(), psk.value.getBytes()));
-            fileSession = new File(psk.key + ".session");
+            config = SslConfig.client(new PskAuth(psk.key, psk.value.getBytes()));
         } else if (ks != null) {
             config = SslConfig.client(CertificateAuth.trusted(readCAs(ks)));
-            fileSession = new File(destAdr.getHostName() + ".session");
         } else {
-            throw new IllegalArgumentException();
+            config = SslConfig.client(CertificateAuth.trusted(), Collections.emptyList(), false);
         }
+        File fileSession = new File(destAdr.getHostName() + "-" + destAdr.getPort() + ".session");
 
         byte[] sessionBytes = readBytes(fileSession);
 
@@ -73,8 +72,10 @@ public class MbedtlsProvider extends TransportProvider {
             @Override
             public void stop() {
                 try {
-                    writeBytes(fileSession, transport.saveSession());
-                    LOGGER.info("Stored DTLS session into: {}", fileSession);
+                    if (transport.getPeerCid() != null) {
+                        writeBytes(fileSession, transport.saveSession());
+                        LOGGER.info("Stored DTLS session into: {}", fileSession);
+                    }
                 } catch (IOException e) {
                     LOGGER.error("Failed to store DTLS session");
                 }
