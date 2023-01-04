@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.util.Collections;
+import org.opencoap.ssl.CertificateAuth;
+import org.opencoap.ssl.PskAuth;
 import org.opencoap.ssl.SslConfig;
 import org.opencoap.ssl.SslSession;
 import org.opencoap.ssl.transport.DtlsTransmitter;
@@ -49,10 +50,10 @@ public class MbedtlsProvider extends TransportProvider {
         SslConfig config;
         File fileSession;
         if (psk != null) {
-            config = SslConfig.client(psk.key.getBytes(), psk.value.getBytes(), Collections.emptyList());
+            config = SslConfig.client(new PskAuth(psk.key.getBytes(), psk.value.getBytes()));
             fileSession = new File(psk.key + ".session");
         } else if (ks != null) {
-            config = SslConfig.client(readCAs(ks));
+            config = SslConfig.client(CertificateAuth.trusted(readCAs(ks)));
             fileSession = new File(destAdr.getHostName() + ".session");
         } else {
             throw new IllegalArgumentException();

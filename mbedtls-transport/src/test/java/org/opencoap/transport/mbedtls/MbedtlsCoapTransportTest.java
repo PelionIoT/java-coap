@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opencoap.ssl.PskAuth;
 import org.opencoap.ssl.SslConfig;
 import org.opencoap.ssl.transport.DtlsServer;
 import org.opencoap.ssl.transport.DtlsTransmitter;
@@ -41,8 +41,8 @@ import org.opencoap.ssl.transport.Packet;
 
 class MbedtlsCoapTransportTest {
 
-    private SslConfig clientConf = SslConfig.client(of("test").getBytes(), of("secret").getBytes(), Collections.emptyList());
-    private SslConfig serverConf = SslConfig.server(of("test").getBytes(), of("secret").getBytes(), Collections.emptyList());
+    private final SslConfig clientConf = SslConfig.client(new PskAuth("test", of("secret").getBytes()));
+    private final SslConfig serverConf = SslConfig.server(new PskAuth("test", of("secret").getBytes()));
 
     private DtlsServer dtlsServer;
     private CoapServer coapServer;
