@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.mbed.coap.utils;
 
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -41,7 +42,18 @@ public class FutureHelpers {
 
     public static Function<Throwable, Void> logError(Logger logger) {
         return ex -> {
-            logger.error(ex.getMessage());
+            logger.error(ex.getMessage(), ex);
+            return null;
+        };
+    }
+
+    public static Function<Throwable, Void> logErrorIgnoreCancelled(Logger logger) {
+        return ex -> {
+            if (ex.getCause() instanceof CancellationException) {
+                logger.debug(ex.getMessage());
+            } else {
+                logger.error(ex.getMessage(), ex);
+            }
             return null;
         };
     }

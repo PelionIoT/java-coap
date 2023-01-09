@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,8 +66,8 @@ class DuplicateDetectorTest {
         CompletableFuture<CoapPacket> result3 = duplicateDetector.apply(req, service);
 
         assertFalse(result1.isDone());
-        assertNull(result2.join());
-        assertNull(result3.join());
+        assertTrue(result2.isCancelled());
+        assertTrue(result3.isCancelled());
         verify(service, times(1)).apply(any());
     }
 }

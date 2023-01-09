@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.mbed.coap.server.messaging;
 
+import static com.mbed.coap.utils.FutureHelpers.failedFuture;
 import static java.util.concurrent.CompletableFuture.*;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.server.CoapRequestId;
@@ -22,6 +23,7 @@ import com.mbed.coap.server.DuplicatedCoapMessageCallback;
 import com.mbed.coap.server.PutOnlyMap;
 import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +51,7 @@ public class DuplicateDetector implements Filter.SimpleFilter<CoapPacket, CoapPa
                 return completedFuture(duplResp);
             } else {
                 LOGGER.debug("CoAP request repeated, no response available [{}]", request);
-                return completedFuture(null);
+                return failedFuture(new CancellationException());
             }
         }
 

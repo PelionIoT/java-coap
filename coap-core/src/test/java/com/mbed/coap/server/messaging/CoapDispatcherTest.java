@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,7 +45,7 @@ public class CoapDispatcherTest {
     public void setUp() throws Exception {
         reset(sender, observationHandler, handleResponse, handleSeparateResponse);
 
-        given(sender.apply(any())).willReturn(completedFuture(null));
+        given(sender.apply(any())).willReturn(completedFuture(true));
         given(observationHandler.apply(any())).willReturn(completedFuture(mock(CoapPacket.class)));
         given(handleResponse.apply(any())).willReturn(false);
         given(handleSeparateResponse.apply(any())).willReturn(false);
