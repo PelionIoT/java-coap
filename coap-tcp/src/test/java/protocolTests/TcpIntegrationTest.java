@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,13 @@
  */
 package protocolTests;
 
-import static org.awaitility.Awaitility.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilderForTcp;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
-import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilderForTcp;
 import com.mbed.coap.server.RouterService;
@@ -64,22 +63,22 @@ public class TcpIntegrationTest extends IntegrationTestBase {
 
     @Override
     public void sendPing() throws Exception {
-        CoapResponse pingResp = client.ping().get();
+        Boolean pingResp = client.ping().get();
 
-        assertEquals(CoapResponse.of(Code.C703_PONG), pingResp);
+        assertTrue(pingResp);
     }
 
     @Test
     public void reconnect() throws Exception {
         int port = server.getLocalSocketAddress().getPort();
-        assertEquals(client.ping().get().getCode(), Code.C703_PONG);
+        assertTrue(client.ping().get());
 
         server.stop();
 
         server = buildServer(port, RouterService.builder().build()).start();
 
         await().ignoreExceptions().untilAsserted(() ->
-                assertEquals(client.ping().get().getCode(), Code.C703_PONG)
+                assertTrue(client.ping().get())
         );
     }
 

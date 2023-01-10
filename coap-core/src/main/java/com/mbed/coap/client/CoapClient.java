@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
  */
 package com.mbed.coap.client;
 
-import static com.mbed.coap.client.ObservationConsumer.*;
+import static com.mbed.coap.client.ObservationConsumer.consumeFrom;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -36,7 +36,7 @@ import java.util.function.Function;
 public class CoapClient implements Closeable {
 
     private final InetSocketAddress destination;
-    private final Service<CoapRequest, CoapResponse> clientService;
+    protected final Service<CoapRequest, CoapResponse> clientService;
     private final Closeable closeable;
 
     public CoapClient(InetSocketAddress destination, Service<CoapRequest, CoapResponse> clientService, Closeable closeable) {
@@ -80,8 +80,9 @@ public class CoapClient implements Closeable {
     }
 
 
-    public CompletableFuture<CoapResponse> ping() throws CoapException {
-        return clientService.apply(CoapRequest.ping(destination, TransportContext.EMPTY));
+    public CompletableFuture<Boolean> ping() throws CoapException {
+        return clientService.apply(CoapRequest.ping(destination, TransportContext.EMPTY))
+                .thenApply(r -> r.getCode() == null);
     }
 
     /**

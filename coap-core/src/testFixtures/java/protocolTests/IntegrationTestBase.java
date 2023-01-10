@@ -16,14 +16,18 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.post;
+import static com.mbed.coap.packet.Opaque.EMPTY;
 import static com.mbed.coap.packet.Opaque.of;
-import static com.mbed.coap.packet.Opaque.*;
 import static com.mbed.coap.utils.FutureHelpers.failedFuture;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.awaitility.Awaitility.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.exception.CoapCodeException;
@@ -186,9 +190,9 @@ abstract class IntegrationTestBase {
 
     @Test
     public void sendPing() throws Exception {
-        CoapResponse pingResp = client.ping().get();
+        Boolean pingResp = client.ping().get();
 
-        assertEquals(CoapResponse.of(null), pingResp);
+        assertEquals(true, pingResp);
     }
 
     @Test

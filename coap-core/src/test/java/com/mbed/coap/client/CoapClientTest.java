@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,17 @@
  */
 package com.mbed.coap.client;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static com.mbed.coap.packet.MediaTypes.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.ping;
+import static com.mbed.coap.packet.MediaTypes.CT_TEXT_PLAIN;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
+import static org.mockito.BDDMockito.reset;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_5683;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -67,10 +72,10 @@ public class CoapClientTest {
                 .willReturn(completedFuture(CoapResponse.of(null)));
 
         // when
-        CompletableFuture<CoapResponse> resp = client.ping();
+        CompletableFuture<Boolean> resp = client.ping();
 
         // then
-        assertNotNull(resp.get());
+        assertTrue(resp.get());
     }
 
     @Test

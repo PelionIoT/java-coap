@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +17,16 @@
 package com.mbed.coap.client;
 
 import com.mbed.coap.packet.BlockSize;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.Code;
+import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilderForTcp;
 import com.mbed.coap.server.messaging.CapabilitiesStorage;
 import com.mbed.coap.transport.CoapTransport;
+import com.mbed.coap.transport.TransportContext;
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
 
 public class CoapClientBuilderForTcp extends CoapClientBuilder<CoapServerBuilderForTcp> {
     private final CoapServerBuilderForTcp coapServerBuilderForTcp;
@@ -66,4 +72,17 @@ public class CoapClientBuilderForTcp extends CoapClientBuilder<CoapServerBuilder
         return this;
     }
 
+    @Override
+    public CoapClient build() throws IOException {
+        CoapServer server = coapServerBuilder.build();
+
+        return new CoapClient(destination, server.start().clientService(), server::stop) {
+            @Override
+            public CompletableFuture<Boolean> ping() {
+                return clientService.apply(CoapRequest.ping(destination, TransportContext.EMPTY))
+                        .thenApply(r -> r.getCode() == Code.C703_PONG);
+            }
+        };
+
+    }
 }
