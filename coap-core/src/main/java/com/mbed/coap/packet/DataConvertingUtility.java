@@ -16,6 +16,7 @@
  */
 package com.mbed.coap.packet;
 
+import com.mbed.coap.utils.Validations;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,7 +58,7 @@ public final class DataConvertingUtility {
         return list.toArray(new String[0]);
     }
 
-    public static Map<String, String> parseUriQuery(String uriQuery) throws ParseException {
+    public static Map<String, String> parseUriQuery(String uriQuery) {
         if (uriQuery == null || uriQuery.length() == 0) {
             return null;
         }
@@ -66,9 +67,7 @@ public final class DataConvertingUtility {
 
         for (String prm : params) {
             String[] p = prm.split("=", 2);
-            if (p.length != 2) {
-                throw new ParseException("", 0);
-            }
+            Validations.require(p.length == 2);
             result.put(p[0], p[1]);
         }
         return result;

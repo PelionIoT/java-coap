@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,16 @@
  */
 package org.opencoap.transport.mbedtls;
 
-import static java.util.concurrent.CompletableFuture.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.CoapTransport;
+import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import org.opencoap.ssl.transport.DtlsSessionContext;
 import org.opencoap.ssl.transport.DtlsTransmitter;
 import org.opencoap.ssl.transport.Packet;
 import org.opencoap.ssl.transport.Transport;
@@ -31,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 public class MbedtlsCoapTransport implements CoapTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(MbedtlsCoapTransport.class);
+    public static final TransportContext.Key<DtlsSessionContext> DTLS_CONTEXT = new TransportContext.Key<>(DtlsSessionContext.EMPTY);
     private final Transport<Packet<byte[]>> dtlsTransport;
 
     public MbedtlsCoapTransport(Transport<Packet<byte[]>> dtlsTransport) {
@@ -73,7 +76,9 @@ public class MbedtlsCoapTransport implements CoapTransport {
     private CompletableFuture<CoapPacket> deserialize(Packet<byte[]> packet) {
         if (packet.getBuffer().length > 0) {
             try {
-                return completedFuture(CoapPacket.read(packet.getPeerAddress(), packet.getBuffer()));
+                CoapPacket coapPacket = CoapPacket.read(packet.getPeerAddress(), packet.getBuffer());
+                coapPacket.setTransportContext(TransportContext.of(DTLS_CONTEXT, packet.getSessionContext()));
+                return completedFuture(coapPacket);
             } catch (CoapException e) {
                 LOGGER.warn("[{}] Received malformed coap. {}", packet.getPeerAddress(), e.toString());
             }

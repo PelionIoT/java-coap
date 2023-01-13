@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,12 @@
  */
 package com.mbed.coap.packet;
 
-import static com.mbed.coap.packet.DataConvertingUtility.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.packet.DataConvertingUtility.parseUriQuery;
+import static com.mbed.coap.packet.DataConvertingUtility.parseUriQueryMult;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +49,7 @@ public class DataConvertingUtilityTest {
         assertNull(parseUriQuery(null));
         assertNull(parseUriQuery(""));
 
-        assertThatThrownBy(() -> parseUriQuery("p=aa&par133")).isExactlyInstanceOf(ParseException.class);
+        assertThatThrownBy(() -> parseUriQuery("p=aa&par133")).isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
 

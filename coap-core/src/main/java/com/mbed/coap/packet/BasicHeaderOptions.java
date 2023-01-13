@@ -22,7 +22,6 @@ import com.mbed.coap.exception.CoapMessageFormatException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -552,7 +551,7 @@ public class BasicHeaderOptions {
         this.uriPort = uriPort;
     }
 
-    public Map<String, String> getUriQueryMap() throws ParseException {
+    public Map<String, String> getUriQueryMap() {
         if (uriQuery == null) {
             return Collections.emptyMap();
         }

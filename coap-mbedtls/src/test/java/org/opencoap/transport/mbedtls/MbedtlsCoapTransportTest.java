@@ -15,11 +15,13 @@
  */
 package org.opencoap.transport.mbedtls;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static com.mbed.coap.packet.CoapResponse.*;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.post;
+import static com.mbed.coap.packet.CoapResponse.ok;
 import static com.mbed.coap.packet.Opaque.of;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
@@ -58,6 +60,20 @@ class MbedtlsCoapTransportTest {
                         .post("/send-malformed", it -> {
                             dtlsServer.send(new Packet<>("acghfh", it.getPeerAddress()).map(String::getBytes));
                             return completedFuture(CoapResponse.of(Code.C201_CREATED));
+                        })
+                        .post("/auth", it -> {
+                            String name = it.options().getUriQueryMap().get("name");
+                            dtlsServer.setSessionAuthenticationContext(it.getPeerAddress(), name);
+                            return completedFuture(CoapResponse.of(Code.C201_CREATED));
+                        })
+                        .get("/auth", it -> {
+                            String name = it.getTransContext().get(MbedtlsCoapTransport.DTLS_CONTEXT).getAuthentication();
+                            if (name != null) {
+                                return completedFuture(CoapResponse.ok(name));
+                            } else {
+                                return completedFuture(CoapResponse.of(Code.C401_UNAUTHORIZED));
+                            }
+
                         })
                 )
                 .build();
@@ -104,4 +120,25 @@ class MbedtlsCoapTransportTest {
 
         coapClient.close();
     }
+
+    @Test
+    void shouldUpdateAndPassDtlsContext() throws IOException, CoapException {
+        // given
+        MbedtlsCoapTransport clientTrans = new MbedtlsCoapTransport(DtlsTransmitter.connect(srvAddress, clientConf).join());
+        CoapClient coapClient = CoapClientBuilder.newBuilder(srvAddress)
+                .transport(clientTrans)
+                .build();
+        // and not authenticated
+        assertEquals(Code.C401_UNAUTHORIZED, coapClient.sendSync(get("/auth")).getCode());
+
+        // when
+        assertEquals(Code.C201_CREATED, coapClient.sendSync(post("/auth").query("name", "dev-007")).getCode());
+
+        // then
+        assertEquals(ok("dev-007"), coapClient.sendSync(get("/auth")));
+
+        assertNotNull(clientTrans.getLocalSocketAddress());
+        coapClient.close();
+    }
+
 }

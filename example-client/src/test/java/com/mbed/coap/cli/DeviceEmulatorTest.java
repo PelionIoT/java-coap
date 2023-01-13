@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,9 @@
  */
 package com.mbed.coap.cli;
 
-import static com.mbed.coap.packet.CoapResponse.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.awaitility.Awaitility.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.cli.providers.PlainTextProvider;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
@@ -29,7 +28,6 @@ import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import java.io.IOException;
-import java.text.ParseException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,12 +45,7 @@ public class DeviceEmulatorTest {
                 .newBuilder()
                 .route(RouterService.builder()
                         .post("/rd", req -> {
-                            String epName;
-                            try {
-                                epName = req.options().getUriQueryMap().get("ep");
-                            } catch (ParseException e) {
-                                return completedFuture(badRequest());
-                            }
+                            String epName = req.options().getUriQueryMap().get("ep");
                             return completedFuture(new CoapResponse(Code.C201_CREATED, Opaque.EMPTY, o -> o.setLocationPath("/rd/" + epName)));
                         })
                 )
