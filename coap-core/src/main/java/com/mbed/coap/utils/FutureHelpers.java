@@ -40,7 +40,7 @@ public class FutureHelpers {
         };
     }
 
-    public static Function<Throwable, Void> logError(Logger logger) {
+    public static <T> Function<Throwable, T> logError(Logger logger) {
         return ex -> {
             logger.error(ex.getMessage(), ex);
             return null;

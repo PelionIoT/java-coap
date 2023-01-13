@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -80,6 +80,9 @@ abstract class IntegrationTestBase {
                 .post("/large", req -> completedFuture(
                         CoapResponse.ok("Got " + req.getPayload().size() + "B")
                 ))
+                .get("/exception", __ -> {
+                    throw new IllegalArgumentException();
+                })
                 .get("/obs", obsResource)
                 .get("/slow", __ -> slowResourcePromise)
                 .get(CoapConstants.WELL_KNOWN_CORE, req ->
@@ -239,6 +242,13 @@ abstract class IntegrationTestBase {
         client = null;
 
         assertThatThrownBy(() -> resp.get(5, TimeUnit.SECONDS)).hasCauseInstanceOf(IOException.class);
+    }
+
+
+    @Test
+    public void should_handle_exception() throws Exception {
+        assertEquals(CoapResponse.of(Code.C500_INTERNAL_SERVER_ERROR), client.sendSync(get("/exception")));
+        assertEquals(CoapResponse.of(Code.C500_INTERNAL_SERVER_ERROR), client.sendSync(get("/exception")));
     }
 
     private static class TestResource implements Service<CoapRequest, CoapResponse> {

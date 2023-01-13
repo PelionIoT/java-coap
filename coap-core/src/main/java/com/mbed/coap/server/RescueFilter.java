@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
- * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +31,11 @@ class RescueFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
 
     @Override
     public CompletableFuture<CoapResponse> apply(CoapRequest request, Service<CoapRequest, CoapResponse> service) {
-        return service.apply(request).exceptionally(this::rescue);
+        try {
+            return service.apply(request).exceptionally(this::rescue);
+        } catch (Exception ex) {
+            return CompletableFuture.completedFuture(rescue(ex));
+        }
     }
 
     private CoapResponse rescue(Throwable ex) {
@@ -43,7 +46,7 @@ class RescueFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
             return ((CoapCodeException) ex).toResponse();
         }
 
-        LOGGER.warn("Unexpected exception: " + ex.getMessage(), ex);
+        LOGGER.error("Unexpected exception: {}", ex.getMessage(), ex);
         return CoapResponse.of(Code.C500_INTERNAL_SERVER_ERROR);
     }
 

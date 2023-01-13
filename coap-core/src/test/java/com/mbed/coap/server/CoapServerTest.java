@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -100,6 +100,21 @@ public class CoapServerTest {
         verify(transport).stop();
         verify(stop).run();
         assertFalse(server.isRunning());
+
+    }
+
+    @Test
+    void shouldHandleExceptionFromDispatcher() {
+        doThrow(new IllegalArgumentException("error")).when(dispatcher).accept(any());
+
+        CoapPacket coapPacket1 = newCoapPacket(1).get().uriPath("/test").build();
+        CoapPacket coapPacket2 = newCoapPacket(2).get().uriPath("/test").build();
+
+        receiveQueue.add(coapPacket1);
+        verify(dispatcher).accept(eq(coapPacket1));
+
+        receiveQueue.add(coapPacket2);
+        verify(dispatcher).accept(eq(coapPacket2));
 
     }
 }
