@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
- * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +15,43 @@
  */
 package com.mbed.coap.transport;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
 
 
 public class TransportContextTest {
 
+    private TransportContext.Key<String> DUMMY_KEY = new TransportContext.Key<>(null);
+    private TransportContext.Key<String> DUMMY_KEY2 = new TransportContext.Key<>("na");
+
     @Test
-    public void test() {
-        TransportContext tc = TransportContext.EMPTY.add("1", () -> "1");
+    void test() {
+        TransportContext trans = TransportContext.of(DUMMY_KEY, "perse");
+        assertEquals("perse", trans.get(DUMMY_KEY));
+        assertEquals("na", trans.get(DUMMY_KEY2));
 
-        assertEquals(tc.get("1"), "1");
-        assertNull(tc.get("2"));
-        assertNull(tc.get(null));
-
-        assertEquals("1", tc.getAndCast("1", String.class));
-        assertNull(tc.getAndCast("1", Integer.class));
-        assertNull(tc.getAndCast(null, Integer.class));
+        trans = trans.with(DUMMY_KEY2, "afds");
+        assertEquals("perse", trans.get(DUMMY_KEY));
+        assertEquals("afds", trans.get(DUMMY_KEY2));
     }
 
     @Test
-    public void testNested() {
-        TransportContext tcFirst = TransportContext.EMPTY.add("1", "1");
-        TransportContext tc = tcFirst.add("2", () -> "2");
+    void empty() {
+        TransportContext trans = TransportContext.EMPTY;
+        assertNull(trans.get(DUMMY_KEY));
+        assertEquals("na", trans.get(DUMMY_KEY2));
+    }
 
-        assertEquals(tc.get("1"), "1");
-        assertEquals(tc.get("2"), "2");
-        assertNull(tc.get("3"));
-        assertNull(tc.get(null));
-        assertNull(tcFirst.get("2"));
-
-        assertEquals("2", tc.getAndCast("2", String.class));
-        assertNull(tc.getAndCast("2", Integer.class));
-        assertNull(tc.getAndCast(null, Integer.class));
+    @Test
+    public void equalsAndHashTest() throws Exception {
+        EqualsVerifier.forClass(TransportContext.class)
+                .suppress(Warning.NONFINAL_FIELDS)
+                .usingGetClass()
+                .withPrefabValues(TransportContext.class, TransportContext.EMPTY, TransportContext.of(TransportContext.NON_CONFIRMABLE, true))
+                .verify();
     }
 
 }

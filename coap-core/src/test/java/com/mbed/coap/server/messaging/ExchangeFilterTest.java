@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,20 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static com.mbed.coap.transport.TransportContext.NON_CONFIRMABLE;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.BDDMockito.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.reset;
+import static org.mockito.BDDMockito.verify;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_5683;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.packet.SeparateResponse;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -104,7 +109,7 @@ class ExchangeFilterTest {
     @Test
     void nonConfirmableExchange() {
         // given
-        CoapRequest req = CoapRequest.get(LOCAL_5683, "/13").token(19).context(TransportContext.NON_CONFIRMABLE);
+        CoapRequest req = CoapRequest.get(LOCAL_5683, "/13").token(19).context(NON_CONFIRMABLE, true);
         resp = service.apply(req);
         assertEquals(1, exchangeFilter.transactions());
 

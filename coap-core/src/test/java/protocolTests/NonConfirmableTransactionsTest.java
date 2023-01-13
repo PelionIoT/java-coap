@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,18 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.BlockSize.*;
-import static com.mbed.coap.packet.CoapRequest.*;
-import static com.mbed.coap.server.CoapServerBuilder.*;
-import static com.mbed.coap.transport.TransportContext.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static com.mbed.coap.packet.BlockSize.S_16;
+import static com.mbed.coap.packet.CoapRequest.put;
+import static com.mbed.coap.server.CoapServerBuilder.newBuilder;
+import static com.mbed.coap.transport.TransportContext.NON_CONFIRMABLE;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
+import static org.mockito.BDDMockito.reset;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_5683;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
@@ -85,7 +88,7 @@ public class NonConfirmableTransactionsTest {
     @Test
     void outboundSimpleRequest() throws InterruptedException {
         // given
-        CompletableFuture<CoapResponse> resp = server.clientService().apply(put(LOCAL_5683, "/test2").token(120).context(NON_CONFIRMABLE));
+        CompletableFuture<CoapResponse> resp = server.clientService().apply(put(LOCAL_5683, "/test2").token(120).context(NON_CONFIRMABLE, true));
         client.verifyReceived(coap(1001).non().put().token(120).uriPath("/test2"));
 
         // when
@@ -107,7 +110,7 @@ public class NonConfirmableTransactionsTest {
     @Test
     void outboundRequestWithBlocks() throws InterruptedException {
         // given
-        CompletableFuture<CoapResponse> resp = server.clientService().apply(put(LOCAL_5683, "/large2").token(32).context(NON_CONFIRMABLE));
+        CompletableFuture<CoapResponse> resp = server.clientService().apply(put(LOCAL_5683, "/large2").token(32).context(NON_CONFIRMABLE, true));
         client.verifyReceived(coap(1001).non().put().token(32).uriPath("/large2"));
 
         // when

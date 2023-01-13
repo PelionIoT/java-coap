@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,14 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.put;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
@@ -46,6 +50,7 @@ public class ForwardingTransportContextTest {
     private CoapServer server;
     private final CoapResourceTest coapResourceTest = new CoapResourceTest();
     private final InMemoryCoapTransport srvTransport = spy(new InMemoryCoapTransport(5683));
+    private final TransportContext.Key<String> MY_TEXT = new TransportContext.Key<>("");
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -70,17 +75,17 @@ public class ForwardingTransportContextTest {
         InMemoryCoapTransport cliTransport = spy(new InMemoryCoapTransport());
         CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683)).transport(cliTransport).build();
 
-        srvTransport.setTransportContext(new TextTransportContext("dupa"));
-        client.sendSync(get("/test").context(new TextTransportContext("client-sending")));
-        assertEquals("dupa", ((TextTransportContext) coapResourceTest.transportContext).getText());
+        srvTransport.setTransportContext(TransportContext.of(MY_TEXT, "dupa"));
+        client.sendSync(get("/test").context(TransportContext.of(MY_TEXT, "client-sending")));
+        assertEquals("dupa", coapResourceTest.transportContext.get(MY_TEXT));
         verify(cliTransport).sendPacket(argThat(cp ->
-                cp.getTransportContext().equals(new TextTransportContext("client-sending"))
+                cp.getTransportContext().get(MY_TEXT).equals("client-sending")
         ));
         // verify(srvTransport).sendPacket(isA(CoapPacket.class), isA(InetSocketAddress.class), eq(new TextTransportContext("get-response")));
 
-        srvTransport.setTransportContext(new TextTransportContext("dupa2"));
+        srvTransport.setTransportContext(TransportContext.of(MY_TEXT, "dupa2"));
         client.sendSync(get("/test"));
-        assertEquals("dupa2", ((TextTransportContext) coapResourceTest.transportContext).getText());
+        assertEquals("dupa2", coapResourceTest.transportContext.get(MY_TEXT));
 
         client.close();
     }
@@ -90,61 +95,21 @@ public class ForwardingTransportContextTest {
         InMemoryCoapTransport cliTransport = spy(new InMemoryCoapTransport());
         CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683)).transport(cliTransport).blockSize(BlockSize.S_16).build();
 
-        srvTransport.setTransportContext(new TextTransportContext("dupa"));
+        srvTransport.setTransportContext(TransportContext.of(MY_TEXT, "dupa"));
         CoapResponse resp = client.sendSync(put("/test").payload("fhdkfhsdkj fhsdjkhfkjsdh fjkhs dkjhfsdjkh")
-                .context(new TextTransportContext("client-block")));
+                .context(TransportContext.of(MY_TEXT, "client-block")));
 
         assertEquals(Code.C201_CREATED, resp.getCode());
-        assertEquals("dupa", ((TextTransportContext) coapResourceTest.transportContext).getText());
+        assertEquals("dupa", coapResourceTest.transportContext.get(MY_TEXT));
 
         //for each block it sends same transport context
         verify(cliTransport, times(3)).sendPacket(argThat(cp ->
-                cp.getTransportContext().equals(new TextTransportContext("client-block"))
+                cp.getTransportContext().get(MY_TEXT).equals("client-block")
         ));
 
         client.close();
     }
 
-    private static class TextTransportContext implements TransportContext {
-
-        private final String text;
-
-        public TextTransportContext(String text) {
-            this.text = text;
-        }
-
-        public String getText() {
-            return text;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof TextTransportContext)) {
-                return false;
-            }
-
-            TextTransportContext that = (TextTransportContext) o;
-
-            if (!text.equals(that.text)) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            return text.hashCode();
-        }
-
-        @Override
-        public Object get(Object key) {
-            return null;
-        }
-    }
 
     private static class CoapResourceTest implements Service<CoapRequest, CoapResponse> {
 

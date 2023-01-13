@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,11 @@
  */
 package com.mbed.coap.packet;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.packet.CoapRequest.ping;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.transport.TransportContext;
 import java.net.InetSocketAddress;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -96,6 +99,9 @@ class CoapRequestTest {
 
     @Test
     public void equalsAndHashTest() {
-        EqualsVerifier.forClass(CoapRequest.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+        EqualsVerifier.forClass(CoapRequest.class).suppress(Warning.NONFINAL_FIELDS)
+                .usingGetClass()
+                .withPrefabValues(TransportContext.class, TransportContext.EMPTY, TransportContext.of(TransportContext.NON_CONFIRMABLE, true))
+                .verify();
     }
 }

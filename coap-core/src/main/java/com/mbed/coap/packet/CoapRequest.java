@@ -205,6 +205,10 @@ public final class CoapRequest {
         return new CoapRequest(method, token, options, payload, peerAddress, newTransportContext);
     }
 
+    public <T> CoapRequest context(TransportContext.Key<T> key, T value) {
+        return new CoapRequest(method, token, options, payload, peerAddress, TransportContext.of(key, value));
+    }
+
     // --- OPTIONS MODIFIERS ---
 
     public CoapRequest options(Consumer<HeaderOptions> optionsConsumer) {

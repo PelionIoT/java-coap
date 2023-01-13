@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
- * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,49 +15,89 @@
  */
 package com.mbed.coap.transport;
 
-import com.mbed.coap.packet.MessageType;
+import static java.util.Objects.requireNonNull;
 import java.util.Objects;
-import java.util.function.Supplier;
 
-/**
- * This class provides transport context information.
- */
-@FunctionalInterface
-public interface TransportContext {
+public final class TransportContext {
 
-    TransportContext EMPTY = key -> null;
-    TransportContext NON_CONFIRMABLE = EMPTY.add(MessageType.NonConfirmable, true);
+    private final Key key;
+    private final Object value;
+    private final TransportContext next;
 
-    Object get(Object key);
+    public static final TransportContext EMPTY = new TransportContext(null, null, null);
+    public static final Key<Boolean> NON_CONFIRMABLE = new Key<>(false);
 
-    default TransportContext add(Object key, Object val) {
-        if (val == null) {
-            return this;
-        } else {
-            return add(key, () -> val);
-        }
+    public static <T> TransportContext of(Key<T> key, T value) {
+        return new TransportContext(requireNonNull(key), requireNonNull(value), null);
     }
 
-    default TransportContext add(Object key, Supplier func) {
-        Objects.requireNonNull(key);
+    private <T> TransportContext(Key<T> key, T value, TransportContext next) {
+        this.key = key;
+        this.value = value;
+        this.next = next;
+    }
 
-        return k -> {
-            if (key.equals(k)) {
-                return func.get();
-            } else {
-                return this.get(k);
+    public <T> T get(Key<T> key) {
+        T value = get0(key);
+        return value == null ? key.defaultValue : value;
+    }
+
+    private <T> T get0(Key<T> key) {
+        if (this.key == requireNonNull(key)) {
+            return (T) value;
+        } else if (next != null) {
+            return next.get0(key);
+        }
+        return null;
+    }
+
+    public <T> TransportContext with(Key<T> key, T value) {
+        if (this.equals(EMPTY)) {
+            return TransportContext.of(key, value);
+        }
+
+        return new TransportContext(requireNonNull(key), requireNonNull(value), this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        TransportContext that = (TransportContext) o;
+        return Objects.equals(key, that.key) && Objects.equals(value, that.value) && Objects.equals(next, that.next);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(key, value, next);
+    }
+
+    public static final class Key<T> {
+        private final T defaultValue;
+
+        public Key(T defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
             }
-        };
-    }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Key<?> key = (Key<?>) o;
+            return Objects.equals(defaultValue, key.defaultValue);
+        }
 
-    default <T> T getAndCast(Object key, Class<T> clazz) {
-        Object val = get(key);
-
-        if (clazz.isInstance(val)) {
-            return clazz.cast(val);
-        } else {
-            return null;
+        @Override
+        public int hashCode() {
+            return Objects.hash(defaultValue);
         }
     }
-
 }

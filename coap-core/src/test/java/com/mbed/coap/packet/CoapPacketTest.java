@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,26 @@
  */
 package com.mbed.coap.packet;
 
-import static com.mbed.coap.packet.CoapResponse.*;
-import static com.mbed.coap.utils.CoapPacketAssertion.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static com.mbed.coap.packet.CoapResponse.ok;
+import static com.mbed.coap.utils.CoapPacketAssertion.assertSimilar;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_1_5683;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_5683;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.linkformat.LinkFormat;
 import com.mbed.coap.linkformat.LinkFormatBuilder;
+import com.mbed.coap.transport.TransportContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -369,7 +381,10 @@ public class CoapPacketTest {
 
     @Test
     public void equalsAndHashTest() throws Exception {
-        EqualsVerifier.forClass(CoapPacket.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass().verify();
+        EqualsVerifier.forClass(CoapPacket.class).suppress(Warning.NONFINAL_FIELDS)
+                .usingGetClass()
+                .withPrefabValues(TransportContext.class, TransportContext.EMPTY, TransportContext.of(TransportContext.NON_CONFIRMABLE, true))
+                .verify();
     }
 
     @Test
