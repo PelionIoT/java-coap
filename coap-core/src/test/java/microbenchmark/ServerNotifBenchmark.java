@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,6 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
@@ -63,7 +62,7 @@ public class ServerNotifBenchmark {
 
         executor = Executors.newScheduledThreadPool(1);
         trans = new ServerBenchmarkBase.FloodTransportStub(MAX, executor);
-        server = CoapServerBuilder.newBuilder().transport(trans).duplicateMsgCacheSize(10000).build();
+        server = CoapServer.builder().transport(trans).duplicateMsgCacheSize(10000).build();
         server.start();
         System.out.println("MSG SIZE: " + reqData.length);
         Thread.currentThread().setPriority(Thread.MIN_PRIORITY);

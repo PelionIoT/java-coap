@@ -20,7 +20,6 @@ import static com.mbed.coap.packet.Opaque.decodeHex;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -56,11 +55,10 @@ public class ClientTest {
     @Test
     void clientWithExtraOutboundFilters() throws IOException, CoapException {
 
-
-        CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683))
+        CoapClient client = CoapServer.builder()
                 .transport(InMemoryCoapTransport.create())
                 .outboundFilter(EtagGeneratorFilter.PAYLOAD_HASHING)
-                .build();
+                .buildClient(InMemoryCoapTransport.createAddress(5683));
 
         CoapResponse coapResponse = client.sendSync(CoapRequest.get("/test"));
 

@@ -17,10 +17,12 @@
 package com.mbed.coap.client;
 
 import static com.mbed.coap.client.ObservationConsumer.consumeFrom;
+import static com.mbed.coap.utils.Validations.require;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Service;
 import java.io.Closeable;
@@ -38,6 +40,11 @@ public class CoapClient implements Closeable {
     private final InetSocketAddress destination;
     protected final Service<CoapRequest, CoapResponse> clientService;
     private final Closeable closeable;
+
+    public static CoapClient create(InetSocketAddress target, CoapServer server) {
+        require(server.isRunning());
+        return new CoapClient(target, server.clientService(), server::stop);
+    }
 
     public CoapClient(InetSocketAddress destination, Service<CoapRequest, CoapResponse> clientService, Closeable closeable) {
         this.destination = destination;

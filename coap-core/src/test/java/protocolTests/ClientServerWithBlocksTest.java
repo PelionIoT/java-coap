@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,19 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.post;
+import static com.mbed.coap.packet.CoapRequest.put;
+import static com.mbed.coap.packet.Opaque.EMPTY;
 import static com.mbed.coap.packet.Opaque.of;
-import static com.mbed.coap.packet.Opaque.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.utils.Networks.localhost;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
@@ -35,7 +40,6 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.InMemoryCoapTransport;
@@ -64,7 +68,7 @@ public class ClientServerWithBlocksTest {
     public void setUp() throws IOException {
 
         changeableBigResource = new ChangeableBigResource();
-        server = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create(5683)).blockSize(BlockSize.S_32).maxMessageSize(64)
+        server = CoapServer.builder().transport(InMemoryCoapTransport.create(5683)).blockSize(BlockSize.S_32).maxMessageSize(64)
                 .route(RouterService.builder()
                         .get("/bigResource", __ -> completedFuture(CoapResponse.ok(BIG_RESOURCE)))
                         .get("/", __ -> completedFuture(CoapResponse.ok(BIG_RESOURCE)))
@@ -87,7 +91,7 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void testBlock2Res() throws IOException, CoapException {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_32).build();
+        CoapClient client = CoapServer.builder().transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_32).buildClient(localhost(SERVER_PORT));
 
         CoapResponse msg = client.sendSync(get("/bigResource"));
         assertEquals(BIG_RESOURCE, msg.getPayload());
@@ -99,7 +103,7 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void testBlock2Res_2() throws IOException, CoapException {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_32).build();
+        CoapClient client = CoapServer.builder().transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_32).buildClient(localhost(SERVER_PORT));
 
         CoapResponse msg = client.sendSync(get("/bigResource"));
         assertEquals(BIG_RESOURCE, msg.getPayload());
@@ -108,7 +112,7 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void dynamicBlockResource() throws IOException, CoapException {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_128).build();
+        CoapClient client = CoapServer.builder().transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_128).buildClient(localhost(SERVER_PORT));
 
         CoapResponse msg = client.sendSync(get("/dynamic"));
         assertEquals(dynamicResource, msg.getPayload());
@@ -118,7 +122,7 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void constantlyDynamicBlockResource() throws IOException {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_128).build();
+        CoapClient client = CoapServer.builder().transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_128).buildClient(localhost(SERVER_PORT));
 
         assertThatThrownBy(() -> client.sendSync(get("/ultra-dynamic"))).isExactlyInstanceOf(CoapBlockException.class);
         client.close();
@@ -128,7 +132,7 @@ public class ClientServerWithBlocksTest {
     public void blockRequest() throws IOException, CoapException {
         Opaque body = BIG_RESOURCE.concat(of("d"));
 
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_128).build();
+        CoapClient client = CoapServer.builder().transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_128).buildClient(localhost(SERVER_PORT));
 
         CoapResponse resp = client.sendSync(put("/chang-res").payload(body, MediaTypes.CT_TEXT_PLAIN));
 
@@ -142,7 +146,7 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void blockRequestWithMoreHeaders() throws IOException, CoapException {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_256).build();
+        CoapClient client = CoapServer.builder().transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_256).buildClient(localhost(SERVER_PORT));
         changeableBigResource.body = BIG_RESOURCE;
         client.sendSync(get("/chang-res").host("test-host"));
 
@@ -154,7 +158,7 @@ public class ClientServerWithBlocksTest {
     public void blockRequest256_to_32_switch() throws IOException, CoapException {
         Opaque body = BIG_RESOURCE.concat(of("d"));
 
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_256).build();
+        CoapClient client = CoapServer.builder().transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_256).buildClient(localhost(SERVER_PORT));
 
         CoapResponse resp = client.sendSync(put("/chang-res").payload(body, MediaTypes.CT_TEXT_PLAIN));
 
@@ -180,7 +184,7 @@ public class ClientServerWithBlocksTest {
             }
         };
 
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(limitedTransport).blockSize(BlockSize.S_64).build();
+        CoapClient client = CoapServer.builder().transport(limitedTransport).blockSize(BlockSize.S_64).buildClient(localhost(SERVER_PORT));
 
         CoapResponse resp = client.sendSync(put("/chang-res").payload(BIG_RESOURCE));
 
@@ -190,7 +194,7 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void sizeTest() throws Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().blockSize(BlockSize.S_256).transport(InMemoryCoapTransport.create()).build().start();
+        CoapServer cnn = CoapServer.builder().blockSize(BlockSize.S_256).transport(InMemoryCoapTransport.create()).build().start();
         CoapRequest request = get(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT), "/small")
                 .options(o -> {
                     o.setBlock2Res(new BlockOption(0, BlockSize.S_256, true));
@@ -208,7 +212,7 @@ public class ClientServerWithBlocksTest {
     public void blockRequest64() throws IOException, CoapException {
         Opaque body = BIG_RESOURCE.concat(of("d"));
 
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_64).build();
+        CoapClient client = CoapServer.builder().transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_64).buildClient(localhost(SERVER_PORT));
         CoapResponse resp = client.sendSync(put("/chang-res").payload(body, MediaTypes.CT_TEXT_PLAIN));
 
         assertEquals(Code.C204_CHANGED, resp.getCode());
@@ -223,7 +227,7 @@ public class ClientServerWithBlocksTest {
     public void incompleteBlockRequest() throws Exception {
         String body = "gdfgdjgdfgdj";
         // no-block transfers client, we need "pure" server and make block packets in tests
-        CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create()).build().start();
+        CoapServer cnn = CoapServer.builder().transport(InMemoryCoapTransport.create()).build().start();
 
         CoapRequest request = put(new InetSocketAddress(InetAddress.getLocalHost(), SERVER_PORT), "/chang-res")
                 .payload(body)
@@ -239,7 +243,7 @@ public class ClientServerWithBlocksTest {
 
     @Test
     public void blockRequestWithEmptyUrlHeader() throws IOException, CoapException {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_32).build();
+        CoapClient client = CoapServer.builder().transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_32).buildClient(localhost(SERVER_PORT));
 
         assertEquals(BIG_RESOURCE, client.sendSync(get("")).getPayload());
 
@@ -250,7 +254,7 @@ public class ClientServerWithBlocksTest {
     public void doubleBlockRequestHardcore() throws IOException, CoapException {
         String body = BIG_RESOURCE + "_doubleBlockRequestHardcore";
 
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_PORT).transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_128).build();
+        CoapClient client = CoapServer.builder().transport(InMemoryCoapTransport.create()).blockSize(BlockSize.S_128).buildClient(localhost(SERVER_PORT));
         CoapResponse resp = client.sendSync(post("/chang-res").payload(body, MediaTypes.CT_TEXT_PLAIN));
 
         System.out.println(resp.getPayloadString());

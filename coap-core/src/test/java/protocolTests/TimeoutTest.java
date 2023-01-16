@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,17 +16,15 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import java.io.IOException;
@@ -38,10 +36,10 @@ public class TimeoutTest {
 
     @Test()
     public void testTimeout() throws IOException, CoapException {
-        CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(0))
+        CoapClient client = CoapServer.builder()
                 .transport(InMemoryCoapTransport.create())
-                .timeout(new SingleTimeout(100))
-                .build();
+                .retransmission(new SingleTimeout(100))
+                .buildClient(InMemoryCoapTransport.createAddress(0));
 
         assertThrows(CoapTimeoutException.class, () ->
                 client.sendSync(get("/non/existing"))
@@ -51,7 +49,7 @@ public class TimeoutTest {
 
     @Test
     public void timeoutTest() throws Exception {
-        CoapServer cnn = CoapServerBuilder.newBuilder().transport(InMemoryCoapTransport.create()).timeout(new SingleTimeout(100)).build();
+        CoapServer cnn = CoapServer.builder().transport(InMemoryCoapTransport.create()).retransmission(new SingleTimeout(100)).build();
         cnn.start();
 
         CoapRequest request = get(InMemoryCoapTransport.createAddress(0), "/test/1");

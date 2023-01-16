@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,15 +16,16 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.utils.FutureHelpers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.utils.FutureHelpers.failedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -46,7 +47,7 @@ public class DuplicateErrorsTest {
     public void setUp() throws IOException {
         MockCoapTransport serverTransport = new MockCoapTransport();
         client = serverTransport.client();
-        server = CoapServerBuilder.newBuilder().transport(serverTransport)
+        server = CoapServer.builder().transport(serverTransport)
                 .route(RouterService.builder()
                         .get("/failed", __ -> failedFuture(new NullPointerException("failed")))
                 )

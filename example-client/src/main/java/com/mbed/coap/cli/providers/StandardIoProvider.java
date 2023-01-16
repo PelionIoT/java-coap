@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ package com.mbed.coap.cli.providers;
 
 import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.transport.CoapTcpTransport;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.stdio.StreamBlockingTransport;
@@ -27,7 +28,7 @@ import java.security.KeyStore;
 public class StandardIoProvider extends TransportProvider {
 
     @Override
-    public CoapTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) {
+    public CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) {
         return create(coapSerializer, destAdr);
     }
 
@@ -36,7 +37,7 @@ public class StandardIoProvider extends TransportProvider {
         return create(coapSerializer, destAdr);
     }
 
-    private CoapTransport create(CoapSerializer coapSerializer, InetSocketAddress destAdr) {
+    private CoapTcpTransport create(CoapSerializer coapSerializer, InetSocketAddress destAdr) {
         return StreamBlockingTransport.forStandardIO(destAdr, coapSerializer);
     }
 

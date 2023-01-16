@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,19 @@
  */
 package com.mbed.coap.client;
 
-import static com.mbed.coap.packet.MediaTypes.*;
-import static java.time.Duration.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static com.mbed.coap.packet.MediaTypes.CT_APPLICATION_LINK__FORMAT;
+import static java.time.Duration.ofMinutes;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
 import java.io.IOException;
 import java.net.URI;
@@ -45,7 +50,7 @@ public class RegistrationManagerTest {
     public void setUp() throws Exception {
         trnsport = new TransportConnectorMock();
 
-        deviceSrv = CoapServerBuilder.newBuilder()
+        deviceSrv = CoapServer.builder()
                 .transport(trnsport)
                 .midSupplier(new MessageIdSupplierImpl(0))
                 .build().start();

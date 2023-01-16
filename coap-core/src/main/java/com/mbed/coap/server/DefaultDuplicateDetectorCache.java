@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,10 @@ import org.slf4j.LoggerFactory;
 
 public class DefaultDuplicateDetectorCache implements PutOnlyMap<CoapRequestId, CoapPacket> {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDuplicateDetectorCache.class);
+    private static final int DEFAULT_DUPLICATE_DETECTOR_CLEAN_INTERVAL_MILLIS = 10000;
+    private static final int DEFAULT_DUPLICATE_DETECTOR_WARNING_INTERVAL_MILLIS = 10000;
+    private static final int DEFAULT_DUPLICATE_DETECTOR_DETECTION_TIME_MILLIS = 30000;
+
     private final Lock REDUCE_LOCK = new ReentrantLock();
     private final ConcurrentHashMap<CoapRequestId, CoapPacket> underlying;
     private final long maxSize;
@@ -53,6 +57,17 @@ public class DefaultDuplicateDetectorCache implements PutOnlyMap<CoapRequestId, 
         underlying = new ConcurrentHashMap<>();
 
         cleanWorkerFut = scheduledExecutor.scheduleWithFixedDelay(this::clean, cleanIntervalMillis, cleanIntervalMillis, TimeUnit.MILLISECONDS);
+    }
+
+    public DefaultDuplicateDetectorCache(String cacheName, long duplicateDetectionTimeMillis, ScheduledExecutorService scheduledExecutor) {
+        this(
+                cacheName,
+                duplicateDetectionTimeMillis,
+                DEFAULT_DUPLICATE_DETECTOR_DETECTION_TIME_MILLIS,
+                DEFAULT_DUPLICATE_DETECTOR_CLEAN_INTERVAL_MILLIS,
+                DEFAULT_DUPLICATE_DETECTOR_WARNING_INTERVAL_MILLIS,
+                scheduledExecutor
+        );
     }
 
     @Override

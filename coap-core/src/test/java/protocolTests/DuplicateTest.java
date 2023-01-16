@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,13 +16,18 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.server.CoapServerBuilder.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.BDDMockito.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
+import static org.mockito.BDDMockito.reset;
+import static org.mockito.BDDMockito.times;
+import static org.mockito.BDDMockito.verify;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_5683;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
@@ -70,7 +75,7 @@ public class DuplicateTest {
         MockCoapTransport serverTransport = new MockCoapTransport();
         AtomicInteger mid = new AtomicInteger(0);
 
-        server = newBuilder()
+        server = CoapServer.builder()
                 .transport(serverTransport)
                 .duplicateMsgCacheSize(100)
                 .duplicatedCoapMessageCallback(request -> duplicated.incrementAndGet())
@@ -132,7 +137,7 @@ public class DuplicateTest {
 
     @Test
     void observationRepeated() throws Exception {
-        CoapClient outbound = CoapClientBuilder.clientFor(LOCAL_5683, server);
+        CoapClient outbound = CoapClient.create(LOCAL_5683, server);
 
         // given, observation established
         outbound.observe("/obs", Opaque.variableUInt(1), consumer);
@@ -154,7 +159,7 @@ public class DuplicateTest {
 
     @Test
     void observationResponseRepeated() throws Exception {
-        CoapClient outbound = CoapClientBuilder.clientFor(LOCAL_5683, server);
+        CoapClient outbound = CoapClient.create(LOCAL_5683, server);
 
         // given
         outbound.observe("/obs", Opaque.variableUInt(1), consumer);

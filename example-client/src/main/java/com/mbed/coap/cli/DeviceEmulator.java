@@ -102,9 +102,11 @@ public class DeviceEmulator {
     void start(TransportProvider transportProvider, String registrationUri, String keystoreFile) throws IOException {
         URI uri = URI.create(registrationUri);
 
-        emulatorServer = providers.create(transportProvider, keystoreFile, null, uri)
-                .route(createRouting())
-                .build().start();
+        emulatorServer = providers.create(transportProvider, keystoreFile, null, uri,
+                udpBuilder -> udpBuilder.route(createRouting()).build(),
+                tcpBuilder -> tcpBuilder.route(createRouting()).build()
+        );
+        emulatorServer.start();
 
         //registration
         String links = "</3/0/1>,</3/0/2>,</3/0/3>,</delayed-10s>";

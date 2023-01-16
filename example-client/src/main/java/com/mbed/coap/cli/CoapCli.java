@@ -16,11 +16,11 @@
  */
 package com.mbed.coap.cli;
 
+import static com.mbed.coap.cli.CoapSchemes.addressFromUri;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.cli.providers.MbedtlsProvider;
 import com.mbed.coap.cli.providers.Pair;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
@@ -28,6 +28,7 @@ import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.filter.TokenGeneratorFilter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -122,10 +123,14 @@ public class CoapCli {
 
     public CoapCli(CoapSchemes providers, TransportProvider transportProvider, String keystoreFile, Pair<String, Opaque> psk, BlockSize blockSize, String proxyUri, String method, URI uri, Opaque payload) throws IOException, InterruptedException, CoapException {
 
-        CoapServer cliServer = providers.create(transportProvider, keystoreFile, psk, uri).blockSize(blockSize).build().start();
+        CoapServer cliServer = providers.create(transportProvider, keystoreFile, psk, uri,
+                udpBuilder -> udpBuilder.blockSize(blockSize).outboundFilter(TokenGeneratorFilter.RANDOM).build(),
+                tcpBuilder -> tcpBuilder.blockSize(blockSize).outboundFilter(TokenGeneratorFilter.RANDOM).build()
+        ).start();
 
-        InetSocketAddress destination = new InetSocketAddress(uri.getHost(), uri.getPort());
-        CoapClient cli = CoapClientBuilder.clientFor(destination, cliServer);
+
+        InetSocketAddress destination = addressFromUri(uri);
+        CoapClient cli = CoapClient.create(destination, cliServer);
 
         Thread.sleep(200);
 
@@ -133,7 +138,6 @@ public class CoapCli {
         try {
             CoapResponse resp = cli.sendSync(CoapRequest.of(destination, Method.valueOf(method), uriPath)
                     .query(uri.getQuery() == null ? "" : uri.getQuery())
-                    .token(System.currentTimeMillis() % 0xFFFF)
                     .proxy(proxyUri)
                     .blockSize(blockSize)
                     .payload(payload)

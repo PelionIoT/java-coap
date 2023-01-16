@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
  */
 package microbenchmark;
 
-import static java.util.concurrent.CompletableFuture.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.mbed.coap.exception.CoapException;
@@ -26,7 +26,6 @@ import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.utils.AsyncQueue;
@@ -64,7 +63,7 @@ public class ServerBenchmark {
         buffer.position(coapReq.toByteArray().length);
 
         trans = new SynchTransportStub();
-        server = CoapServerBuilder.newBuilder().transport(trans)
+        server = CoapServer.builder().transport(trans)
                 .route(RouterService.builder()
                         .get("/path1/sub2/sub3", __ -> completedFuture(CoapResponse.ok("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")))
                 )

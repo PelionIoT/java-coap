@@ -18,6 +18,7 @@ package com.mbed.coap.cli.providers;
 import static com.mbed.coap.cli.CoapSchemes.readCAs;
 import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.transport.CoapTcpTransport;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.File;
@@ -42,7 +43,7 @@ public class MbedtlsProvider extends TransportProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(MbedtlsProvider.class);
 
     @Override
-    public CoapTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) {
+    public CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) {
         throw new IllegalArgumentException("TLS not supported");
     }
 

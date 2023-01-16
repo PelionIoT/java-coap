@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,12 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.BlockSize.*;
-import static com.mbed.coap.packet.CoapRequest.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static com.mbed.coap.packet.BlockSize.S_32;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.post;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
@@ -44,11 +44,9 @@ public class SeparateResponseTest {
         MockCoapTransport serverTransport = new MockCoapTransport();
         server = serverTransport.client();
 
-        CoapServer coapServer = CoapServer.builder().transport(serverTransport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(S_32)
-                .timeout(new SingleTimeout(500)).build();
-        coapServer.start();
-
-        this.client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);
+        client = CoapServer.builder().transport(serverTransport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(S_32)
+                .retransmission(new SingleTimeout(500))
+                .buildClient(SERVER_ADDRESS);
     }
 
     @AfterEach

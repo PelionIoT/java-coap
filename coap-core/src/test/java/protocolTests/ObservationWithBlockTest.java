@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,16 +16,15 @@
  */
 package protocolTests;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.messaging.MessageIdSupplierImpl;
 import com.mbed.coap.utils.ObservationConsumer;
 import java.net.InetSocketAddress;
@@ -47,11 +46,9 @@ public class ObservationWithBlockTest {
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
-        CoapServer coapServer = CoapServerBuilder.newBuilder().transport(transport).midSupplier(new MessageIdSupplierImpl(0))
-                .blockSize(BlockSize.S_16).build();
-        coapServer.start();
-
-        client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);
+        client = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0))
+                .blockSize(BlockSize.S_16)
+                .buildClient(SERVER_ADDRESS);
 
         //establish observation relation
         transport.when(newCoapPacket(1).get().uriPath("/path1").obs(0).token(1).build())

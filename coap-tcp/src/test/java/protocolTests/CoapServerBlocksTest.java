@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,12 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.Opaque.*;
-import static com.mbed.coap.server.CoapServerBuilderForTcp.*;
+import static com.mbed.coap.packet.Opaque.of;
 import static com.mbed.coap.utils.FutureHelpers.failedFuture;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.fail;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_5683;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
@@ -31,6 +31,7 @@ import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.RouterService;
+import com.mbed.coap.server.TcpCoapServer;
 import com.mbed.coap.server.messaging.Capabilities;
 import com.mbed.coap.server.messaging.CapabilitiesStorageImpl;
 import com.mbed.coap.utils.Service;
@@ -61,9 +62,9 @@ public class CoapServerBlocksTest {
 
     @BeforeEach
     public void setUp() {
-        MockCoapTransport transport = new MockCoapTcpTransport();
+        MockCoapTcpTransport transport = new MockCoapTcpTransport();
 
-        server = newBuilderForTcp().transport(transport).maxIncomingBlockTransferSize(10000000).route(route).csmStorage(capabilities).build();
+        server = TcpCoapServer.builder().transport(transport).maxIncomingBlockTransferSize(10000000).route(route).csmStorage(capabilities).build();
 
         client = transport.client();
     }
@@ -108,8 +109,8 @@ public class CoapServerBlocksTest {
     public void block1_request_shouldFailIfTooBigPayload() throws Exception {
         capabilities.put(LOCAL_5683, new Capabilities(5000, true));
 
-        MockCoapTransport transport = new MockCoapTcpTransport();
-        server = newBuilderForTcp().transport(transport).maxIncomingBlockTransferSize(10000).route(route).csmStorage(capabilities).build();
+        MockCoapTcpTransport transport = new MockCoapTcpTransport();
+        server = TcpCoapServer.builder().transport(transport).maxIncomingBlockTransferSize(10000).route(route).csmStorage(capabilities).build();
         client = transport.client();
 
         server.start();

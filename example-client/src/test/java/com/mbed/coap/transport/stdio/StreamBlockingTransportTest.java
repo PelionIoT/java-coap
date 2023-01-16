@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,12 @@
  */
 package com.mbed.coap.transport.stdio;
 
-import static org.awaitility.Awaitility.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilderForTcp;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilderForTcp;
+import com.mbed.coap.server.TcpCoapServer;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -44,13 +44,12 @@ public class StreamBlockingTransportTest {
         serverOut.connect(clientIn);
         clientOut.connect(serverIn);
 
-        CoapServer server = CoapServerBuilderForTcp.newBuilderForTcp().transport(new StreamBlockingTransport(serverOut, serverIn, adr, CoapSerializer.TCP)).build();
+        CoapServer server = TcpCoapServer.builder().transport(new StreamBlockingTransport(serverOut, serverIn, adr, CoapSerializer.TCP)).build();
         server.start();
 
-        CoapClient client = CoapClientBuilderForTcp
-                .newBuilderForTcp(adr)
+        CoapClient client = TcpCoapServer.builder()
                 .transport(new StreamBlockingTransport(clientOut, clientIn, adr, CoapSerializer.TCP))
-                .build();
+                .buildClient(adr);
 
         assertNotNull(client.ping().get());
         server.stop();

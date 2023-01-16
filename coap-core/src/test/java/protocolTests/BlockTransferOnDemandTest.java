@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,12 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.CoapRequest.get;
 import static com.mbed.coap.packet.Opaque.of;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.utils.Networks.localhost;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
@@ -29,7 +29,6 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.InMemoryCoapTransport;
 import com.mbed.coap.utils.Service;
@@ -53,7 +52,7 @@ public class BlockTransferOnDemandTest {
     @BeforeEach
     public void setUp() throws IOException {
 
-        server = CoapServerBuilder.newBuilder()
+        server = CoapServer.builder()
                 .maxIncomingBlockTransferSize(MAX_DATA)
                 .blockSize(BlockSize.S_16)
                 .transport(InMemoryCoapTransport.create(5683))
@@ -65,10 +64,10 @@ public class BlockTransferOnDemandTest {
 
         server.start();
 
-        client = CoapClientBuilder.newBuilder(5683)
+        client = CoapServer.builder()
                 .maxIncomingBlockTransferSize(MAX_DATA)
                 .transport(InMemoryCoapTransport.create())
-                .build();
+                .buildClient(localhost(5683));
     }
 
     @AfterEach

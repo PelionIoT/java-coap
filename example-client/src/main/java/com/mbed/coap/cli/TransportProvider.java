@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ package com.mbed.coap.cli;
 
 import com.mbed.coap.cli.providers.Pair;
 import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.transport.CoapTcpTransport;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.IOException;
@@ -29,7 +30,7 @@ public abstract class TransportProvider {
 
     protected String cipherSuite;
 
-    public abstract CoapTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException;
+    public abstract CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException;
 
     public abstract CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException;
 

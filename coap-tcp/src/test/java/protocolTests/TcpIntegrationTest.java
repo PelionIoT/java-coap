@@ -19,13 +19,12 @@ package protocolTests;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilderForTcp;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilderForTcp;
 import com.mbed.coap.server.RouterService;
+import com.mbed.coap.server.TcpCoapServer;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.javassl.SingleConnectionSocketServerTransport;
 import com.mbed.coap.transport.javassl.SocketClientTransport;
@@ -41,7 +40,7 @@ public class TcpIntegrationTest extends IntegrationTestBase {
 
     @Override
     protected CoapServer buildServer(int port, Service<CoapRequest, CoapResponse> route) throws IOException {
-        return CoapServerBuilderForTcp.newBuilderForTcp()
+        return TcpCoapServer.builder()
                 .transport(new SingleConnectionSocketServerTransport(port, CoapSerializer.TCP))
                 .blockSize(BlockSize.S_1024_BERT)
                 .maxMessageSize(100_000)
@@ -53,12 +52,12 @@ public class TcpIntegrationTest extends IntegrationTestBase {
     protected CoapClient buildClient(int port) throws IOException {
         InetSocketAddress serverAddress = new InetSocketAddress(InetAddress.getLocalHost(), port);
 
-        return CoapClientBuilderForTcp.newBuilderForTcp(serverAddress)
+        return TcpCoapServer.builder()
                 .transport(new SocketClientTransport(serverAddress, SocketFactory.getDefault(), CoapSerializer.TCP, true))
                 .blockSize(BlockSize.S_1024_BERT)
                 .maxIncomingBlockTransferSize(4000)
                 .maxMessageSize(2100)
-                .build();
+                .buildClient(serverAddress);
     }
 
     @Override

@@ -25,14 +25,12 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.ObservableResourceService;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.InMemoryCoapTransport;
@@ -54,7 +52,7 @@ public class ForwardingTransportContextTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        server = CoapServerBuilder.newBuilder()
+        server = CoapServer.builder()
                 .route(RouterService.builder()
                         .get("/test", coapResourceTest)
                         .put("/test", coapResourceTest)
@@ -73,7 +71,7 @@ public class ForwardingTransportContextTest {
     @Test
     public void testRequest() throws IOException, CoapException {
         InMemoryCoapTransport cliTransport = spy(new InMemoryCoapTransport());
-        CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683)).transport(cliTransport).build();
+        CoapClient client = CoapServer.builder().transport(cliTransport).buildClient(InMemoryCoapTransport.createAddress(5683));
 
         srvTransport.setTransportContext(TransportContext.of(MY_TEXT, "dupa"));
         client.sendSync(get("/test").context(TransportContext.of(MY_TEXT, "client-sending")));
@@ -93,7 +91,7 @@ public class ForwardingTransportContextTest {
     @Test
     public void testRequestWithBlocks() throws IOException, CoapException {
         InMemoryCoapTransport cliTransport = spy(new InMemoryCoapTransport());
-        CoapClient client = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683)).transport(cliTransport).blockSize(BlockSize.S_16).build();
+        CoapClient client = CoapServer.builder().transport(cliTransport).blockSize(BlockSize.S_16).buildClient(InMemoryCoapTransport.createAddress(5683));
 
         srvTransport.setTransportContext(TransportContext.of(MY_TEXT, "dupa"));
         CoapResponse resp = client.sendSync(put("/test").payload("fhdkfhsdkj fhsdjkhfkjsdh fjkhs dkjhfsdjkh")

@@ -15,9 +15,9 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.transport.udp.DatagramSocketTransport.udp;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
@@ -91,9 +91,9 @@ public class UsageTest {
     @Test
     void simpleClientUsage() throws IOException, CoapException {
         // build CoapClient that connects to coap server which is running on port 5683
-        CoapClient client = CoapClientBuilder
-                .newBuilder(new InetSocketAddress("localhost", 5683))
-                .build();
+        CoapClient client = CoapServer.builder()
+                .transport(udp())
+                .buildClient(new InetSocketAddress("localhost", 5683));
 
         // send request
         CoapResponse resp = client.sendSync(CoapRequest.get("/sensors/temperature"));
@@ -105,15 +105,13 @@ public class UsageTest {
     @Test
     void completeClientUsage() throws IOException, CoapException {
         // build CoapClient that connects to coap server which is running on port 5683
-        CoapClient client = CoapClientBuilder
-                // create new builder and sets target server address
-                .newBuilder(new InetSocketAddress("localhost", 5683))
+        CoapClient client = CoapServer.builder()
                 // define transport, plain text UDP listening on random port
-                .transport(new DatagramSocketTransport(0))
+                .transport(udp())
                 // (optional) define maximum block size
                 .blockSize(BlockSize.S_1024)
                 // (optional) set maximum response timeout
-                .finalTimeout(Duration.ofMinutes(2))
+                .responseTimeout(Duration.ofMinutes(2))
                 // (optional) set maximum allowed resource size
                 .maxIncomingBlockTransferSize(1000_0000)
                 // (optional) set extra filters (interceptors) to outbound pipeline
@@ -121,7 +119,8 @@ public class UsageTest {
                         // each request will be set with different Token
                         TokenGeneratorFilter.sequential(1)
                 )
-                .build();
+                // build client with target server address
+                .buildClient(new InetSocketAddress("localhost", 5683));
 
         // send ping
         client.ping();

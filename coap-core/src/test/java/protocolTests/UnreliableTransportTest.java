@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,21 +16,20 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static com.mbed.coap.packet.CoapResponse.*;
-import static com.mbed.coap.transport.InMemoryCoapTransport.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapResponse.ok;
+import static com.mbed.coap.transport.InMemoryCoapTransport.createAddress;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transmission.CoapTimeout;
 import com.mbed.coap.transmission.SingleTimeout;
@@ -56,7 +55,7 @@ public class UnreliableTransportTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        server = CoapServerBuilder.newBuilder()
+        server = CoapServer.builder()
                 .transport(InMemoryCoapTransport.create(5683))
                 .route(route)
                 .build();
@@ -71,7 +70,7 @@ public class UnreliableTransportTest {
 
     @Test
     public void requestWithPacketLost() throws CoapException, IOException {
-        try (CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(5683))
+        try (CoapClient cnn = CoapServer.builder()
                 .transport(new DroppingPacketsTransportWrapper(0, (byte) 0) {
                     private boolean hasDropped = false;
 
@@ -87,8 +86,9 @@ public class UnreliableTransportTest {
                     }
 
                 })
-                .timeout(new CoapTimeout(100)).build()) {
-
+                .retransmission(new CoapTimeout(100))
+                .buildClient(InMemoryCoapTransport.createAddress(5683))
+        ) {
             CoapResponse resp = cnn.sendSync(get("/dropping"));
             assertEquals("OK", resp.getPayloadString());
         }
@@ -97,7 +97,7 @@ public class UnreliableTransportTest {
     @Test
     public void testRequestWithPacketDelay() throws Exception {
         ExecutorService executorService = Executors.newCachedThreadPool();
-        CoapClient client = CoapClientBuilder.newBuilder(createAddress(5683))
+        CoapClient client = CoapServer.builder()
                 .transport(new InMemoryCoapTransport(0, command -> executorService.execute(() -> {
                     try {
                         Thread.sleep(100);
@@ -105,7 +105,7 @@ public class UnreliableTransportTest {
                         throw new RuntimeException();
                     }
                     command.run();
-                }))).build();
+                }))).buildClient(createAddress(5683));
 
         CompletableFuture<CoapResponse> callback = client.send(get("/test/1"));
         assertEquals("Dziala", callback.get().getPayloadString());
@@ -115,7 +115,7 @@ public class UnreliableTransportTest {
     @Test
     public void testRequestWithPacketDropping() throws IOException, CoapException {
         server.stop();
-        server = CoapServerBuilder.newBuilder()
+        server = CoapServer.builder()
                 .transport(new DroppingPacketsTransportWrapper(CoapConstants.DEFAULT_PORT, (byte) 100))
                 .route(RouterService.builder()
                         .get("/test", __ -> completedFuture(ok("TEST")))
@@ -123,8 +123,9 @@ public class UnreliableTransportTest {
                 .build()
                 .start();
 
-        CoapClient cnn = CoapClientBuilder.newBuilder(InMemoryCoapTransport.createAddress(CoapConstants.DEFAULT_PORT))
-                .transport(InMemoryCoapTransport.create()).timeout(new SingleTimeout(100)).build();
+        CoapClient cnn = CoapServer.builder()
+                .transport(InMemoryCoapTransport.create()).retransmission(new SingleTimeout(100))
+                .buildClient(InMemoryCoapTransport.createAddress(CoapConstants.DEFAULT_PORT));
 
         assertThrows(CoapTimeoutException.class, () ->
                 cnn.sendSync(get("/test"))

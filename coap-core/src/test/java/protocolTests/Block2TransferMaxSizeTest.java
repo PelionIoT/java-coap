@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.packet.BlockSize;
@@ -44,19 +43,15 @@ public class Block2TransferMaxSizeTest {
     private static final int MAX_TRANSFER_SIZE = 32;
     private TransportConnectorMock transport;
     private CoapClient client;
-    private CoapServer coapServer;
 
     @BeforeEach
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
-        coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
-                .timeout(new SingleTimeout(500))
+        client = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
+                .retransmission(new SingleTimeout(500))
                 .maxIncomingBlockTransferSize(MAX_TRANSFER_SIZE)
-                .build();
-        coapServer.start();
-
-        client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);
+                .buildClient(SERVER_ADDRESS);
     }
 
     @AfterEach

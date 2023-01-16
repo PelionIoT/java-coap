@@ -23,12 +23,10 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -53,7 +51,7 @@ class MbedtlsCoapTransportTest {
     @BeforeEach
     void setUp() throws IOException {
         dtlsServer = DtlsServer.create(serverConf);
-        coapServer = CoapServerBuilder.newBuilder()
+        coapServer = CoapServer.builder()
                 .transport(new MbedtlsCoapTransport(dtlsServer))
                 .route(new RouterService.RouteBuilder()
                         .get("/test", it -> completedFuture(ok("OK!")))
@@ -90,9 +88,9 @@ class MbedtlsCoapTransportTest {
     void shouldConnectUsingMbedtlsTransport() throws IOException, CoapException {
         // given
         MbedtlsCoapTransport clientTrans = new MbedtlsCoapTransport(DtlsTransmitter.connect(srvAddress, clientConf).join());
-        CoapClient coapClient = CoapClientBuilder.newBuilder(srvAddress)
+        CoapClient coapClient = CoapServer.builder()
                 .transport(clientTrans)
-                .build();
+                .buildClient(srvAddress);
 
         // when
         CoapResponse resp = coapClient.sendSync(get("/test"));
@@ -108,9 +106,9 @@ class MbedtlsCoapTransportTest {
     void shouldIgnoreMalformedCoapPacket() throws IOException, CoapException {
         // given
         MbedtlsCoapTransport clientTrans = new MbedtlsCoapTransport(DtlsTransmitter.connect(srvAddress, clientConf).join());
-        CoapClient coapClient = CoapClientBuilder.newBuilder(srvAddress)
+        CoapClient coapClient = CoapServer.builder()
                 .transport(clientTrans)
-                .build();
+                .buildClient(srvAddress);
 
         // when
         assertEquals(CoapResponse.of(Code.C201_CREATED), coapClient.sendSync(post("/send-malformed")));
@@ -125,9 +123,9 @@ class MbedtlsCoapTransportTest {
     void shouldUpdateAndPassDtlsContext() throws IOException, CoapException {
         // given
         MbedtlsCoapTransport clientTrans = new MbedtlsCoapTransport(DtlsTransmitter.connect(srvAddress, clientConf).join());
-        CoapClient coapClient = CoapClientBuilder.newBuilder(srvAddress)
+        CoapClient coapClient = CoapServer.builder()
                 .transport(clientTrans)
-                .build();
+                .buildClient(srvAddress);
         // and not authenticated
         assertEquals(Code.C401_UNAUTHORIZED, coapClient.sendSync(get("/auth")).getCode());
 

@@ -18,11 +18,12 @@ package protocolTests;
 
 import static com.mbed.coap.packet.CoapRequest.put;
 import static com.mbed.coap.packet.Opaque.of;
+import static com.mbed.coap.transport.udp.DatagramSocketTransport.udp;
+import static com.mbed.coap.utils.Networks.localhost;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
@@ -31,7 +32,6 @@ import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.ObservableResourceService;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.utils.ObservationConsumer;
@@ -66,7 +66,7 @@ public class Block1TransferMaxSizeTest {
         changeableResource = new ChangeableResource();
         observableResource = new ObservableResourceService(CoapResponse.ok(OBS_RESOURCE_INIT_VALUE));
 
-        server = CoapServerBuilder.newBuilder()
+        server = CoapServer.builder()
                 .route(RouterService.builder()
                         .get(CHANGEABLE_RESOURCE_PATH, changeableResource)
                         .put(CHANGEABLE_RESOURCE_PATH, changeableResource)
@@ -74,17 +74,18 @@ public class Block1TransferMaxSizeTest {
                 )
                 .maxIncomingBlockTransferSize(MAX_DATA)
                 .blockSize(BlockSize.S_16)
-                .transport(0)
+                .transport(udp())
                 .build();
 
         server.start();
         SERVER_PORT = server.getLocalSocketAddress().getPort();
 
 
-        client = CoapClientBuilder.newBuilder(SERVER_PORT)
+        client = CoapServer.builder()
+                .transport(udp())
                 .maxIncomingBlockTransferSize(MAX_DATA)
                 .blockSize(BlockSize.S_16)
-                .build();
+                .buildClient(localhost(SERVER_PORT));
     }
 
     @AfterEach

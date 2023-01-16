@@ -24,7 +24,6 @@ import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import java.io.IOException;
@@ -41,8 +40,7 @@ public class DeviceEmulatorTest {
     public void setUp() throws Exception {
 
         DatagramSocketTransport transport = new DatagramSocketTransport(0);
-        stubServer = CoapServerBuilder
-                .newBuilder()
+        stubServer = CoapServer.builder()
                 .route(RouterService.builder()
                         .post("/rd", req -> {
                             String epName = req.options().getUriQueryMap().get("ep");

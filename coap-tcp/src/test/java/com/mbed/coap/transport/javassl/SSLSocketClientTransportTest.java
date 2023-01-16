@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,12 @@
  */
 package com.mbed.coap.transport.javassl;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static com.mbed.coap.server.CoapServerBuilderForTcp.*;
-import static org.awaitility.Awaitility.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
-import com.mbed.coap.client.CoapClientBuilderForTcp;
 import com.mbed.coap.server.CoapServer;
+import com.mbed.coap.server.TcpCoapServer;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import javax.net.ssl.SSLContext;
@@ -41,15 +39,15 @@ public class SSLSocketClientTransportTest {
     @Test
     public void successfulConnection() throws Exception {
 
-        CoapServer srv = newBuilderForTcp()
+        CoapServer srv = TcpCoapServer.builder()
                 .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, CoapSerializer.TCP))
                 .build().start();
 
 
         InetSocketAddress serverAdr = new InetSocketAddress("localhost", srv.getLocalSocketAddress().getPort());
-        CoapClient client = CoapClientBuilder.clientFor(serverAdr,
-                newBuilderForTcp().transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), CoapSerializer.TCP, false)).build().start()
-        );
+        CoapClient client = TcpCoapServer.builder()
+                .transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), CoapSerializer.TCP, false))
+                .buildClient(serverAdr);
 
         //        assertNotNull(client.ping().get());
         assertNotNull(client.sendSync(get("/test")));
@@ -63,23 +61,23 @@ public class SSLSocketClientTransportTest {
     @Test
     public void successful_reconnection() throws Exception {
 
-        CoapServer srv = newBuilderForTcp()
+        CoapServer srv = TcpCoapServer.builder()
                 .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, CoapSerializer.TCP))
                 .build().start();
 
 
         int serverPort = srv.getLocalSocketAddress().getPort();
         InetSocketAddress serverAdr = new InetSocketAddress("localhost", serverPort);
-        CoapClient client = CoapClientBuilderForTcp.clientFor(serverAdr,
-                newBuilderForTcp().transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), CoapSerializer.TCP, true)).build().start()
-        );
+        CoapClient client = TcpCoapServer.builder()
+                .transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), CoapSerializer.TCP, true))
+                .buildClient(serverAdr);
 
         assertNotNull(client.ping().get());
 
         //re-start server
         srv.stop();
         System.out.println("----- STOPPED");
-        srv = newBuilderForTcp()
+        srv = TcpCoapServer.builder()
                 .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, serverPort, CoapSerializer.TCP))
                 .build().start();
 

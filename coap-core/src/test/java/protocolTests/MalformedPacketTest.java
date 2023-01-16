@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,11 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.transport.udp.DatagramSocketTransport.udp;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
@@ -43,7 +43,8 @@ public class MalformedPacketTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        server = CoapServer.builder().transport(0)
+        server = CoapServer.builder()
+                .transport(udp())
                 .route(RouterService.builder()
                         .get("/test/1", __ -> completedFuture(CoapResponse.ok("Dziala")))
                 )
@@ -62,9 +63,8 @@ public class MalformedPacketTest {
     public void simpleRequest() throws Exception {
         DatagramSocketTransport clientTransport = new DatagramSocketTransport(new InetSocketAddress(0));
 
-        CoapClient cnn = CoapClientBuilder
-                .newBuilder(InMemoryCoapTransport.createAddress(serverPort))
-                .transport(clientTransport).build();
+        CoapClient cnn = CoapServer.builder()
+                .transport(clientTransport).buildClient(InMemoryCoapTransport.createAddress(serverPort));
 
         //when, malformed packet
         Opaque malformedPacket1 = Opaque.decodeHex("42021ed720d468bfb0daed7d8da264e29198e37bc4817da81c86b66f2d66276421a4769789b5ab5b1bb09e9300aca1b82362c2759dc6c8d6c87441b012933677704beeab571d3d3d95cfedfc9f57dd0fc145fd8d39af24d7109916a53b52cdb593c19600c15e69088f7405afe2dcbb5fed1ee17b5bd216c7a654f8ab674e24922cd1b57c0c1a626b05e9032cd25e70dbb5383e1b222c930990962c80c4a21ae3148f25d01670aa33444fe4cc6abe904a1b4950c3182e4679242858f8e71ead0d0e5c25f11643c9375f5ec57633cf3fb088d8a4c36c2ecfad042ca33bf4be795fd3b7da341c42ce7b5c70468d8ece307140705285e974a077f0a465785904ecdf0c3a99284fed82c258a490764b1c075dd9fd02577a80f929fcad30395e78b1da4c961f7a39b0c5d5dd8a567bd5abb22df8a3288a2ab9f82aea6e79bfd560baee12294a4611f529096f89d2cffd764463f317b481ba4d7fd6f1d1b40e6dffd6fd0aae724aeb802185f5daaa66645745b46dcf2a09511862b1e852b819527a901bb1662805dc553e2ade9274b41f825d036cbd975ac313f23a9f7d1ec8deb7b2658b915204d6f23e2edf18c782c15a6ce37f67771809a2b298c6270255d0ebe98a69809f75bce7df1b10584604bee1bcdf6758f6210b0cb9163187b4d518d94d84799c3453dd0204b37b214a242e3cb4be522ff0c3b09e96cb37242d4d65779c88590e1438b74a350213346707673c9fd33b39221115e1479d6dd70e787ae2ba612dd40b4ee856e27856ac09f87d0e1bb2d8091e1f6ca343f2f0f8");

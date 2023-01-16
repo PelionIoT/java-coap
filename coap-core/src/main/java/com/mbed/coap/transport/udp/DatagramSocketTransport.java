@@ -44,6 +44,14 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     protected DatagramSocket socket;
     private final ExecutorService readingWorker;
 
+    public static DatagramSocketTransport udp() {
+        return new DatagramSocketTransport(0);
+    }
+
+    public static DatagramSocketTransport udp(int localPort) {
+        return new DatagramSocketTransport(localPort);
+    }
+
     public DatagramSocketTransport(InetSocketAddress bindAddress) {
         this(null, bindAddress, null);
     }

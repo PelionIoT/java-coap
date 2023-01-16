@@ -19,19 +19,18 @@ package protocolTests;
 import static com.mbed.coap.packet.CoapRequest.get;
 import static com.mbed.coap.packet.Opaque.EMPTY;
 import static com.mbed.coap.packet.Opaque.of;
+import static com.mbed.coap.transport.udp.DatagramSocketTransport.udp;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
-import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.server.ObservableResourceService;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.transmission.SingleTimeout;
@@ -53,12 +52,12 @@ public class ObservationTest {
     @BeforeEach
     public void setUpClass() throws Exception {
         obsResource = new ObservableResourceService(CoapResponse.ok(EMPTY));
-        server = CoapServerBuilder.newBuilder().transport(0)
+        server = CoapServer.builder().transport(udp())
                 .route(RouterService.builder()
                         .get("/path1", __ -> completedFuture(CoapResponse.ok("content1")))
                         .get(RES_OBS_PATH1, obsResource)
                 )
-                .timeout(new SingleTimeout(500)).blockSize(BlockSize.S_128).build();
+                .retransmission(new SingleTimeout(500)).blockSize(BlockSize.S_128).build();
 
         server.start();
         SERVER_ADDRESS = new InetSocketAddress("127.0.0.1", server.getLocalSocketAddress().getPort());
@@ -71,7 +70,7 @@ public class ObservationTest {
 
     @Test
     public void observationTest() throws Exception {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapServer.builder().transport(udp()).buildClient(SERVER_ADDRESS);
 
         ObservationListener obsListener = new ObservationListener();
         client.observe(RES_OBS_PATH1, token1001, obsListener).get();
@@ -116,7 +115,7 @@ public class ObservationTest {
 
     @Test
     public void terminateObservationByServerWithErrorCode() throws Exception {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapServer.builder().transport(udp()).buildClient(SERVER_ADDRESS);
 
         ObservationListener obsListener = new ObservationListener();
         client.observe(RES_OBS_PATH1, token1001, obsListener).get();
@@ -137,7 +136,7 @@ public class ObservationTest {
 
     @Test
     public void terminateObservationByServerTimeout() throws Exception {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapServer.builder().transport(udp()).buildClient(SERVER_ADDRESS);
 
         ObservationListener obsListener = new ObservationListener();
         client.observe(RES_OBS_PATH1, token1001, obsListener).get();
@@ -152,7 +151,7 @@ public class ObservationTest {
 
     @Test
     public void dontTerminateObservationIfNoObs() throws Exception {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapServer.builder().transport(udp()).buildClient(SERVER_ADDRESS);
 
         //register observation
         ObservationListener obsListener = new ObservationListener();
@@ -173,7 +172,7 @@ public class ObservationTest {
 
     @Test
     public void terminateObservationByClientWithRst() throws Exception {
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
+        CoapClient client = CoapServer.builder().transport(udp()).buildClient(SERVER_ADDRESS);
 
         //register observation
         client.observe(RES_OBS_PATH1, token1001, obs -> false).get();
@@ -193,7 +192,7 @@ public class ObservationTest {
     public void observationWithBlocks() throws Exception {
         obsResource.putPayload(ClientServerWithBlocksTest.BIG_RESOURCE);
 
-        CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).blockSize(BlockSize.S_128).build();
+        CoapClient client = CoapServer.builder().transport(udp()).blockSize(BlockSize.S_128).buildClient(SERVER_ADDRESS);
 
         //register observation
         ObservationListener obsListener = new ObservationListener();

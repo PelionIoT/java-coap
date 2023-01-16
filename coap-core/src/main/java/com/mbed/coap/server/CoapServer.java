@@ -44,8 +44,8 @@ public class CoapServer {
         this.stopAll = stopAll;
     }
 
-    public static CoapServerBuilder.CoapServerBuilderForUdp builder() {
-        return CoapServerBuilder.newBuilder();
+    public static CoapServerBuilder builder() {
+        return new CoapServerBuilder();
     }
 
     /**

@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.client.CoapClient;
-import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapResponse;
@@ -50,11 +49,9 @@ public class BlockTest {
     public void setUp() throws Exception {
         transport = new TransportConnectorMock();
 
-        CoapServer coapServer = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
-                .timeout(new SingleTimeout(500)).build();
-        coapServer.start();
-
-        client = CoapClientBuilder.clientFor(SERVER_ADDRESS, coapServer);
+        client = CoapServer.builder().transport(transport).midSupplier(new MessageIdSupplierImpl(0)).blockSize(BlockSize.S_32)
+                .retransmission(new SingleTimeout(500))
+                .buildClient(SERVER_ADDRESS);
     }
 
     @AfterEach
