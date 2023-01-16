@@ -2,7 +2,7 @@ plugins {
     id("java-library")
 }
 
-description = "mbedtls-transport"
+description = "coap-mbedtls"
 
 dependencies {
     api(project(":coap-core"))

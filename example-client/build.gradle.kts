@@ -8,7 +8,7 @@ dependencies {
     implementation(project(":coap-core"))
     implementation(project(":coap-tcp"))
     implementation(project(":lwm2m"))
-    implementation(project(":mbedtls-transport"))
+    implementation(project(":coap-mbedtls"))
     implementation("org.slf4j:slf4j-api:2.0.6")
     implementation("ch.qos.logback:logback-classic:1.3.5")
 

@@ -1,5 +1,5 @@
 include(":coap-core")
 include(":coap-tcp")
-include(":mbedtls-transport")
+include(":coap-mbedtls")
 include(":lwm2m")
 include(":example-client")
