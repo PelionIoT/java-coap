@@ -11,6 +11,7 @@ plugins {
     id("com.github.spotbugs") version "5.0.13"
     id("org.gradle.signing")
     id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+    id("com.adarshr.test-logger") version "3.2.0"
 }
 
 allprojects {
@@ -47,6 +48,7 @@ subprojects {
         plugin("jacoco")
         plugin("maven-publish")
         plugin("org.gradle.signing")
+        plugin("com.adarshr.test-logger")
     }
 
     val projSourceSets = extensions.getByName("sourceSets") as SourceSetContainer
