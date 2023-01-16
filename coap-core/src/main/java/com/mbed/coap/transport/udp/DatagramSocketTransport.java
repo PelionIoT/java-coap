@@ -24,6 +24,7 @@ import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.utils.ExecutorHelpers;
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -40,22 +41,14 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatagramSocketTransport.class.getName());
     private final InetSocketAddress bindAddress;
-    protected BlockingSocket socket;
+    protected DatagramSocket socket;
     private final ExecutorService readingWorker;
 
     public DatagramSocketTransport(InetSocketAddress bindAddress) {
         this(null, bindAddress, null);
     }
 
-    public DatagramSocketTransport(InetSocketAddress bindAddress, ExecutorService readingWorker) {
-        this(null, bindAddress, readingWorker);
-    }
-
-    public DatagramSocketTransport(BlockingSocket datagramSocket, ExecutorService readingWorker) {
-        this(datagramSocket, datagramSocket.getBoundAddress(), readingWorker);
-    }
-
-    private DatagramSocketTransport(BlockingSocket datagramSocket, InetSocketAddress bindAddress, ExecutorService readingWorker) {
+    private DatagramSocketTransport(DatagramSocket datagramSocket, InetSocketAddress bindAddress, ExecutorService readingWorker) {
         this.socket = datagramSocket;
         this.bindAddress = bindAddress;
         if (readingWorker != null) {
@@ -100,17 +93,13 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
     }
 
     protected void createSocket() throws SocketException {
-        socket = new DatagramSocketAdapter(bindAddress);
+        socket = new DatagramSocket(bindAddress);
     }
 
     @Override
     public void stop() {
         if (socket != null) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                LOGGER.error(e.getMessage(), e);
-            }
+            socket.close();
         }
         readingWorker.shutdown();
     }
@@ -133,10 +122,10 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
 
     @Override
     public InetSocketAddress getLocalSocketAddress() {
-        return getSocket().getBoundAddress();
+        return (InetSocketAddress) socket.getLocalSocketAddress();
     }
 
-    public BlockingSocket getSocket() {
+    public DatagramSocket getSocket() {
         return socket;
     }
 

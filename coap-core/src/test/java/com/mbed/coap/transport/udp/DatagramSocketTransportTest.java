@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,14 @@
  */
 package com.mbed.coap.transport.udp;
 
-import static com.mbed.coap.transport.InMemoryCoapTransport.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static com.mbed.coap.transport.InMemoryCoapTransport.localAddressFrom;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_5683;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.packet.CoapPacket;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -55,22 +60,6 @@ public class DatagramSocketTransportTest {
         } finally {
             trans.stop();
         }
-    }
-
-    @Test
-    public void initializeWithProvidedDatagramSocket() throws Exception {
-
-        DatagramSocketAdapter udpSocket = new DatagramSocketAdapter(0);
-        DatagramSocketTransport datagramSocketTransport = new DatagramSocketTransport(udpSocket, null);
-
-        datagramSocketTransport.start();
-        assertTrue(udpSocket.isBound());
-        assertFalse(udpSocket.isClosed());
-
-        assertEquals(udpSocket.getLocalPort(), datagramSocketTransport.getLocalSocketAddress().getPort());
-
-        datagramSocketTransport.stop();
-        assertTrue(udpSocket.isClosed());
     }
 
     @Test
