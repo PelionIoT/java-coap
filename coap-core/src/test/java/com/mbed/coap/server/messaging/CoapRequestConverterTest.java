@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,15 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static com.mbed.coap.packet.CoapResponse.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static com.mbed.coap.packet.CoapRequest.post;
+import static com.mbed.coap.packet.CoapResponse.ok;
+import static com.mbed.coap.transport.TransportContext.NON_CONFIRMABLE;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_5683;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -53,7 +55,7 @@ class CoapRequestConverterTest {
     @Test
     void shouldConvertNonRequestAndResponse() {
         given(service.apply(eq(
-                post(LOCAL_5683, "/test2").token(13).payload("test"))
+                post(LOCAL_5683, "/test2").token(13).payload("test").context(NON_CONFIRMABLE, true))
         )).willReturn(completedFuture(
                 ok("ok"))
         );

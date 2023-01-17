@@ -17,8 +17,10 @@ package protocolTests;
 
 import static com.mbed.coap.packet.BlockSize.S_16;
 import static com.mbed.coap.packet.CoapRequest.put;
+import static com.mbed.coap.packet.CoapResponse.ok;
 import static com.mbed.coap.server.CoapServerBuilder.newBuilder;
 import static com.mbed.coap.transport.TransportContext.NON_CONFIRMABLE;
+import static com.mbed.coap.utils.Validations.require;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,11 +52,15 @@ public class NonConfirmableTransactionsTest {
     private Function<CoapResponse, Boolean> consumer = mock(Function.class);
 
     private final Service<CoapRequest, CoapResponse> route = RouterService.builder()
-            .get("/test", req ->
-                    completedFuture(CoapResponse.ok("OK"))
+            .get("/test", req -> {
+                        require(req.getTransContext().get(NON_CONFIRMABLE));
+                        return completedFuture(ok("OK"));
+                    }
             )
-            .get("/large", req ->
-                    completedFuture(CoapResponse.ok("aaaaaaaaaaaaaaa|bbbbbb"))
+            .get("/large", req -> {
+                        require(req.getTransContext().get(NON_CONFIRMABLE));
+                        return completedFuture(ok("aaaaaaaaaaaaaaa|bbbbbb"));
+                    }
             )
             .build();
 

@@ -308,7 +308,9 @@ public class CoapPacket {
     }
 
     public CoapRequest toCoapRequest() {
-        return new CoapRequest(method, token, options, payload, remoteAddress, transportContext);
+        TransportContext transCtx = (messageType == MessageType.NonConfirmable) ? transportContext.with(NON_CONFIRMABLE, true) : transportContext;
+
+        return new CoapRequest(method, token, options, payload, remoteAddress, transCtx);
     }
 
     /**
