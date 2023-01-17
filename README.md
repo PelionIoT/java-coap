@@ -27,34 +27,30 @@ The following features are supported by the library:
 * Network transports:
   - UDP (plain text)
   - TCP (plain text)
-  - TLS
-  - DTLS 1.2 (using mbedtls)
   - DTLS 1.2 with CID (using mbedtls)
+    - X509 Certificate
+    - PSK
+  - TLS
 * LwM2M TLV and JSON data formats
 
-Requirements
+Runtime requirements
 ------------
 
-### Runtime:
-
 * JRE 8, 11, 17
-
-### Development:
-
-* JDK 8
-* gradle
 
 Using the Library
 -----------------
 
 ### Gradle
 
-Add to your `build.gradle`
+Add to your `build.gradle.kts`
 
 ```kotlin
 dependencies {
   ...
   implementation("io.github.open-coap:coap-core:VERSION")
+  implementation("io.github.open-coap:coap-mbedtls:VERSION") // for DTLS support
+  implementation("io.github.open-coap:coap-tcp:VERSION")     // for coap over tcp support
 }
 ```
 
@@ -67,55 +63,136 @@ Add dependency into your `pom.xml`:
 <dependency>
   <groupId>io.github.open-coap</groupId>
   <artifactId>coap-core</artifactId>
-    <version>{VERSION}</version>
+  <version>{VERSION}</version>
 </dependency>
 ```
 
-### Creating a Server
+### Coap client simple usage:
 
-#### Initializing, starting and stopping the server
+```java
+// build CoapClient that connects to coap server which is running on port 5683
+CoapClient client = CoapClientBuilder
+        .newBuilder(new InetSocketAddress("localhost", 5683))
+        .build();
 
-To initialize a server, you must at minimum define the port number. You must set the server parameters before starting a server.
+// send request
+CoapResponse resp = client.sendSync(CoapRequest.get("/sensors/temperature"));
+LOGGER.info(resp.toString());
 
-    CoapServer server = CoapServer.builder().transport(5683).build();
-    server.start();
+client.close();
+```
 
-To stop a server, use the `stop()` method.
+### Coap client complete usage:
 
-    server.stop();
+```java
+// build CoapClient that connects to coap server which is running on port 5683
+CoapClient client = CoapClientBuilder
+        // create new builder and sets target server address
+        .newBuilder(new InetSocketAddress("localhost", 5683))
+        // define transport, plain text UDP listening on random port
+        .transport(new DatagramSocketTransport(0))
+        // (optional) define maximum block size
+        .blockSize(BlockSize.S_1024)
+        // (optional) set maximum response timeout
+        .finalTimeout(Duration.ofMinutes(2))
+        // (optional) set maximum allowed resource size
+        .maxIncomingBlockTransferSize(1000_0000)
+        // (optional) set extra filters (interceptors) to outbound pipeline
+        .outboundFilter(
+                // each request will be set with different Token
+                TokenGeneratorFilter.sequential(1)
+        )
+        .build();
 
-#### Handling incoming requests with Services and Filters
+// send ping
+client.ping();
 
-Incoming requests are handled by implementing `Service<CoapRequest, CoapResponse>` interface. It is a simple function: 
+// send request
+CompletableFuture<CoapResponse> futureResponse = client.send(CoapRequest.get("/sensors/temperature"));
+futureResponse.thenAccept(resp ->
+        // .. handle response
+        LOGGER.info(resp.toString())
+);
+
+// send request with payload and header options
+CompletableFuture<CoapResponse> futureResponse2 = client.send(CoapRequest
+        .post("/actuator/switch")
+        .options(opt -> {
+            // set header options, for example:
+            opt.setEtag(Opaque.decodeHex("0a8120"));
+            opt.setAccept(MediaTypes.CT_APPLICATION_JSON);
+            opt.setMaxAge(3600L);
+        })
+        .payload("{\"power\": \"on\"}", MediaTypes.CT_APPLICATION_JSON)
+);
+futureResponse2.thenAccept(resp ->
+        // .. handle response
+        LOGGER.info(resp.toString())
+);
+
+// observe resource (subscribe), observations will be handled to provided callback
+CompletableFuture<CoapResponse> resp3 = client.observe("/sensors/temperature", coapResponse -> {
+    LOGGER.info(coapResponse.toString());
+    return true; // return false to terminate observation
+});
+LOGGER.info(resp3.join().toString());
+
+client.close();
+```
+
+### Server usage
+
+```java
+server = CoapServer.builder()
+        // configure with plain text UDP transport, listening on port 5683
+        .transport(new DatagramSocketTransport(5683))
+        // define routing
+        // (note that each resource function is a `Service` type and can be decorated/transformed with `Filter`)
+        .route(RouterService.builder()
+                .get("/.well-known/core", req -> completedFuture(
+                        CoapResponse.ok("</sensors/temperature>", MediaTypes.CT_APPLICATION_LINK__FORMAT)
+                ))
+                .post("/actuators/switch", req -> {
+                    // ...
+                    return completedFuture(CoapResponse.of(Code.C204_CHANGED));
+                })
+                // observable resource
+                .get("/sensors/temperature", req -> {
+                    CoapResponse resp = CoapResponse.ok("21C").nextSupplier(() -> {
+                                // we need to define a promise for next value
+                                CompletableFuture<CoapResponse> promise = new CompletableFuture();
+                                // ... complete once resource value changes
+                                return promise;
+                            }
+                    );
+
+                    return completedFuture(resp);
+                })
+        )
+        .build()
+        
+server.start();
+```
+
+### Services and Filters
+
+All requests are handled by implementing `Service<REQ, RES>` interface, which is a simple function:
 
 ```
-(CoapRequest) -> CompletableFuture<CoapResponse>
+(REQ) -> CompletableFuture<RES>
 ```
 
 Intercepting is achieved by implementing `Filter` interface, which is again a simple function:
 
 ```
-(CoapRequest, Service<CoapRequest, CoapResponse>) -> CompletableFuture<CoapResponse>
+(REQ, Service<IN_REQ, IN_RES>) -> CompletableFuture<RES>
 ```
 
-That interface has helper functions to compose with another `Filter` and `Service`.
+Filter interface has a set of helper functions to compose with another `Filter` and `Service`.
+Together it creates a pipeline of request handling functions.
 
-It is following server as a function idea, that is a very simple, flexible and testable way to model data processing.
-It is best describe in this white paper: [Your Server as a Function](https://monkey.org/~marius/funsrv.pdf), and has a great implementation in [Finagle](https://twitter.github.io/finagle).
-
-#### Routing service
-
-Routing can be build with `RouterService.builder()` that creates a `Service` which routes incoming request into specific function based on uri path and method. For example:
-
-```java
-    Service<CoapRequest, CoapResponse> route = RouterService.builder()
-        .get("/hello",req ->
-            completedFuture(CoapResponse.of("Hello World", MediaTypes.CT_TEXT_PLAIN))
-        )
-        .build();
-``` 
-
-Note that each resource function is also with a `Service` type and can be decorated/transformed with `Filter`
+It is following "server as a function" design concept. It is a very simple, flexible and testable way to model data processing in a pipeline.
+It is best describe in this white paper: [Your Server as a Function](https://monkey.org/~marius/funsrv.pdf), and has a great implementation in [Finagle](https://twitter.github.io/finagle) project.
 
 #### Decorating services with filters
 
@@ -140,19 +217,6 @@ Another example, is to use auto generated `etag` for responses and validate it i
 
 All request handling filters are under package [..coap.server.filter](coap-core/src/main/java/com/mbed/coap/server/filter).
 
-### Creating a client
-
-To make a CoAP request, use the class `CoapClient`. It uses fluent API. The following is a simple example on the usage:
-
-    CoapClient client = CoapClientBuilder.newBuilder(new InetSocketAddress("localhost",5683)).build();
-    
-    CoapResponse resp = client.sendSync(get("/s/temp"));
-    
-    resp = client.sendSync(put("/a/relay").payload("1", MediaTypes.CT_TEXT_PLAIN));
-        
-    //it is important to close connection in order to release socket
-    client.close();
-    
 
 Example client
 --------------
@@ -162,6 +226,13 @@ This [example client](example-client) demonstrates how to build coap client.
 
 Development
 -----------
+
+### Requirements:
+
+* JDK 8
+* gradle
+
+### Useful commands:
 
 - `./gradlew build`                             build
 - `./gradlew publishToMavenLocal`               publish to local maven

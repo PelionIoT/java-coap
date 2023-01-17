@@ -9,6 +9,7 @@ nb-configuration.xml
 .idea/
 !.idea/copyright
 !.idea/codeStyles
+!.idea/markdown.xml
 .DS_Store
 example-client/*.pem
 example-client/*.jks
