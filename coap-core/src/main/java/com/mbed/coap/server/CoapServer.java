@@ -16,7 +16,7 @@
  */
 package com.mbed.coap.server;
 
-import static com.mbed.coap.utils.Validations.*;
+import static com.mbed.coap.utils.Validations.assume;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
@@ -33,14 +33,14 @@ public class CoapServer {
     private boolean isRunning;
     private final CoapTransport transport;
     private final Consumer<CoapPacket> dispatcher;
-    private final Service<CoapRequest, CoapResponse> inboundService;
+    private final Service<CoapRequest, CoapResponse> outboundService;
     private final Runnable stopAll;
 
-    public CoapServer(CoapTransport transport, Consumer<CoapPacket> dispatcher, Service<CoapRequest, CoapResponse> inboundService,
+    public CoapServer(CoapTransport transport, Consumer<CoapPacket> dispatcher, Service<CoapRequest, CoapResponse> outboundService,
             Runnable stopAll) {
         this.transport = transport;
         this.dispatcher = dispatcher;
-        this.inboundService = inboundService;
+        this.outboundService = outboundService;
         this.stopAll = stopAll;
     }
 
@@ -123,7 +123,7 @@ public class CoapServer {
 
 
     public final Service<CoapRequest, CoapResponse> clientService() {
-        return inboundService;
+        return outboundService;
     }
 
 }
