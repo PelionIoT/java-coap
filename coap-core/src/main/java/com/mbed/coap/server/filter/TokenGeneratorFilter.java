@@ -15,35 +15,42 @@
  */
 package com.mbed.coap.server.filter;
 
+import static java.util.Objects.requireNonNull;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
-public class EtagGeneratorFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
+public class TokenGeneratorFilter implements Filter.SimpleFilter<CoapRequest, CoapResponse> {
 
-    private final Function<Opaque, Opaque> etagGenerator;
+    final Supplier<Opaque> tokenGenerator;
 
-    public final static EtagGeneratorFilter PAYLOAD_HASHING = new EtagGeneratorFilter(payload -> Opaque.variableUInt(Arrays.hashCode(payload.getBytes())));
+    private static final Random random = new Random();
+    public static final TokenGeneratorFilter RANDOM = new TokenGeneratorFilter(() ->
+            Opaque.variableUInt(random.nextLong())
+    );
 
-    public EtagGeneratorFilter(Function<Opaque, Opaque> etagGenerator) {
-        this.etagGenerator = Objects.requireNonNull(etagGenerator);
+    public static TokenGeneratorFilter sequential(long startToken) {
+        final AtomicLong current = new AtomicLong(startToken);
+
+        return new TokenGeneratorFilter(() -> Opaque.variableUInt(current.incrementAndGet()));
+    }
+
+    public TokenGeneratorFilter(Supplier<Opaque> tokenGenerator) {
+        this.tokenGenerator = requireNonNull(tokenGenerator);
     }
 
     @Override
     public CompletableFuture<CoapResponse> apply(CoapRequest request, Service<CoapRequest, CoapResponse> service) {
-        return service
-                .apply(request)
-                .thenApply(resp -> {
-                    if (resp.options().getEtagArray() == null) {
-                        return resp.etag(etagGenerator.apply(resp.getPayload()));
-                    }
-                    return resp;
-                });
+        if (!request.isPing() && request.getToken().isEmpty()) {
+            return service.apply(request.token(tokenGenerator.get()));
+        }
+
+        return service.apply(request);
     }
 }

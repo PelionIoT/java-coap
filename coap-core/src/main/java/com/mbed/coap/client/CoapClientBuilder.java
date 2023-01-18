@@ -17,11 +17,14 @@
 package com.mbed.coap.client;
 
 import com.mbed.coap.packet.BlockSize;
+import com.mbed.coap.packet.CoapRequest;
+import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
 import com.mbed.coap.transmission.SingleTimeout;
 import com.mbed.coap.transmission.TransmissionTimeout;
 import com.mbed.coap.transport.CoapTransport;
+import com.mbed.coap.utils.Filter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -152,6 +155,11 @@ public class CoapClientBuilder<T extends CoapServerBuilder<?>> {
 
         public CoapClientBuilderForUdp maxIncomingBlockTransferSize(int maxSize) {
             coapServerBuilderForUdp.maxIncomingBlockTransferSize(maxSize);
+            return this;
+        }
+
+        public CoapClientBuilderForUdp outboundFilter(Filter.SimpleFilter<CoapRequest, CoapResponse> outboundFilter){
+            coapServerBuilderForUdp.outboundFilter(outboundFilter);
             return this;
         }
 

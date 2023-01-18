@@ -69,6 +69,7 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
     protected int maxMessageSize = 1152; //default
     protected Service<CoapRequest, CoapResponse> route = RouterService.NOT_FOUND_SERVICE;
     protected int maxQueueSize = 100;
+    protected Filter.SimpleFilter<CoapRequest, CoapResponse> outboundFilter = Filter.identity();
 
     protected abstract T me();
 
@@ -94,6 +95,11 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
 
     public T route(RouterService.RouteBuilder routeBuilder) {
         return route(routeBuilder.build());
+    }
+
+    public T outboundFilter(Filter.SimpleFilter<CoapRequest, CoapResponse> outboundFilter) {
+        this.outboundFilter = outboundFilter;
+        return me();
     }
 
     @SuppressWarnings("PMD.CompareObjectsWithEquals")
@@ -265,7 +271,8 @@ public abstract class CoapServerBuilder<T extends CoapServerBuilder<?>> {
             RetransmissionFilter<CoapPacket, CoapPacket> retransmissionFilter = new RetransmissionFilter<>(timer, transmissionTimeout, CoapPacket::isConfirmable);
             PiggybackedExchangeFilter piggybackedExchangeFilter = new PiggybackedExchangeFilter();
 
-            Service<CoapRequest, CoapResponse> outboundService = new ObserveRequestFilter(observationHandler)
+            Service<CoapRequest, CoapResponse> outboundService = outboundFilter
+                    .andThen(new ObserveRequestFilter(observationHandler))
                     .andThen(new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress))
                     .andThen(new BlockWiseOutgoingFilter(capabilities(), maxIncomingBlockTransferSize))
                     .andThen(new TimeoutFilter<>(timer, finalOutboundTimeout))

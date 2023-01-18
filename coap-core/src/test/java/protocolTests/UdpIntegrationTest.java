@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
+import com.mbed.coap.server.filter.TokenGeneratorFilter;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 
@@ -29,7 +30,10 @@ public class UdpIntegrationTest extends IntegrationTestBase {
 
     @Override
     protected CoapClient buildClient(int port) throws IOException {
-        return CoapClientBuilder.newBuilder(port).blockSize(BlockSize.S_1024).build();
+        return CoapClientBuilder.newBuilder(port)
+                .blockSize(BlockSize.S_1024)
+                .outboundFilter(TokenGeneratorFilter.sequential(1))
+                .build();
     }
 
     @Override

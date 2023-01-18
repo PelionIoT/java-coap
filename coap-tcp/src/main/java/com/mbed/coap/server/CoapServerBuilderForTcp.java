@@ -107,7 +107,8 @@ public class CoapServerBuilderForTcp extends CoapServerBuilder<CoapServerBuilder
 
         // OUTBOUND
         TcpExchangeFilter exchangeFilter = new TcpExchangeFilter();
-        Service<CoapRequest, CoapResponse> outboundService = new ObserveRequestFilter(observationHandler)
+        Service<CoapRequest, CoapResponse> outboundService = outboundFilter
+                .andThen(new ObserveRequestFilter(observationHandler))
                 .andThen(new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress))
                 .andThen(new BlockWiseOutgoingFilter(capabilities(), maxIncomingBlockTransferSize))
                 .andThen(exchangeFilter)
