@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,11 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.CoapRequest.put;
 import static com.mbed.coap.packet.Opaque.of;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.exception.CoapException;
@@ -154,7 +155,6 @@ public class Block1TransferMaxSizeTest {
 
     @Test
     public void block2_observationWithBlocks() throws Exception {
-        System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         Opaque expectedBody = OBS_RESOURCE_INIT_VALUE;
 
         //register observation
@@ -181,11 +181,5 @@ public class Block1TransferMaxSizeTest {
         expectedBody = expectedBody.concat(Opaque.of("2_2345678901234|3_2345678901234|"));
         observableResource.putPayload(expectedBody);
         assertTrue(obsListener.isEmpty());
-
-
-        System.out.println("-- END");
-
     }
-
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,14 @@
  */
 package protocolTests;
 
-import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.Opaque.EMPTY;
 import static com.mbed.coap.packet.Opaque.of;
-import static com.mbed.coap.packet.Opaque.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.awaitility.Awaitility.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
 import com.mbed.coap.packet.BlockSize;
@@ -114,7 +116,6 @@ public class ObservationTest {
 
     @Test
     public void terminateObservationByServerWithErrorCode() throws Exception {
-        System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         ObservationListener obsListener = new ObservationListener();
@@ -132,12 +133,10 @@ public class ObservationTest {
         assertEquals(0, obsResource.observationRelations(), "Number of observation did not change");
 
         client.close();
-        System.out.println("-- END");
     }
 
     @Test
     public void terminateObservationByServerTimeout() throws Exception {
-        System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         ObservationListener obsListener = new ObservationListener();
@@ -149,12 +148,10 @@ public class ObservationTest {
         );
 
         assertEquals(0, obsResource.observationRelations(), "Observation did not terminate");
-        System.out.println("\n-- END");
     }
 
     @Test
     public void dontTerminateObservationIfNoObs() throws Exception {
-        System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         //register observation
@@ -172,13 +169,10 @@ public class ObservationTest {
         );
 
         client.close();
-
-        System.out.println("\n-- END");
     }
 
     @Test
     public void terminateObservationByClientWithRst() throws Exception {
-        System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).build();
 
         //register observation
@@ -193,12 +187,10 @@ public class ObservationTest {
         assertFalse(obsResource.putPayload(of("keho")));
 
         client.close();
-        System.out.println("\n-- END");
     }
 
     @Test
     public void observationWithBlocks() throws Exception {
-        System.out.println("\n-- START: " + Thread.currentThread().getStackTrace()[1].getMethodName());
         obsResource.putPayload(ClientServerWithBlocksTest.BIG_RESOURCE);
 
         CoapClient client = CoapClientBuilder.newBuilder(SERVER_ADDRESS).blockSize(BlockSize.S_128).build();
@@ -216,8 +208,6 @@ public class ObservationTest {
         //assertEquals(Integer.valueOf(1), packet.headers().getObserve());
 
         client.close();
-        System.out.println("-- END");
-
     }
 
 }
