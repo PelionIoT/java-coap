@@ -15,7 +15,7 @@
  */
 package com.mbed.coap.cli.providers;
 
-import static com.mbed.coap.cli.CoapSchemes.readCAs;
+import static com.mbed.coap.cli.KeystoreUtils.readCAs;
 import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTcpTransport;

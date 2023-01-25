@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,8 @@
  */
 package com.mbed.coap.client;
 
-import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.CoapRequest.delete;
+import static com.mbed.coap.packet.CoapRequest.post;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.server.CoapServer;
@@ -25,6 +26,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -72,8 +74,8 @@ public class RegistrationManager {
         this(server, registrationUri, registrationLinks, scheduledExecutor, Duration.ofSeconds(10), Duration.ofMinutes(5));
     }
 
-    public void register() {
-        client.send(post(registrationUri.getPath())
+    public CompletableFuture<Void> register() {
+        return client.send(post(registrationUri.getPath())
                         .query(registrationUri.getQuery())
                         .payload(registrationLinks, MediaTypes.CT_APPLICATION_LINK__FORMAT)
                 )
@@ -129,7 +131,7 @@ public class RegistrationManager {
     protected void registrationFailed(String errMessage) {
         lastRetryDelay = nextDelay(lastRetryDelay);
         registrationLocation = Optional.empty();
-        scheduledExecutor.schedule(this::register, lastRetryDelay.getSeconds(), TimeUnit.SECONDS);
+        scheduledExecutor.schedule((Runnable) this::register, lastRetryDelay.getSeconds(), TimeUnit.SECONDS);
         LOGGER.warn("[EP:{}] Registration failed, re-try in {}s. ({})", epName, lastRetryDelay.getSeconds(), errMessage);
     }
 

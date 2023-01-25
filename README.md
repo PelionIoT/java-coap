@@ -217,10 +217,10 @@ Another example, is to use auto generated `etag` for responses and validate it i
 All request handling filters are under package [..coap.server.filter](coap-core/src/main/java/com/mbed/coap/server/filter).
 
 
-Example client
+Coap command line client
 --------------
 
-This [example client](example-client) demonstrates how to build coap client.
+This [coap-cli](coap-cli) module provides command line utility.
 
 
 Development

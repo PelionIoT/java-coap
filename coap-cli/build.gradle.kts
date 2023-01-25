@@ -2,7 +2,7 @@ plugins {
     id("application")
 }
 
-description = "example-client"
+description = "coap-cli"
 
 dependencies {
     implementation(project(":coap-core"))
@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":coap-mbedtls"))
     implementation("org.slf4j:slf4j-api:2.0.6")
     implementation("ch.qos.logback:logback-classic:1.3.5")
+    implementation("info.picocli:picocli:4.7.0")
 
     testImplementation("org.mockito:mockito-core:4.11.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.1")
@@ -18,18 +19,8 @@ dependencies {
     testImplementation("org.awaitility:awaitility:4.2.0")
 }
 
-tasks {
-    create<JavaExec>("runDeviceEmulator") {
-        mainClass.set("com.mbed.coap.cli.DeviceEmulator")
-        classpath = sourceSets["main"].runtimeClasspath
-    }
-
-    withType<JacocoBase> { enabled = false }
-    withType<AbstractPublishToMaven> { enabled = false }
-}
-
 application {
-    mainClass.set("com.mbed.coap.cli.CoapCli")
+    mainClass.set("com.mbed.coap.cli.Main")
 }
 
 distributions {

@@ -11,8 +11,8 @@ nb-configuration.xml
 !.idea/codeStyles
 !.idea/markdown.xml
 .DS_Store
-example-client/*.pem
-example-client/*.jks
+coap-cli/*.pem
+coap-cli/*.jks
 *.tmp
 .gradle/
 out/

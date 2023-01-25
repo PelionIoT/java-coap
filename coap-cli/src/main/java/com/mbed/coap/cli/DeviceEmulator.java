@@ -25,84 +25,36 @@ import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.ObservableResourceService;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.utils.Service;
-import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
 
-@SuppressWarnings({"PMD.SystemPrintln", "PMD.AvoidPrintStackTrace", "PMD.AvoidReassigningLoopVariables"})
-public class DeviceEmulator {
+@Command(name = "register", mixinStandardHelpOptions = true, description = "Register to LwM2M server and simulate some simple resources", usageHelpAutoWidth = true)
+public class DeviceEmulator implements Callable<Integer> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DeviceEmulator.class);
+
+    @CommandLine.Parameters(index = "0", paramLabel = "<registration-url>", description = "Registration url")
+    private URI uri;
+
+    @CommandLine.Mixin
+    private TransportOptions transportOptions;
+
     protected CoapServer emulatorServer;
     protected final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-    private RegistrationManager registrationManager;
-    protected final CoapSchemes providers;
+    RegistrationManager registrationManager;
 
-    public static void main(String[] args) {
-        main(args, new DeviceEmulator(new CoapSchemes()));
-    }
-
-    public static void main(String[] args, DeviceEmulator deviceEmulator) {
-        if (args.length == 0) {
-            System.out.println("Usage: ");
-            System.out.println("  ./run.sh [options...] <scheme>://<registration-url>");
-            System.out.println("Options:");
-            System.out.println("     -s <ssl provider>  jdk <default>,");
-            System.out.println("                        openssl (requires installed openssl that supports dtls),");
-            System.out.println("                        stdio (standard IO)");
-            System.out.println("     -k <file>          KeyStore file (with empty passphrase)");
-            System.out.println("Schemes: " + deviceEmulator.providers.supportedSchemes().replaceAll("\n", "\n         "));
-            System.out.println();
-            System.out.println("Examples:");
-            System.out.println("  ./run.sh 'coap://localhost:5683/rd?ep=device01&aid=dm'");
-            System.out.println("  ./run.sh -k device01.jks 'coaps+tcp://localhost:5685/rd?ep=device01&aid=dm'");
-            return;
-        }
-
-        //parse arguments
-        String keystoreFile = null;
-        TransportProvider transportProvider = deviceEmulator.providers.defaultProvider();
-        String cipherSuite = null;
-        for (int i = 0; i < args.length; i++) {
-            if ("-k".equals(args[i])) {
-                keystoreFile = args[++i];
-            } else if ("-s".equals(args[i])) {
-                transportProvider = deviceEmulator.providers.transportProviderFor(args[++i]);
-            } else if ("--cipher".equals(args[i])) {
-                cipherSuite = args[++i];
-            }
-        }
-
-        transportProvider.setCipherSuite(cipherSuite);
-
-        String uri = args[args.length - 1];
-
-        try {
-            deviceEmulator.start(transportProvider, uri, keystoreFile);
-            Runtime.getRuntime().addShutdownHook(new Thread(deviceEmulator::stop));
-        } catch (IllegalArgumentException ex) {
-            LOGGER.error(ex.getMessage());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-    }
-
-    public DeviceEmulator(CoapSchemes providers) {
-        this.providers = providers;
-    }
-
-
-    void start(TransportProvider transportProvider, String registrationUri, String keystoreFile) throws IOException {
-        URI uri = URI.create(registrationUri);
-
-        emulatorServer = providers.create(transportProvider, keystoreFile, null, uri,
+    @Override
+    public Integer call() throws Exception {
+        emulatorServer = transportOptions.create(uri,
                 udpBuilder -> udpBuilder.route(createRouting()).build(),
                 tcpBuilder -> tcpBuilder.route(createRouting()).build()
         );
@@ -112,7 +64,14 @@ public class DeviceEmulator {
         String links = "</3/0/1>,</3/0/2>,</3/0/3>,</delayed-10s>";
         this.registrationManager = new RegistrationManager(emulatorServer, uri, links, scheduledExecutor);
         LOGGER.info("Resources: {}", links);
-        registrationManager.register();
+        registrationManager.register().join();
+
+        if (registrationManager.isRegistered()) {
+            Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+            return -1;
+        } else {
+            return 1;
+        }
     }
 
     protected Service<CoapRequest, CoapResponse> createRouting() {
@@ -134,11 +93,6 @@ public class DeviceEmulator {
                 .get("/time", timeResource)
                 .build();
 
-    }
-
-
-    RegistrationManager getRegistrationManager() {
-        return registrationManager;
     }
 
     void stop() {

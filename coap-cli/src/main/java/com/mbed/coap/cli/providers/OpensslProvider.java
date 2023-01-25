@@ -16,8 +16,8 @@
  */
 package com.mbed.coap.cli.providers;
 
-import static com.mbed.coap.cli.CoapSchemes.findKeyAlias;
-import static com.mbed.coap.cli.CoapSchemes.secret;
+import static com.mbed.coap.cli.KeystoreUtils.findKeyAlias;
+import static com.mbed.coap.cli.KeystoreUtils.secret;
 import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTcpTransport;

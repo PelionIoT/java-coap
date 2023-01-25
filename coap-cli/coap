@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-../gradlew :example-client:installDist -q
+../gradlew :coap-cli:installDist -q
 ./build/install/coap-cli/bin/coap $@

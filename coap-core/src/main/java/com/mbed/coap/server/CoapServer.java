@@ -79,7 +79,7 @@ public class CoapServer {
 
     private synchronized void stopWithError(Throwable error) {
         if (isRunning) {
-            LOGGER.error("CoapServer got error while receiving: {}", error, error);
+            LOGGER.error("CoapServer got error while receiving: {}", error.toString(), error);
             stop();
         }
     }
