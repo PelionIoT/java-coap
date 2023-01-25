@@ -84,10 +84,6 @@ public class CoapCli {
             Pair<String, Opaque> psk = null;
             int i;
             for (i = 0; i < args.length; i++) {
-                if ('-' == args[i].charAt(0)) {
-                    throw new IllegalArgumentException("Unrecognised flag: " + args[i]);
-                }
-
                 if ("-k".equals(args[i])) {
                     keystoreFile = args[++i];
                 } else if ("-p".equals(args[i])) {
@@ -100,6 +96,8 @@ public class CoapCli {
                     cipherSuite = args[++i];
                 } else if ("--psk".equals(args[i])) {
                     psk = Pair.split(args[++i], ':').mapValue(Opaque::decodeHex);
+                } else if ('-' == args[i].charAt(0)) {
+                    throw new IllegalArgumentException("Unrecognised flag: " + args[i]);
                 } else {
                     break;
                 }
