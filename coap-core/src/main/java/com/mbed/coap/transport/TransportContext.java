@@ -16,6 +16,7 @@
 package com.mbed.coap.transport;
 
 import static java.util.Objects.requireNonNull;
+import java.time.Duration;
 import java.util.Objects;
 
 public final class TransportContext {
@@ -26,6 +27,7 @@ public final class TransportContext {
 
     public static final TransportContext EMPTY = new TransportContext(null, null, null);
     public static final Key<Boolean> NON_CONFIRMABLE = new Key<>(false);
+    public static final Key<Duration> RESPONSE_TIMEOUT = new Key<>(null);
 
     public static <T> TransportContext of(Key<T> key, T value) {
         return new TransportContext(requireNonNull(key), requireNonNull(value), null);
@@ -38,8 +40,12 @@ public final class TransportContext {
     }
 
     public <T> T get(Key<T> key) {
+        return getOrDefault(key, key.defaultValue);
+    }
+
+    public <T> T getOrDefault(Key<T> key, T defaultValue) {
         T value = get0(key);
-        return value == null ? key.defaultValue : value;
+        return value == null ? defaultValue : value;
     }
 
     private <T> T get0(Key<T> key) {

@@ -17,6 +17,7 @@
 package com.mbed.coap.server;
 
 import static com.mbed.coap.transport.CoapTransport.logSent;
+import static com.mbed.coap.transport.TransportContext.RESPONSE_TIMEOUT;
 import static com.mbed.coap.utils.Timer.toTimer;
 import static com.mbed.coap.utils.Validations.require;
 import static java.util.Objects.requireNonNull;
@@ -31,7 +32,7 @@ import com.mbed.coap.server.block.BlockWiseIncomingFilter;
 import com.mbed.coap.server.block.BlockWiseNotificationFilter;
 import com.mbed.coap.server.block.BlockWiseOutgoingFilter;
 import com.mbed.coap.server.filter.CongestionControlFilter;
-import com.mbed.coap.server.filter.TimeoutFilter;
+import com.mbed.coap.server.filter.ResponseTimeoutFilter;
 import com.mbed.coap.server.messaging.Capabilities;
 import com.mbed.coap.server.messaging.CapabilitiesResolver;
 import com.mbed.coap.server.messaging.CoapDispatcher;
@@ -198,7 +199,7 @@ public final class CoapServerBuilder {
                 .andThen(new ObserveRequestFilter(observationHandler))
                 .andThen(new CongestionControlFilter<>(maxQueueSize, CoapRequest::getPeerAddress))
                 .andThen(new BlockWiseOutgoingFilter(capabilities(), maxIncomingBlockTransferSize))
-                .andThen(new TimeoutFilter<>(timer, responseTimeout))
+                .andThen(new ResponseTimeoutFilter<>(timer, req -> req.getTransContext().getOrDefault(RESPONSE_TIMEOUT, responseTimeout)))
                 .andThen(exchangeFilter)
                 .andThen(Filter.of(CoapPacket::from, CoapPacket::toCoapResponse)) // convert coap packet
                 .andThenMap(midSupplier::update)
@@ -210,7 +211,7 @@ public final class CoapServerBuilder {
         // OBSERVATION
         Service<SeparateResponse, Boolean> sendNotification = new NotificationValidator()
                 .andThen(new BlockWiseNotificationFilter(capabilities()))
-                .andThen(new TimeoutFilter<>(timer, responseTimeout))
+                .andThen(new ResponseTimeoutFilter<>(timer, req -> req.getTransContext().getOrDefault(RESPONSE_TIMEOUT, responseTimeout)))
                 .andThen(Filter.of(CoapPacket::from, CoapPacket::isAck))
                 .andThenMap(midSupplier::update)
                 .andThen(retransmissionFilter)

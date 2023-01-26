@@ -21,22 +21,23 @@ import com.mbed.coap.utils.Service;
 import com.mbed.coap.utils.Timer;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
-public class TimeoutFilter<REQ, RES> implements SimpleFilter<REQ, RES> {
+public class ResponseTimeoutFilter<REQ, RES> implements SimpleFilter<REQ, RES> {
 
     private final Timer timer;
-    private final Duration timeout;
+    private final Function<REQ, Duration> timeoutResolver;
 
-    public TimeoutFilter(Timer timer, Duration timeout) {
+    public ResponseTimeoutFilter(Timer timer, Function<REQ, Duration> timeoutResolver) {
         this.timer = timer;
-        this.timeout = timeout;
+        this.timeoutResolver = timeoutResolver;
     }
 
     @Override
     public CompletableFuture<RES> apply(REQ request, Service<REQ, RES> service) {
         CompletableFuture<RES> promise = service.apply(request);
 
-        Runnable cancel = timer.schedule(timeout, () ->
+        Runnable cancel = timer.schedule(timeoutResolver.apply(request), () ->
                 promise.completeExceptionally(new CoapTimeoutException())
         );
 

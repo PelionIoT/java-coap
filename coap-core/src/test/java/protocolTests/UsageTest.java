@@ -28,6 +28,7 @@ import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.RouterService;
 import com.mbed.coap.server.filter.TokenGeneratorFilter;
+import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -110,7 +111,7 @@ public class UsageTest {
                 .transport(udp())
                 // (optional) define maximum block size
                 .blockSize(BlockSize.S_1024)
-                // (optional) set maximum response timeout
+                // (optional) set maximum response timeout, default for every request
                 .responseTimeout(Duration.ofMinutes(2))
                 // (optional) set maximum allowed resource size
                 .maxIncomingBlockTransferSize(1000_0000)
@@ -142,6 +143,7 @@ public class UsageTest {
                     opt.setMaxAge(3600L);
                 })
                 .payload("{\"power\": \"on\"}", MediaTypes.CT_APPLICATION_JSON)
+                .context(TransportContext.RESPONSE_TIMEOUT, Duration.ofMinutes(3)) // overwrite default response timeout
         );
         futureResponse2.thenAccept(resp ->
                 // .. handle response

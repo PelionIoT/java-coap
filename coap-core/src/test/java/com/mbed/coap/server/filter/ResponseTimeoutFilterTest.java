@@ -15,25 +15,47 @@
  */
 package com.mbed.coap.server.filter;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.time.Duration.ofMinutes;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.exception.CoapTimeoutException;
 import com.mbed.coap.utils.MockTimer;
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 
-class TimeoutFilterTest {
+class ResponseTimeoutFilterTest {
 
     private MockTimer timer = new MockTimer();
-    private TimeoutFilter<String, String> filter = new TimeoutFilter<>(timer, Duration.ofMinutes(2));
+    private ResponseTimeoutFilter<String, String> filter = new ResponseTimeoutFilter<>(timer, req -> {
+        if (req.startsWith("req-timeout-")) {
+            return ofMinutes(Integer.parseInt(req.substring(12)));
+        }
+        return ofMinutes(2);
+    });
 
     @Test
-    void shouldTimeoutRequest() {
+    void shouldScheduleResponseTimeout() {
         final CompletableFuture<String> servicePromise = new CompletableFuture<>();
         CompletableFuture<String> resp = filter.apply("req", s -> servicePromise);
 
         // when, timeout hits
+        assertEquals(ofMinutes(2), timer.getLastScheduledDelay());
+        timer.runAll();
+
+        // then
+        assertTrue(resp.isCompletedExceptionally());
+        assertThatThrownBy(resp::join).hasCauseExactlyInstanceOf(CoapTimeoutException.class);
+        assertTrue(servicePromise.isCompletedExceptionally());
+    }
+
+    @Test
+    void shouldScheduleResponseTimeoutWithCustomDelay() {
+        final CompletableFuture<String> servicePromise = new CompletableFuture<>();
+        CompletableFuture<String> resp = filter.apply("req-timeout-13", s -> servicePromise);
+
+        // when, timeout hits
+        assertEquals(ofMinutes(13), timer.getLastScheduledDelay());
         timer.runAll();
 
         // then

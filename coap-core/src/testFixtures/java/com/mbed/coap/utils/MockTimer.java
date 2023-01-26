@@ -22,9 +22,11 @@ import java.util.List;
 public class MockTimer implements Timer {
 
     private final List<Runnable> tasks = new ArrayList<>();
+    private Duration lastScheduledDelay = null;
 
     @Override
     public Runnable schedule(Duration delay, Runnable task) {
+        lastScheduledDelay = delay;
         tasks.add(task);
         return () -> tasks.removeIf(entry -> task == entry);
     }
@@ -41,5 +43,9 @@ public class MockTimer implements Timer {
 
     public boolean isEmpty() {
         return tasks.isEmpty();
+    }
+
+    public Duration getLastScheduledDelay() {
+        return lastScheduledDelay;
     }
 }

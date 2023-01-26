@@ -91,7 +91,7 @@ CoapClient client = CoapServer.builder()
         .transport(udp())
         // (optional) define maximum block size
         .blockSize(BlockSize.S_1024)
-        // (optional) set maximum response timeout
+        // (optional) set maximum response timeout, default for every request
         .responseTimeout(Duration.ofMinutes(2))
         // (optional) set maximum allowed resource size
         .maxIncomingBlockTransferSize(1000_0000)
@@ -123,6 +123,7 @@ CompletableFuture<CoapResponse> futureResponse2 = client.send(CoapRequest
             opt.setMaxAge(3600L);
         })
         .payload("{\"power\": \"on\"}", MediaTypes.CT_APPLICATION_JSON)
+        .context(TransportContext.RESPONSE_TIMEOUT, Duration.ofMinutes(3)) // overwrite default response timeout
 );
 futureResponse2.thenAccept(resp ->
         // .. handle response

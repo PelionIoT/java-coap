@@ -42,6 +42,7 @@ public class TransportContextTest {
     void empty() {
         TransportContext trans = TransportContext.EMPTY;
         assertNull(trans.get(DUMMY_KEY));
+        assertEquals("default-val", trans.getOrDefault(DUMMY_KEY2, "default-val"));
         assertEquals("na", trans.get(DUMMY_KEY2));
     }
 
