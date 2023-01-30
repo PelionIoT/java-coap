@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,13 @@
  */
 package com.mbed.coap.server;
 
-import static com.mbed.coap.packet.CoapRequest.*;
-import static com.mbed.coap.packet.MediaTypes.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.packet.CoapRequest.delete;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.post;
+import static com.mbed.coap.packet.CoapRequest.put;
+import static com.mbed.coap.packet.MediaTypes.CT_TEXT_PLAIN;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
@@ -43,6 +46,12 @@ public class RoutingServiceTest {
             )
             .delete("/test/*",
                     req -> completedFuture(CoapResponse.of(Code.C202_DELETED))
+            )
+            .any("/test2", req ->
+                    completedFuture(CoapResponse.ok("Reply to " + req.getMethod()))
+            )
+            .any("/test3/*", req ->
+                    completedFuture(CoapResponse.ok("Reply to " + req.getMethod()))
             )
             .build();
 
@@ -86,6 +95,24 @@ public class RoutingServiceTest {
         assertEquals(CoapResponse.of(Code.C204_CHANGED), resp1.get());
         assertEquals(CoapResponse.of(Code.C204_CHANGED), resp2.get());
         assertEquals(CoapResponse.of(Code.C202_DELETED), resp3.get());
+    }
+
+    @Test
+    void shouldRouteToAnyMethod() throws ExecutionException, InterruptedException {
+        // when
+        CompletableFuture<CoapResponse> resp1 = routeService.apply(put("/test2"));
+        CompletableFuture<CoapResponse> resp2 = routeService.apply(post("/test2"));
+        CompletableFuture<CoapResponse> resp3 = routeService.apply(delete("/test2"));
+        CompletableFuture<CoapResponse> resp4 = routeService.apply(get("/test3/dsds"));
+        CompletableFuture<CoapResponse> resp5 = routeService.apply(delete("/test3/fsdfs"));
+
+        // then
+        assertEquals(CoapResponse.ok("Reply to PUT"), resp1.get());
+        assertEquals(CoapResponse.ok("Reply to POST"), resp2.get());
+        assertEquals(CoapResponse.ok("Reply to DELETE"), resp3.get());
+        assertEquals(CoapResponse.ok("Reply to GET"), resp4.get());
+        assertEquals(CoapResponse.ok("Reply to DELETE"), resp5.get());
+
     }
 
     @Test

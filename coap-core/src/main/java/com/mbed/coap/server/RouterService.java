@@ -15,12 +15,13 @@
  */
 package com.mbed.coap.server;
 
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.utils.Service;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,14 +43,16 @@ public class RouterService implements Service<CoapRequest, CoapResponse> {
 
     RouterService(Map<RequestMatcher, Service<CoapRequest, CoapResponse>> handlers) {
 
-        this.handlers = Collections.unmodifiableMap(handlers.entrySet().stream()
-                .filter(entry -> !entry.getKey().isPrefixed())
-                .collect(Collectors.toMap(Entry::getKey, Entry::getValue))
+        this.handlers = unmodifiableMap(
+                handlers.entrySet().stream()
+                        .filter(entry -> !entry.getKey().isPrefixed())
+                        .collect(Collectors.toMap(Entry::getKey, Entry::getValue))
         );
 
-        this.prefixedHandlers = Collections.unmodifiableList(handlers.entrySet().stream()
-                .filter(entry -> entry.getKey().isPrefixed())
-                .collect(Collectors.toList())
+        this.prefixedHandlers = unmodifiableList(
+                handlers.entrySet().stream()
+                        .filter(entry -> entry.getKey().isPrefixed())
+                        .collect(Collectors.toList())
         );
     }
 
@@ -63,12 +66,19 @@ public class RouterService implements Service<CoapRequest, CoapResponse> {
     }
 
     private Service<CoapRequest, CoapResponse> findHandler(RequestMatcher requestMatcher) {
-        return prefixedHandlers.stream()
-                .filter(e -> e.getKey().matches(requestMatcher))
-                .findFirst()
-                .map(Entry::getValue)
-                .orElse(NOT_FOUND_SERVICE);
+        Service<CoapRequest, CoapResponse> nextService;
 
+        nextService = handlers.get(requestMatcher.withAnyMethod());
+        if (nextService != null) {
+            return nextService;
+        }
+
+        for (Entry<RequestMatcher, Service<CoapRequest, CoapResponse>> e : prefixedHandlers) {
+            if (e.getKey().matches(requestMatcher)) {
+                return e.getValue();
+            }
+        }
+        return NOT_FOUND_SERVICE;
     }
 
     public static class RouteBuilder {
@@ -88,6 +98,10 @@ public class RouterService implements Service<CoapRequest, CoapResponse> {
 
         public RouteBuilder delete(String uriPath, Service<CoapRequest, CoapResponse> service) {
             return add(Method.DELETE, uriPath, service);
+        }
+
+        public RouteBuilder any(String uriPath, Service<CoapRequest, CoapResponse> service) {
+            return add(null, uriPath, service);
         }
 
         private RouteBuilder add(Method method, String uriPath, Service<CoapRequest, CoapResponse> service) {
@@ -126,7 +140,14 @@ public class RouterService implements Service<CoapRequest, CoapResponse> {
         }
 
         public boolean matches(RequestMatcher other) {
+            if (method == null) {
+                return other.uriPath.startsWith(uriPath);
+            }
             return other.method == method && other.uriPath.startsWith(uriPath);
+        }
+
+        public RequestMatcher withAnyMethod() {
+            return new RequestMatcher(null, uriPath);
         }
 
         @Override

@@ -74,10 +74,7 @@ abstract class IntegrationTestBase {
                 .get("/test/1", req ->
                         completedFuture(CoapResponse.ok("Dziala", MediaTypes.CT_TEXT_PLAIN))
                 )
-                .get("/test2", testResource)
-                .put("/test2", testResource)
-                .post("/test2", testResource)
-                .delete("/test2", testResource)
+                .any("/test2", testResource)
                 .get("/large", __ -> completedFuture(
                         CoapResponse.ok(largePayload)
                 ))
