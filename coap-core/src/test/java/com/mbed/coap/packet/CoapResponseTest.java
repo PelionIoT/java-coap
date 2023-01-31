@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,9 @@
  */
 package com.mbed.coap.packet;
 
-import static com.mbed.coap.packet.MediaTypes.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.packet.MediaTypes.CT_APPLICATION_JSON;
+import static com.mbed.coap.packet.MediaTypes.CT_TEXT_PLAIN;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -41,5 +42,6 @@ class CoapResponseTest {
         assertEquals("CoapResponse[205, pl(4):64757061]", CoapResponse.ok("dupa").toString());
         assertEquals("CoapResponse[400, ETag:6565]", CoapResponse.badRequest().etag(Opaque.of("ee")).toString());
         assertEquals("CoapResponse[205, ContTp:0, pl(3):616161]", CoapResponse.ok("aaa", CT_TEXT_PLAIN).toString());
+        assertEquals("CoapResponse[400, ContTp:50, pl(13):7b226572726f72223a3132337d]", CoapResponse.of(Code.C400_BAD_REQUEST, Opaque.of("{\"error\":123}"), CT_APPLICATION_JSON).toString());
     }
 }
