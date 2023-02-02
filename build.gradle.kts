@@ -6,7 +6,7 @@ plugins {
     id("maven-publish")
     id("com.github.mfarsikov.kewt-versioning") version "1.0.0"
     id("se.patrikerdes.use-latest-versions") version "0.2.18"
-    id("com.github.ben-manes.versions") version "0.44.0"
+    id("com.github.ben-manes.versions") version "0.45.0"
     id("pmd")
     id("com.github.spotbugs") version "5.0.13"
     id("org.gradle.signing")
@@ -34,7 +34,7 @@ allprojects {
     tasks.withType<DependencyUpdatesTask> {
         rejectVersionIf {
             // newer version of logback-classic is not java8 compatible
-            candidate.module == "logback-classic"
+            listOf("logback-classic", "mockito-core").contains(candidate.module)
         }
     }
 
