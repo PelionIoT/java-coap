@@ -29,7 +29,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 /**
@@ -62,13 +64,9 @@ public class CoapClient implements Closeable {
 
     private static CoapResponse await(CompletableFuture<CoapResponse> future) throws CoapException {
         try {
-            return future.join();
-        } catch (CompletionException ex) {
-            if (ex.getCause() instanceof CoapException) {
-                throw (CoapException) ex.getCause();
-            } else {
-                throw new CoapException(ex.getCause());
-            }
+            return future.get(5, TimeUnit.MINUTES);
+        } catch (ExecutionException | InterruptedException | TimeoutException ex) {
+            throw CoapException.wrap(ex);
         }
     }
 

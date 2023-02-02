@@ -17,19 +17,29 @@
 package com.mbed.coap.server;
 
 
-import static com.mbed.coap.packet.CoapResponse.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static com.mbed.coap.packet.CoapResponse.ok;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.BDDMockito.any;
+import static org.mockito.BDDMockito.doAnswer;
+import static org.mockito.BDDMockito.doThrow;
+import static org.mockito.BDDMockito.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
+import static org.mockito.BDDMockito.reset;
+import static org.mockito.BDDMockito.verify;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.utils.AsyncQueue;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class CoapServerTest {
 
@@ -116,5 +126,19 @@ public class CoapServerTest {
         receiveQueue.add(coapPacket2);
         verify(dispatcher).accept(eq(coapPacket2));
 
+    }
+
+    @Test
+    @Timeout(2)
+    void shouldNotDeadlock() {
+        doAnswer(__ -> {
+            // while stopping transport complete promise from different thread
+            CompletableFuture
+                    .runAsync(() -> receiveQueue.addException(new IOException("Closed")))
+                    .join();
+            return null;
+        }).when(transport).stop();
+
+        server.stop();
     }
 }

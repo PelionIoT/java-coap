@@ -139,13 +139,15 @@ public class SocketClientTransport extends BlockingCoapTransport implements Coap
     }
 
     @Override
-    public synchronized void sendPacket0(CoapPacket coapPacket) throws CoapException, IOException {
+    public void sendPacket0(CoapPacket coapPacket) throws CoapException, IOException {
         InetSocketAddress adr = coapPacket.getRemoteAddress();
         if (!adr.equals(this.destination)) {
             throw new IllegalStateException("No connection with: " + adr);
         }
-        serializer.serialize(outputStream, coapPacket);
-        outputStream.flush();
+        synchronized (this) {
+            serializer.serialize(outputStream, coapPacket);
+            outputStream.flush();
+        }
     }
 
     @Override

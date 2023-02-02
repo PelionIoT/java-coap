@@ -24,13 +24,14 @@ import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CoapServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoapServer.class);
-    private boolean isRunning;
+    private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final CoapTransport transport;
     private final Consumer<CoapPacket> dispatcher;
     private final Service<CoapRequest, CoapResponse> outboundService;
@@ -55,10 +56,9 @@ public class CoapServer {
      * @throws IOException           exception from transport initialization
      * @throws IllegalStateException if server is already running
      */
-    public synchronized CoapServer start() throws IOException, IllegalStateException {
-        assume(!isRunning, "CoapServer is running");
+    public CoapServer start() throws IOException, IllegalStateException {
+        assume(!isRunning.getAndSet(true), "CoapServer is running");
         transport.start();
-        isRunning = true;
 
         transport.receive().whenComplete(this::handle);
         return this;
@@ -77,8 +77,8 @@ public class CoapServer {
         transport.receive().whenComplete(this::handle);
     }
 
-    private synchronized void stopWithError(Throwable error) {
-        if (isRunning) {
+    private void stopWithError(Throwable error) {
+        if (isRunning.get()) {
             LOGGER.error("CoapServer got error while receiving: {}", error.toString(), error);
             stop();
         }
@@ -86,15 +86,12 @@ public class CoapServer {
 
     /**
      * Stops CoAP server
-     *
-     * @throws IllegalStateException if server is already stopped
      */
-    public final synchronized void stop() {
-        if (!isRunning) {
+    public final void stop() {
+        if (!isRunning.getAndSet(false)) {
             return;
         }
 
-        isRunning = false;
         LOGGER.trace("Stopping CoAP server..");
         stopAll.run();
         transport.stop();
@@ -107,8 +104,8 @@ public class CoapServer {
      *
      * @return true if running
      */
-    public synchronized boolean isRunning() {
-        return isRunning;
+    public boolean isRunning() {
+        return isRunning.get();
     }
 
 

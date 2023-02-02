@@ -99,6 +99,7 @@ public class ResourceModel implements ResourceValidator {
         return getValidator().isValid(value);
     }
     
+    @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
     private synchronized ResourceValidator getValidator() {
         if (validator == null) {
             switch (type) {
