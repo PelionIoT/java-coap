@@ -37,13 +37,11 @@ import com.mbed.coap.server.messaging.CoapTcpDispatcher;
 import com.mbed.coap.server.messaging.PayloadSizeVerifier;
 import com.mbed.coap.server.messaging.TcpExchangeFilter;
 import com.mbed.coap.transport.CoapTcpTransport;
-import com.mbed.coap.transport.TransportContext;
 import com.mbed.coap.utils.Filter;
 import com.mbed.coap.utils.Service;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 public class CoapServerBuilderForTcp {
@@ -109,15 +107,7 @@ public class CoapServerBuilderForTcp {
     }
 
     public CoapClient buildClient(InetSocketAddress target) throws IOException {
-        CoapServer server = build();
-
-        return new CoapClient(target, server.start().clientService(), server::stop) {
-            @Override
-            public CompletableFuture<Boolean> ping() {
-                return clientService.apply(CoapRequest.ping(target, TransportContext.EMPTY))
-                        .thenApply(r -> r.getCode() == Code.C703_PONG);
-            }
-        };
+        return CoapClient.create(target, build().start(), r -> r.getCode() == Code.C703_PONG);
     }
 
     public CoapServer build() {

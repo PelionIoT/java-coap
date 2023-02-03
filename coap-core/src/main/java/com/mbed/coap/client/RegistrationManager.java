@@ -54,7 +54,7 @@ public class RegistrationManager {
         }
 
         this.epName = epNameFrom(registrationUri);
-        this.client = new CoapClient(new InetSocketAddress(registrationUri.getHost(), registrationUri.getPort()), server.clientService(), server::stop);
+        this.client = CoapClient.create(new InetSocketAddress(registrationUri.getHost(), registrationUri.getPort()), server);
         this.scheduledExecutor = scheduledExecutor;
         this.registrationUri = registrationUri;
         this.registrationLinks = Objects.requireNonNull(registrationLinks);

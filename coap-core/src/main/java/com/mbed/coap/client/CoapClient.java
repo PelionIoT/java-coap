@@ -42,16 +42,23 @@ public class CoapClient implements Closeable {
     private final InetSocketAddress destination;
     protected final Service<CoapRequest, CoapResponse> clientService;
     private final Closeable closeable;
+    private final Function<CoapResponse, Boolean> resolvePingResponse;
+    static final Function<CoapResponse, Boolean> defaultResolvePingResponse = resp -> resp.getCode() == null;
 
     public static CoapClient create(InetSocketAddress target, CoapServer server) {
-        require(server.isRunning());
-        return new CoapClient(target, server.clientService(), server::stop);
+        return create(target, server, defaultResolvePingResponse);
     }
 
-    public CoapClient(InetSocketAddress destination, Service<CoapRequest, CoapResponse> clientService, Closeable closeable) {
+    public static CoapClient create(InetSocketAddress target, CoapServer server, Function<CoapResponse, Boolean> resolvePingResponse) {
+        require(server.isRunning());
+        return new CoapClient(target, server.clientService(), server::stop, resolvePingResponse);
+    }
+
+    CoapClient(InetSocketAddress destination, Service<CoapRequest, CoapResponse> clientService, Closeable closeable, Function<CoapResponse, Boolean> resolvePingResponse) {
         this.destination = destination;
         this.clientService = clientService;
         this.closeable = closeable;
+        this.resolvePingResponse = resolvePingResponse;
     }
 
     public CompletableFuture<CoapResponse> send(CoapRequest request) {
@@ -87,7 +94,7 @@ public class CoapClient implements Closeable {
 
     public CompletableFuture<Boolean> ping() throws CoapException {
         return clientService.apply(CoapRequest.ping(destination, TransportContext.EMPTY))
-                .thenApply(r -> r.getCode() == null);
+                .thenApply(resolvePingResponse);
     }
 
     /**

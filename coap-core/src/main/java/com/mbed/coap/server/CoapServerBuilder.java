@@ -245,8 +245,7 @@ public final class CoapServerBuilder {
     }
 
     public CoapClient buildClient(InetSocketAddress target) throws IOException {
-        CoapServer server = build();
-        return new CoapClient(target, server.start().clientService(), server::stop);
+        return CoapClient.create(target, build().start());
     }
 
 }

@@ -50,7 +50,7 @@ public class CoapClientTest {
     public void setUp() throws Exception {
         reset(clientService);
         client = new CoapClient(LOCAL_5683, clientService, () -> {
-        });
+        }, CoapClient.defaultResolvePingResponse);
         next = new FutureQueue<>();
     }
 
