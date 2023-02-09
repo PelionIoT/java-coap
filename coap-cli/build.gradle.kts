@@ -19,6 +19,11 @@ dependencies {
     testImplementation("org.awaitility:awaitility:4.2.0")
 }
 
+tasks {
+    withType<JacocoBase> { enabled = false }
+    withType<AbstractPublishToMaven> { enabled = false }
+}
+
 application {
     mainClass.set("com.mbed.coap.cli.Main")
 }
