@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,16 +16,18 @@
  */
 package com.mbed.coap.server.block;
 
-import static com.mbed.coap.packet.BlockSize.*;
-import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.BlockSize.S_16;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.put;
 import static com.mbed.coap.packet.CoapResponse.of;
-import static com.mbed.coap.packet.CoapResponse.*;
-import static com.mbed.coap.packet.Code.*;
-import static com.mbed.coap.packet.Opaque.of;
-import static com.mbed.coap.utils.Bytes.*;
-import static java.util.concurrent.CompletableFuture.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.packet.CoapResponse.ok;
+import static com.mbed.coap.packet.Code.C204_CHANGED;
+import static com.mbed.coap.packet.Code.C205_CONTENT;
+import static com.mbed.coap.packet.Code.C231_CONTINUE;
+import static com.mbed.coap.utils.Bytes.opaqueOfSize;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.mbed.coap.exception.CoapCodeException;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
@@ -80,7 +82,7 @@ class BlockWiseIncomingFilterTest {
         resp = service.apply(
                 put(LOCAL_5683, "/").token(3003).block1Req(2, S_16, false).payload(opaqueOfSize(1))
         );
-        assertEquals(of(C204_CHANGED).block1Req(2, S_16, false).payload(of("ok")), resp.join());
+        assertEquals(of(C204_CHANGED).block1Req(2, S_16, false).payload("ok"), resp.join());
 
 
         assertEquals(put(LOCAL_5683, "/").token(3003).block1Req(2, S_16, false).payload(opaqueOfSize(33)), lastRequest);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,19 @@
  */
 package com.mbed.coap.server.block;
 
-import static com.mbed.coap.packet.BlockSize.*;
-import static com.mbed.coap.packet.CoapRequest.*;
+import static com.mbed.coap.packet.BlockSize.S_1024_BERT;
+import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.post;
+import static com.mbed.coap.packet.CoapRequest.put;
 import static com.mbed.coap.packet.CoapResponse.of;
-import static com.mbed.coap.packet.CoapResponse.*;
-import static com.mbed.coap.utils.Bytes.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static com.mbed.coap.packet.CoapResponse.ok;
+import static com.mbed.coap.utils.Bytes.opaqueOfSize;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_5683;
 import com.mbed.coap.exception.CoapBlockException;
 import com.mbed.coap.exception.CoapBlockTooLargeEntityException;
 import com.mbed.coap.exception.CoapException;
@@ -160,12 +165,12 @@ class BlockWiseOutgoingFilterTest {
         assertMakeRequest(get(LOCAL_5683, "/test"));
 
         //response
-        promise.complete(of(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload(Opaque.of("LARGE___PAYLOAD_")));
+        promise.complete(of(Code.C205_CONTENT).block2Res(0, BlockSize.S_16, true).payload("LARGE___PAYLOAD_"));
 
         //BLOCK 1
         assertMakeRequest(get(LOCAL_5683, "/test").block2Res(1, BlockSize.S_16, false));
 
-        promise.complete(of(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload(Opaque.of("LARGE___PAYLOAD_")));
+        promise.complete(of(Code.C205_CONTENT).block2Res(1, BlockSize.S_16, false).payload("LARGE___PAYLOAD_"));
 
         //verify
         assertTrue(respFut.isDone());

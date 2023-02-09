@@ -462,12 +462,12 @@ public class CoapPacketTest {
 
     @Test
     public void convertToSeparateResponse() {
-        CoapPacket packet = newCoapPacket(LOCAL_5683).mid(13).token(918).ack(Code.C201_CREATED).payload("OK").etag(99).build();
+        CoapPacket packet = newCoapPacket(LOCAL_5683).mid(13).token(918).ack(Code.C201_CREATED).payload("OK").contFormat(MediaTypes.CT_TEXT_PLAIN).etag(99).build();
 
         SeparateResponse separateResponse = packet.toSeparateResponse();
 
         assertEquals(
-                CoapResponse.of(Code.C201_CREATED).payload(Opaque.of("OK")).etag(Opaque.ofBytes(99)).toSeparate(Opaque.variableUInt(918), LOCAL_5683),
+                CoapResponse.of(Code.C201_CREATED).payload("OK", MediaTypes.CT_TEXT_PLAIN).etag(Opaque.ofBytes(99)).toSeparate(Opaque.variableUInt(918), LOCAL_5683),
                 separateResponse
         );
     }

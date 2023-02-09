@@ -163,6 +163,19 @@ public class CoapResponse {
         return new CoapResponse(code, newPayload, options);
     }
 
+    public CoapResponse payload(String newPayload) {
+        return payload(Opaque.of(newPayload));
+    }
+
+    public CoapResponse payload(String newPayload, short contentFormat) {
+        return payload(Opaque.of(newPayload), contentFormat);
+    }
+
+    public CoapResponse payload(Opaque newPayload, short contentFormat) {
+        options.setContentFormat(contentFormat);
+        return payload(newPayload);
+    }
+
     public CoapResponse options(Consumer<HeaderOptions> optionsFunc) {
         HeaderOptions newOpts = options.duplicate();
         optionsFunc.accept(newOpts);
