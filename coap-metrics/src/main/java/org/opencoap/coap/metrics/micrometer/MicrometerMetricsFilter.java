@@ -82,17 +82,17 @@ public class MicrometerMetricsFilter implements Filter.SimpleFilter<CoapRequest,
         MicrometerMetricsFilterBuilder() {
         }
 
-        MicrometerMetricsFilterBuilder registry(MeterRegistry registry) {
+        public MicrometerMetricsFilterBuilder registry(MeterRegistry registry) {
             this.registry = registry;
             return this;
         }
 
-        MicrometerMetricsFilterBuilder metricName(String metricName) {
+        public MicrometerMetricsFilterBuilder metricName(String metricName) {
             this.metricName = metricName;
             return this;
         }
 
-        MicrometerMetricsFilterBuilder distributionStatisticConfig(DistributionStatisticConfig distributionStatisticConfig) {
+        public MicrometerMetricsFilterBuilder distributionStatisticConfig(DistributionStatisticConfig distributionStatisticConfig) {
             this.distributionStatisticConfig = distributionStatisticConfig;
             return this;
         }
