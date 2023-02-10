@@ -74,5 +74,15 @@ class MicrometerMetricsFilterTest {
                         .tag("throwable", "java.lang.Exception")
                         .timer()
         );
+
+        okService.apply(get("/")).join();
+        assertNotNull(
+                registry.find("coap.server.requests")
+                        .tag("route", "/")
+                        .tag("status", "205")
+                        .tag("method", "GET")
+                        .tag("throwable", "n/a")
+                        .timer()
+        );
     }
 }

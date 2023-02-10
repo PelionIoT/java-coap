@@ -65,10 +65,11 @@ public class MicrometerMetricsFilter implements Filter.SimpleFilter<CoapRequest,
     }
 
     private List<Tag> requestTags(CoapRequest req, CoapResponse resp, Throwable err) {
+        String uriPath = req.options().getUriPath();
         return Arrays.asList(
                 Tag.of("method", req.getMethod().name()),
                 Tag.of("status", resp != null ? resp.getCode().codeToString() : "n/a"),
-                Tag.of("route", req.options().getUriPath()),
+                Tag.of("route", uriPath != null ? uriPath : "/"),
                 Tag.of("throwable", err != null ? err.getClass().getCanonicalName() : "n/a")
         );
     }
