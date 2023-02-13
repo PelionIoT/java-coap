@@ -30,8 +30,8 @@ import org.slf4j.LoggerFactory;
 public class SSLSocketClientTransport extends SocketClientTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(SSLSocketClientTransport.class);
 
-    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect) {
-        super(destination, socketFactory, serializer, autoReconnect);
+    public SSLSocketClientTransport(InetSocketAddress destination, SSLSocketFactory socketFactory, boolean autoReconnect) {
+        super(destination, socketFactory, autoReconnect);
     }
 
     @Override
@@ -39,9 +39,9 @@ public class SSLSocketClientTransport extends SocketClientTransport {
         SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(destination.getAddress(), destination.getPort());
 
         sslSocket.addHandshakeCompletedListener(handshakeCompletedEvent -> {
-                    try {
-                        LOGGER.debug("Connected [{}, {}]", handshakeCompletedEvent.getSource(), ((X509Certificate) sslSocket.getSession().getPeerCertificates()[0]).getSubjectX500Principal());
-                    } catch (SSLPeerUnverifiedException e) {
+            try {
+                LOGGER.debug("Connected [{}, {}]", handshakeCompletedEvent.getSource(), ((X509Certificate) sslSocket.getSession().getPeerCertificates()[0]).getSubjectX500Principal());
+            } catch (SSLPeerUnverifiedException e) {
                         LOGGER.warn(e.getMessage(), e);
                     }
                     listener.onConnected((InetSocketAddress) socket.getRemoteSocketAddress());

@@ -31,7 +31,6 @@ import com.mbed.coap.server.CoapServerBuilderForTcp;
 import com.mbed.coap.server.TcpCoapServer;
 import com.mbed.coap.transport.CoapTcpTransport;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -111,18 +110,18 @@ class TransportOptions {
 
         switch (uri.getScheme()) {
             case "coap":
-                return new PlainTextProvider(sourcePort).createUDP(CoapSerializer.UDP, destAdr, ks, psk);
+                return new PlainTextProvider(sourcePort).createUDP(destAdr, ks, psk);
 
             case "coap+tcp":
-                return new PlainTextProvider(sourcePort).createTCP(CoapSerializer.TCP, destAdr, ks);
+                return new PlainTextProvider(sourcePort).createTCP(destAdr, ks);
 
             case "coaps":
                 return createTransportProvider(TransportProviderTypes.mbedtls)
-                        .createUDP(CoapSerializer.UDP, destAdr, ks, psk);
+                        .createUDP(destAdr, ks, psk);
 
             case "coaps+tcp":
                 return createTransportProvider(TransportProviderTypes.jdk)
-                        .createTCP(CoapSerializer.TCP, destAdr, ks);
+                        .createTCP(destAdr, ks);
 
             default:
                 throw new IllegalArgumentException("Scheme not supported: " + uri.getScheme());

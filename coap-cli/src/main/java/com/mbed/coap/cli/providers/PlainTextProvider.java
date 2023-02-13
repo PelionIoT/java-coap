@@ -20,7 +20,6 @@ import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTcpTransport;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.javassl.SocketClientTransport;
 import com.mbed.coap.transport.udp.DatagramSocketTransport;
 import java.net.InetSocketAddress;
@@ -35,12 +34,12 @@ public class PlainTextProvider implements TransportProvider {
     }
 
     @Override
-    public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) {
+    public CoapTransport createUDP(InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) {
         return new DatagramSocketTransport(bindPort);
     }
 
     @Override
-    public CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) {
-        return new SocketClientTransport(destAdr, SocketFactory.getDefault(), coapSerializer, true);
+    public CoapTcpTransport createTCP(InetSocketAddress destAdr, KeyStore ks) {
+        return new SocketClientTransport(destAdr, SocketFactory.getDefault(), true);
     }
 }

@@ -22,7 +22,6 @@ import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTcpTransport;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.stdio.OpensslProcessTransport;
 import java.io.File;
 import java.io.FileWriter;
@@ -45,16 +44,16 @@ public class OpensslProvider implements TransportProvider {
     }
 
     @Override
-    public CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException {
-        return create(coapSerializer, destAdr, ks, false);
+    public CoapTcpTransport createTCP(InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException {
+        return create(CoapSerializer.TCP, destAdr, ks, false);
     }
 
     @Override
-    public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException {
+    public CoapTransport createUDP(InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException {
         if (psk == null) {
-            return create(coapSerializer, destAdr, ks, true);
+            return create(CoapSerializer.UDP, destAdr, ks, true);
         } else {
-            return create(coapSerializer, destAdr, psk, true);
+            return create(CoapSerializer.UDP, destAdr, psk, true);
         }
     }
 

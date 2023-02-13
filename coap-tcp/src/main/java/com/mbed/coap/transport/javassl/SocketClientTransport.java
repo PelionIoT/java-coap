@@ -20,6 +20,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapTcpPacketSerializer;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapTcpListener;
 import com.mbed.coap.transport.CoapTcpTransport;
@@ -50,18 +51,16 @@ public class SocketClientTransport extends BlockingCoapTransport implements Coap
     protected CoapTcpListener listener;
     private final ExecutorService readingWorker;
     protected final SocketFactory socketFactory;
-    private final CoapSerializer serializer;
     private final boolean autoReconnect;
     private volatile boolean isRunning;
 
-    public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect) {
-        this(destination, socketFactory, serializer, autoReconnect, ExecutorHelpers.newSingleThreadExecutor("client-reader"));
+    public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, boolean autoReconnect) {
+        this(destination, socketFactory, autoReconnect, ExecutorHelpers.newSingleThreadExecutor("client-reader"));
     }
 
-    public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, CoapSerializer serializer, boolean autoReconnect, ExecutorService readingWorker) {
+    public SocketClientTransport(InetSocketAddress destination, SocketFactory socketFactory, boolean autoReconnect, ExecutorService readingWorker) {
         this.destination = destination;
         this.socketFactory = socketFactory;
-        this.serializer = serializer;
         this.autoReconnect = autoReconnect;
         this.readingWorker = readingWorker;
     }
@@ -105,7 +104,7 @@ public class SocketClientTransport extends BlockingCoapTransport implements Coap
 
             if (!socket.isClosed()) {
                 try {
-                    return serializer.deserialize(inputStream, (InetSocketAddress) socket.getRemoteSocketAddress());
+                    return CoapTcpPacketSerializer.deserialize((InetSocketAddress) socket.getRemoteSocketAddress(), inputStream);
                 } catch (CoapException e) {
                     if (e.getCause() != null && e.getCause() instanceof IOException) {
                         throw (IOException) e.getCause();
@@ -145,7 +144,7 @@ public class SocketClientTransport extends BlockingCoapTransport implements Coap
             throw new IllegalStateException("No connection with: " + adr);
         }
         synchronized (this) {
-            serializer.serialize(outputStream, coapPacket);
+            CoapTcpPacketSerializer.writeTo(outputStream, coapPacket);
             outputStream.flush();
         }
     }

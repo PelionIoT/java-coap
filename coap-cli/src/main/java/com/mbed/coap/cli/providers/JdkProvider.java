@@ -19,7 +19,6 @@ package com.mbed.coap.cli.providers;
 import static com.mbed.coap.cli.KeystoreUtils.secret;
 import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.transport.CoapTcpTransport;
-import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.javassl.SSLSocketClientTransport;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
@@ -37,10 +36,10 @@ public class JdkProvider implements TransportProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdkProvider.class);
 
     @Override
-    public CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException {
+    public CoapTcpTransport createTCP(InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException {
         SSLContext sslContext = sslContextFromKeystore(ks);
 
-        return new SSLSocketClientTransport(destAdr, sslContext.getSocketFactory(), coapSerializer, true);
+        return new SSLSocketClientTransport(destAdr, sslContext.getSocketFactory(), true);
     }
 
     protected static SSLContext sslContextFromKeystore(KeyStore ks) throws GeneralSecurityException {

@@ -20,7 +20,6 @@ import com.mbed.coap.cli.providers.Pair;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTcpTransport;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
@@ -28,11 +27,11 @@ import java.security.KeyStore;
 
 public interface TransportProvider {
 
-    default CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException {
+    default CoapTcpTransport createTCP(InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException {
         throw new IllegalArgumentException("Not supported");
     }
 
-    default CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException {
+    default CoapTransport createUDP(InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException {
         throw new IllegalArgumentException("Not supported");
     }
 

@@ -20,7 +20,6 @@ import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTcpTransport;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.stdio.StreamBlockingTransport;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
@@ -28,13 +27,13 @@ import java.security.KeyStore;
 public class StandardIoProvider implements TransportProvider {
 
     @Override
-    public CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) {
-        return create(coapSerializer, destAdr);
+    public CoapTcpTransport createTCP(InetSocketAddress destAdr, KeyStore ks) {
+        return create(CoapSerializer.TCP, destAdr);
     }
 
     @Override
-    public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) {
-        return create(coapSerializer, destAdr);
+    public CoapTransport createUDP(InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) {
+        return create(CoapSerializer.UDP, destAdr);
     }
 
     private CoapTcpTransport create(CoapSerializer coapSerializer, InetSocketAddress destAdr) {

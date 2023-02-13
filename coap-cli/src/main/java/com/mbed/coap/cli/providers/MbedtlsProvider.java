@@ -19,7 +19,6 @@ import static com.mbed.coap.cli.KeystoreUtils.readCAs;
 import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTransport;
-import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -50,7 +49,7 @@ public class MbedtlsProvider implements TransportProvider {
     }
 
     @Override
-    public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException {
+    public CoapTransport createUDP(InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException {
         SslConfig config;
         if (psk != null) {
             config = SslConfig.client(new PskAuth(psk.key, psk.value.getBytes()));

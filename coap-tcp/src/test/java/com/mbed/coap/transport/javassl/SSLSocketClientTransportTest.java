@@ -40,13 +40,13 @@ public class SSLSocketClientTransportTest {
     public void successfulConnection() throws Exception {
 
         CoapServer srv = TcpCoapServer.builder()
-                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, CoapSerializer.TCP))
+                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0))
                 .build().start();
 
 
         InetSocketAddress serverAdr = new InetSocketAddress("localhost", srv.getLocalSocketAddress().getPort());
         CoapClient client = TcpCoapServer.builder()
-                .transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), CoapSerializer.TCP, false))
+                .transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), false))
                 .buildClient(serverAdr);
 
         //        assertNotNull(client.ping().get());
@@ -62,14 +62,14 @@ public class SSLSocketClientTransportTest {
     public void successful_reconnection() throws Exception {
 
         CoapServer srv = TcpCoapServer.builder()
-                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, CoapSerializer.TCP))
+                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0))
                 .build().start();
 
 
         int serverPort = srv.getLocalSocketAddress().getPort();
         InetSocketAddress serverAdr = new InetSocketAddress("localhost", serverPort);
         CoapClient client = TcpCoapServer.builder()
-                .transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), CoapSerializer.TCP, true))
+                .transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), true))
                 .buildClient(serverAdr);
 
         assertNotNull(client.ping().get());
@@ -78,7 +78,7 @@ public class SSLSocketClientTransportTest {
         srv.stop();
         System.out.println("----- STOPPED");
         srv = TcpCoapServer.builder()
-                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, serverPort, CoapSerializer.TCP))
+                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, serverPort))
                 .build().start();
 
 

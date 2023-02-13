@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,11 @@
  */
 package com.mbed.coap.transport.javassl;
 
-import static com.mbed.coap.utils.FutureHelpers.*;
-import static java.util.concurrent.CompletableFuture.*;
+import static com.mbed.coap.utils.FutureHelpers.wrapExceptions;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapTcpPacketSerializer;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapTcpListener;
 import com.mbed.coap.transport.CoapTcpTransport;
@@ -44,17 +45,15 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     final ServerSocket serverSocket;
     private OutputStream outputStream;
-    private final CoapSerializer serializer;
     private Socket socket;
     private CoapTcpListener listener;
 
-    SingleConnectionSocketServerTransport(ServerSocket serverSocket, CoapSerializer serializer) {
+    SingleConnectionSocketServerTransport(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
-        this.serializer = serializer;
     }
 
-    public SingleConnectionSocketServerTransport(int port, CoapSerializer serializer) throws IOException {
-        this(new ServerSocket(port), serializer);
+    public SingleConnectionSocketServerTransport(int port) throws IOException {
+        this(new ServerSocket(port));
     }
 
 
@@ -85,7 +84,7 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
     private CoapPacket read() throws IOException, CoapException {
         if (!socket.isClosed()) {
             try {
-                final CoapPacket coapPacket = serializer.deserialize(socket.getInputStream(), ((InetSocketAddress) socket.getRemoteSocketAddress()));
+                final CoapPacket coapPacket = CoapTcpPacketSerializer.deserialize(((InetSocketAddress) socket.getRemoteSocketAddress()), socket.getInputStream());
                 return coapPacket;
             } catch (EOFException e) {
                 closeSocket();
@@ -140,7 +139,7 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
 
     @Override
     public synchronized void sendPacket0(CoapPacket coapPacket) throws CoapException, IOException {
-        serializer.serialize(outputStream, coapPacket);
+        CoapTcpPacketSerializer.writeTo(outputStream, coapPacket);
         outputStream.flush();
     }
 

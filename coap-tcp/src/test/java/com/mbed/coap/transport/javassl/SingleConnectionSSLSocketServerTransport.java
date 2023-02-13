@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,8 +22,8 @@ import javax.net.ssl.SSLServerSocket;
 
 public class SingleConnectionSSLSocketServerTransport extends SingleConnectionSocketServerTransport {
 
-    public SingleConnectionSSLSocketServerTransport(SSLContext sslContext, int port, CoapSerializer serializer) throws IOException {
-        super(sslContext.getServerSocketFactory().createServerSocket(port), serializer);
+    public SingleConnectionSSLSocketServerTransport(SSLContext sslContext, int port) throws IOException {
+        super(sslContext.getServerSocketFactory().createServerSocket(port));
         ((SSLServerSocket) serverSocket).setNeedClientAuth(true);
     }
 }
