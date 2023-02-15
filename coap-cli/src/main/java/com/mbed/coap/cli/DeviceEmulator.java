@@ -34,18 +34,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
 
 @Command(name = "register", mixinStandardHelpOptions = true, description = "Register to LwM2M server and simulate some simple resources", usageHelpAutoWidth = true)
 public class DeviceEmulator implements Callable<Integer> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DeviceEmulator.class);
 
-    @CommandLine.Parameters(index = "0", paramLabel = "<registration-url>", description = "Registration url")
+    @Parameters(index = "0", paramLabel = "<registration-url>", description = "Registration url")
     private URI uri;
 
-    @CommandLine.Mixin
+    @Mixin
     private TransportOptions transportOptions;
 
     protected CoapServer emulatorServer;

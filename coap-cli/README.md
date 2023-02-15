@@ -20,7 +20,7 @@ Commands:
 
 ### Examples
 
-- `./coap send GET coap://coap.me:5683/.well-known/core`
+- `./coap send GET coap://coap.me/.well-known/core`
 - `./coap register 'coap://leshan.eclipseprojects.io:5683/rd?ep=device007&lt=3600&b=U'`
 
 #### Running with openssl:

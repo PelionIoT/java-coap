@@ -36,10 +36,12 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateEncodingException;
 import java.util.Base64;
 
-public class OpensslProvider extends TransportProvider {
+public class OpensslProvider implements TransportProvider {
 
-    public OpensslProvider() {
-        this.cipherSuite = "ECDHE-ECDSA-AES128-SHA256";
+    private final String cipherSuite;
+
+    public OpensslProvider(String cipherSuite) {
+        this.cipherSuite = cipherSuite != null ? cipherSuite : "ECDHE-ECDSA-AES128-SHA256";
     }
 
     @Override

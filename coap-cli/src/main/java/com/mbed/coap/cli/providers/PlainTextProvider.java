@@ -27,11 +27,16 @@ import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import javax.net.SocketFactory;
 
-public class PlainTextProvider extends TransportProvider {
+public class PlainTextProvider implements TransportProvider {
+    private final int bindPort;
+
+    public PlainTextProvider(int bindPort) {
+        this.bindPort = bindPort;
+    }
 
     @Override
     public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) {
-        return new DatagramSocketTransport(0);
+        return new DatagramSocketTransport(bindPort);
     }
 
     @Override

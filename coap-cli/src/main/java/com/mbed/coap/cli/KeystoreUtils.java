@@ -17,8 +17,6 @@
 package com.mbed.coap.cli;
 
 import java.io.FileInputStream;
-import java.net.InetSocketAddress;
-import java.net.URI;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
@@ -35,10 +33,6 @@ public class KeystoreUtils {
 
     public static char[] secret() {
         return "".toCharArray();
-    }
-
-    public static InetSocketAddress addressFromUri(URI uri) {
-        return new InetSocketAddress(uri.getHost(), uri.getPort());
     }
 
     static KeyStore loadKeystore(String keystoreFile) {

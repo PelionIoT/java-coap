@@ -15,10 +15,6 @@
  */
 package com.mbed.coap.cli;
 
-import com.mbed.coap.cli.providers.JdkProvider;
-import com.mbed.coap.cli.providers.MbedtlsProvider;
-import com.mbed.coap.cli.providers.OpensslProvider;
-import com.mbed.coap.cli.providers.StandardIoProvider;
 import com.mbed.coap.packet.BlockSize;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -35,22 +31,7 @@ public class Main {
 
     static CommandLine createCommandLine() {
         return new CommandLine(new Main())
-                .registerConverter(BlockSize.class, s -> BlockSize.valueOf("S_" + s))
-                .registerConverter(TransportProvider.class, Main::transportProviderFor);
+                .registerConverter(BlockSize.class, s -> BlockSize.valueOf("S_" + s));
     }
 
-    static TransportProvider transportProviderFor(String transport) {
-        switch (transport.toLowerCase()) {
-            case "jdk":
-                return new JdkProvider();
-            case "openssl":
-                return new OpensslProvider();
-            case "stdio":
-                return new StandardIoProvider();
-            case "mbedtls":
-                return new MbedtlsProvider();
-            default:
-                throw new IllegalArgumentException("Not supported transport: " + transport);
-        }
-    }
 }

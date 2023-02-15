@@ -16,7 +16,7 @@
  */
 package com.mbed.coap.cli;
 
-import static com.mbed.coap.cli.KeystoreUtils.addressFromUri;
+import static com.mbed.coap.cli.TransportOptions.addressFromUri;
 import com.mbed.coap.CoapConstants;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.packet.BlockSize;
@@ -29,15 +29,17 @@ import java.net.URI;
 import java.util.concurrent.Callable;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
 
 
 @Command(name = "send", mixinStandardHelpOptions = true, description = "Send CoAP requests", usageHelpAutoWidth = true)
 public class SendCommand implements Callable<Integer> {
 
     CoapRequest request;
-    @CommandLine.Spec private CommandLine.Model.CommandSpec spec;
+    @Spec private CommandLine.Model.CommandSpec spec;
 
     @Parameters(index = "0", description = "Method: GET | POST | PUT | DELETE")
     private Method method;
@@ -57,7 +59,7 @@ public class SendCommand implements Callable<Integer> {
     @Option(names = {"--content-format", "-c"}, paramLabel = "<content-format>", description = "Content format, for example: 50 (json), 40 (link-format), 0 (text-plain)")
     private Short contentFormat;
 
-    @CommandLine.Mixin
+    @Mixin
     private TransportOptions transportOptions;
 
     @Override

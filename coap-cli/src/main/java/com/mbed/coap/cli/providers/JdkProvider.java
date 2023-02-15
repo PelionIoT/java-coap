@@ -18,9 +18,7 @@ package com.mbed.coap.cli.providers;
 
 import static com.mbed.coap.cli.KeystoreUtils.secret;
 import com.mbed.coap.cli.TransportProvider;
-import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.transport.CoapTcpTransport;
-import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import com.mbed.coap.transport.javassl.SSLSocketClientTransport;
 import java.net.InetSocketAddress;
@@ -34,7 +32,7 @@ import javax.net.ssl.TrustManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JdkProvider extends TransportProvider {
+public class JdkProvider implements TransportProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdkProvider.class);
 
@@ -44,12 +42,6 @@ public class JdkProvider extends TransportProvider {
 
         return new SSLSocketClientTransport(destAdr, sslContext.getSocketFactory(), coapSerializer, true);
     }
-
-    @Override
-    public CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) {
-        throw new IllegalArgumentException("DTLS not supported by Jdk secure provider");
-    }
-
 
     protected static SSLContext sslContextFromKeystore(KeyStore ks) throws GeneralSecurityException {
             final KeyManagerFactory kmf;

@@ -26,18 +26,14 @@ import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 
-public abstract class TransportProvider {
+public interface TransportProvider {
 
-    protected String cipherSuite;
+    default CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException {
+        throw new IllegalArgumentException("Not supported");
+    }
 
-    public abstract CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) throws GeneralSecurityException, IOException;
-
-    public abstract CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException;
-
-    final void setCipherSuite(String cipherSuite) {
-        if (cipherSuite != null) {
-            this.cipherSuite = cipherSuite;
-        }
+    default CoapTransport createUDP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks, Pair<String, Opaque> psk) throws GeneralSecurityException, IOException {
+        throw new IllegalArgumentException("Not supported");
     }
 
 }

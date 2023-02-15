@@ -15,12 +15,15 @@
  */
 package com.mbed.coap.cli;
 
-import static com.mbed.coap.cli.KeystoreUtils.addressFromUri;
 import static com.mbed.coap.cli.KeystoreUtils.loadKeystore;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import com.mbed.coap.cli.providers.JdkProvider;
 import com.mbed.coap.cli.providers.MbedtlsProvider;
+import com.mbed.coap.cli.providers.OpensslProvider;
 import com.mbed.coap.cli.providers.Pair;
 import com.mbed.coap.cli.providers.PlainTextProvider;
+import com.mbed.coap.cli.providers.StandardIoProvider;
 import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.CoapServerBuilder;
@@ -35,21 +38,37 @@ import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.function.Function;
-import picocli.CommandLine;
+import org.slf4j.LoggerFactory;
+import picocli.CommandLine.Option;
 
 class TransportOptions {
     private Pair<String, Opaque> psk;
 
-    @CommandLine.Option(names = {"-s", "--ssl-provider"}, paramLabel = "<ssl-provider>", description = "jdk (default),\nmbedtls (default for DTLS),\nopenssl (requires installed openssl that supports dtls),\nstdio (standard IO)")
-    private TransportProvider transportProvider;
+    @Option(names = {"-s", "--ssl-provider"}, paramLabel = "<ssl-provider>", description = "jdk (default),\nmbedtls (default for DTLS),\nopenssl (requires installed openssl that supports dtls),\nstdio (standard IO)")
+    private TransportProviderTypes transportProviderType;
 
-    @CommandLine.Option(names = {"-k", "--key-store"}, description = "KeyStore file (with empty passphrase)")
+    @Option(names = {"-k", "--key-store"}, description = "KeyStore file (with empty passphrase)")
     private String keystoreFile;
 
-    @CommandLine.Option(names = {"--cipher"}, paramLabel = "<name>", description = "Cipher suite")
+    @Option(names = {"--cipher"}, paramLabel = "<name>", description = "Cipher suite")
     private String cipherSuite;
 
-    @CommandLine.Option(names = {"--psk"}, paramLabel = "<id:hex-secret>", description = "Pre shared key pair")
+    @Option(names = {"-f", "--force-new-handshake"}, description = "Force new handshake, only applicable when using DTLS with CID")
+    private boolean forceNewHandshake;
+
+    @Option(names = {"--port"}, paramLabel = "<port number>", defaultValue = "0", description = "UDP source port number, default: 0")
+    private int sourcePort;
+
+    @Option(names = {"-q", "--quiet"}, paramLabel = "<name>", description = "Force new handshake, only applicable when using DTLS with CID")
+    void setQuite(boolean quiet) {
+        if (quiet) {
+            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+            ch.qos.logback.classic.Logger logger = loggerContext.getLogger("root");
+            logger.setLevel(Level.WARN);
+        }
+    }
+
+    @Option(names = {"--psk"}, paramLabel = "<id:hex-secret>", description = "Pre shared key pair")
     void setPsk(String pskPair) {
         psk = Pair.split(pskPair, ':').mapValue(Opaque::decodeHex);
     }
@@ -68,32 +87,70 @@ class TransportOptions {
         }
     }
 
+    private TransportProvider createTransportProvider(TransportProviderTypes defaultTpt) {
+        if (transportProviderType == null) {
+            transportProviderType = defaultTpt;
+        }
+
+        switch (transportProviderType) {
+            case jdk:
+                return new JdkProvider();
+            case openssl:
+                return new OpensslProvider(cipherSuite);
+            case stdio:
+                return new StandardIoProvider();
+            case mbedtls:
+                return new MbedtlsProvider(forceNewHandshake, sourcePort);
+        }
+        throw new IllegalArgumentException();
+    }
+
     private CoapTransport createTransport(URI uri) throws GeneralSecurityException, IOException {
         InetSocketAddress destAdr = addressFromUri(uri);
         KeyStore ks = loadKeystore(keystoreFile);
 
         switch (uri.getScheme()) {
             case "coap":
-                return new PlainTextProvider().createUDP(CoapSerializer.UDP, destAdr, ks, psk);
+                return new PlainTextProvider(sourcePort).createUDP(CoapSerializer.UDP, destAdr, ks, psk);
 
             case "coap+tcp":
-                return new PlainTextProvider().createTCP(CoapSerializer.TCP, destAdr, ks);
+                return new PlainTextProvider(sourcePort).createTCP(CoapSerializer.TCP, destAdr, ks);
 
             case "coaps":
-                if (transportProvider == null) {
-                    transportProvider = new MbedtlsProvider();
-                }
-                return transportProvider.createUDP(CoapSerializer.UDP, destAdr, ks, psk);
+                return createTransportProvider(TransportProviderTypes.mbedtls)
+                        .createUDP(CoapSerializer.UDP, destAdr, ks, psk);
 
             case "coaps+tcp":
-                if (transportProvider == null) {
-                    transportProvider = new JdkProvider();
-                }
-                return transportProvider.createTCP(CoapSerializer.TCP, destAdr, ks);
+                return createTransportProvider(TransportProviderTypes.jdk)
+                        .createTCP(CoapSerializer.TCP, destAdr, ks);
 
             default:
                 throw new IllegalArgumentException("Scheme not supported: " + uri.getScheme());
         }
     }
 
+    public static InetSocketAddress addressFromUri(URI uri) {
+        int port = (uri.getPort() == -1) ? defaultPort(uri.getScheme()) : uri.getPort();
+
+        return new InetSocketAddress(uri.getHost(), port);
+    }
+
+    private static int defaultPort(String scheme) {
+        switch (scheme) {
+            case "coap":
+            case "coap+tcp":
+                return 5683;
+
+            case "coaps":
+            case "coaps+tcp":
+                return 5684;
+
+            default:
+                throw new IllegalArgumentException("Scheme not supported: " + scheme);
+        }
+    }
+
+    enum TransportProviderTypes {
+        jdk, openssl, stdio, mbedtls
+    }
 }

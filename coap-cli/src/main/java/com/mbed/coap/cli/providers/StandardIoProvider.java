@@ -25,7 +25,7 @@ import com.mbed.coap.transport.stdio.StreamBlockingTransport;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
 
-public class StandardIoProvider extends TransportProvider {
+public class StandardIoProvider implements TransportProvider {
 
     @Override
     public CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) {

@@ -18,7 +18,6 @@ package com.mbed.coap.cli.providers;
 import static com.mbed.coap.cli.KeystoreUtils.readCAs;
 import com.mbed.coap.cli.TransportProvider;
 import com.mbed.coap.packet.Opaque;
-import com.mbed.coap.transport.CoapTcpTransport;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.javassl.CoapSerializer;
 import java.io.File;
@@ -38,13 +37,16 @@ import org.opencoap.transport.mbedtls.MbedtlsCoapTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MbedtlsProvider extends TransportProvider {
+public class MbedtlsProvider implements TransportProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MbedtlsProvider.class);
 
-    @Override
-    public CoapTcpTransport createTCP(CoapSerializer coapSerializer, InetSocketAddress destAdr, KeyStore ks) {
-        throw new IllegalArgumentException("TLS not supported");
+    private final boolean forceNewHandshake;
+    private final int bindPort;
+
+    public MbedtlsProvider(Boolean forceNewHandshake, int bindPort) {
+        this.forceNewHandshake = forceNewHandshake;
+        this.bindPort = bindPort;
     }
 
     @Override
@@ -62,11 +64,11 @@ public class MbedtlsProvider extends TransportProvider {
         byte[] sessionBytes = readBytes(fileSession);
 
         DtlsTransmitter transport;
-        if (sessionBytes.length > 0) {
+        if (!forceNewHandshake && sessionBytes.length > 0) {
             SslSession session = config.loadSession(new byte[0], sessionBytes, destAdr);
-            transport = DtlsTransmitter.create(destAdr, session, 0);
+            transport = DtlsTransmitter.create(destAdr, session, bindPort);
         } else {
-            transport = DtlsTransmitter.connect(destAdr, config, 0).join();
+            transport = DtlsTransmitter.connect(destAdr, config, bindPort).join();
         }
 
         return new MbedtlsCoapTransport(transport) {
