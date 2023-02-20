@@ -238,6 +238,7 @@ Development
 - `./gradlew publishToMavenLocal`               publish to local maven
 - `./gradlew dependencyUpdates`                 determine which dependencies have updates
 - `./gradlew useLatestVersions`                 update dependencies to the latest available versions
+- `./gradlew wrapper --gradle-version VERSION`  Upgrading the Wrapper version
 
 Contributions
 -------------

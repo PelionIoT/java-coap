@@ -15,7 +15,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
     testImplementation("ch.qos.logback:logback-classic:1.3.5")
     testImplementation("org.mockito:mockito-core:4.11.0")
-    testImplementation("nl.jqno.equalsverifier:equalsverifier:3.13")
+    testImplementation("nl.jqno.equalsverifier:equalsverifier:3.13.2")
     testImplementation("io.github.artsok:rerunner-jupiter:2.1.6")
 }
 
