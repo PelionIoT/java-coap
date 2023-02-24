@@ -17,13 +17,7 @@
 package com.mbed.coap.packet;
 
 import static com.mbed.coap.transport.TransportContext.NON_CONFIRMABLE;
-import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.transport.TransportContext;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
@@ -32,8 +26,6 @@ import java.util.Objects;
  */
 public class CoapPacket {
 
-    static final int PAYLOAD_MARKER = 0xFF;
-    private byte version = 1;
     private MessageType messageType = MessageType.Confirmable;
     private int messageId;
     private Code code;
@@ -81,34 +73,6 @@ public class CoapPacket {
         this.remoteAddress = remoteAddress;
     }
 
-    /**
-     * Reads CoAP packet from raw data.
-     *
-     * @param remoteAddress remote address
-     * @param rawData data
-     * @param length data length
-     * @return CoapPacket instance
-     * @throws CoapException if can not parse
-     */
-    public static CoapPacket read(InetSocketAddress remoteAddress, byte[] rawData, int length) throws CoapException {
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(rawData, 0, length);
-        CoapPacket cp = new CoapPacket(remoteAddress);
-        cp.readFrom(EofInputStream.wrap(inputStream));
-        return cp;
-    }
-
-    /**
-     * Reads CoAP packet from raw data.
-     *
-     * @param remoteAddress remote address
-     * @param rawData data
-     * @return CoapPacket instance
-     * @throws CoapException if can not parse
-     */
-    public static CoapPacket read(InetSocketAddress remoteAddress, byte[] rawData) throws CoapException {
-        return read(remoteAddress, rawData, rawData.length);
-    }
-
     public static CoapPacket from(CoapRequest req) {
         CoapPacket packet = new CoapPacket(Objects.requireNonNull(req.getPeerAddress()));
         packet.setMessageType(req.getTransContext().get(NON_CONFIRMABLE) ? MessageType.NonConfirmable : MessageType.Confirmable);
@@ -150,79 +114,6 @@ public class CoapPacket {
             return remoteAddress.getHostString().split("%")[0].concat(":" + remoteAddress.getPort());
         } else {
             return null;
-        }
-    }
-
-    /**
-     * De-serialize CoAP message from input stream.
-     *
-     * @param remoteAddress remote address
-     * @param inputStream input stream
-     * @return CoapPacket instance
-     * @throws CoapException if can not parse
-     */
-    public static CoapPacket deserialize(InetSocketAddress remoteAddress, InputStream inputStream) throws CoapException {
-        CoapPacket coapPacket = new CoapPacket(remoteAddress);
-        coapPacket.readFrom(EofInputStream.wrap(inputStream));
-        return coapPacket;
-    }
-
-    /**
-     * Serialize CoAP message
-     *
-     * @param coapPacket CoAP packet object
-     * @return serialized data
-     * @throws CoapException exception if coap packet can not be serialized
-     */
-    public static byte[] serialize(CoapPacket coapPacket) throws CoapException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-        coapPacket.writeTo(outputStream);
-        return outputStream.toByteArray();
-    }
-
-    private void readFrom(EofInputStream inputStream) throws CoapException {
-        try {
-            int tempByte = inputStream.read();      //first byte
-
-            version = (byte) ((tempByte & 0xC0) >> 6);
-            if (version != 1) {
-                throw new CoapException("CoAP version %s not supported", version);
-            }
-
-            messageType = MessageType.valueOf((tempByte >> 4) & 0x3);
-
-            byte tokenLen = (byte) (tempByte & 0x0F);
-            if (tokenLen > 8) {
-                throw new CoapException("Wrong TOKEN value, size should be within range 0-8");
-            }
-
-            tempByte = inputStream.read();         //second byte
-            if (tempByte >= 1 && tempByte <= 10) {
-                //method code
-                method = Method.valueOf(tempByte);
-            } else {
-                code = Code.valueOf(tempByte);
-            }
-
-            messageId = inputStream.read() << 8;
-            messageId = messageId | inputStream.read();
-
-            //token
-            token = Opaque.read(inputStream, tokenLen);
-
-            //read headers
-            options = new HeaderOptions();
-            boolean hasPayloadMarker = options.deserialize(inputStream);
-
-            //read payload
-            if (hasPayloadMarker) {
-                int plLen = inputStream.available();
-                this.payload = Opaque.read(inputStream, plLen);
-            }
-
-        } catch (IOException | IllegalArgumentException ex) {
-            throw new CoapException(ex);
         }
     }
 
@@ -311,15 +202,6 @@ public class CoapPacket {
         TransportContext transCtx = (messageType == MessageType.NonConfirmable) ? transportContext.with(NON_CONFIRMABLE, true) : transportContext;
 
         return new CoapRequest(method, token, options, payload, remoteAddress, transCtx);
-    }
-
-    /**
-     * Returns CoAP version.
-     *
-     * @return version
-     */
-    public byte getVersion() {
-        return version;
     }
 
     /**
@@ -430,69 +312,6 @@ public class CoapPacket {
 
     public Opaque getToken() {
         return token;
-    }
-
-    /**
-     * Writes serialized CoAP packet to given OutputStream.
-     *
-     * @param outputStream output stream
-     */
-    public void writeTo(OutputStream outputStream) {
-        try {
-            int tempByte;
-
-            tempByte = (0x3 & version) << 6;            //Version
-            tempByte |= (0x3 & messageType.ordinal()) << 4;  //Transaction Message Type
-            tempByte |= token.size() & 0xF;                  //Token length
-
-            outputStream.write(tempByte);
-            writeCode(outputStream, this);
-
-            outputStream.write(0xFF & (messageId >> 8));
-            outputStream.write(0xFF & messageId);
-
-            //token
-            token.writeTo(outputStream);
-
-            // options
-            options.serialize(outputStream);
-
-            //payload
-            if (payload.nonEmpty()) {
-                outputStream.write(PAYLOAD_MARKER);
-                payload.writeTo(outputStream);
-            }
-        } catch (IOException exception) {
-            throw new IllegalStateException(exception.getMessage(), exception);
-        }
-    }
-
-    static Code writeCode(OutputStream os, CoapPacket coapPacket) throws IOException {
-        Code code = coapPacket.getCode();
-        Method method = coapPacket.getMethod();
-
-        if (code != null && method != null) {
-            throw new IllegalStateException("Forbidden operation: 'code' and 'method' use at a same time");
-        }
-        if (code != null) {
-            os.write(code.getCoapCode());
-        } else if (method != null) {
-            os.write(method.getCode());
-        } else { //no code or method used
-            os.write(0);
-        }
-        return code;
-    }
-
-    /**
-     * Creates a CoAP packet and Returns array of bytes.
-     *
-     * @return serialized CoAP packet
-     */
-    public byte[] toByteArray() {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        writeTo(outputStream);
-        return outputStream.toByteArray();
     }
 
     /**
@@ -611,11 +430,11 @@ public class CoapPacket {
         return messageType == MessageType.Acknowledgement && method == null && code == null && payload.isEmpty() && token.isEmpty();
     }
 
-    public boolean isRequest() {
+    boolean isRequest() {
         return method != null;
     }
 
-    public boolean isResponse() {
+    boolean isResponse() {
         return code != null;
     }
 
@@ -638,7 +457,6 @@ public class CoapPacket {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 41 * hash + this.version;
         hash = 41 * hash + Objects.hashCode(this.messageType);
         hash = 41 * hash + this.messageId;
         hash = 41 * hash + Objects.hashCode(this.code);
@@ -660,9 +478,6 @@ public class CoapPacket {
             return false;
         }
         final CoapPacket other = (CoapPacket) obj;
-        if (this.version != other.version) {
-            return false;
-        }
         if (this.messageType != other.messageType) {
             return false;
         }

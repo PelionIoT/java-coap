@@ -20,6 +20,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapSerializer;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.utils.ExecutorHelpers;
 import java.io.IOException;
@@ -89,7 +90,7 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
         try {
             DatagramPacket datagramPacket = new DatagramPacket(readBuffer, readBuffer.length);
             socket.receive(datagramPacket);
-            packet = CoapPacket.read((InetSocketAddress) datagramPacket.getSocketAddress(), datagramPacket.getData(), datagramPacket.getLength());
+            packet = CoapSerializer.deserialize((InetSocketAddress) datagramPacket.getSocketAddress(), datagramPacket.getData(), datagramPacket.getLength());
         } catch (CoapException e) {
             LOGGER.warn(e.toString(), e);
         } catch (SocketTimeoutException ex) {
@@ -117,7 +118,7 @@ public class DatagramSocketTransport extends BlockingCoapTransport {
         if (!socketCreated()) {
             throw new IllegalStateException();
         }
-        byte[] data = coapPacket.toByteArray();
+        byte[] data = CoapSerializer.serialize(coapPacket);
 
         DatagramPacket datagramPacket = new DatagramPacket(data, data.length, coapPacket.getRemoteAddress());
 

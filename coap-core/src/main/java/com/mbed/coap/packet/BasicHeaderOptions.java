@@ -646,7 +646,7 @@ public class BasicHeaderOptions {
             int hdrByte = read8(is);
             availableInternal--;
 
-            if (hdrByte == CoapPacket.PAYLOAD_MARKER) {
+            if (hdrByte == CoapSerializer.PAYLOAD_MARKER) {
                 return availableInternal;
             }
             int delta = hdrByte >> 4;

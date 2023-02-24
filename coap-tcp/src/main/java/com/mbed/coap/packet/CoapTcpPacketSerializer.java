@@ -242,7 +242,7 @@ public final class CoapTcpPacketSerializer {
         writeExtendedPacketLength(os, packetLen1Code, packetLength);
 
         // Code
-        CoapPacket.writeCode(os, coapPacket);
+        CoapSerializer.writeCode(os, coapPacket);
 
         //TKL Bytes
         coapPacket.getToken().writeTo(os);
@@ -252,7 +252,7 @@ public final class CoapTcpPacketSerializer {
 
         //Payload
         if (coapPacket.getPayload().size() > 0) {
-            os.write(CoapPacket.PAYLOAD_MARKER);
+            os.write(CoapSerializer.PAYLOAD_MARKER);
             coapPacket.getPayload().writeTo(os);
         }
 

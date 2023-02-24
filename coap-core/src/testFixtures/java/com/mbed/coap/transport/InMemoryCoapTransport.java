@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,9 @@
  */
 package com.mbed.coap.transport;
 
-import static com.mbed.coap.utils.FutureHelpers.*;
+import static com.mbed.coap.utils.FutureHelpers.wrapExceptions;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapSerializer;
 import com.mbed.coap.utils.AsyncQueue;
 import com.mbed.coap.utils.IpPortAddress;
 import java.io.IOException;
@@ -109,7 +110,7 @@ public class InMemoryCoapTransport extends BlockingCoapTransport {
         InMemoryCoapTransport transport = BINDING_MANAGER.getQueueByAddress(coapPacket.getRemoteAddress());
 
         if (transport != null) {
-            transport.receive(new DatagramMessage(bindingAddress, coapPacket.toByteArray()));
+            transport.receive(new DatagramMessage(bindingAddress, CoapSerializer.serialize(coapPacket)));
         }
     }
 
@@ -121,7 +122,7 @@ public class InMemoryCoapTransport extends BlockingCoapTransport {
     public CompletableFuture<CoapPacket> receive() {
         return receiveQueue.poll()
                 .thenApplyAsync(msg -> wrapExceptions(() -> {
-                    CoapPacket packet = CoapPacket.read(msg.source.toInetSocketAddress(), msg.packetData, msg.packetData.length);
+                    CoapPacket packet = CoapSerializer.deserialize(msg.source.toInetSocketAddress(), msg.packetData, msg.packetData.length);
                     packet.setTransportContext(transportContext);
                     return packet;
                 }), executor);

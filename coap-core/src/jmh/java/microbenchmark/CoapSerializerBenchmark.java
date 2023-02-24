@@ -21,10 +21,13 @@ import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.BlockOption;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapSerializer;
+import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.MessageType;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.packet.Opaque;
+import com.mbed.coap.utils.Bytes;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -41,10 +44,11 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(value = 1, jvmArgsPrepend = {"-Xms128m", "-Xmx128m"})
 @Warmup(iterations = 1, time = 3)
 @Measurement(iterations = 1, time = 10)
-public class ParsingBenchmark {
+public class CoapSerializerBenchmark {
 
-    private final CoapPacket packet = createCoapPacket();
-    private final CoapPacket simpleCoap = newCoapPacket().emptyAck(5154);
+    private final CoapPacket complexCoap = createCoapPacket();
+    private final CoapPacket emptyAckCoap = newCoapPacket().emptyAck(5154);
+    private final CoapPacket resp1kCoap = newCoapPacket().mid(1098).ack(Code.C205_CONTENT).payload(Bytes.opaqueOfRandom(1024)).build();
     private ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
     public static CoapPacket createCoapPacket() {
@@ -69,20 +73,31 @@ public class ParsingBenchmark {
     @Benchmark()
     public void serialize_complex_coap(Blackhole bh) throws CoapException {
         baos.reset();
-        packet.writeTo(baos);
+        CoapSerializer.serialize(complexCoap, baos);
 
-        CoapPacket packet2 = CoapPacket.deserialize(null, new ByteArrayInputStream(baos.toByteArray()));
+        CoapPacket packet2 = CoapSerializer.deserialize(null, new ByteArrayInputStream(baos.toByteArray()));
 
         bh.consume(packet2);
     }
 
     @Benchmark()
-    public void serialize_simple_coap(Blackhole bh) throws CoapException {
+    public void serialize_empty_ack(Blackhole bh) throws CoapException {
         baos.reset();
 
-        simpleCoap.writeTo(baos);
+        CoapSerializer.serialize(emptyAckCoap, baos);
 
-        CoapPacket packet2 = CoapPacket.deserialize(null, new ByteArrayInputStream(baos.toByteArray()));
+        CoapPacket packet2 = CoapSerializer.deserialize(null, new ByteArrayInputStream(baos.toByteArray()));
+
+        bh.consume(packet2);
+    }
+
+    @Benchmark()
+    public void serialize_resp_with_1k_payload(Blackhole bh) throws CoapException {
+        baos.reset();
+
+        CoapSerializer.serialize(resp1kCoap, baos);
+
+        CoapPacket packet2 = CoapSerializer.deserialize(null, new ByteArrayInputStream(baos.toByteArray()));
 
         bh.consume(packet2);
     }

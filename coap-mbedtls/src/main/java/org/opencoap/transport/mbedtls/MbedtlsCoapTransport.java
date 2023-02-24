@@ -18,6 +18,7 @@ package org.opencoap.transport.mbedtls;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapSerializer;
 import com.mbed.coap.transport.CoapTransport;
 import com.mbed.coap.transport.TransportContext;
 import java.io.IOException;
@@ -65,7 +66,7 @@ public class MbedtlsCoapTransport implements CoapTransport {
 
     @Override
     public CompletableFuture<Boolean> sendPacket(CoapPacket coapPacket) {
-        return dtlsTransport.send(new Packet<>(coapPacket.toByteArray(), coapPacket.getRemoteAddress()));
+        return dtlsTransport.send(new Packet<>(CoapSerializer.serialize(coapPacket), coapPacket.getRemoteAddress()));
     }
 
     @Override
@@ -76,7 +77,7 @@ public class MbedtlsCoapTransport implements CoapTransport {
     private CompletableFuture<CoapPacket> deserialize(Packet<byte[]> packet) {
         if (packet.getBuffer().length > 0) {
             try {
-                CoapPacket coapPacket = CoapPacket.read(packet.getPeerAddress(), packet.getBuffer());
+                CoapPacket coapPacket = CoapSerializer.deserialize(packet.getPeerAddress(), packet.getBuffer());
                 coapPacket.setTransportContext(TransportContext.of(DTLS_CONTEXT, packet.getSessionContext()));
                 return completedFuture(coapPacket);
             } catch (CoapException e) {

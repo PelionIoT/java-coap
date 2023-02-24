@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,8 @@
 package com.mbed.coap.utils;
 
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.mbed.coap.packet.CoapPacket;
 
 public class CoapPacketAssertion {
@@ -51,7 +52,6 @@ public class CoapPacketAssertion {
         assertEquals(cp1.headers().getUriPort(), cp2.headers().getUriPort());
 
         assertEquals(cp1.getPayloadString(), cp2.getPayloadString());
-        assertEquals(1, cp2.getVersion());
 
         assertEquals(cp1.getRemoteAddress(), cp2.getRemoteAddress());
         assertEquals(cp1.getTransportContext(), cp2.getTransportContext());

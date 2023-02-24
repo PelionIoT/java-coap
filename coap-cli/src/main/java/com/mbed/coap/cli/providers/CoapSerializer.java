@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,12 +29,12 @@ public interface CoapSerializer {
     CoapSerializer UDP = new CoapSerializer() {
         @Override
         public void serialize(OutputStream outputStream, CoapPacket coapPacket) {
-            coapPacket.writeTo(outputStream);
+            com.mbed.coap.packet.CoapSerializer.serialize(coapPacket, outputStream);
         }
 
         @Override
         public CoapPacket deserialize(InputStream inputStream, InetSocketAddress sourceAddress) throws CoapException {
-            return CoapPacket.deserialize(sourceAddress, inputStream);
+            return com.mbed.coap.packet.CoapSerializer.deserialize(sourceAddress, inputStream);
         }
     };
 

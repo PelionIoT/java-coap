@@ -91,7 +91,7 @@ public class UdpTransportBenchmark {
     @OperationsPerInvocation(20)
     public void udpTransport_20_outgoing_transactions(Blackhole bh) throws InterruptedException {
         for (int i = 0; i < 20; i++) {
-            assertTrue(client.sendPacket(coapRequest).join());
+            client.sendPacket(coapRequest);
             cliReceived[i] = client.receive();
         }
 

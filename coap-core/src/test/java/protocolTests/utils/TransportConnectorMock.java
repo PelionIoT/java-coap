@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ package protocolTests.utils;
 
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.packet.CoapPacket;
+import com.mbed.coap.packet.CoapSerializer;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.utils.AsyncQueue;
 import java.io.IOException;
@@ -64,7 +65,7 @@ public class TransportConnectorMock extends BlockingCoapTransport {
 
     public void receive(CoapPacket coapPacket, InetSocketAddress sourceAddress) {
         try {
-            receive(CoapPacket.read(sourceAddress, coapPacket.toByteArray()));
+            receive(CoapSerializer.deserialize(sourceAddress, CoapSerializer.serialize(coapPacket)));
         } catch (CoapException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -83,8 +84,8 @@ public class TransportConnectorMock extends BlockingCoapTransport {
     private CoapPacket[] findResponse(CoapPacket coapPacket) throws IOException {
         //remove address
         try {
-            byte[] bytes = coapPacket.toByteArray();
-            coapPacket = CoapPacket.read(null, bytes, bytes.length);
+            byte[] bytes = CoapSerializer.serialize(coapPacket);
+            coapPacket = CoapSerializer.deserialize(null, bytes, bytes.length);
         } catch (CoapException e) {
             throw new RuntimeException(e);
         }
