@@ -22,6 +22,7 @@ import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.packet.BlockSize;
 import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
+import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.Method;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.filter.TokenGeneratorFilter;
@@ -59,6 +60,9 @@ public class SendCommand implements Callable<Integer> {
     @Option(names = {"--content-format", "-c"}, paramLabel = "<content-format>", description = "Content format, for example: 50 (json), 40 (link-format), 0 (text-plain)")
     private Short contentFormat;
 
+    @Option(names = {"--accept", "-a"}, paramLabel = "<accept>", description = "Content format we want to receive, for example: 60 (cbor), 50 (json), 0 (text-plain)")
+    private Short accept;
+
     @Mixin
     private TransportOptions transportOptions;
 
@@ -81,12 +85,19 @@ public class SendCommand implements Callable<Integer> {
                     .options(o -> {
                         o.setContentFormat(contentFormat);
                         o.setProxyUri(proxyUri);
+                        if (accept != null) {
+                            o.setAccept(accept);
+                        }
                     });
             CoapResponse resp = cli.sendSync(request);
 
             if (resp.getPayload().nonEmpty()) {
                 spec.commandLine().getOut().println();
-                spec.commandLine().getOut().println(resp.getPayloadString());
+                if (resp.options().getContentFormat() != null && (resp.options().getContentFormat() == MediaTypes.CT_APPLICATION_CBOR || resp.options().getContentFormat() == MediaTypes.CT_APPLICATION_OCTET__STREAM)) {
+                    spec.commandLine().getOut().println(resp.getPayload().toHex());
+                } else {
+                    spec.commandLine().getOut().println(resp.getPayloadString());
+                }
             }
         }
         return 0;
