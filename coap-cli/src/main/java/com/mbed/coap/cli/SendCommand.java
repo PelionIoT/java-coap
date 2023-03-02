@@ -24,6 +24,7 @@ import com.mbed.coap.packet.CoapRequest;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.MediaTypes;
 import com.mbed.coap.packet.Method;
+import com.mbed.coap.packet.Opaque;
 import com.mbed.coap.server.CoapServer;
 import com.mbed.coap.server.filter.TokenGeneratorFilter;
 import java.net.URI;
@@ -63,6 +64,9 @@ public class SendCommand implements Callable<Integer> {
     @Option(names = {"--accept", "-a"}, paramLabel = "<accept>", description = "Content format we want to receive, for example: 60 (cbor), 50 (json), 0 (text-plain)")
     private Short accept;
 
+    @Option(names = {"--hex-payload", "-x"}, description = "The payload is in HEX")
+    private boolean hexPayload;
+
     @Mixin
     private TransportOptions transportOptions;
 
@@ -81,7 +85,7 @@ public class SendCommand implements Callable<Integer> {
             request = CoapRequest.of(null, method, uriPath)
                     .query(uri.getQuery() == null ? "" : uri.getQuery())
                     .blockSize(blockSize)
-                    .payload(payload)
+                    .payload(hexPayload ? Opaque.decodeHex(payload) : Opaque.of(payload))
                     .options(o -> {
                         o.setContentFormat(contentFormat);
                         o.setProxyUri(proxyUri);

@@ -117,6 +117,21 @@ class CoapCliTest {
     }
 
     @Test
+    public void requestWithHexPayload() {
+        // when
+        int exitCode = cmd.execute("send", "-x", "-c", "60", "-a", "50", "POST", format("coap://localhost:%d/test", port), "a16e626573745f6775697461726973746a476172795f4d6f6f7265");
+
+        // then
+        assertEquals(0, exitCode);
+        assertEquals("\nReceived 27\n", sw.toString());
+
+        CoapRequest expected = CoapRequest.post("/test")
+                .payload(Opaque.decodeHex("a16e626573745f6775697461726973746a476172795f4d6f6f7265"), MediaTypes.CT_APPLICATION_CBOR)
+                .accept(MediaTypes.CT_APPLICATION_JSON);
+        assertEquals(expected, sendCommand.request);
+    }
+
+    @Test
     public void registerEmulator() {
         int exitCode = cmd.execute("register", format("coap://localhost:%d/rd?ep=dev123&lt=60", port));
 
