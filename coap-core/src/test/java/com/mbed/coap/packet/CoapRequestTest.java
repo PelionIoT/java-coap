@@ -94,6 +94,9 @@ class CoapRequestTest {
         assertEquals("CoapRequest[POST URI:/test, pl(4):64757061]", CoapRequest.post("/test").payload("dupa").toString());
         assertEquals("CoapRequest[DELETE URI:/test,Token:03ff]", CoapRequest.delete("/test").token(1023).toString());
         assertEquals("CoapRequest[GET URI:/test]", CoapRequest.get("/test").toString());
+        assertEquals("CoapRequest[FETCH URI:/test, pl(4):64757061]", CoapRequest.fetch("/test").payload("dupa").toString());
+        assertEquals("CoapRequest[PATCH URI:/test, pl(4):64757061]", CoapRequest.patch("/test").payload("dupa").toString());
+        assertEquals("CoapRequest[iPATCH URI:/test, pl(4):64757061]", CoapRequest.iPatch("/test").payload("dupa").toString());
         assertEquals("CoapRequest[PING]", CoapRequest.ping(destination, TransportContext.EMPTY).toString());
     }
 

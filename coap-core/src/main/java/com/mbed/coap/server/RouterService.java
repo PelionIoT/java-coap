@@ -100,6 +100,18 @@ public class RouterService implements Service<CoapRequest, CoapResponse> {
             return add(Method.DELETE, uriPath, service);
         }
 
+        public RouteBuilder fetch(String uriPath, Service<CoapRequest, CoapResponse> service) {
+            return add(Method.FETCH, uriPath, service);
+        }
+
+        public RouteBuilder patch(String uriPath, Service<CoapRequest, CoapResponse> service) {
+            return add(Method.PATCH, uriPath, service);
+        }
+
+        public RouteBuilder iPatch(String uriPath, Service<CoapRequest, CoapResponse> service) {
+            return add(Method.iPATCH, uriPath, service);
+        }
+
         public RouteBuilder any(String uriPath, Service<CoapRequest, CoapResponse> service) {
             return add(null, uriPath, service);
         }

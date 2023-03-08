@@ -16,9 +16,13 @@
 package com.mbed.coap.server;
 
 import static com.mbed.coap.packet.CoapRequest.delete;
+import static com.mbed.coap.packet.CoapRequest.fetch;
 import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.iPatch;
+import static com.mbed.coap.packet.CoapRequest.patch;
 import static com.mbed.coap.packet.CoapRequest.post;
 import static com.mbed.coap.packet.CoapRequest.put;
+import static com.mbed.coap.packet.MediaTypes.CT_APPLICATION_JSON;
 import static com.mbed.coap.packet.MediaTypes.CT_TEXT_PLAIN;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,6 +50,15 @@ public class RoutingServiceTest {
             )
             .delete("/test/*",
                     req -> completedFuture(CoapResponse.of(Code.C202_DELETED))
+            )
+            .fetch("/fetchtest/",
+                    req -> completedFuture(CoapResponse.ok("{\"key1:\" [\"value1\", \"value2\"]}", CT_APPLICATION_JSON))
+            )
+            .patch("/test4/",
+                    req -> completedFuture(CoapResponse.of(Code.C204_CHANGED))
+            )
+            .iPatch("/test4/",
+                    req -> completedFuture(CoapResponse.of(Code.C204_CHANGED))
             )
             .any("/test2", req ->
                     completedFuture(CoapResponse.ok("Reply to " + req.getMethod()))
@@ -75,12 +88,18 @@ public class RoutingServiceTest {
         CompletableFuture<CoapResponse> resp2 = routeService.apply(post("/test/1"));
         CompletableFuture<CoapResponse> resp3 = routeService.apply(put("/test/1"));
         CompletableFuture<CoapResponse> resp4 = routeService.apply(delete("/no"));
+        CompletableFuture<CoapResponse> resp5 = routeService.apply(fetch("/test/"));
+        CompletableFuture<CoapResponse> resp6 = routeService.apply(patch("/no"));
+        CompletableFuture<CoapResponse> resp7 = routeService.apply(iPatch("/no"));
 
         // then
         assertEquals(CoapResponse.notFound(), resp1.get());
         assertEquals(CoapResponse.notFound(), resp2.get());
         assertEquals(CoapResponse.notFound(), resp3.get());
         assertEquals(CoapResponse.notFound(), resp4.get());
+        assertEquals(CoapResponse.notFound(), resp5.get());
+        assertEquals(CoapResponse.notFound(), resp6.get());
+        assertEquals(CoapResponse.notFound(), resp7.get());
     }
 
     @Test

@@ -16,7 +16,10 @@
  */
 package protocolTests;
 
+import static com.mbed.coap.packet.CoapRequest.fetch;
 import static com.mbed.coap.packet.CoapRequest.get;
+import static com.mbed.coap.packet.CoapRequest.iPatch;
+import static com.mbed.coap.packet.CoapRequest.patch;
 import static com.mbed.coap.packet.CoapRequest.post;
 import static com.mbed.coap.packet.Opaque.EMPTY;
 import static com.mbed.coap.packet.Opaque.of;
@@ -79,6 +82,15 @@ abstract class IntegrationTestBase {
                         CoapResponse.ok(largePayload)
                 ))
                 .post("/large", req -> completedFuture(
+                        CoapResponse.ok("Got " + req.getPayload().size() + "B")
+                ))
+                .fetch("/large", __ -> completedFuture(
+                        CoapResponse.ok(largePayload)
+                ))
+                .iPatch("/large", req -> completedFuture(
+                        CoapResponse.ok("Got " + req.getPayload().size() + "B")
+                ))
+                .patch("/large", req -> completedFuture(
                         CoapResponse.ok("Got " + req.getPayload().size() + "B")
                 ))
                 .get("/exception", __ -> {
@@ -200,6 +212,13 @@ abstract class IntegrationTestBase {
     }
 
     @Test
+    void readLargePayloadFetch() {
+        CoapResponse resp = client.send(fetch("/large").token(103)).join();
+
+        assertEquals(CoapResponse.ok(largePayload), resp.options(it -> it.setBlock2Res(null)));
+    }
+
+    @Test
     void writeLargePayload() {
         await().untilAsserted(() -> {
             CoapResponse resp = client.send(post("/large").token(102).payload(largePayload)).join();
@@ -207,6 +226,25 @@ abstract class IntegrationTestBase {
             assertEquals(CoapResponse.ok("Got 3000B"), resp.options(it -> it.setBlock1Req(null)));
         });
     }
+
+    @Test
+    void writeLargePatch() {
+        await().untilAsserted(() -> {
+            CoapResponse resp = client.send(patch("/large").token(105).payload(largePayload)).join();
+
+            assertEquals(CoapResponse.ok("Got 3000B"), resp.options(it -> it.setBlock1Req(null)));
+        });
+    }
+
+    @Test
+    void writeLargeIPatch() {
+        await().untilAsserted(() -> {
+            CoapResponse resp = client.send(iPatch("/large").token(106).payload(largePayload)).join();
+
+            assertEquals(CoapResponse.ok("Got 3000B"), resp.options(it -> it.setBlock1Req(null)));
+        });
+    }
+
 
     @Test
     void observeResource() throws InterruptedException {

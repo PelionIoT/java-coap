@@ -90,6 +90,30 @@ public final class CoapRequest {
         return CoapRequest.of(null, Method.DELETE, uriPath);
     }
 
+    public static CoapRequest fetch(InetSocketAddress peerAddress, String uriPath) {
+        return CoapRequest.of(peerAddress, Method.FETCH, uriPath);
+    }
+
+    public static CoapRequest fetch(String uriPath) {
+        return CoapRequest.of(null, Method.FETCH, uriPath);
+    }
+
+    public static CoapRequest patch(InetSocketAddress peerAddress, String uriPath) {
+        return CoapRequest.of(peerAddress, Method.PATCH, uriPath);
+    }
+
+    public static CoapRequest patch(String uriPath) {
+        return CoapRequest.of(null, Method.PATCH, uriPath);
+    }
+
+    public static CoapRequest iPatch(InetSocketAddress peerAddress, String uriPath) {
+        return CoapRequest.of(peerAddress, Method.iPATCH, uriPath);
+    }
+
+    public static CoapRequest iPatch(String uriPath) {
+        return CoapRequest.of(null, Method.iPATCH, uriPath);
+    }
+
     public static CoapRequest ping(InetSocketAddress peerAddress, TransportContext transContext) {
         return new CoapRequest(peerAddress, transContext);
     }
@@ -273,7 +297,7 @@ public final class CoapRequest {
         if (method == Method.GET) {
             options.setBlock2Res(new BlockOption(0, size, false));
         }
-        if (method == Method.PUT || method == Method.POST) {
+        if (method == Method.PUT || method == Method.POST || method == Method.FETCH || method == Method.PATCH || method == Method.iPATCH) {
             options.setBlock1Req(new BlockOption(0, size, true));
         }
         return this;

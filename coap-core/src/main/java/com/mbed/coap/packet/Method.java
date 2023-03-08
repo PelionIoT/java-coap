@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2018 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +21,7 @@ import com.mbed.coap.exception.CoapException;
 
 public enum Method {
 
-    GET, POST, PUT, DELETE;
+    GET, POST, PUT, DELETE, FETCH, PATCH, iPATCH;
 
     public static Method valueOf(int methodCode) throws CoapException {
         switch (methodCode) {
@@ -32,6 +33,12 @@ public enum Method {
                 return PUT;
             case 4:
                 return DELETE;
+            case 5:
+                return FETCH;
+            case 6:
+                return PATCH;
+            case 7:
+                return iPATCH;
             default:
                 throw new CoapException("Wrong method code");
         }

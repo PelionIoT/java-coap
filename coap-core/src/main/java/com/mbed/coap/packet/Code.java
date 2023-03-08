@@ -47,6 +47,11 @@ public enum Code {
     C408_REQUEST_ENTITY_INCOMPLETE(4, 8, 500),
     C413_REQUEST_ENTITY_TOO_LARGE(4, 13, 413),
     //
+    //RFC 8132 (FETCH & PATCH)
+    C409_CONFLICT(4, 9, 409),
+    C422_UNPROCESSABLE_ENTITY(4, 22, 422),
+
+    //
     //draft-ietf-core-coap-tcp-tls-09
     C701_CSM(7, 01, 500),
     C702_PING(7, 02, 500),
