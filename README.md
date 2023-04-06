@@ -18,6 +18,7 @@ The following features are supported by the library:
     - The Constrained Application Protocol [RFC 7252](https://tools.ietf.org/html/rfc7252)
     - Observing Resources in the Constrained Application Protocol [RFC 7641](https://tools.ietf.org/html/rfc7641)
     - Block-Wise Transfers in the Constrained Application Protocol [RFC 7959](https://tools.ietf.org/html/rfc7959)
+    - PATCH and FETCH Methods [RFC 8132](https://tools.ietf.org/html/rfc8132)
 * CoRE Link Format processing API
     - Constrained RESTful Environments (CoRE) Link Format [RFC 6690](https://tools.ietf.org/html/rfc6690)
 * CoAP server mode
