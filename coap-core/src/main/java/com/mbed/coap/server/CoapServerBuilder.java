@@ -179,6 +179,7 @@ public final class CoapServerBuilder {
 
     public CoapServer build() {
         requireNonNull(coapTransport, "Missing transport");
+        final boolean stopExecutor = scheduledExecutorService == null;
         if (scheduledExecutorService == null) {
             scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         }
@@ -240,6 +241,9 @@ public final class CoapServerBuilder {
         return new CoapServer(coapTransport, dispatcher::handle, outboundService, () -> {
             piggybackedExchangeFilter.stop();
             duplicateDetectorCache.stop();
+            if (stopExecutor) {
+                scheduledExecutorService.shutdown();
+            }
         });
 
     }
