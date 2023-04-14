@@ -6,7 +6,7 @@ description = "coap-tcp"
 
 dependencies {
     api(project(":coap-core"))
-    api("org.slf4j:slf4j-api:2.0.6")
+    api("org.slf4j:slf4j-api:2.0.7")
 
     testImplementation(testFixtures(project(":coap-core")))
 
@@ -15,6 +15,6 @@ dependencies {
     testImplementation("ch.qos.logback:logback-classic:1.3.5")
     testImplementation("org.mockito:mockito-core:4.11.0")
     testImplementation("org.assertj:assertj-core:3.24.2")
-    testImplementation("nl.jqno.equalsverifier:equalsverifier:3.13.2")
+    testImplementation("nl.jqno.equalsverifier:equalsverifier:3.14.1")
     testImplementation("org.awaitility:awaitility:4.2.0")
 }

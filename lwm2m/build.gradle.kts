@@ -6,7 +6,7 @@ description = "lwm2m"
 
 dependencies {
     api("com.google.code.gson:gson:2.10.1")
-    api("org.slf4j:slf4j-api:2.0.6")
+    api("org.slf4j:slf4j-api:2.0.7")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
@@ -14,5 +14,5 @@ dependencies {
     testImplementation("ch.qos.logback:logback-classic:1.3.5")
     testImplementation("org.mockito:mockito-core:4.11.0")
     testImplementation("org.hamcrest:hamcrest-all:1.3")
-    testImplementation("nl.jqno.equalsverifier:equalsverifier:3.13.2")
+    testImplementation("nl.jqno.equalsverifier:equalsverifier:3.14.1")
 }

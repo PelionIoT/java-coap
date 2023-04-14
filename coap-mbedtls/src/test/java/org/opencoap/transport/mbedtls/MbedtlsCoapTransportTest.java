@@ -61,11 +61,11 @@ class MbedtlsCoapTransportTest {
                         })
                         .post("/auth", it -> {
                             String name = it.options().getUriQueryMap().get("name");
-                            dtlsServer.setSessionAuthenticationContext(it.getPeerAddress(), name);
+                            dtlsServer.putSessionAuthenticationContext(it.getPeerAddress(), "auth", name);
                             return completedFuture(CoapResponse.of(Code.C201_CREATED));
                         })
                         .get("/auth", it -> {
-                            String name = it.getTransContext().get(MbedtlsCoapTransport.DTLS_CONTEXT).getAuthentication();
+                            String name = it.getTransContext().get(MbedtlsCoapTransport.DTLS_CONTEXT).getAuthenticationContext().get("auth");
                             if (name != null) {
                                 return completedFuture(CoapResponse.ok(name));
                             } else {
