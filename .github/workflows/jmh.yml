@@ -1,0 +1,34 @@
+name: benchmark
+
+on:
+  push:
+
+jobs:
+  benchmark:
+    timeout-minutes: 10
+    if: github.repository == 'open-coap/java-coap'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: 'adopt'
+      - name: Build
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: jmhJar
+          cache-read-only: false
+      - name: Run benchmarks
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: jmh
+          cache-read-only: false
+      - name: print summary
+        run: |
+          echo '### JMH report' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          find . -path '*/results/jmh/*.txt' -type f | xargs cat >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

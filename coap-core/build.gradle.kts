@@ -1,6 +1,7 @@
 plugins {
     id("java-library")
     id("java-test-fixtures")
+    id("me.champeau.jmh").version("0.7.0")
 }
 
 description = "coap-core"
@@ -21,4 +22,6 @@ dependencies {
 
 tasks {
     named("pmdTestFixtures").get().enabled = false
+    named("pmdJmh").get().enabled = false
+    named("spotbugsJmh").get().enabled = false
 }
