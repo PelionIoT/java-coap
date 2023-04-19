@@ -16,7 +16,6 @@
  */
 package com.mbed.coap.packet;
 
-import com.mbed.coap.utils.Validations;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,8 +66,11 @@ public final class DataConvertingUtility {
 
         for (String prm : params) {
             String[] p = prm.split("=", 2);
-            Validations.require(p.length == 2);
-            result.put(p[0], p[1]);
+            if (p.length == 2) {
+                result.put(p[0], p[1]);
+            } else {
+                result.put(p[0], "");
+            }
         }
         return result;
     }

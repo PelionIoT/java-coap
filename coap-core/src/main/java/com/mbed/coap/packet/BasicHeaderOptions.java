@@ -243,19 +243,6 @@ public class BasicHeaderOptions {
         return list;
     }
 
-    /**
-     * Returns number of header options. If greater that 14 then returns 15.
-     *
-     * @return option count
-     */
-    final byte getOptionCount() {
-        int optCount = 0;
-        for (RawOption rOpt : getRawOptions()) {
-            optCount += rOpt.optValues.length == 0 ? 1 : rOpt.optValues.length;
-        }
-        return (byte) (optCount > 14 ? 15 : optCount);
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

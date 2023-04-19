@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 java-coap contributors (https://github.com/open-coap/java-coap)
+ * Copyright (C) 2022-2023 java-coap contributors (https://github.com/open-coap/java-coap)
  * Copyright (C) 2011-2021 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,17 @@
  */
 package com.mbed.coap.packet;
 
-import static com.mbed.coap.packet.BasicHeaderOptions.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.mbed.coap.packet.BasicHeaderOptions.hasNoCacheKey;
+import static com.mbed.coap.packet.BasicHeaderOptions.isCritical;
+import static com.mbed.coap.packet.BasicHeaderOptions.isUnsave;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapMessageFormatException;
 import java.io.ByteArrayInputStream;
@@ -117,7 +125,7 @@ public class HeaderOptionTest {
     public void testWithAccept() throws IOException, CoapException {
         HeaderOptions hdr = new HeaderOptions();
         hdr.setAccept((short) 123);
-        HeaderOptions hdr2 = deserialize(serialize(hdr), hdr.getOptionCount());
+        HeaderOptions hdr2 = deserialize(serialize(hdr));
 
         System.out.println(hdr.toString());
         System.out.println(hdr2.toString());
@@ -125,7 +133,7 @@ public class HeaderOptionTest {
         assertEquals(hdr, hdr2);
 
         hdr.setAccept(null);
-        hdr2 = deserialize(serialize(hdr), hdr.getOptionCount());
+        hdr2 = deserialize(serialize(hdr));
         assertEquals(hdr, hdr2);
     }
 
@@ -152,8 +160,6 @@ public class HeaderOptionTest {
         System.out.println(hdr);
         System.out.println(hdr2);
         assertTrue(hdr.equals(hdr2));
-        assertEquals(1, hdr.getOptionCount());
-        assertEquals(1, hdr2.getOptionCount());
     }
 
     @Test
@@ -163,7 +169,7 @@ public class HeaderOptionTest {
         hdr.setBlock2Res(new BlockOption(4, BlockSize.S_1024, false));
         hdr.setObserve(4321);
 
-        HeaderOptions hdr2 = deserialize(serialize(hdr), hdr.getOptionCount());
+        HeaderOptions hdr2 = deserialize(serialize(hdr));
 
         System.out.println(hdr);
         System.out.println(hdr2);
@@ -347,7 +353,7 @@ public class HeaderOptionTest {
         HeaderOptions hdr = new HeaderOptions();
         hdr.setSize1(3211);
 
-        HeaderOptions hdr2 = deserialize(serialize(hdr), hdr.getOptionCount());
+        HeaderOptions hdr2 = deserialize(serialize(hdr));
         assertEquals(hdr, hdr2);
         assertEquals((Integer) 3211, hdr2.getSize1());
 
@@ -384,7 +390,7 @@ public class HeaderOptionTest {
     public void uriPath_withMultipleEmptyPathSegments() throws Exception {
         HeaderOptions hdr = new HeaderOptions();
         hdr.setUriPath("/3//");
-        HeaderOptions hdr2 = deserialize(serialize(hdr), (byte) 0);
+        HeaderOptions hdr2 = deserialize(serialize(hdr));
         assertEquals(hdr, hdr2);
         assertEquals("/3//", hdr2.getUriPath());
     }
@@ -484,13 +490,28 @@ public class HeaderOptionTest {
         assertFalse(new BasicHeaderOptions().equals(null));
     }
 
+    @Test
+    void shouldUseQueryWithoutValue() throws CoapException, IOException {
+        HeaderOptions h = new HeaderOptions();
+        // when
+        h.setUriQuery("param1=val1&q&param2=val2");
+        h.setLocationQuery("q");
+        HeaderOptions h2 = deserialize(serialize(h));
+
+        // then
+        assertEquals("param1=val1&q&param2=val2", h2.getUriQuery());
+        assertEquals("", h2.getUriQueryMap().get("q"));
+
+        assertEquals("?param1=val1&q&param2=val2 Loc:?q", h2.toString());
+    }
+
     private static byte[] serialize(BasicHeaderOptions hdr) throws IOException, CoapException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         hdr.serialize(baos);
         return baos.toByteArray();
     }
 
-    private static HeaderOptions deserialize(byte[] rawData, byte optNumber) throws IOException, CoapException {
+    private static HeaderOptions deserialize(byte[] rawData) throws IOException, CoapException {
         HeaderOptions hdr2 = new HeaderOptions();
         hdr2.deserialize(new ByteArrayInputStream(rawData));
         return hdr2;

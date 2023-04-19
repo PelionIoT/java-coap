@@ -48,8 +48,16 @@ public class DataConvertingUtilityTest {
 
         assertNull(parseUriQuery(null));
         assertNull(parseUriQuery(""));
+    }
 
-        assertThatThrownBy(() -> parseUriQuery("p=aa&par133")).isExactlyInstanceOf(IllegalArgumentException.class);
+    @Test
+    public void testParseUriQueryWithoutValue() throws ParseException {
+        Map<String, String> q = new HashMap<>();
+        q.put("par1", "");
+
+        assertEquals(q, parseUriQuery("par1"));
+        assertEquals(q, parseUriQuery("?par1"));
+        assertEquals(q, parseUriQuery("par1="));
     }
 
 
