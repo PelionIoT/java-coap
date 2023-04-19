@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 public class DuplicateDetector implements Filter.SimpleFilter<CoapPacket, CoapPacket> {
     private static final Logger LOGGER = LoggerFactory.getLogger(DuplicateDetector.class);
     private static final CoapPacket EMPTY_COAP_PACKET = new CoapPacket(null);
+    private static final CoapPacket NULL_COAP_PACKET = new CoapPacket(null);
 
     private final PutOnlyMap<CoapRequestId, CoapPacket> requestMap;
     private final DuplicatedCoapMessageCallback duplicatedCoapMessageCallback;
@@ -46,17 +47,24 @@ public class DuplicateDetector implements Filter.SimpleFilter<CoapPacket, CoapPa
 
         if (duplResp != null) {
             duplicatedCoapMessageCallback.duplicated(request);
-            if (duplResp != DuplicateDetector.EMPTY_COAP_PACKET) { // NOPMD
-                LOGGER.debug("CoAP request repeated, resending response [{}]", request);
-                return completedFuture(duplResp);
-            } else {
+            if (duplResp == DuplicateDetector.EMPTY_COAP_PACKET) { // NOPMD
                 LOGGER.debug("CoAP request repeated, no response available [{}]", request);
                 return failedFuture(new CancellationException());
+            } else if (duplResp == DuplicateDetector.NULL_COAP_PACKET) { // NOPMD
+                LOGGER.debug("CoAP request repeated, null response available [{}]", request);
+                return completedFuture(null);
+            } else {
+                LOGGER.debug("CoAP request repeated, resending response [{}]", request);
+                return completedFuture(duplResp);
             }
         }
 
         return service.apply(request).thenApply(response -> {
-            putResponse(request, response);
+            if (response != null) {
+                putResponse(request, response);
+            } else {
+                putResponse(request, NULL_COAP_PACKET);
+            }
             return response;
         });
     }

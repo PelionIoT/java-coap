@@ -15,10 +15,19 @@
  */
 package com.mbed.coap.server.messaging;
 
-import static java.util.concurrent.CompletableFuture.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
-import static protocolTests.utils.CoapPacketBuilder.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.BDDMockito.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
+import static org.mockito.BDDMockito.reset;
+import static org.mockito.BDDMockito.times;
+import static org.mockito.BDDMockito.verify;
+import static protocolTests.utils.CoapPacketBuilder.LOCAL_5683;
+import static protocolTests.utils.CoapPacketBuilder.newCoapPacket;
 import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.server.DefaultDuplicateDetectorCache;
@@ -68,6 +77,21 @@ class DuplicateDetectorTest {
         assertFalse(result1.isDone());
         assertTrue(result2.isCancelled());
         assertTrue(result3.isCancelled());
+        verify(service, times(1)).apply(any());
+    }
+
+    @Test
+    void should_cache_non_observation_and_its_null_response() {
+        CoapPacket obs = newCoapPacket(LOCAL_5683).non(Code.C205_CONTENT).obs(41).payload("test123").build();
+        given(service.apply(any())).willReturn(CompletableFuture.completedFuture(null));
+
+        // when
+        CompletableFuture<CoapPacket> result1 = duplicateDetector.apply(obs, service);
+        CompletableFuture<CoapPacket> result2 = duplicateDetector.apply(obs, service);
+
+        // then
+        assertNull(result1.join());
+        assertNull(result2.join());
         verify(service, times(1)).apply(any());
     }
 }

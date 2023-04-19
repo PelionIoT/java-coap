@@ -22,6 +22,7 @@ import static com.mbed.coap.transport.TransportContext.NON_CONFIRMABLE;
 import static com.mbed.coap.utils.Validations.require;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -126,6 +127,16 @@ public class NonConfirmableTransactionsTest {
         // then
         assertEquals(CoapResponse.of(Code.C201_CREATED).block2Res(1, S_16, false).payload(Opaque.of("ccccccccccccccccdddd")), resp.join());
     }
+
+    @Test
+    public void inboundObservation() {
+        // when
+        client.send(coap(124).non(Code.C205_CONTENT).token(31).obs(4).payload("test123"));
+
+        // then
+        assertTrue(client.nothingReceived());
+    }
+
 
     private static CoapPacketBuilder coap(int mid) {
         return newCoapPacket(LOCAL_5683).mid(mid);
