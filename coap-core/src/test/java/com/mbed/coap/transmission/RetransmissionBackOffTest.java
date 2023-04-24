@@ -111,4 +111,22 @@ public class RetransmissionBackOffTest {
         assertThrows(IllegalArgumentException.class, () -> singleTimeout.next(0));
         assertThrows(IllegalArgumentException.class, () -> singleTimeout.next(-1));
     }
+
+    @Test
+    public void retransmission_with_custom_random_factor() {
+        RetransmissionBackOff backOff = RetransmissionBackOff.ofExponential(ofSeconds(2), 2, 1.0f);
+
+        assertEquals(2000, backOff.next(1).toMillis());
+        assertEquals(4000, backOff.next(2).toMillis());
+    }
+
+    @Test
+    void should_fail_with_wrong_parameters() {
+        assertThrows(IllegalArgumentException.class, () -> RetransmissionBackOff.ofExponential(ofSeconds(2), 2, 0.99f));
+        assertThrows(IllegalArgumentException.class, () -> RetransmissionBackOff.ofExponential(ofSeconds(2), 2, 0f));
+        assertThrows(IllegalArgumentException.class, () -> RetransmissionBackOff.ofExponential(ofSeconds(2), 2, -1.321f));
+
+
+        assertThrows(IllegalArgumentException.class, () -> RetransmissionBackOff.ofExponential(ofSeconds(2), -1, 2f));
+    }
 }

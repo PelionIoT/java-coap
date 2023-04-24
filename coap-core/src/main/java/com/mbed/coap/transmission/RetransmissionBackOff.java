@@ -41,6 +41,12 @@ public interface RetransmissionBackOff {
     }
 
     static RetransmissionBackOff ofExponential(Duration first, int maxAttempts) {
+        return ofExponential(first, maxAttempts, CoapConstants.ACK_RANDOM_FACTOR);
+    }
+
+    static RetransmissionBackOff ofExponential(Duration first, int maxAttempts, float randomFactor) {
+        require(randomFactor >= 1);
+        require(maxAttempts >= 0);
         final Random rnd = new Random();
         long firstMs = first.toMillis();
 
@@ -50,7 +56,7 @@ public interface RetransmissionBackOff {
                 return Duration.ZERO;
             }
 
-            float rndFactor = 1 + (CoapConstants.ACK_RANDOM_FACTOR - 1) * rnd.nextFloat();
+            float rndFactor = 1 + (randomFactor - 1) * rnd.nextFloat();
             return Duration.ofMillis((long) (firstMs * rndFactor * (1L << (attempt - 1))));
         };
     }
