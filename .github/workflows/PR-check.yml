@@ -28,7 +28,20 @@ jobs:
         run: |
             cd $PDM_BINARY_ARTIFACTS_DIR
             bash init.sh --force
+      - name: Check hostname
+        run: |
+          HOST=$(hostname)
+          echo "Hostname is $HOST"
+          if [ "$HOST" != "localhost" ]; then
+            echo "Changing hostname to localhost, tests will fail otherwise."
+            sudo hostname localhost
+          fi
       - run: mvn clean install -P ci
+      - name: Publish Test Report
+        if: success() || failure()
+        uses: scacap/action-surefire-report@v1
+        with:
+          check_name: mvn clean install -P ci test report
 
   pysh-check:
     runs-on: ubuntu-22.04
