@@ -199,7 +199,7 @@
                 <plugin>
                     <groupId>com.mycila</groupId>
                     <artifactId>license-maven-plugin</artifactId>
-                    <version>3.0</version>
+                    <version>4.2</version>
                     <configuration>
                         <header>license-header.txt</header>
                         <excludes>
@@ -212,7 +212,8 @@
                             <exclude>**/*.tmp</exclude>
                             <exclude>src/test/resources/**</exclude>
                             <exclude>src/main/resources/**</exclude>
-                            <exclude>pdm-artifacts-binary/**</exclude>
+                            <exclude>$HOME/.m2/**</exclude>
+                            <exclude>pdm-binary-artifacts/**</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
