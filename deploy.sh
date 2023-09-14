@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 #
 # Copyright (C) 2011-2018 ARM Limited. All rights reserved.
+# Copyright (c) 2023 Izuma Networks. All rights reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -24,7 +27,7 @@
 [[ -z $(git status -s) ]] || exit 1
 
 VER="5.1.0-`git log --format="%cd-%h" --date=format:%Y%m%d -n 1`"
-mvn versions:set -DnewVersion=$VER -DgenerateBackupPoms=false
+mvn versions:set -DnewVersion="$VER" -DgenerateBackupPoms=false
 mvn -DskipTests deploy -P ci $@
 git reset --hard
 

@@ -6,11 +6,17 @@ mbed CoAP
 [![codecov](https://codecov.io/gh/PelionIoT/java-coap/branch/master/graph/badge.svg)](https://codecov.io/gh/PelionIoT/java-coap)
 [![Known Vulnerabilities](https://snyk.io/test/github/PelionIoT/java-coap/badge.svg)](https://snyk.io/test/github/PelionIoT/java-coap)
 
+Maintenance
+-----------
+This repository is under minimal maintenance.
+There is a more actively developed version available at [https://github.com/open-coap/java-coap](https://github.com/open-coap/java-coap) - you might want to check that repository out.
+There are API differences, though.
+
 Introduction
 ------------
 
-This library makes it easy to integrate a Java SE enabled device with coap based services like [mbed Cloud](https://www.mbed.com/en/platform/cloud). 
-It can also help to emulate an embedded device for prototyping and testing purposes. 
+This library makes it easy to integrate a Java SE enabled device with CoAP based services like [Izuma Networks Device Management](https://www.izumanetworks.com). 
+It can also help to emulate an embedded device for prototyping and testing purposes.
 
 The following features are supported by the library:
 
@@ -139,6 +145,24 @@ This [example client](example-client) demonstrates how to build coap client.
 Development
 -----------
 
+### Issues with localhost on Ubuntu
+
+Ubuntu has IP addresses for localhost, `127.0.0.1` and `127.0.1.1`.
+This causes problems with CoAP packets, the request and response address does not match.
+Change both addresses to `127.0.0.1` or comment or remove the latter from `/etc/hosts` and change hostname to localhost.
+
+To check hostname:
+
+```
+    hostname
+```
+
+To change hostname to localhost:
+
+```
+    sudo hostname localhost
+```
+
 ### Build
 
     mvn clean install
@@ -150,7 +174,6 @@ Development
 ### Update license header
 
     mvn com.mycila:license-maven-plugin:format
-
 
 Contributions
 -------------

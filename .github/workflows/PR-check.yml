@@ -1,0 +1,58 @@
+name: PR-checker
+run-name: ${{ github.actor }} Pull Request - make all
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: java-coap-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+on: [push]
+jobs:
+  mvn-clean-install-ci:
+    runs-on: ubuntu-22.04
+    env:
+      PDM_BINARY_ARTIFACTS_DIR: pdm-binary-artifacts    
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          java-version: "8"
+          distribution: "temurin"
+      - name: Cloning pdm-binary-artifacts
+        uses: actions/checkout@v3
+        with:
+          repository: PelionIoT/pdm-binary-artifacts
+          token: ${{ secrets.ACCESS_TOKEN }}
+          path: ${{ env.PDM_BINARY_ARTIFACTS_DIR }}
+      - name: Initializing pdm-binary-artifacts
+        run: |
+            cd $PDM_BINARY_ARTIFACTS_DIR
+            bash init.sh --force
+      - name: Check hostname
+        run: |
+          HOST=$(hostname)
+          echo "Hostname is $HOST"
+          if [ "$HOST" != "localhost" ]; then
+            echo "Changing hostname to localhost, tests will fail otherwise."
+            sudo hostname localhost
+          fi
+      - run: mvn clean install -P ci
+      - name: Publish Test Report
+        if: success() || failure()
+        uses: scacap/action-surefire-report@v1
+        with:
+          check_name: mvn clean install -P ci test report
+
+  pysh-check:
+    runs-on: ubuntu-22.04
+    steps:
+        - uses: actions/checkout@v3
+        - name: Get scripts internal...
+          run: | 
+                git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
+                git clone git@github.com:PelionIoT/scripts-internal.git
+        - name: Run no-more-lines w pysh-check 
+          run: |
+                sudo apt install pycodestyle pydocstyle black
+                echo "." >scripts-internal/.nopyshcheck
+                scripts-internal/ci/more-lines-checker.sh ${{ github.event.repository.default_branch }} ${{ github.ref_name }} "scripts-internal/pysh-check/pysh-check.sh  --workdir ."
