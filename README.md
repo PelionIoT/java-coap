@@ -145,6 +145,24 @@ This [example client](example-client) demonstrates how to build coap client.
 Development
 -----------
 
+### Issues with localhost on Ubuntu
+
+Ubuntu has IP addresses for localhost, `127.0.0.1` and `127.0.1.1`.
+This causes problems with CoAP packets, the request and response address does not match.
+Change both addresses to `127.0.0.1` or comment or remove the latter from `/etc/hosts` and change hostname to localhost.
+
+To check hostname:
+
+```
+    hostname
+```
+
+To change hostname to localhost:
+
+```
+    sudo hostname localhost
+```
+
 ### Build
 
     mvn clean install
@@ -156,7 +174,6 @@ Development
 ### Update license header
 
     mvn com.mycila:license-maven-plugin:format
-
 
 Contributions
 -------------
