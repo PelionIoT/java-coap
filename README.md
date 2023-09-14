@@ -6,11 +6,17 @@ mbed CoAP
 [![codecov](https://codecov.io/gh/PelionIoT/java-coap/branch/master/graph/badge.svg)](https://codecov.io/gh/PelionIoT/java-coap)
 [![Known Vulnerabilities](https://snyk.io/test/github/PelionIoT/java-coap/badge.svg)](https://snyk.io/test/github/PelionIoT/java-coap)
 
+Maintenance
+-----------
+This repository is under minimal maintenance.
+There is a more actively developed version available at [https://github.com/open-coap/java-coap](https://github.com/open-coap/java-coap) - you might want to check that repository out.
+There are API differences, though.
+
 Introduction
 ------------
 
-This library makes it easy to integrate a Java SE enabled device with coap based services like [mbed Cloud](https://www.mbed.com/en/platform/cloud). 
-It can also help to emulate an embedded device for prototyping and testing purposes. 
+This library makes it easy to integrate a Java SE enabled device with CoAP based services like [Izuma Networks Device Management](https://www.izumanetworks.com). 
+It can also help to emulate an embedded device for prototyping and testing purposes.
 
 The following features are supported by the library:
 
