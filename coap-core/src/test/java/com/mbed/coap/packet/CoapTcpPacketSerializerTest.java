@@ -20,7 +20,6 @@ package com.mbed.coap.packet;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.exception.CoapException;
 import com.mbed.coap.exception.CoapMessageFormatException;

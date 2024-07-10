@@ -20,8 +20,6 @@ package com.mbed.coap.client;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 import static protocolTests.utils.CoapPacketBuilder.*;
 import com.mbed.coap.exception.CoapCodeException;

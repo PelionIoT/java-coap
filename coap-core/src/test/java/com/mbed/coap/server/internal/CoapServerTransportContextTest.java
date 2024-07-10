@@ -19,8 +19,6 @@
 package com.mbed.coap.server.internal;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 import com.mbed.coap.client.CoapClient;
 import com.mbed.coap.client.CoapClientBuilder;
