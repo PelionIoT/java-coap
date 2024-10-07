@@ -13,13 +13,13 @@ jobs:
     env:
       PDM_BINARY_ARTIFACTS_DIR: pdm-binary-artifacts    
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-java@v3
         with:
           java-version: "8"
           distribution: "temurin"
       - name: Cloning pdm-binary-artifacts
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: PelionIoT/pdm-binary-artifacts
           token: ${{ secrets.ACCESS_TOKEN }}
@@ -46,7 +46,7 @@ jobs:
   pysh-check:
     runs-on: ubuntu-22.04
     steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - name: Get scripts internal...
           run: | 
                 git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
